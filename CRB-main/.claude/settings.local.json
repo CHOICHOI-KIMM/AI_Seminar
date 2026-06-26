@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo:*)",
+      "Bash(rustup:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm view:*)",
+      "Bash(node:*)",
+      "Bash(npm create:*)",
+      "Bash(export:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(/tmp/test_trb.bat:*)",
+      "Bash(xargs grep:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

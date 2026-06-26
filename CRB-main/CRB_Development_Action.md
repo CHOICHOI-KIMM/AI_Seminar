@@ -1,0 +1,120 @@
+# CRB Contact Analysis System — 개발 실행 기록 (Action Log)
+
+> **Plan**: [CRB_Development_Plan.md](CRB_Development_Plan.md) 참조
+> **작성 원칙**: Phase 완료 시 해당 섹션 append. 진행 중 이슈는 ⚠️ 로 즉시 기록, 해결 시 ✅ 로 갱신.
+> **날짜 표기**: `YYYY-MM-DD HH:MM:SS` (작업 PC 로컬 시각).
+
+---
+
+## 진행 상태 요약
+
+| Phase | 상태 | 완료일 | 순작업 시간 | 비고 |
+|-------|------|--------|-----------|------|
+| **0. 환경 분리** | ✅ 완료 | 2026-06-25 | ~12 분 | Sanity 통과, TRB 코드 그대로 동작 가능 상태 |
+| 1. 데이터 모델 단순화 | ⏳ 대기 | — | — | 시리즈(N/NU/NJ/NUP) 결정 후 진입 |
+| 2. Geometry 단순화 | — | — | — | — |
+| 3. Roller-Level Solver | — | — | — | — |
+| 4. Bearing-Level Equilibrium | — | — | — | — |
+| 5. Life / Static Rating | — | — | — | — |
+| 6. Frontend UI | — | — | — | — |
+| 7. Lubrication / Transient | — | — | — | — |
+| 8. 검증 + 문서화 | — | — | — | — |
+
+---
+
+## Phase 0 — 폴더 복제 + 환경 분리   ✅ 완료 (2026-06-25)
+
+**전체 소요**: 2026-06-25 21:42:57 ~ 21:54:38 (순작업 ~ 12 분, 대기·대화 시간 제외)
+
+### 0-A. 폴더 복제   (2026-06-25 21:42:57 ~ 21:43:03, 6 초)
+
+- **명령**: `robocopy "TRB-main" "CRB-main" /E /XD node_modules target dist .git /NFL /NDL /NP /R:1 /W:1 /MT:8`
+- **결과**: 756 파일, 158.7 MB, exit 3 (정상 — robocopy 0~7 = success)
+- **제외**: `node_modules`, `target`, `dist`, `.git`
+- **보존**: 사전 생성된 `CRB_Development_Plan.md` (덮어쓰지 않음)
+- **결과 디렉토리**: `d:/AI/Main_Bearing/CRB-main/`
+
+### 0-B. 식별자 변경   (2026-06-25 21:43 ~ 21:46, ~ 3 분)
+
+| 파일 | 변경 항목 | Before | After |
+|------|----------|--------|-------|
+| [package.json](package.json) | `name` | `trb-app` | `crb-app` |
+| [src-tauri/Cargo.toml](src-tauri/Cargo.toml) | `name` | `trb-contact-analysis` | `crb-contact-analysis` |
+| | `description` | `TRB Contact Analysis...` | `CRB Contact Analysis...` |
+| [src-tauri/tauri.conf.json](src-tauri/tauri.conf.json) | `productName` | `trb-contact-analysis` | `crb-contact-analysis` |
+| | `identifier` | `com.trb.contact-analysis` | `com.crb.contact-analysis` |
+| | `title` | `TRB Contact Analysis` | `CRB Contact Analysis` |
+| | `devUrl` | `http://localhost:5174` | `http://localhost:5175` |
+| [vite.config.ts](vite.config.ts) | `server.port` | `5174` | **`5175`** (TRB와 동시 실행 가능) |
+
+### 0-C. 문서 헤더 수정   (2026-06-25 21:46 ~ 21:48, ~ 2 분)
+
+| 파일 | 변경 |
+|------|------|
+| [CLAUDE.md](CLAUDE.md) | 헤더 TRB→CRB + 모태 SW 링크 + Phase 0 상태 주석 (코드는 아직 TRB 알고리즘) |
+| [Master_plan.md](Master_plan.md) | 헤더 TRB→CRB + 본문 (~700 줄) 은 TRB 기준 그대로임 명시 (Phase 1+ 갱신) |
+| [README.md](README.md) | CRB 헤더 추가 + dev/build 가이드 + dev port 5175 표기 |
+
+### 0-D. Sanity 검증
+
+#### 0-D-1. `npm install`   (2026-06-25 21:48:21 ~ 21:49:12, 51 초)
+
+- **결과**: ✅ exit 0
+- **설치 패키지**: 521개 (TRB-main 과 동일)
+- **취약점**: 9개 보고 (low 2 / moderate 4 / high 3) — 모두 TRB 와 동일, 의존성 트리 그대로
+- **종료 알림**: npm notice "New major version of npm available! 10.9.3 → 11.16.0" (선택적 업데이트, 작업에 무관)
+
+#### 0-D-2. `cargo check`   (2026-06-25 21:49:51 ~ 21:54:38, 4 분 46 초)
+
+- **결과**: ✅ `Finished dev profile [unoptimized + debuginfo] target(s) in 4m 46s`, exit 0
+- **컴파일**: 521 의존성 + `crb-contact-analysis` 본체
+- **Warning**: 10 개 (모두 "function is never used" — TRB 와 동일, [lubrication.rs](src-tauri/src/solver/lubrication.rs) 의 미사용 함수)
+- **검증된 점**:
+  - Crate 이름이 `crb-contact-analysis` 로 정상 인식
+  - `src-tauri/.cargo/config.toml` 의 VS 2022 BuildTools 경로 그대로 동작 (TRB 환경 검증과 동일)
+  - 사전 환경 (Rust 1.95, MSVC 14.44.35207, Win11 SDK 26100) 변경 없이 호환
+
+### 발생 이슈
+
+없음. Phase 0 전 과정에서 빌드 오류·환경 충돌·포트 충돌 모두 발생하지 않음.
+
+### 미해결 / 이월 항목
+
+- ✅ **CRB 시리즈 결정** (해결: 2026-06-25) — [Plan §6 D1·D2](CRB_Development_Plan.md): **모든 시리즈에서 rib contact 제외 → 단일 솔버**, 시리즈 enum 도입 안 함. 근거: ISO 16281 A.3.1 NOTE 1
+- ✅ **Row 구성** (해결: 2026-06-25) — [Plan §6 D3](CRB_Development_Plan.md): **단일 row 만 구현** (`n_rows = 1` 고정). Multi-row (NNU 등 풍력 메인베어링) 는 본 계획 외 후속 작업 (F1)
+- ✅ **Axial 입력** (해결: 2026-06-25, D1 후속) — [Plan §6 D4](CRB_Development_Plan.md): `F_a = 0` 강제 → `bearing.rs` 평형 DOF = **3 (δr, γx, γy)** 로 단순화
+- ⏳ **Manual 정책**: TRB Manual 학습용 유지 vs CRB 별도 작성 — Phase 8 진입 전 결정 (Plan §6 F3)
+- ℹ️ `src-tauri/.cargo/config.toml.bak` (TRB-main 에서 만든 백업, Community 경로) 도 함께 복제됨 — CRB 환경에서도 보존
+
+### Plan 대비 편차 ([Plan §3 Phase 0](CRB_Development_Plan.md) 비교)
+
+| 항목 | Plan 예측 | 실제 | 편차 |
+|------|----------|------|------|
+| 소요 시간 | 1 day | ~ 12 분 (순작업) | **–98%** (자동화 효과, 코드 변경 없음) |
+| 작업 범위 | 폴더 복사 + 식별자 + 문서 헤더 + sanity | Plan 그대로 + 포트 5175 분리 | **+** dev port 변경 (동시 실행 위한 추가 결정) |
+| 발생 이슈 | (예상 없음) | 없음 | — |
+
+### 다음 단계 진입 조건 (Phase 1)
+
+✅ Phase 1 진입을 위한 결정 사항 모두 확정 ([Plan §6 D1~D4](CRB_Development_Plan.md)):
+- D1 모든 시리즈에서 rib contact 제외
+- D2 단일 솔버 (시리즈 분기 없음)
+- D3 단일 row
+- D4 F_a = 0 강제, 평형 DOF = 3
+
+**Phase 1 작업 범위 (확정)**:
+- `types.rs`: α, β, D_we_max/min, rib*, R_sph, F_a 등 필드 제거 (단순화)
+- `RollerProfile`: dub-off 대칭화
+- TypeScript `types/bearing.ts` mirror 갱신
+- `defaults.ts`: 단일 row CRB 예시값
+- 통과 기준: cargo check + npm run build
+
+검증 명령 (현재 시점 — TRB 코드 그대로 동작 확인용):
+```powershell
+cd "d:\AI\Main_Bearing\CRB-main"
+npm run tauri dev   # http://localhost:5175 + WebView 윈도우
+```
+
+---
+
+*Last updated: 2026-06-25 (Phase 0 완료, scope 결정 D1~D4 확정, Phase 1 코딩 보류 중)*

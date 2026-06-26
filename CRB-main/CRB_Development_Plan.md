@@ -1,0 +1,1071 @@
+# CRB Contact Analysis System — 개발 계획서
+
+> 기존 TRB-main 의 SW 체계를 기반으로 원통롤러베어링(CRB, Cylindrical Roller Bearing) 해석 SW 를 신규 개발하기 위한 종합 계획.
+>
+> - **작성 기준**: ISO 16281:2025 (Rolling bearings — Methods for calculating the modified reference rating life)
+> - **모태 SW**: `d:/AI/Main_Bearing/TRB-main/` (Tauri 2.0 + Rust + React 데스크톱 앱)
+> - **목표 SW**: `d:/AI/Main_Bearing/CRB-main/` (본 폴더)
+
+---
+
+## 1. ISO 16281 기반 CRB ↔ TRB 핵심 차이 요약
+
+> ISO 16281:2025 (en) 참조 위치를 **CRB/TRB 각각 분리** + **정확한 ISO 원문 페이지** 표기.
+> 페이지는 `TRB-main/Reference/ISO_16281_2025(en).pdf` 의 ISO 원문 페이지 번호 (PDF 페이지 = ISO 페이지 + 6) 기준으로 직접 확인.
+> ⚠️ Clause 구조: **3** = Terms and definitions, **4** = Symbols and abbreviated terms, **5** = Calculation of rating life, **6** = Calculation of contact deflection.
+> `—` 는 해당 표준에 별도 절이 없거나 공통 처리.
+
+| 구분 | 항목 | CRB (Cylindrical Roller Bearing) | TRB (Tapered Roller Bearing) | CRB 참조 (ISO 16281:2025) | TRB 참조 (ISO 16281:2025) |
+|------|------|----------------------------------|------------------------------|---------------------------|---------------------------|
+| **Geometry** | Roller 형상 | 원통 (β = 0°) | 원추 (β = half cone angle) | Clause 4 Symbols (**p. 2**) | Clause 4 Symbols: β (**p. 5**) |
+| | Contact angle | α = 0° (순수 radial) | α ≠ 0° (10~30°) | A.3.1 radial bearing (**pp. 22–23**) | A.3.2 + `Figure A.4` (**pp. 24–25**) |
+| | Roller diameter | D_we (균일) | D_we_max / D_we_min | Clause 4 D_we (**pp. 3, 5**) | Clause 4 Symbols (**pp. 3, 5**) |
+| | L_we 기준축 | along **roller axis** | along **roller contact line** (β 보정) | Clause 4 NOTE 3 (**p. 4**) | Clause 4 NOTE 3 (**p. 4**) |
+| | x_k 좌표 | roller axis 따라 | lateral surface 따라 | Clause 4 NOTE 5 (**p. 5**) | Clause 4 NOTE 5 (**p. 5**) |
+| **Raceway** | Taper angle (α_i, α_o) | 0° (cylindrical bore) | ≠ 0° | A.3.1 본문 (**pp. 22–23**) | A.3.2 본문 (**pp. 24–25**) |
+| | Profile (radial) | B.5 (단순 대칭) | B.6 (β 보정 `0.00045/cos β`) | **B.5** (**p. 29**) | **B.6** (**p. 29**) |
+| | Profile (thrust) | B.8 (대칭) | B.9 (β 보정) | **B.8** (**p. 29**) | **B.9** (**p. 30**) |
+| **Rib contact** | 필요 여부 | **일반적으로 무시** (보조적) | **필수** (axial 지지) | A.3.1 **NOTE 1** "not necessary" (**p. 22**) | A.3.2 본문 `axial force on the rib` (**p. 24**) |
+| | 입력 (h_rib, α_rib, R_sph) | 옵션/생략 | 필수 | — | A.3.2 + B.6 (**pp. 24, 29**) |
+| **Load** | Axial 지지 | 약하거나 없음 (시리즈에 따라) | 구조적으로 지지 | A.3.1 (**pp. 22–23**) | A.3.2 `Figure A.4` (**pp. 24–25**) |
+| | 평형 DOF | 3~4-DOF (radial+tilt 중심) | 5-DOF (δx, δy, δz, γx, γy) | A.3.1 Formula (A.11)/(A.12) (**p. 22**) | A.3.2 Formula 본문 (**pp. 24–25**) |
+| | 접촉력 방향 | radial direction | perpendicular to taper raceway | A.3.1 `Figure A.2` (**p. 23**) | A.3.2 `Figure A.4` (**p. 25**) |
+| **Elastic deflection** | 공식 번호 | Formula **(42)** | Formula **(47)** | **6.3.2** Cylindrical rollers (**p. 17**) | **6.3.3** Tapered rollers (**p. 17**) |
+| | Spring constant 기호 | c_R | c_T | Clause 4 Symbols (**pp. 2–5**) | Clause 4 Symbols (**pp. 2–5**) |
+| **Profile (Roller)** | Dub-off | 대칭 (단일 δ_dub, L_dub) | 비대칭 (large/small 분리) | B.5 (**p. 29**) | B.6 (**p. 29**) |
+| | End sphere R_sph | 옵션 (rib 없으면 불필요) | 필수 | — | B.6 + A.3.2 (**pp. 24, 29**) |
+| **Lamina model** | Figure 참조 | `Figure A.2` (cylindrical) | `Figure 2` (tapered lamina) / `Figure A.4` (FBD) | 6.3.2 + A.3.1 (**pp. 17, 23**) | 6.3.3 + A.3.2 (**pp. 17, 25**) |
+| **Stress concentration** | 적용 식 / 함수 | f[j,k] 정의는 동일 (C.1/C.2) | 동일 (C.1/C.2) | 5.3.5 + C.1/C.2 (**pp. 13, 31–32**) | 5.3.5 + C.1/C.2 (**pp. 13, 31–32**) |
+| **Roller bending (Gen3)** | EI(x) | **균일** (단면 일정) | **위치 종속** (가변 I_k) | — (구현 영역, ISO 외) | — (구현 영역, ISO 외) |
+| **Fatigue life** | Lamina life 식 | 동일 (Lundberg-Palmgren) | 동일 | 5.3 (**pp. 10–14**) | 5.3 (**pp. 10–14**) |
+| | C_R 상수 | ISO 281 CRB 식 | ISO 281 TRB 식 | ISO 281 (외부 참조) | ISO 281 (외부 참조) |
+| **Pre-/Post-processing** | Hertz parameter 계산 | Annex E 참조 | Annex E 참조 | E (Hertzian parameters) | E (Hertzian parameters) |
+
+### 1.1 페이지 매핑 빠른 참조표 (ISO 원문 페이지 기준)
+
+| ISO 16281 절 | ISO 페이지 | PDF 페이지 | 주요 내용 |
+|--------------|-----------|-----------|----------|
+| 1 Scope / 2 Normative references | 1 | 7 | 적용 범위 |
+| 3 Terms and definitions | 1~2 | 7~8 | basic / modified reference rating life 등 |
+| **4 Symbols and abbreviated terms** | **2~5** | 8~11 | D_we, β, α, c_R, c_T 등 기호 정의 (NOTE 3 @ p.4, NOTE 5 @ p.5) |
+| 5.1 Ball bearings | 6 | 12 | 볼 베어링 수명 |
+| 5.2 Roller bearings (intro) | 7~9 | 13~15 | (skipped — 5.3 가 본 표 핵심) |
+| **5.3 Roller bearings (lamina-level)** | **10~14** | 16~20 | Lamina life. **5.3.5 stress concentration @ p. 13** |
+| 6.1~6.2 Line contact intro | 15~16 | 21~22 | 양면 접촉 → 단면 분리 |
+| **6.3.2 Cylindrical rollers** | **17** | 23 | CRB 탄성변형 Formula **(42)~(46)** |
+| **6.3.3 Tapered rollers** | **17** | 23 | TRB 탄성변형 Formula **(47)~(50)**, `Figure 2` |
+| Annex A 시작 / A.1 | 20 | 26 | Internal load distribution intro |
+| **A.3.1 Cylindrical roller bearings** | **22~23** | 28~29 | CRB 평형, `Figure A.2` @ p.23, **NOTE 1** "rib 무시 가능" @ p.22 |
+| **A.3.2 Tapered roller bearings** | **24~25** | 30~31 | TRB 평형, `Figure A.4` @ p.25 (rib 포함 FBD) |
+| **B.5 Cylindrical & needle (radial)** | **29** | 35 | CRB profile Formula |
+| **B.6 Tapered (radial)** | **29** | 35 | TRB profile Formula, β 보정 |
+| B.8 Thrust cylindrical & needle | 29 | 35 | Thrust CRB profile |
+| B.9 Thrust tapered | 30 | 36 | Thrust TRB profile, β 보정 |
+| C.1 Stress concentration (detailed) | 31 | 37 | Non-Hertzian 상세 |
+| C.2 Stress concentration (approx.) | 32 | 38 | 근사 함수 f[j,k] |
+| Annex E Hertzian parameters | (참조) | (별도) | 본 표 사용 식의 파라미터 정의 |
+
+### 1.1 핵심 결론
+
+CRB 는 ISO 16281 관점에서 **TRB 의 특수 케이스(β = 0, α = 0)** 로 볼 수 있어, TRB-main 의 아키텍처와 알고리즘 골격을 그대로 재활용 가능. 단, 일부 모듈은 단순화 또는 분기 처리, 일부는 입력 인터페이스 자체 재설계가 필요.
+
+---
+
+## 2. TRB-main 모듈별 CRB 전환 영향도
+
+### 2.1 Rust solver (`src-tauri/src/solver/`)
+
+| 모듈 | 변경 강도 | 주요 변경 사항 |
+|------|---------|--------------|
+| `types.rs` | 🔴 **대규모** | `MacroGeometry`: α 제거(0 고정), D_we 단일화, **rib 필드 제거**(D1). `RacewayGeometry`: α_i / α_o 제거. `RollerProfile`: dub-off 대칭화, **R_sph 제거**(D1). `OperatingConditions`: **F_a 제거 또는 0 강제**(D4) |
+| `geometry.rs` | 🟡 중간 | 슬라이스의 `r_roller_k = D_we/2` 균일 (테이퍼 보정 제거). 등가 곡률반경 계산 단순화 |
+| `hertz.rs` | 🟢 거의 불변 | Hertz line contact + Weber bulk 공식은 동일 |
+| `gen1.rs` | 🟢 거의 불변 | 독립 슬라이스 방식 동일. δ_rigid 계산만 단순화 (α = 0) |
+| `gen3.rs` | 🟡 중간 | Newton-Raphson 동일, active set 동일. EI_k 균일에 따라 행렬 구조 단순화 |
+| `beam.rs` | 🟡 중간 | Timoshenko beam 유효, I_k = const 로 단순화 (행렬 banded 구조 유지) |
+| `rib_contact.rs` | 🟢 **비활성/제거** (D1) | 모든 시리즈에서 미사용 — 모듈 자체 삭제 또는 `mod.rs` 등록 해제 |
+| `bearing.rs` | 🔴 **대규모** | 5-DOF → **3-DOF: `(δx, δy, γx)`** (D4+D6+D7). 접촉력 방향 = 순수 radial. ISO 16281 A.3.1 알고리즘. **단일 row** (D3). 좌표계: Y=수직(중력), X=수평, Z=shaft (D5). misalignment 는 X축 about (M_x) 만, γ_y = 0 강제 (D6) |
+| `life.rs` | 🟡 중간 | C_R 상수 사용 (ISO 281 CRB 식), lamina life 합성식은 동일 |
+| `static_rating.rs` | 🟡 중간 | ISO 76 CRB 식 (C_0r 계수 다름) |
+| `transient.rs` / `transient_io.rs` | 🟢 불변 | 시간 영역 통합 framework 동일 |
+| `hmehl.rs`, `lubrication.rs` | 🟢 불변 | EHL 식 그대로 적용 (cylindrical line contact 가 base) |
+| `wec_risk.rs` | 🟢 불변 | 동일 |
+
+### 2.2 Frontend (`src/components/`)
+
+| 컴포넌트 | 변경 강도 | 변경 내용 |
+|----------|---------|-----------|
+| `InputPanel/` | 🔴 **대규모** | α, β, D_we_max/min, rib 입력 제거/통합. dub-off 단일 필드. preset UI 변경 |
+| `BearingView3D/` | 🔴 **대규모** | 원추 → 원통 형상 렌더링 (Three.js `CylinderGeometry`) |
+| `SectionView2D/` | 🟡 중간 | 2D 단면도 — 원통 단면으로 |
+| `ProfileView/` | 🟢 거의 불변 | profile 시각화는 동일 (대칭만 다름) |
+| `ResultCharts/`, `ContourMap/`, `ComparisonView/` | 🟢 불변 | 차트/등고선/비교 동일 |
+| `LubricationView/`, `TransientView/`, `ThermalSpeedView/` | 🟢 불변 | 동일 |
+| `GeometryView/` | 🟡 중간 | 형상 미리보기 — 원통화 |
+
+---
+
+## 3. 권장 작업 프로세스 (Phase 0 ~ 8)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Phase 0: 폴더 복제 + 환경 분리                          [1 day] │
+│  • TRB-main → CRB-main 전체 복사                                │
+│  • package.json name 변경 (trb-app → crb-app)                   │
+│  • Cargo.toml name 변경 (trb-contact-analysis → crb-)           │
+│  • src-tauri/tauri.conf.json: app identifier 변경                │
+│  • src-tauri/.cargo/config.toml 은 사용자 환경 그대로 유지       │
+│  • README/CLAUDE.md 헤더 변경 (TRB → CRB)                       │
+│  • Sanity check: npm install && npm run tauri dev                │
+└─────────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Phase 1: 데이터 모델 단순화                          [2~3 days] │
+│  • types.rs:                                                     │
+│    - MacroGeometry: α 제거, D_we 단일화, rib → Option            │
+│    - RacewayGeometry: α_i/α_o 제거                              │
+│    - RollerProfile: dub-off 대칭, R_sph Option                  │
+│  • TypeScript types/bearing.ts mirror 업데이트                   │
+│  • defaults.ts: CRB 표준 예시 (예: NU2240, N2240)                │
+│  • presets.rs: TRB preset 제거, CRB preset 추가                  │
+│  • 통과 기준: cargo check + npm run build                        │
+└─────────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Phase 2: Geometry 단순화                              [2 days]  │
+│  • geometry.rs: compute_slices 를 cylindrical 로                 │
+│    - r_roller_k = D_we/2 (균일)                                  │
+│    - 등가 곡률반경: R_eq = D_we/2 × r_race/(D_we/2 + r_race)     │
+│    - profile superposition (ISO B.5 적용)                        │
+│  • Golden test: 단일 slice Hertz 해석해와 비교 (Level A < 0.1%) │
+└─────────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Phase 3: Roller-Level Solver (Gen1/Gen3)             [3~4 days] │
+│  • gen1.rs: δ_rigid 단순화 (α = 0), 알고리즘 골격 유지            │
+│  • beam.rs: I_k = const, 행렬 구조 단순화 (banded 유지)          │
+│  • gen3.rs: Newton-Raphson 동일, active set 동일                  │
+│  • 검증: Gen1 ↔ Gen3 교차 검증 (flat profile 시 수렴, Level C)  │
+└─────────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Phase 4: Bearing-Level Equilibrium (3-DOF)            [3 days]  │
+│  • bearing.rs: ISO 16281 A.3.1 알고리즘 (CRB)                    │
+│    - 평형 DOF: {δr, γx, γy} (axial 무시 또는 시리즈별 분기)      │
+│    - 접촉력 방향 = pure radial                                   │
+│    - Q_j 계산: 각 roller 위치 ψ_j 에서 radial 침투                │
+│  • Tauri command 시그니처 그대로 (solve_bearing 등)              │
+│  • rib_contact.rs: Option 처리, 입력 없으면 skip                 │
+│  • 검증: MASTA/Bearinx CRB 결과와 비교 (Level D < 5%)            │
+└─────────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Phase 5: Life / Static Rating                         [2 days]  │
+│  • life.rs: ISO 16281 5.3 식 그대로 (lamina-level)              │
+│    - 단, basic dynamic load rating C_R = ISO 281 CRB 식          │
+│  • static_rating.rs: ISO 76 CRB 식 (p_0 = 4000 MPa 기준)         │
+└─────────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Phase 6: Frontend UI 변경                            [4~5 days] │
+│  • InputPanel/: α/β/D_we_max/min 필드 제거, rib 섹션 옵션화      │
+│  • BearingView3D/: 원통 roller 렌더링 (CylinderGeometry)         │
+│  • SectionView2D/: 원통 단면도                                    │
+│  • Defaults / preset UI 업데이트                                 │
+│  • npm run tauri dev 로 end-to-end 동작 확인                     │
+└─────────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Phase 7: 추가 모듈 적용 (Lubrication/Transient/HMEHL) [2 days]  │
+│  • hmehl.rs / lubrication.rs / transient.rs: 거의 그대로         │
+│    - kinematic 식만 CRB 형태로 (cage speed, slip velocity 등)    │
+│  • View 컴포넌트 (LubricationView, TransientView) 동일 유지      │
+└─────────────────────────────────────────────────────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ Phase 8: 검증 + 문서화                               [3~4 days] │
+│  • Manual/ 폴더: CRB 기준으로 17 챕터 재작성                     │
+│    (특히 02_Geometry, 06/07 Solver, 09 Equilibrium, 16 LoadFlow) │
+│  • CLAUDE.md, Master_plan.md → CRB 버전                          │
+│  • ISO 16281 검증 예제 (Annex) 실행                              │
+│  • MESYS/MASTA CRB 결과와 비교 보고서 (reports/)                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**총 예상 기간**: **약 22 ~ 26 일** (3.5 ~ 4 주, 단일 개발자 풀타임 기준)
+
+---
+
+## 4. 우선순위 / 리스크 매트릭스
+
+> §6 결정 반영 (D1: rib 제거, D3: 단일 row, D4: F_a 제거).
+
+| 작업 | 영향도 | 난이도 | 리스크 |
+|------|-------|-------|-------|
+| `bearing.rs` **3-DOF (δr, γx, γy)** 평형 재설계 | 🔴 매우 큼 | 🔴 높음 | 좌표계 / 부호 실수 → 결과 전체 오염 |
+| `types.rs` 필드 제거 (α, β, D_we_max/min, rib*, R_sph, F_a) | 🔴 큼 | 🟡 중 | Frontend 동기화 누락 시 빌드 깨짐 |
+| `BearingView3D` 원통 렌더링 | 🟡 중 | 🟡 중 | Three.js 기하 변환 — 시각만 영향 |
+| `geometry.rs` slice 변환 | 🟡 중 | 🟢 낮음 | 균일화로 단순화 |
+| Gen3 `beam.rs` EI 균일화 | 🟢 작음 | 🟢 낮음 | 검증 용이 |
+| `rib_contact.rs` **비활성/삭제** (D1) | 🟢 작음 | 🟢 낮음 | 단순 제거 — `mod.rs` + Tauri command 등록부에서 해제 |
+| Lubrication / Transient 이식 | 🟢 작음 | 🟢 낮음 | 그대로 |
+
+---
+
+## 5. 권장 첫 작업 순서
+
+오늘 / 이번 주에 시작한다면:
+
+1. **Phase 0 — 폴더 복제**: 가장 단순, 즉시 가능. CRB-main 환경에서 `npm run tauri dev` 까지 한 번 띄워보기 (TRB 그대로 동작하는지 sanity check).
+2. **Phase 1 — types.rs 단순화**: 데이터 구조부터 정리해야 이후 모듈 변경이 깨끗함. Rust 컴파일러가 강제 가이드 역할.
+3. **Phase 4 — bearing.rs 재설계 선제 검토**: 가장 어려운 부분이라 일찍 paper-design 해두기 권장.
+
+---
+
+## 6. 결정 사항 (Decisions)
+
+> 사용자 결정 (2026-06-25). Phase 1 진입을 위한 scope 확정.
+
+### 6.1 결정 완료 항목
+
+| # | 결정 항목 | 결정 내용 | 근거 / 영향 |
+|---|----------|----------|------------|
+| **D1** | **Rib contact 처리** | **모든 시리즈에서 고려 제외** (N/NU/NJ/NUP/NN/NNU 무관) | ISO 16281 A.3.1 NOTE 1 (ISO p. 23): *"for typical load cases, the consideration of axial rib loads for cylindrical roller bearings is not necessary"*. NJ/NUP 의 small axial 도 본 SW 범위에서는 무시. |
+| **D2** | **시리즈별 분기** | **단일 솔버** — 시리즈 enum 도입 안 함, 평형/접촉/수명 알고리즘 동일 | D1 결정 결과 시리즈별 차이가 사라짐. 시리즈는 명세 외 정보(사용자 메모)로만 관리. |
+| **D3** | **Row 구성** | **단일 row 만 구현** (`n_rows = 1` 고정) | Phase 1~8 본체는 단일 row 만. 풍력 메인베어링용 multi-row (NNU 등) 는 본 계획 외 후속 작업으로 분리. |
+| **D4** | **Axial 입력 처리** | D1·D2 결과 — `OperatingConditions.F_a` 는 **항상 0** 으로 강제 (또는 입력 자체 제거) | `bearing.rs` 평형 DOF 가 명확히 radial+tilt 중심으로 단순화 |
+
+### 6.2 결정에 따른 Plan 영향 (Section 2~4 일관성 갱신)
+
+| 영향 위치 | 변경 |
+|----------|------|
+| §2.1 `rib_contact.rs` | "선택화 (Option 분기)" → **"미사용 / 모듈 비활성"** (D1) |
+| §2.1 `bearing.rs` | "5-DOF → 3~4-DOF" → **"3-DOF (δr, γx, γy) — axial 제외"** (D1+D4) |
+| §2.1 `types.rs` | "rib 필드 Option<>" → **"rib 필드 제거"** (D1) |
+| §4 우선순위 매트릭스 | "`rib_contact.rs` Option 처리" 행 → **"`rib_contact.rs` 비활성/제거" (난이도·리스크 모두 🟢 낮음)** |
+| Phase 1 작업량 | 시리즈 enum/validation 분기 제거로 **−0.5 day** |
+| Phase 4 작업량 | DOF 3 으로 확정 → 평형식 단순 → **−0.5 day** |
+| **총 예상 기간** | 22~26 일 → **약 21~25 일** (변동 작음) |
+
+### 6.3 좌표계 & 모멘트 축 결정 (2026-06-25 추가)
+
+| ID | 결정 항목 | 결정 내용 | 근거 |
+|----|----------|----------|------|
+| **D5** | **좌표계** (TRB-main 그대로 승계) | X = horizontal radial, **Y = vertical radial (= 중력 방향)**, Z = bearing axis (shaft) | [bearing.rs:78](src-tauri/src/solver/bearing.rs#L78), BearingView3D 의 `[px,py,0]` 배치 + Three.js Y-up |
+| **D6** | **Single-plane misalignment 축** | **M_x (γ_x) 만 사용**, M_y = γ_y = 0 강제 | ISO 16281 A.3.1 Formula (A.10) (p. 23) 가 한 평면 misalignment 만 다룸. **중력 방향이 아닌 X축** 채택 (풍력 메인베어링의 자중·풍하중 모멘트가 X축 about 임) |
+| **D7** | **평형 DOF (정확 명세)** | **3-DOF: (δx, δy, γx)** | D4 (δz 제거) + D6 (γy 제거). 기존 §2.1 "3-DOF (δr, γx, γy)" 표기는 잘못 — D7 로 정정 |
+
+### 6.4 미결정 / 후속 항목 (본 계획 외)
+
+| # | 항목 | 처리 시점 |
+|---|------|---------|
+| F1 | Multi-row CRB (NNU 49 등 풍력 메인베어링 표준) | 본 계획 (Phase 0~8) 종료 후 별도 sub-project |
+| F2 | NJ/NUP small axial rib 지지 모델 | 본 SW 가 시장 검증 통과 후 옵션 모듈로 |
+| F3 | TRB-main Manual 학습용 유지 여부 / CRB 별도 작성 | Phase 8 진입 전 결정 |
+| F4 | 풍력 메인베어링용 reference 모델 (예시 geometry) | Phase 1 의 defaults.ts 작성 시 선택 |
+
+---
+
+## 7. Phase별 상세 작업 계획
+
+> 각 Phase 의 진입 시점에 본 섹션을 상세화. 현재는 **Phase 1 만 상세**, Phase 2~8 은 placeholder.
+> 실제 작업 내역·검증·이슈는 [CRB_Development_Action.md](CRB_Development_Action.md) 에 누적 기록.
+
+---
+
+### Phase 1 — 데이터 모델 단순화
+
+#### 1.1 목표
+
+- TRB 특화 데이터 구조를 CRB scope (Plan §6 D1~D4) 에 맞게 단순화
+- **목적**: 이후 Phase 2~5 의 알고리즘 변경이 깨끗하게 진행되도록 데이터 골격을 먼저 정리
+- **빌드 가능 상태 유지**: `cargo check` + `npm run build` 통과 (솔버 결과의 수치 정합성은 Phase 2 이후 검증)
+
+#### 1.2 작업 대상 파일
+
+| 파일 | 변경 강도 | 주요 작업 |
+|------|---------|---------|
+| [src-tauri/src/solver/types.rs](src-tauri/src/solver/types.rs) | 🔴 대규모 | 5개 struct 필드 제거/통합 |
+| [src/types/bearing.ts](src/types/bearing.ts) | 🔴 대규모 | Rust mirror 동기화 |
+| [src/defaults.ts](src/defaults.ts) | 🟡 중간 | CRB 표준 기본값 (단일 row, F_a=0) |
+| [src-tauri/src/presets.rs](src-tauri/src/presets.rs) | 🟡 중간 | TRB preset 제거 + CRB preset 자리만 마련 |
+| [src-tauri/src/solver/mod.rs](src-tauri/src/solver/mod.rs) | 🟢 작음 | `pub mod rib_contact;` 주석 처리 (D1) |
+| (이슈 발생 시 임시) 솔버 모듈들 (`bearing.rs`, `gen1.rs`, `gen3.rs`, `life.rs`, `rib_contact.rs` 등) | 🟢 stub 처리 | 제거된 필드 참조부를 임시 stub (`unimplemented!()` / `todo!()`) 으로 → Phase 2~5 에서 본격 수정 |
+
+#### 1.3 `types.rs` 상세 변경 명세
+
+> 컬럼: **유지** = 그대로 / **제거** = 삭제 / **통합** = 두 필드를 하나로 / **추가** = 신규.
+
+**`MacroGeometry`** ([types.rs:29](src-tauri/src/solver/types.rs#L29))
+
+| 필드 | 현재 (TRB) | 변경 후 (CRB) | 근거 |
+|------|-----------|--------------|------|
+| `d` (bore) | 유지 | 유지 | — |
+| `outer_diameter` | 유지 | 유지 | — |
+| `t` (width) | 유지 | 유지 | — |
+| `alpha` | f64 (deg) | **제거** | CRB α = 0 (Plan §1) |
+| `z` (roller 수) | 유지 | 유지 | — |
+| `d_we_max`, `d_we_min` | 분리 | **통합 → `d_we: f64`** | CRB 원통 = 균일 D_we (Plan §1) |
+| `l_we` | 유지 | 유지 | — |
+| `d_pw` | 유지 | 유지 | — |
+| `h_rib`, `alpha_rib`, `h_c` | rib 정의 | **모두 제거** | D1 (rib contact 제외) |
+| `g_r` (radial clearance) | 유지 | 유지 | — |
+
+**`RacewayGeometry`** ([types.rs:76](src-tauri/src/solver/types.rs#L76))
+
+| 필드 | 변경 |
+|------|------|
+| `alpha_i`, `alpha_o` | **제거** (CRB raceway 비-원추) |
+| `r_i`, `r_o` (transverse curvature) | **유지** (CRB 도 transverse 곡률 있음 — 일반적으로 ∞ 처리 가능하지만 필드는 보유) |
+| `r_rib`, `r_rib_circ` | **제거** (D1) |
+| `d_uc`, `l_uc` (undercut) | 유지 (CRB 도 raceway undercut 있음) |
+
+**`RollerProfile`** ([types.rs:103](src-tauri/src/solver/types.rs#L103))
+
+| 필드 | 변경 |
+|------|------|
+| `crown_type` (enum) | **유지** (Logarithmic/Circular/Parabolic/Custom/Polynomial — CRB 도 동일) |
+| `delta_c` (crown drop) | 유지 |
+| `delta_dub_l`, `delta_dub_s` | **통합 → `delta_dub: f64`** (CRB dub-off 대칭) |
+| `l_dub_l`, `l_dub_s` | **통합 → `l_dub: f64`** |
+| `r_sph` (large-end sphere) | **제거** (D1, rib 없음) |
+| `sigma_roller` | 유지 |
+
+**`RacewayProfile`** ([types.rs:121](src-tauri/src/solver/types.rs#L121))
+
+| 필드 | 변경 |
+|------|------|
+| 전체 | **변경 없음** (raceway profile 은 CRB/TRB 공통) |
+
+**`OperatingConditions`** ([types.rs:443](src-tauri/src/solver/types.rs#L443))
+
+| 필드 | 변경 | 근거 |
+|------|------|------|
+| `f_x`, `f_y` | 유지 (radial 2 성분) | D5 좌표계 |
+| `f_a` | **제거 또는 0 강제** | D4 |
+| `m_x` | **유지** (X축 about, 풍력 자중·풍하중의 주된 tilting moment) | D5+D6 |
+| `m_y` | **제거 또는 0 강제** (single-plane misalignment) | D6 |
+| `gamma` (external misalignment) | **유지** (X축 about, [bearing.rs:63](src-tauri/src/solver/bearing.rs#L63) 주석과 일치) | D6 |
+| `n_inner_rpm`, `n_outer_rpm`, `t_op` | 유지 | — |
+| Lubrication 관련 (40여 필드, p. 462~582) | **변경 없음** | Phase 7 에서 검토 |
+| `preload_mode`, `delta_preload_um` | **제거** (axial preload — CRB 무관) | D4 |
+| `skf_trb_series` (`SkfTrbSeriesEnum`) | **제거** (TRB 전용 SKF 시리즈) | Phase 7 에서 friction model 의 SKF 옵션도 검토 |
+
+#### 1.4 `bearing.ts` (TypeScript mirror) 동기화 원칙
+
+Rust `types.rs` 의 모든 struct 를 TS interface 로 1:1 mirror. Phase 1 의 모든 필드 변경을 그대로 반영. 자동화 도구 없이 수동 동기화 — Rust serde 의 snake_case ↔ TS camelCase 변환 규칙 확인 필요 (`#[serde(rename_all)]` 없음 → snake_case 유지).
+
+#### 1.5 `defaults.ts` 변경
+
+TRB 의 `defaultInput` 을 단일 row CRB 표준값으로 교체. 후보:
+- **NU 240** (200 × 360 × 58 mm, Z=18 roller, D_we=44 mm 정도) — 시리즈 무관 (D2), 단일 row, F_a=0
+- 풍력 메인베어링 reference 는 multi-row 라 F4 후속 결정 사항 (현 Phase 1 에서는 선택 안 함)
+
+#### 1.6 `presets.rs` 변경
+
+- 기존 TRB preset (e.g. 30206, 30306) 모두 제거
+- CRB preset 자리만 마련 (`ensure_default_preset` 의 기본값을 1.5 의 NU 240 으로)
+- 사용자 정의 preset 저장 형식 (`.trb.json` → `.crb.json`) 변경 검토 — 단, file extension 변경은 backward-compat 영향 있음, 작업 마지막에 결정
+
+#### 1.7 통과 기준 (Phase 1 종료 조건)
+
+- [ ] `cargo check` exit 0 (warning 만 허용)
+- [ ] `npm run build` exit 0 (TypeScript 타입 에러 0)
+- [ ] `npm run tauri dev` 로 WebView 윈도우 정상 팝업 (UI 일부 깨짐 허용 — Phase 6 에서 정리)
+- [ ] 솔버 호출은 **수치 정합성 무관** — Tauri command 가 panic 없이 호출 가능 + 결과 객체 반환 (값은 stub OK)
+
+#### 1.8 예상 시간
+
+- **1.5 ~ 2 day** (Plan §3 의 2~3 day 에서 D2 단순화로 -0.5 day)
+- 세부: types.rs 변경 (4h) + 컴파일 에러 stub 처리 (4~6h) + TS 동기화 (3h) + defaults/presets (2h) + 검증 (1~2h)
+
+#### 1.9 잠재 이슈 / 대응
+
+| 이슈 | 대응 |
+|------|------|
+| 솔버 모듈 다수 (bearing.rs, gen1.rs, gen3.rs, life.rs, rib_contact.rs 등) 가 제거된 필드를 참조 → **컴파일 에러 다수** | 임시 stub (`todo!()`, `unimplemented!("CRB Phase 2+")`) 로 우선 컴파일 통과. 본격 수정은 Phase 2~5 에서 |
+| TypeScript mirror 누락 → `npm run build` 실패 | Rust 컴파일 후 TS 일괄 비교 (diff 도구 사용 권장) |
+| Preset 저장/로드 backward-compat 깨짐 | `.trb.json` 파일 로드 시 경고 + 기본값 fallback. 새 저장은 `.crb.json` |
+| TRB Manual 코드 인용이 더 이상 일치 안 함 | Phase 1 에서는 Manual 수정 안 함 (Phase 8 에서 일괄 갱신, F3 결정 대기) |
+| Frontend 컴포넌트가 제거된 필드를 참조 → UI 일부 깨짐 | Phase 6 까지 허용 — Phase 1 은 컴파일만 우선 |
+
+#### 1.10 검증 절차 (순서)
+
+1. `types.rs` 수정 (struct 단위로 점진적, 각 단계 cargo check)
+2. 컴파일 에러 발생 솔버 모듈을 stub 처리 (panic 메시지에 "Phase 2+" 명시)
+3. `cargo check` 통과 확인
+4. `src/types/bearing.ts` 동기화
+5. `src/defaults.ts` + `src-tauri/src/presets.rs` 갱신
+6. `npm run build` 통과 확인
+7. `npm run tauri dev` 로 WebView 팝업 확인
+8. Action.md 에 결과 기록 (6 소절 템플릿)
+
+#### 1.11 산출물
+
+- 수정 파일 5개 (위 §1.2)
+- 임시 stub 파일 (Phase 2~5 에서 본격 구현 대상)
+- [CRB_Development_Action.md](CRB_Development_Action.md) 의 Phase 1 섹션 (완료 시 append)
+
+#### 1.12 Phase 2 진입 조건
+
+- Phase 1 통과 기준 (§1.7) 모두 만족
+- 본 Phase 에서 발견된 추가 결정 사항 (있다면) Plan §6 갱신
+
+---
+
+### Phase 2 — Geometry 단순화 (placeholder)
+
+진입 시점에 상세화. 핵심: `geometry.rs::compute_slices` 를 cylindrical 단순화, ISO 16281 B.5 profile 적용, Level A 검증.
+
+### Phase 3 — Roller-Level Solver (Gen1/Gen3) (placeholder)
+
+진입 시점에 상세화. 핵심: gen1/gen3/beam 의 α=0 단순화, EI 균일화, Level C 교차검증.
+
+### Phase 4 — Bearing-Level Equilibrium (3-DOF) (placeholder)
+
+진입 시점에 상세화. 핵심: ISO 16281 A.3.1 알고리즘, 3-DOF (δr, γx, γy), Level D 검증.
+
+### Phase 5 — Life / Static Rating (placeholder)
+
+진입 시점에 상세화. 핵심: ISO 16281 5.3 + ISO 281 C_R (CRB) + ISO 76 C_0r.
+
+### Phase 6 — Frontend UI 변경 (placeholder)
+
+진입 시점에 상세화. 핵심: InputPanel 필드 정리, BearingView3D 원통 렌더링.
+
+### Phase 7 — Lubrication / Transient / HMEHL (placeholder)
+
+진입 시점에 상세화. 핵심: kinematic 식만 CRB 형태 (cage speed, slip velocity).
+
+### Phase 8 — 검증 + 문서화 (placeholder)
+
+진입 시점에 상세화. 핵심: Manual 재작성 (F3 결정 후), ISO 검증 예제, MESYS/MASTA 비교 보고서.
+
+---
+
+## 8. 참고 문헌
+
+| 문헌 | 위치 | 주요 활용 |
+|------|------|----------|
+| ISO 16281:2025 | `TRB-main/Reference/ISO_16281_2025(en).pdf` (md: `ISO_16281_2025.md`) | CRB 알고리즘 본체 (5.3, 6.3.2, A.3.1, B.5) |
+| ISO 281:2007 | `TRB-main/Reference/ISO_281_2007.md` | C_R (basic dynamic load rating) |
+| ISO 76:2006 | `TRB-main/Reference/ISO_76_2006.md` | Static load rating C_0r |
+| ISO TR 1281-1/2 | `TRB-main/Reference/ISO_TR_1281-*.md` | Calculation background |
+| Yan 2025 (CRB Dynamic Model) | `TRB-main/Reference/2025_Yan_et_al_Dynamic_Model_CRB.md` | CRB flexible roller dynamics 참고 |
+| TRB-main `CLAUDE.md`, `Master_plan.md` | `TRB-main/` | 아키텍처 / 인터페이스 청사진 |
+
+---
+
+## 부록 A — Roller Profile 용어 해설 (Dub-off, End sphere R_sph)
+
+### A.1 Dub-off (덥-오프) — 양 끝 추가 drop
+
+**정의**: Roller profile 양 끝의 마지막 구간 L_dub 에서 crown profile 위에 **추가로 부여하는 큰 폭 drop δ_dub**. Crown 만으로 완화되지 않는 끝부분의 edge stress spike 를 누르기 위해 사용.
+
+**기하 도식**:
+```
+        ←──────── L_we (effective length) ────────→
+        ┌──────────────────────────────────────┐
+        │ \                                  /  │
+crown   │  \____ (crown profile, 가운데) ___/   │
+        │ ↘                                 ↙  │  ← dub-off (마지막 L_dub)
+        ↑     ↑                          ↑    ↑
+       δ_dub  L_dub                    L_dub δ_dub
+```
+
+**TRB 의 비대칭**:
+- 대단(large end) ↔ 소단(small end) 직경 다름 → 응력 분포 본질적 비대칭
+- 대단은 rib 접촉 + 큰 axial 분력 → **더 큰** dub-off 필요
+- 소단은 sliding 위주 → 작은 dub-off
+- TRB-main 의 4개 필드: `delta_dub_l`, `l_dub_l`, `delta_dub_s`, `l_dub_s`
+- ISO 16281 **B.6 (p. 29)** 와 일치
+
+**CRB 의 대칭**:
+- 양 끝 직경 동일 (D_we 균일) → 응력 분포 좌우 대칭
+- Rib 접촉 없음 (D1) → 한쪽에 추가 부담 없음
+- **단일 (δ_dub, L_dub)** 로 양쪽 동일 적용
+- ISO 16281 **B.5 (p. 29)** 와 일치
+
+### A.2 End sphere R_sph (대단 구면 반경)
+
+**정의**: TRB roller 의 대단면 끝 단면 형상이 **평면이 아닌 구면(sphere)** 으로 가공된 것. 그 구면이 내륜 rib 면과 만나서 **Hertzian point contact (타원 접촉)** 을 형성.
+
+**TRB 에서 필수인 이유**:
+- TRB 의 raceway 접촉력 sin α 분력 = axial 방향 → roller end 에서 rib 으로 전달 → rib 이 받쳐줘야 평형
+- Roller end 가 평면이라면 rib 과 line contact → 응력 무한대 (실용 불가)
+- 구면 R_sph → rib 평면과 점접촉 (타원) → 유한한 Hertz stress
+- R_sph 가 클수록 접촉 면적 ↑ 응력 ↓, 그러나 rib 마찰 ↑ — 절충
+
+**CRB 에서 무관 (제거)**:
+- ISO 16281 **A.3.1 NOTE 1 (p. 23)**: *"for typical load cases, the consideration of axial rib loads for cylindrical roller bearings is **not necessary**"*
+- N/NU: rib axial 지지 자체 없음
+- NJ/NUP: small axial 가능하지만 본 SW 범위에서 무시 (D1)
+- → R_sph 필드 의미 없음 → **제거**
+
+### A.3 CRB vs TRB 비교 요약
+
+| 항목 | TRB | CRB (본 SW) | ISO 16281 |
+|------|------|------------|-----------|
+| Dub-off 필드 수 | 4 (`delta_dub_l/s`, `l_dub_l/s`) | **2** (`delta_dub`, `l_dub`, 양쪽 동일) | B.6 → **B.5** |
+| End sphere R_sph | 필수 | **제거** | A.3.2 → **A.3.1 NOTE 1** |
+| 양 끝 대칭성 | 비대칭 | **완전 대칭** | — |
+| Roller end 평면 가공 | 불가 (구면 필수) | **가능** (rib 미접촉) | — |
+
+---
+
+## 부록 B — 좌표계 & 모멘트 축 결정 분석
+
+### B.1 TRB-main 좌표계 (코드 기준)
+
+| 축 | 의미 | 코드 근거 |
+|----|------|----------|
+| **X** | Horizontal radial | `f_x` (radial X). Roller `ψ=0` → +X |
+| **Y** | **Vertical radial = 중력 방향** | `f_y` (radial Y). [BearingView3D](src/components/BearingView3D/index.tsx) 의 `[px, py, 0]` 배치 + Three.js Y-up 카메라 컨벤션 |
+| **Z** | Bearing axis (shaft 회전축) | `f_a` (axial). Roller cylinder 가 Z 따라 회전 |
+
+**Roller angular position ψ_j** ([bearing.rs:78](src-tauri/src/solver/bearing.rs#L78)):
+- `δ_r = δx · cos(ψ) + δy · sin(ψ)`
+- ψ = 0 → +X (수평 우)
+- ψ = π/2 → +Y (위)
+- ψ = -π/2 → -Y (아래 = **중력 방향**)
+
+### B.2 ISO 16281 A.3.1 의 single-plane misalignment 가정
+
+**Formula (A.10)** (ISO p. 23):
+```
+θ_j = arctan(tan θ · cos ψ_j)
+```
+- 한 평면 안에서의 misalignment θ 만 다룸
+- ISO 의 `cos ψ_j` 항 ↔ TRB-main 의 `γx · sin ψ - γy · cos ψ` 항에서 **X축 about γ_x** 가 standard form
+
+[bearing.rs:63](src-tauri/src/solver/bearing.rs#L63) 주석: *"gamma_ext: external misalignment [rad] (imposed **about x-axis**)"* — 코드가 이미 X축 about 으로 설계됨.
+
+### B.3 풍력 메인베어링의 물리적 하중 시나리오
+
+- Shaft: Z 축 수평
+- 자중 + 풍하중: bearing 중심에서 떨어진 거리에서 **-Y 방향** force
+- 이 force × shaft span = **X축에 대한 tilting moment M_x** (γ_x)
+- 좌우 비대칭 하중 거의 없음 → **M_y ≈ 0**
+
+### B.4 결정 (Plan §6.3 D5~D7 반영)
+
+| 결정 ID | 결정 |
+|---------|------|
+| D5 | 좌표계 TRB-main 그대로 — Y = 중력 |
+| D6 | **M_x (γ_x) 만 사용**, M_y = γ_y = 0 강제 — 풍력 메인베어링의 자연스러운 single-plane |
+| D7 | **평형 DOF = 3: (δx, δy, γx)** — δz=0 (D4), γy=0 (D6) |
+
+### B.5 Future flag
+
+- 향후 풍력 외 응용 (수직 shaft, 좌우 비대칭 로터 등) 추가 시 **D6 해제** 필요
+- 그때는 (δx, δy, γx, γy) 4-DOF 로 확장 가능 — bearing.rs 의 residual 식 [183~188](src-tauri/src/solver/bearing.rs#L183-L188) 은 이미 일반화되어 있어 큰 변경 없음
+
+---
+
+## 부록 C — SW 개발 워크플로우 안내 (변경 관리 · Git · 롤백)
+
+> **목적**: Phase 1 이후 본격 코드 변경 시, 실수 방지·이전 상태 복구·여러 시도 병행을 위한 기본 SW 개발 테크닉 안내.
+> **독자 가정**: Git 경험이 적은 사용자.
+> **범위**: CRB-main 프로젝트 맥락에서 즉시 적용 가능한 핵심만.
+
+### C.1 왜 이런 기법이 필요한가
+
+코드를 직접 수정하기 시작하면 다음 위험들이 발생합니다:
+
+| 위험 | 예시 |
+|------|------|
+| **실수로 동작하던 코드 망가뜨림** | Phase 2 작업 중 Phase 1 의 잘된 부분까지 깨뜨림 |
+| **이전 상태로 돌아갈 수 없음** | "어제 잘 됐는데..." 라며 1주일 작업 폐기 |
+| **여러 시도를 병행 불가** | 알고리즘 A vs B 둘 다 시험하고 싶은데 한 번에 하나만 가능 |
+| **누가 무엇을 왜 바꿨는지 추적 불가** | 한 달 뒤 본인이 봐도 의도를 모름 |
+| **두 PC 간 동기화 불가** | 사무실 PC ↔ 노트북 작업 분리 어려움 |
+
+이 5가지 모두를 한 번에 해결하는 표준 도구가 **Git** + 선택적으로 **GitHub** 입니다.
+
+### C.2 Git 기본 개념 (3분 요약)
+
+```
+┌────────────────────┐    git add     ┌────────────────────┐    git commit    ┌────────────────────┐
+│  Working Directory │ ──────────────▶│   Staging Area     │ ────────────────▶│   Local Repository │
+│  (실제 편집 중인    │                │   (다음 커밋에 포함  │                  │   (영구 보존 + 이력) │
+│   파일들)          │                │    할 변경 후보)    │                  │                    │
+└────────────────────┘                └────────────────────┘                  └──────────┬─────────┘
+                                                                                          │
+                                                                                  git push │ git pull
+                                                                                          ▼
+                                                                              ┌────────────────────┐
+                                                                              │ Remote (GitHub)    │
+                                                                              │ (백업 + 협업)      │
+                                                                              └────────────────────┘
+```
+
+핵심 단어 5개:
+- **commit**: "지금 이 상태를 영구 보존" 명령. 메시지 함께 기록.
+- **branch**: 코드의 평행 우주. main 에서 분기해 자유롭게 시험, 검증 후 합치거나 버림.
+- **diff**: 어제 ↔ 오늘 변경된 내용 비교.
+- **revert / reset**: 이전 commit 상태로 되돌리기 (두 방식 차이는 §C.5 참조).
+- **stash**: 작업 중 임시 보관 (commit 만들지 않고 잠시 치워두기).
+
+### C.3 본 프로젝트 Git 초기화 (1회만)
+
+CRB-main 은 현재 Git 저장소가 아닙니다 (Phase 0 복제 시 `.git` 제외). 다음 명령으로 초기화:
+
+```powershell
+cd "d:\AI\Main_Bearing\CRB-main"
+
+# 1) Git 저장소 초기화
+git init
+
+# 2) .gitignore 작성 — 추적 제외 대상 (C.4 참조)
+# (별도 파일로 작성)
+
+# 3) 사용자 정보 설정 (1회, 전역)
+git config --global user.name "Your Name"
+git config --global user.email "drivetrain001@gmail.com"
+
+# 4) 현재 상태 (Phase 0 완료 상태) 를 첫 commit
+git add .
+git commit -m "Phase 0: TRB-main 복제 + 환경 분리 완료
+
+- TRB-main → CRB-main 전체 구조 복제 (node_modules/target 제외)
+- 식별자 변경 (crb-app, crb-contact-analysis, port 5175)
+- 문서 헤더 TRB→CRB
+- npm install + cargo check 통과
+"
+```
+
+### C.4 `.gitignore` 권장 내용 (CRB-main 용)
+
+```gitignore
+# 빌드 산출물
+node_modules/
+src-tauri/target/
+dist/
+
+# IDE 설정
+.vscode/
+.idea/
+*.swp
+
+# OS 파일
+.DS_Store
+Thumbs.db
+
+# 로컬 환경 (PC별로 다른 경로)
+src-tauri/.cargo/config.toml
+src-tauri/.cargo/config.toml.bak
+# → 사용자 PC 별 VS 경로가 다름. config.toml 은 git 추적 제외 권장.
+#   대신 config.toml.template 를 만들어 추적
+
+# 임시 / 백업 파일
+*.bak
+*.tmp
+*~
+
+# 사용자 프로젝트 파일 (선택)
+*.crb.json
+```
+
+### C.5 변경 관리 4가지 핵심 기법 비교
+
+| 기법 | 명령 예시 | 언제 쓰나 | 위험도 |
+|------|----------|----------|------|
+| **백업 파일 (.bak)** | `cp foo.rs foo.rs.bak` | 1~2분짜리 즉시 비교 (Git 도 안 쓰고 싶을 때) | 🟢 낮음 (단 Git이 더 우월) |
+| **별도 파일 새로 만들기** | `gen1.rs` 옆에 `gen1_v2.rs` 생성 | 알고리즘 A/B 병행 시험 (둘 다 컴파일하고 호출부에서 선택) | 🟢 낮음 |
+| **Branch** | `git checkout -b try-newton` | "큰 변경" 시험 (실패 시 통째로 버리기 좋음) | 🟢 낮음 (강추) |
+| **Stash** | `git stash` / `git stash pop` | 작업 중 다른 일 잠깐 처리 (커밋 만들기 애매한 변경 임시 보관) | 🟡 중간 (`stash drop` 시 영구 손실) |
+
+**롤백 3가지** (작업 되돌리기):
+
+| 명령 | 효과 | 비고 |
+|------|------|------|
+| `git checkout -- foo.rs` | foo.rs 만 직전 commit 상태로 복구 (working dir 변경 폐기) | **로컬 미커밋 변경 폐기** |
+| `git revert <commit>` | 그 commit 의 변경을 **취소하는 새 commit 추가** (이력 보존) | **공유된 이력 안전 롤백** (권장) |
+| `git reset --hard <commit>` | 그 commit 이후 모든 commit 삭제 (이력 자체 제거) | ⚠️ **위험** — push 한 후엔 쓰지 마세요 |
+
+### C.6 GitHub 연동 (선택, 강력 권장)
+
+GitHub 에 백업하면: (a) PC 고장 대비, (b) 두 PC 간 동기화, (c) 협업 가능.
+
+```powershell
+# 1) GitHub 에 빈 repo 생성 (웹에서 또는 gh CLI 로)
+gh repo create CRB-main --private --source=. --remote=origin
+
+# 2) 첫 push
+git push -u origin main
+
+# 이후 push
+git push
+```
+
+> 본 시스템에는 GitHub CLI (`gh`) 가 이미 설치되어 있음 (`C:\Program Files\GitHub CLI`). `gh auth login` 으로 1회 인증.
+
+### C.7 본 프로젝트 권장 워크플로우 (Phase 1 진입 시 적용)
+
+#### C.7.1 Phase 단위 브랜치 전략
+
+```
+main ────●─────────────────────●─────────────●─────────────●──── ...
+         │                       ▲             ▲             ▲
+         │ (Phase 0 완료)         │ (merge)      │ (merge)      │
+         │                       │             │             │
+         └──┬── phase-1 ─────────●             │             │
+            └── phase-2 ─────────────────────●               │
+            └── phase-3 ───────────────────────────────────●
+```
+
+- `main`: 통과 검증된 안정 상태 (각 Phase 완료 후 merge)
+- `phase-1`, `phase-2`, ...: 진행 중 작업 브랜치 (자유롭게 시험·실패·재시도)
+
+명령 예시:
+```powershell
+# Phase 1 시작
+git checkout -b phase-1
+
+# 작업 → commit (자주, 작게)
+git add src-tauri/src/solver/types.rs
+git commit -m "Phase 1.1: MacroGeometry — α/D_we_max/D_we_min/rib 필드 제거"
+
+# ... (여러 commit 누적)
+
+# Phase 1 완료 → 검증 통과 → main 으로 merge
+git checkout main
+git merge phase-1
+git push                  # GitHub 사용 시
+```
+
+#### C.7.2 Commit message 컨벤션 (제안)
+
+```
+<Phase 번호>: <한 줄 요약 — 무엇을 왜 변경했는지>
+
+<선택: 본문 — 상세 변경 항목, 검증 결과, 관련 결정 ID>
+```
+
+예시:
+```
+Phase 1.3: OperatingConditions f_a/m_y/preload 필드 제거
+
+- 결정 D4 (F_a=0) + D6 (γ_y=0) 반영
+- skf_trb_series 도 제거 (TRB 전용)
+- cargo check 통과, npm run build 통과
+```
+
+#### C.7.3 시험적 변경 시 별도 파일 vs 브랜치
+
+| 상황 | 권장 방식 |
+|------|----------|
+| "혹시 모르니 이전 버전을 한 줄 옆에 두고 싶다" | `foo.rs.bak` (또는 commented-out 코드) — 단 일주일 내 정리 |
+| "알고리즘 A 와 B 를 둘 다 호출 가능하게 두고 토글로 시험" | `foo_a.rs` + `foo_b.rs` 별도 파일, 호출부에서 분기 |
+| "큰 구조 변경을 안전하게 시험" | `git checkout -b try-XXX` 브랜치, 실패 시 `git checkout main && git branch -D try-XXX` |
+| "이 부분만 시간 거꾸로 돌리고 싶다" | `git revert <commit>` (해당 변경만 취소하는 새 commit) |
+| "작업 중인데 갑자기 다른 일이 들어옴" | `git stash` 로 잠시 치워두기, 다른 일 끝나면 `git stash pop` |
+
+### C.8 즉시 적용 권장 절차 (Phase 1 진입 직전)
+
+다음 5분 작업으로 안전망 구축:
+
+```powershell
+cd "d:\AI\Main_Bearing\CRB-main"
+
+# 1. Git 초기화
+git init
+git config --global user.name "Your Name"      # 1회만
+git config --global user.email "your@email"    # 1회만
+
+# 2. .gitignore 작성 (C.4 내용을 .gitignore 파일로 저장)
+
+# 3. Phase 0 상태를 첫 commit
+git add .
+git commit -m "Phase 0: 환경 분리 완료"
+
+# 4. (선택) GitHub 백업
+gh auth login           # 1회만
+gh repo create CRB-main --private --source=. --push
+
+# 5. Phase 1 작업 브랜치
+git checkout -b phase-1
+
+# 이제 안전하게 작업 가능. 망쳐도 git checkout main 으로 즉시 복구.
+```
+
+### C.9 자주 쓰는 명령 한 페이지 요약
+
+```powershell
+# 상태 확인
+git status                          # 현재 변경 사항 (어느 파일이 수정/추가됐는지)
+git diff                            # 구체적 변경 내용 (Working ↔ Staging)
+git diff --staged                   # Staging ↔ Last commit
+git log --oneline -10               # 최근 10개 commit 한 줄 요약
+
+# 변경 보존
+git add <file>                      # 특정 파일을 staging 에 추가
+git add .                           # 전체 변경 staging
+git commit -m "message"             # commit 생성
+
+# 브랜치
+git branch                          # 현재 브랜치 목록
+git checkout -b <new-branch>        # 새 브랜치 만들고 이동
+git checkout <branch>               # 기존 브랜치로 이동
+git merge <branch>                  # 현 브랜치에 다른 브랜치 합치기
+
+# 되돌리기
+git checkout -- <file>              # 그 파일만 직전 commit 상태로 (Working dir 변경 폐기)
+git reset HEAD <file>               # staging 만 취소 (working dir 보존)
+git revert <commit-hash>            # 그 commit 의 변경을 취소하는 새 commit
+git stash                           # 임시 보관
+git stash pop                       # 보관한 것 꺼내기
+
+# GitHub
+git push                            # remote 로 보내기
+git pull                            # remote 에서 받아오기
+gh repo view --web                  # 브라우저에서 repo 열기
+```
+
+### C.10 학습 자료 (자료원)
+
+- 공식 Git Book (한글): https://git-scm.com/book/ko/v2 — Chapter 1~3 만 읽어도 충분
+- Atlassian Git Tutorial: https://www.atlassian.com/git/tutorials — 시각적 설명 우수
+- GitHub Docs (한글): https://docs.github.com/ko
+- 책 추천: 『*프로 Git*』 (Scott Chacon, 무료 공개)
+
+### C.11 본 SW 개발 맥락의 추가 팁
+
+| 상황 | 권장 행동 |
+|------|----------|
+| Phase N 작업 중 절반쯤 진행됐는데 막힘 | commit 일단 만들기 (`WIP: ...` message). 막힌 부분만 별도 issue 로 기록 후 다른 Phase 로 넘어갈 수도 |
+| 솔버 결과 수치가 갑자기 이상함 | `git log` 로 최근 commit 확인 → `git diff <과거_commit>` 으로 원인 추적 → `git bisect` (이진 탐색) 로 어느 commit이 깨뜨렸는지 자동 검색 |
+| 사무실 PC ↔ 노트북 작업 분리 | GitHub repo 만들고 양 PC 에서 `git pull` / `git push` 로 동기화. 절대 USB 로 폴더 복사 X |
+| AI(Claude) 가 코드 수정한 후 마음에 안 듦 | `git diff` 로 어디를 바꿨는지 확인 → `git checkout -- <file>` 로 즉시 롤백 |
+| Phase 8 (문서화) 진입 전에 전 과정 회고하고 싶음 | `git log --oneline --graph --all` 로 전 Phase 의 commit 트리 시각화 |
+
+---
+
+### C.12 기존 GitHub 레포지터리에 CRB-main 올리기 + VS Code 에서 Git 작업
+
+> **상황 가정**: 사용자가 이미 본인의 GitHub 계정에 레포지터리를 가지고 있고, 거기에 CRB-main 을 추가하려는 경우. 그리고 일상 작업은 Visual Studio Code 의 Git 통합 UI 로 진행하고 싶음.
+
+#### C.12.1 사전 확인 — 어떤 시나리오인가 (3가지 중 선택)
+
+| 시나리오 | 설명 | 선택 기준 |
+|---------|------|----------|
+| **A. 기존 레포가 비어 있거나 CRB 전용** | CRB-main 통째로 main 브랜치에 push | 그 레포가 CRB 프로젝트만을 위한 것 |
+| **B. 기존 레포에 다른 프로젝트도 있음 (monorepo)** | CRB-main 을 기존 레포의 **하위 폴더**로 추가 (예: `repo-root/CRB-main/`) | 한 레포에 TRB-main, CRB-main 등 여러 프로젝트 공존 |
+| **C. 별도 브랜치로 분리** | 기존 레포의 새 브랜치 (예: `crb-main` 브랜치) 로 CRB-main push | 다른 프로젝트와 완전 분리하되 같은 레포에서 관리 |
+
+→ 본 안내는 **A** (가장 단순) 와 **B** (가장 실용적) 두 시나리오를 다룸. C 는 §C.7 의 브랜치 전략으로 응용 가능.
+
+#### C.12.2 시나리오 A — 기존 빈 레포에 CRB-main 통째로 push
+
+```powershell
+cd "d:\AI\Main_Bearing\CRB-main"
+
+# 1) Git 초기화 (이미 했다면 생략)
+git init
+git add .
+git commit -m "Phase 0: CRB-main 초기 상태"
+
+# 2) 기존 레포 URL 확인 (GitHub 웹에서 "Code" 버튼 → HTTPS 또는 SSH URL 복사)
+#    예: https://github.com/<USERNAME>/<REPONAME>.git
+
+# 3) remote 등록
+git remote add origin https://github.com/<USERNAME>/<REPONAME>.git
+
+# 4) 기본 브랜치 이름을 main 으로 (GitHub 기본)
+git branch -M main
+
+# 5) 첫 push
+git push -u origin main
+```
+
+⚠️ **기존 레포에 이미 파일이 있다면** `git push` 가 거부됩니다. 그 경우:
+```powershell
+# 먼저 기존 내용 pull (충돌 가능)
+git pull origin main --allow-unrelated-histories
+# 충돌 해결 후
+git push -u origin main
+```
+충돌이 복잡하면 시나리오 B 가 더 안전.
+
+#### C.12.3 시나리오 B — 기존 레포의 하위 폴더로 CRB-main 추가 (권장)
+
+가장 안전하고 직관적인 방법. 기존 레포를 로컬에 clone → CRB-main 폴더를 그 안으로 복사 → push.
+
+```powershell
+# 1) 작업 임시 위치로 이동 (예: d:\Work)
+cd "d:\Work"
+
+# 2) 기존 레포 clone
+git clone https://github.com/<USERNAME>/<REPONAME>.git
+cd <REPONAME>
+
+# 3) CRB-main 폴더 통째로 복사 (node_modules, target, .git 제외)
+robocopy "d:\AI\Main_Bearing\CRB-main" ".\CRB-main" /E /XD node_modules target dist .git
+
+# 4) 상태 확인 → 새 파일 추가 → commit
+git status
+git add CRB-main/
+git commit -m "Add CRB-main project (Phase 0 complete)
+
+- TRB-main 의 SW 체계 복제 기반
+- 환경 분리 (식별자, port 5175) 완료
+- Phase 1 진입 대기 상태
+"
+
+# 5) push
+git push
+```
+
+이후 작업 위치는 **`d:\Work\<REPONAME>\CRB-main\`** 이 됩니다 (기존 `d:\AI\Main_Bearing\CRB-main\` 은 백업 또는 삭제 결정).
+
+> **권장**: 원본 폴더 `d:\AI\Main_Bearing\CRB-main\` 은 즉시 삭제하지 말고 1~2일 정도 보존 → Git 작업이 안정되면 정리.
+
+#### C.12.4 VS Code Git 통합 — UI 구성
+
+VS Code 는 Git 을 **별도 확장 없이 기본 지원**합니다. 주요 UI:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ [≡] 메뉴바                                                              │
+├──┬─────────────────────────────────────────────────────────────────────┤
+│📁│  Explorer        ┌─────────────────────────────────┐                │
+│🔍│  Search          │ 파일 트리                        │   에디터        │
+│🔀│  Source Control  │                                 │   영역          │
+│🐞│  Run/Debug       │                                 │                │
+│⌘ │  Extensions      └─────────────────────────────────┘                │
+│  │                                                                     │
+├──┴─────────────────────────────────────────────────────────────────────┤
+│ [main↑3↓0]   하단 상태바: 현재 브랜치 + 푸시/풀 대기 표시                  │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+핵심 UI 위치:
+- **좌측 사이드바 🔀 아이콘 (Source Control)** — Ctrl+Shift+G 단축키
+- **하단 상태바 좌측** — 현재 브랜치명 + 동기화 상태 (`↑` = push 대기, `↓` = pull 대기)
+- **에디터 좌측 게터(gutter)** — 줄별 변경 표시 (▎녹색 = 추가, ▎파랑 = 수정, ▎빨강 = 삭제)
+
+#### C.12.5 VS Code 일상 워크플로우 (UI 클릭만)
+
+##### 1) 폴더 열기
+- `File → Open Folder` → CRB-main 폴더 선택 (또는 monorepo 의 경우 레포 루트)
+- Git 저장소가 자동 인식되어 하단 상태바에 브랜치명 표시
+
+##### 2) 변경 확인
+- 좌측 🔀 (Source Control) 클릭
+- "CHANGES" 섹션에 수정된 파일 목록
+- 파일 클릭 → **diff viewer** 자동 열림 (좌: 이전, 우: 현재)
+
+##### 3) Staging (commit 후보 선택)
+- 각 파일 옆 `+` 버튼 → "STAGED CHANGES" 로 이동
+- 전체 staging: 섹션 제목 옆 `+` 버튼
+
+##### 4) Commit
+- 상단 메시지 박스에 commit 메시지 입력
+- Ctrl+Enter (또는 `✓ Commit` 버튼) 으로 commit 생성
+- ⚠️ 메시지 첫 줄은 50자 이내 요약, 본문은 한 줄 비우고 작성 (§C.7.2 컨벤션 참조)
+
+##### 5) Push / Pull (Sync)
+- 하단 상태바의 동기화 아이콘 클릭 (↻ 모양) — push + pull 자동 수행
+- 또는 `... → Push` / `Pull` 메뉴
+
+##### 6) 브랜치 만들기 / 전환
+- 하단 상태바의 브랜치명 클릭
+- 상단 명령 팔레트에 옵션 표시:
+  - `Create new branch...` — 새 브랜치 생성
+  - `Checkout to...` — 기존 브랜치 전환
+- 또는 Ctrl+Shift+P → "Git: Checkout to..."
+
+##### 7) 충돌 해결
+- Pull 시 충돌 발생하면 파일이 `<<<<<<<` `=======` `>>>>>>>` 마커로 표시됨
+- VS Code 가 각 충돌 블록 위에 4개 버튼 제공:
+  - **Accept Current Change** (내 것 유지)
+  - **Accept Incoming Change** (상대 것 채택)
+  - **Accept Both Changes** (둘 다)
+  - **Compare Changes** (비교 보기)
+- 모든 충돌 해결 후 staging + commit
+
+#### C.12.6 추천 VS Code 확장 (선택, 강력 권장)
+
+| 확장 | 기능 | 설치 명령 |
+|------|------|----------|
+| **GitLens** | 줄별 git blame, 풍부한 commit 히스토리, 비교 도구 | `code --install-extension eamodio.gitlens` |
+| **Git Graph** | commit 트리 시각화 (`git log --graph` 의 GUI 버전) | `code --install-extension mhutchie.git-graph` |
+| **Git History** | 파일별 commit 히스토리 우클릭 메뉴 | `code --install-extension donjayamanne.githistory` |
+| **GitHub Pull Requests** | VS Code 안에서 PR 열기/리뷰 (GitHub 사용 시) | `code --install-extension GitHub.vscode-pull-request-github` |
+
+설치 방법:
+- 좌측 사이드바 ⌘ (Extensions) 클릭
+- 검색창에 확장 이름 입력 → "Install" 버튼
+
+#### C.12.7 일상 사이클 예시 (Phase 1 작업 중)
+
+```
+[월요일 오전]
+1. VS Code 폴더 열기
+2. 🔀 사이드바 확인 — 새 변경 없음 (깨끗한 상태)
+3. 하단 상태바: "main" → 클릭 → "Create new branch..." → "phase-1" 입력
+4. types.rs 편집 (MacroGeometry 의 alpha 필드 제거)
+5. cargo check (터미널에서) → 통과
+6. 🔀 사이드바 → types.rs 옆 + 버튼 (staging)
+7. 메시지 입력: "Phase 1.1: MacroGeometry alpha 필드 제거 (D5)"
+8. Ctrl+Enter → commit
+9. ↻ 클릭 → push (phase-1 브랜치가 GitHub 에 올라감)
+
+[월요일 오후 — 추가 작업]
+10. d_we_max/min → d_we 통합
+11. cargo check → 통과
+12. 🔀 → staging → commit "Phase 1.1: D_we 통합" → push
+
+[화요일 — Phase 1 완료]
+13. cargo check + npm run build 모두 통과
+14. 하단 브랜치명 클릭 → "Checkout to..." → "main"
+15. 명령 팔레트 (Ctrl+Shift+P) → "Git: Merge Branch..." → "phase-1" 선택
+16. push → main 에 Phase 1 통합 완료
+17. (선택) phase-1 브랜치 삭제: 명령 팔레트 → "Git: Delete Branch..." → "phase-1"
+```
+
+#### C.12.8 자주 발생하는 문제 / 트러블슈팅
+
+| 증상 | 원인 | 해결 |
+|------|------|------|
+| `Source Control 패널이 비어 있음 / "no source control providers"` | Git 미설치 또는 폴더가 git 저장소 아님 | 터미널에서 `git init` 후 VS Code 재시작 |
+| `Push 시 "Updates were rejected"` | Remote 가 로컬보다 앞서 있음 (다른 PC 에서 작업) | 먼저 Pull (↻) → 충돌 해결 → Push |
+| `사용자 이름 / 이메일 묻는 메시지` | `git config` 미설정 | `git config --global user.name "..."` + `user.email "..."` |
+| `Push 시 인증 실패 (HTTPS)` | Personal Access Token 필요 (2021 이후 GitHub 패스워드 인증 폐지) | GitHub Settings → Developer settings → Personal access tokens 생성 → 첫 push 시 token 을 password 로 입력. 또는 `gh auth login` 으로 자동 처리 |
+| `Commit 메시지 입력창이 안 보임` | Source Control 패널이 좁아짐 | 패널 폭 늘리기 또는 Ctrl+Shift+G 로 패널 토글 |
+| `대용량 파일 (>100MB) push 실패` | GitHub 의 파일 크기 제한 | `.gitignore` 에 추가 + `git rm --cached <file>` + Git LFS 검토 |
+| `한글 commit 메시지 깨짐 (Windows)` | 터미널 인코딩 문제 | `git config --global core.quotepath false` + VS Code 내부 git 사용 (UI 입력은 안전) |
+| `Phase 0 의 .cargo/config.toml 이 push 됨 — 다른 PC 에서 동작 안 함` | PC 별 경로 차이 | `.gitignore` 에 `src-tauri/.cargo/config.toml` 추가, `git rm --cached` 로 추적 해제 |
+
+#### C.12.9 GitHub CLI (gh) 와 VS Code 병행 활용
+
+본 시스템에 `gh` CLI 가 설치되어 있어 두 도구를 함께 활용 가능:
+
+```powershell
+# 인증 (1회만)
+gh auth login
+
+# 브라우저에서 현재 레포 열기
+gh repo view --web
+
+# 새 issue 생성 (VS Code 에 없는 기능)
+gh issue create --title "Phase 4 평형 알고리즘 수치 발산 이슈" --body "..."
+
+# PR 생성 (VS Code 의 GitHub PR 확장으로도 가능하지만 CLI 가 빠름)
+gh pr create --title "Phase 1 완료" --body "D1~D7 반영"
+```
+
+#### C.12.10 한 페이지 요약 — "VS Code 에서 Git 쓰는 법 5초 안내"
+
+| 키/위치 | 동작 |
+|---------|------|
+| **Ctrl+Shift+G** | Source Control 패널 열기 |
+| **메시지 + Ctrl+Enter** | Commit |
+| **하단 ↻ 아이콘** | Push + Pull (Sync) |
+| **하단 브랜치명 클릭** | 브랜치 전환/생성 |
+| **에디터 좌측 게터** | 줄별 변경 시각화 |
+| **파일 우클릭 → "View File History"** | 그 파일의 commit 이력 (GitLens 필요) |
+
+---
+
+*Last updated: 2026-06-25 (Phase 0 완료 + §6 결정 D1~D7 확정 + §7 Phase 1 상세 계획 + 부록 A·B·C(§C.1~C.12) 추가. [실행 기록은 CRB_Development_Action.md](CRB_Development_Action.md))*
