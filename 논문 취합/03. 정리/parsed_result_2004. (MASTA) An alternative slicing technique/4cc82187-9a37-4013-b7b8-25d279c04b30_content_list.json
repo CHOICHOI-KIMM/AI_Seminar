@@ -1,0 +1,2414 @@
+[
+    {
+        "type": "text",
+        "text": "Roman Teutsch",
+        "text_level": 1,
+        "bbox": [
+            196,
+            70,
+            323,
+            85
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "e-mail: megt@mv.uni-kl.de",
+        "bbox": [
+            194,
+            87,
+            323,
+            99
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Research Assistant",
+        "bbox": [
+            233,
+            99,
+            323,
+            109
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The University of Kaiserslautern,",
+        "bbox": [
+            171,
+            112,
+            323,
+            125
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Institute of Machine Elements, Gears and",
+        "bbox": [
+            133,
+            125,
+            323,
+            136
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Transmissions,",
+        "bbox": [
+            251,
+            138,
+            323,
+            148
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Gottlieb-Daimler-Strasse,",
+        "bbox": [
+            205,
+            150,
+            323,
+            161
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "67663 Kaiserslautern, Germany",
+        "bbox": [
+            176,
+            162,
+            323,
+            174
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Bernd Sauer",
+        "text_level": 1,
+        "bbox": [
+            220,
+            183,
+            323,
+            199
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "e-mail: megt@mv.uni-kl.de",
+        "bbox": [
+            196,
+            200,
+            323,
+            212
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Professor",
+        "bbox": [
+            276,
+            213,
+            323,
+            224
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "The University of Kaiserslautern,",
+        "bbox": [
+            171,
+            224,
+            323,
+            236
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Institute of Machine Elements, Gears and",
+        "bbox": [
+            133,
+            238,
+            323,
+            250
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Transmissions,",
+        "bbox": [
+            253,
+            251,
+            323,
+            262
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Gottlieb-Daimler-Strasse,",
+        "bbox": [
+            204,
+            263,
+            323,
+            273
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "67663 Kaiserslautern, Germany",
+        "bbox": [
+            176,
+            276,
+            323,
+            287
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "An Alternative Slicing Technique to Consider Pressure Concentrations in Non-Hertzian Line Contacts",
+        "text_level": 1,
+        "bbox": [
+            364,
+            53,
+            872,
+            183
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "A new, fast method is presented for the analysis of roller-race contact in roller bearings. Based on a theoretical and implicit load-deflection relationship, an improved slicing technique is developed which accounts for a more accurate representation of the pressure distribution along the line of contact. For validation, the method is compared to literature data and results obtained by FEM analysis. In the course of this, roller profiling and misalignment are considered. Due to its fastness and accuracy, the method has its particular advantages when many contacts have to be evaluated several times, e.g., in static load distribution calculations and dynamic simulations. [DOI: 10.1115/1.1739244]",
+        "bbox": [
+            362,
+            199,
+            903,
+            303
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Introduction",
+        "text_level": 1,
+        "bbox": [
+            94,
+            347,
+            187,
+            359
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "After Heinrich Hertz had published his work \"On the Contact of Elastic Solids\" [1], contact problems were only divided in Hertzian and non-Hertzian cases. In the point contact case, Hertz gave an analytical solution for the load-deflection relationship. In the line contact case, no such relationship was proposed by him. Modern rolling bearing calculations, however, require that the compression of the rolling elements and raceways can be calculated from known loading conditions and vice versa.",
+        "bbox": [
+            96,
+            364,
+            490,
+            465
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Over the years, many authors have addressed non-Hertzian contact problems involving cylindrically shaped bodies of finite length. Half-space theory, experiments, and more recently, numerical schemes have been applied to evaluate load, deflection, pressure and stresses arising in a single contact. Only few authors, however, have developed explicit load-deflection relationships that can be used without time-consuming iteration.",
+        "bbox": [
+            96,
+            467,
+            490,
+            554
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In order to consider misalignment in line contact problems, so-called slicing techniques have frequently been used. The roller is sliced up into several laminae, each of which contributes to the roller stiffness according to its length. Each slice is usually treated separately, having no effect on the contact load or deflection of others. Therefore, pressure concentrations cannot be taken into account. If a more accurate pressure distribution is required, time-consuming calculations in a more involved single contact model have to be performed.",
+        "bbox": [
+            96,
+            555,
+            490,
+            667
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Non-Hertzian Line Contact",
+        "text_level": 1,
+        "bbox": [
+            94,
+            681,
+            292,
+            696
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Theoretical and Experimental Studies. From the work of Hertz, relationships are available to calculate the maximum contact pressure  $p_0$  and the semi-width  $b$  of the contact area in a line contact [2]",
+        "bbox": [
+            93,
+            704,
+            491,
+            756
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\begin{array}{l} b = \\sqrt {\\frac {8 \\cdot (1 - \\nu^ {2}) \\cdot Q}{\\pi \\cdot E \\cdot \\Sigma \\rho \\cdot L}} \\\\ p _ {0} = \\frac {2}{\\pi} \\cdot \\frac {Q}{b \\cdot L} \\\\ \\sum \\rho = \\frac {1}{R _ {1}} \\pm \\frac {1}{R _ {2}} \\tag {1} \\\\ \\end{array}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            225,
+            761,
+            488,
+            875
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In the latter expression the positive sign is used for convex-convex, the negative sign is used for convex-concave contacts, respectively. No exact and explicit relationship is available for expressing the load  $Q$  as a function of the deflection  $\\delta$ . Many authors describe, however, how the deflection may be calculated from known loading conditions. At least some give approximations for calculating  $Q$  from a known deflection  $\\delta$ , often taken as the theoretical interpenetration of the rigid bodies.",
+        "bbox": [
+            501,
+            345,
+            901,
+            449
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In 1939, Lundberg [3] published an analytical solution for calculating the deflection of two cylinders in contact. He assumed that their cylindrical shapes merge into half-spaces outside the contact region and that the contact pressure is constant along the cylinder's axes. To hold the latter assumption, he found that the contours of the cylinders need to follow a certain profile to avoid pressure concentrations towards the ends. The relationship he gave for the approach of the cylinder axes under a certain load was based on this profile.",
+        "bbox": [
+            501,
+            450,
+            901,
+            565
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In 1940, Kowalsky considered the deformation of a cylinder of finite length loaded from two sides by an elliptically distributed pressure [4].",
+        "bbox": [
+            503,
+            565,
+            901,
+            604
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Earlier than Kowalsky, Dinnik had found a similar expression but for a parabolic distribution of pressure along the width of contact [4]. His proposal is also given in [5] for the calculation of the deflection in a cylindrical contact.",
+        "bbox": [
+            503,
+            604,
+            901,
+            654
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In 1959, Palmgren [6] published his book, \"Ball and Roller Bearing Engineering.\" From experiments with an un-profiled roller compressed between two plates, he found a simple expression relating the deflection  $\\delta$  to the load  $Q$ . He mentioned that the deflection was not dependent on the roller diameter and that his results could be used with only small error for the load calculation in roller bearings.",
+        "bbox": [
+            503,
+            655,
+            901,
+            744
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In 1961, Kunert [7] proved Lundberg's equation when he was concerned with the stress distribution in a half-space loaded by an elliptically distributed pressure over a rectangular contact area. He extended the theory to the case of a cylinder contacting a plane half-space. He stated that an evenly distributed pressure along the cylinder axis could not be achieved under these conditions. His corrected roller profile took stress concentrations below the surface into account. In the end he gave an approximate expression for the load-deflection relationship in a line contact. Since a unique optimum profile is assumed for every loading condition, it is, however, of restricted practical use.",
+        "bbox": [
+            501,
+            744,
+            901,
+            885
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In 2001, Houpert [8] compared expressions due to Palmgren, Kunert, and Zantopolus with equations given by Tripp in 1985, the best reference from his point of view. After introducing the",
+        "bbox": [
+            503,
+            885,
+            901,
+            924
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "header",
+        "text": "Check for updates",
+        "bbox": [
+            836,
+            0,
+            988,
+            22
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Contributed by the Tribology Division for publication in the ASME JOURNAL OF TRIBOLOGY. Manuscript received by the Tribology Division February 11, 2003; revised manuscript received October 23, 2003. Associate Editor: C. H. Venner.",
+        "bbox": [
+            93,
+            891,
+            491,
+            924
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "436",
+        "bbox": [
+            94,
+            940,
+            124,
+            952
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Vol. 126, JULY 2004",
+        "bbox": [
+            135,
+            940,
+            282,
+            953
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Copyright © 2004 by ASME",
+        "bbox": [
+            401,
+            940,
+            596,
+            955
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "footer",
+        "text": "Transactions of the ASME",
+        "bbox": [
+            715,
+            940,
+            901,
+            953
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "Downloaded from http://asmedigitalcollection.asme.org/tribology/article-pdf/126/3/436/5753578/436_1.pdf by Korea Institute of Machinery & Material (KIMM) user on 07 July 2025",
+        "bbox": [
+            955,
+            198,
+            973,
+            797
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "table",
+        "img_path": "images/6d9923f0126ddd4222bdda0dd37729c00e795fef87a28f88c9384493d00b387c.jpg",
+        "table_caption": [
+            "Table 1 Deflection-load relationships for inner and outer-race-to-roller-contact"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Lundberg [3]</td><td>δi=δo=Q/π·2/L·(1-ν12/E1+1-ν22/E2)·(1.8864+ln L/2·b)</td><td>(2)</td></tr><tr><td rowspan=\"2\">Dinnik [4]</td><td>δi=(2·Q)/π·L)·[(1-ν12)/E1(ln 2·R1/b+1/3)+(1-ν22)/E2(ln 2·R2/b+1/3)]</td><td rowspan=\"2\">(3)</td></tr><tr><td>δo=(2·Q)/π·L)·[(1-ν12)/E1(ln 2·R1/b+1/3)+(1-ν22)/E2(ln t/b+1/3)]</td></tr><tr><td rowspan=\"2\">Kowalsky [4]</td><td>δi=(2·Q)/π·L)·[(1-ν12)/E1(ln 2·R1/b+0.407)+(1-ν22)/E2(ln 2·R2/b+0.407)]</td><td rowspan=\"2\">(4)</td></tr><tr><td>δo=(2·Q)/π·L)·[(1-ν12)/E1(ln 2·R1/b+0.407)+(1-ν22)/E2(ln t/b+0.407)]</td></tr><tr><td>Palmgren [6]</td><td>δi=δo=3.84·10-5·Q0.9/L0.8</td><td>(5)</td></tr><tr><td>Kunert [7]</td><td>δi=δo=4.05·10-5·Q0.925/L0.85</td><td>(6)</td></tr><tr><td rowspan=\"3\">Tripp [8]</td><td>δi=(2·Q)/π·L)·[(1-ν12)/E1(ln 4·R1/b-1/2)+(1-ν22)/E2(ln 4·R2/b-1/2)]</td><td rowspan=\"3\">(7)</td></tr><tr><td>δo=(2·Q)/π·L)·[(1-ν12)/E1(ln 4·R1/b-1/2)+(1-ν22)/E2(ln 2·t/2·(1-ν2))]</td></tr><tr><td>δi=[Q·(1-ν2)/0.2723·E·L·d0.074]1/1.074</td></tr><tr><td>Houpert [8]</td><td>δo=[Q·(1-ν2)/0.27835·E·L·(t/1+D/dm)0.078]1/1.078</td><td>(8)</td></tr></table>",
+        "bbox": [
+            200,
+            59,
+            790,
+            483
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "outer-race-plus-housing-section-thickness as the appropriate depth of reference at which the deformation can be assumed to be zero, Houpert made approximate curve fits to the relationships given by Tripp. According to Houpert, his two simple equations are valid for roller-race type contacts in roller bearings.",
+        "bbox": [
+            91,
+            512,
+            491,
+            575
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Table 1 contains the various deflection-load relationships described above. These were applied to a case study taken from reference [8], the contact of an un-profiled roller with either inner or outer race of a cylindrical roller bearing. Figure 1 shows the corresponding sketch to the problem. Figures 2 and 3 compare the expressions due to different authors.",
+        "bbox": [
+            91,
+            575,
+            490,
+            652
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/5000ee49c5c90c8d9bd0dad43c0e93c775b584cd4bf6b0ade311f0b826ca667e.jpg",
+        "image_caption": [
+            "Fig. 1 Sketch of a roller bearing case study taken from [8]"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            148,
+            679,
+            439,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In case of the inner race contact, most of the load-deflection relationships compare fairly well among each other. Only Lundberg's and Kunert's results deviate noticeably. Since both authors assume an optimum roller profile, this is not surprising though.",
+        "bbox": [
+            503,
+            512,
+            901,
+            563
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In case of the outer race contact, Palmgren's results, too, deviate greatly from the ones obtained using the expressions of others. The load-deflection relationships due to Tripp, Dinnik, and Kowalsky are nearly identical. Houpert's curve fit deviates slightly in the highly loaded region.",
+        "bbox": [
+            503,
+            563,
+            901,
+            626
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "It is important to note, that only the equations given by Palmgren, Kunert, and Houpert can be explicitly solved for  $Q$  from a known deflection  $\\delta$ . In the equations due to Lundberg, Tripp, Dinnik, and Kowalsky, the deflection is dependent on the load  $Q$  and the semi-width  $b$ , which, according to Eqs. (1), also depends on  $Q$ . Consequently, the latter expressions can only be",
+        "bbox": [
+            503,
+            626,
+            903,
+            703
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/1ba4010f3bdfec30b662cedbb9f794f0477584b72c25b4fd09dce71e9f677f1a.jpg",
+        "image_caption": [
+            "Fig. 2 Inner-race-to-roller-contact, comparison of  $\\delta = f(Q)$"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            506,
+            727,
+            898,
+            901
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "footer",
+        "text": "Journal of Tribology",
+        "bbox": [
+            94,
+            940,
+            241,
+            955
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "footer",
+        "text": "JULY 2004, Vol. 126",
+        "bbox": [
+            715,
+            940,
+            852,
+            953
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "437",
+        "bbox": [
+            872,
+            941,
+            901,
+            953
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "aside_text",
+        "text": "Downloaded from http://asmedigitalcollection.asme.org/tribology/article-pdf/126/3/436/5753578/436_1.pdf by Korea Institute of Machinery & Material (KIMM) user on 07 July 2025",
+        "bbox": [
+            955,
+            198,
+            973,
+            797
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "image",
+        "img_path": "images/6ffb9284ee3e2b16b4a7cf86e4c81eaa5708c546f6c3a468ee224ca59ea395a9.jpg",
+        "image_caption": [
+            "Fig. 3 Outer-race-to-roller-contact, comparison of  $\\delta = f(\\mathbf{Q})$"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            98,
+            42,
+            491,
+            219
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "solved for  $Q$  by time-consuming iterative techniques; a great disadvantage as far as the analysis of rolling bearings is concerned.",
+        "bbox": [
+            93,
+            268,
+            488,
+            291
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "It is also important to note, that Palmgren's and Kunert's expressions are independent from the roller radius. The implicit equations of Tripp, Dinnik, and Kowalsky, however, show a weak dependency of the load-deflection relationship on the curvature of the contacting bodies. Only the curve-fit due to Houpert incorporates such geometrically based adjustment terms and is explicitly solvable for  $Q$  without costly iteration at the same time.",
+        "bbox": [
+            91,
+            291,
+            491,
+            381
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Numerical Approaches. As for some of the theories mentioned above, Boussinesq's half-space theory has frequently been adopted in numerical approaches. In general, the condition of contact reads as follows:",
+        "bbox": [
+            93,
+            386,
+            491,
+            436
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\delta_ {1} + \\delta_ {2} + f _ {1} + f _ {2} - \\alpha \\geqslant 0 \\tag {9}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            218,
+            443,
+            488,
+            458
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where  $\\delta_{1}$  and  $\\delta_{2}$  are the elastic deformations and  $f_{1}$  and  $f_{2}$  are functions describing the geometry, i.e., the initial gap to an assumed reference plane for body 1 and 2, respectively.  $\\alpha$  is taken as the rigid body approach of the two bodies. To satisfy the contact condition, Eq. (9) must be equal to zero within the contact area and greater than zero outside. The contact pressure must be zero outside the contact region and positive within. With reference to aforementioned half-space theory, the elastic deformations can be expressed by the following equation:",
+        "bbox": [
+            91,
+            462,
+            490,
+            578
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\delta_ {1} + \\delta_ {2} = \\left(\\frac {1 - v _ {1} ^ {2}}{\\pi \\cdot E _ {1}} + \\frac {1 - v _ {2} ^ {2}}{\\pi \\cdot E _ {2}}\\right) \\cdot \\int_ {\\Omega} \\int \\frac {p \\left(x ^ {\\prime} , y ^ {\\prime}\\right) \\cdot d x ^ {\\prime} \\cdot d y ^ {\\prime}}{\\sqrt {\\left(x - x ^ {\\prime}\\right) ^ {2} + \\left(y - y ^ {\\prime}\\right) ^ {2}}} \\tag {10}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            120,
+            583,
+            488,
+            642
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "By subdividing the contact area in a number of discrete cells, the integral in (10) can be approximated by the sum of the pressure acting on each cell times the cell area, divided by the distance of one cell reference point to another. The resulting set of equations can be solved by some numerical means.",
+        "bbox": [
+            93,
+            646,
+            488,
+            709
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In 1971, Conry and Seirig [10] used a simplex algorithm to solve the problem. Instead of pressures, they adopted forces acting at discrete points within the contact area.",
+        "bbox": [
+            93,
+            709,
+            491,
+            747
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "When solving the problem iteratively, Singh and Paul [11] (1974) encountered that the solutions accuracy was very much dependent on the discretization. The application of a finer grid with smaller cells partly produced physically meaningless results. In an effort of canceling out random errors, they applied an averaging technique, which they called the Method of Redundant Field Points. They also used a functional approach in which they tried to solve the governing set of equations in an average sense, i.e., in a way that large deviations in the pressure of neighboring cells were kept small.",
+        "bbox": [
+            93,
+            747,
+            491,
+            873
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In 1977, Reusner [12] extended the half-space theory to the case where the contacting bodies were both limited in the longitudinal direction. By mirroring the contact pressure about the end planes of the contacting bodies, he managed to cancel out shear",
+        "bbox": [
+            93,
+            873,
+            491,
+            925
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "stresses in these planes; stresses which are not present in a real contact. He subdivided the contact area in strips along the axis of revolution and applied an iterative technique to numerically solve the problem.",
+        "bbox": [
+            501,
+            42,
+            901,
+            94
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Nayak and Johnson [13] presented a paper in 1978, in which they assumed a piecewise linear pressure distribution over a number of strips subdividing a slender area of contact. The integral equations were solved numerically.",
+        "bbox": [
+            503,
+            94,
+            901,
+            143
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In 1980, Hartnett [14] partly integrated Eq. (10) by assuming a constant pressure distribution over each rectangular cell. He improved the numerical scheme by first solving for cells combined to strips along one axis and after solving for the strips along the other. Arranging the strips perpendicular to the major axis of the contact area was found to be the more efficient method, requiring only half the iterations than the other alternative.",
+        "bbox": [
+            503,
+            143,
+            901,
+            231
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Harris [15] (1984) described a slicing technique to account for misalignment in cylindrical contacts. Each slice of the roller was given a linearized fraction of the total roller stiffness calculated from Palmgren's equation [6].",
+        "bbox": [
+            503,
+            232,
+            901,
+            282
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "De Mul, Kalker, and Fredriksson [9] reported an improved half-space model in 1986. In this, they added correction terms due to Reusner [12] for the finite length and depth of the contacting bodies. Their results compared well to their own FEM evidence and to data published by others.",
+        "bbox": [
+            503,
+            282,
+            901,
+            345
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "A common advantage of all reported half-space models is their fairly high accuracy and the fastness of the solution process when compared to analogous FE models. Compared to simpler models, similar to the one proposed by Harris [15], however, computation time is still excessive. Therefore, the use of some slicing technique can be advantageous when many contacts have to be solved simultaneously, even though the solution's accuracy may be reduced greatly. For that reason, the slicing method is improved in this paper to account for a more exact load and pressure distribution along the line of contact.",
+        "bbox": [
+            501,
+            345,
+            901,
+            470
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Alternative Slicing Technique (AST)",
+        "text_level": 1,
+        "bbox": [
+            504,
+            487,
+            767,
+            503
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Deflection-Load Relationship. As shown above, the equations given by Tripp, Kowalsky, and Dinnik are nearly equivalent within a wide range. From all compared relationships, their approaches are considered best. The implicit nature of their expressions, however, is disadvantageous.",
+        "bbox": [
+            503,
+            510,
+            901,
+            573
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In order to calculate the load from a given deflection without the need of time-consuming iteration, simpler deflection-load relationships are required. Since Houpert's curve-fits deviate slightly from the original, new curves were fitted in a similar way as described by him in [8]. For this, Dinnik's instead of Tripp's equation was taken as a basis, leading to the following deflection-load relationships for inner and outer race, respectively:",
+        "bbox": [
+            503,
+            573,
+            901,
+            662
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\delta_ {i} = 3. 1 7 \\cdot \\left(\\frac {\\mathrm {d} _ {\\mathrm {m}}}{2}\\right) ^ {0. 0 8} \\cdot \\left(\\frac {Q \\cdot \\left(1 - v ^ {2}\\right)}{E \\cdot L}\\right) ^ {0. 9 2} \\tag {11}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            593,
+            666,
+            901,
+            705
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\delta_ {o} = 2. 6 6 \\cdot \\left(\\frac {\\mathrm {t}}{1 + D / d _ {m}}\\right) ^ {0. 0 9} \\cdot \\left(\\frac {Q \\cdot (1 - v ^ {2})}{E \\cdot L}\\right) ^ {0. 9 1}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            573,
+            705,
+            834,
+            737
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In case of a roller contacting a flat plate, the latter expression in (11) simplifies to",
+        "bbox": [
+            504,
+            742,
+            901,
+            768
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\delta_ {r p} = 2. 6 6 \\cdot (t) ^ {0. 0 9} \\cdot \\left(\\frac {Q \\cdot \\left(1 - v ^ {2}\\right)}{E \\cdot L}\\right) ^ {0. 9 1} \\tag {12}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            596,
+            772,
+            901,
+            805
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "It should be noted that this equation is independent of the roller diameter, a fact that confirms Palmgren's results. It is, however, still dependent on the thickness of the plate, which Palmgren did not consider.",
+        "bbox": [
+            503,
+            810,
+            901,
+            859
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In order to validate the new relationship, an FE model of an un-profiled roller contacting a flat plate was set up. A sketch of the problem is presented in Fig. 4. Due to symmetry, only  $1/8$  of the roller and  $1/4$  of the plate had to be modeled. All degrees of freedom (DOF) at nodes located on the lower surface of the plate",
+        "bbox": [
+            503,
+            859,
+            901,
+            924
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "438",
+        "bbox": [
+            94,
+            940,
+            124,
+            952
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "footer",
+        "text": "Vol. 126, JULY 2004",
+        "bbox": [
+            135,
+            940,
+            282,
+            953
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "footer",
+        "text": "Transactions of the ASME",
+        "bbox": [
+            715,
+            940,
+            901,
+            953
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "aside_text",
+        "text": "Downloaded from http://asmedigitalcollection.asme.org/tribology/article-pdf/126/3/436/5753578/436_1.pdf by Korea Institute of Machinery & Material (KIMM) user on 07 July 2025",
+        "bbox": [
+            955,
+            198,
+            973,
+            797
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/2ffafc04e21418fa01fc7736a75f655313cc553afb28cdc22c0b2c9ff56961a9.jpg",
+        "image_caption": [
+            "Fig. 4 Sketch of roller-plate contact model"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            143,
+            42,
+            444,
+            209
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "were fixed to ground. For the roller diameter and length, values of  $D = L = 10 \\mathrm{~mm}$  were chosen. The materials of plate and roller were assumed to be the same, having an elastic modulus and a Poisson's ratio of  $E = 2.08 \\cdot 10^{5} \\mathrm{MPa}$  and  $\\nu = 0.3$ , respectively. The ratio of plate-thickness-to-roller-diameter was varied in the range of  $t / D = 4 \\ldots 0.5$ . The rigid body approach, equal to the elastic deformation in the model was kept constant at  $\\alpha = \\delta = 0.01 \\mathrm{~mm}$ , introduced at all nodes in the mid-plane of the roller.",
+        "bbox": [
+            93,
+            258,
+            491,
+            362
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "From the load calculated with the FE model for different plate thicknesses, the deflections from the curve fit to Dinnik's formula and from some other relations were determined. The resulting values were then compared to the constant elastic deflection, which had served before as an input to the FE model.",
+        "bbox": [
+            93,
+            361,
+            490,
+            425
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Figure 5 indicates that the deflection calculated from Eq. (12) is closest to the FE results, with a maximum relative error of less than 1.5 percent.",
+        "bbox": [
+            93,
+            424,
+            491,
+            463
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Deflections calculated from Kowalsky's equation are qualitatively similar to the ones due to Dinnik and Tripp. The virtually identical values calculated from their expressions, however, are closer to the results from the FE model. The deviation of Houpert's curve-fitted equation from the FE results is more pronounced at smaller plate-thickness-to-roller-diameter-ratios.",
+        "bbox": [
+            93,
+            462,
+            491,
+            539
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Influence Coefficient Matrix. In our alternative model, the roller is sliced up into  $n$  slices of equal length  $l$ . For each slice  $j$ , Eqs. (11) can be written as",
+        "bbox": [
+            93,
+            545,
+            491,
+            585
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\delta_ {i, j} ^ {1 / 0. 9 2} = \\frac {c _ {i} ^ {1 / 0 . 9 2}}{l} \\cdot q _ {j} \\tag {13}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            238,
+            589,
+            488,
+            628
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\delta_ {o, j} ^ {1 / 0. 9 1} = \\frac {c _ {0} ^ {1 / 0 . 9 1}}{l} \\cdot q _ {j}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            240,
+            628,
+            346,
+            659
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "image",
+        "img_path": "images/569e6a6cd8eb5c071afaf075a0721960a663ae970593d42c46be1589ecbc7077.jpg",
+        "image_caption": [
+            "Fig. 5 Comparison of deflection-load relationships with FEM data"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            142,
+            688,
+            444,
+            891
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "in which",
+        "bbox": [
+            504,
+            42,
+            563,
+            55
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\nc _ {i} = 3. 1 7 \\cdot \\left(\\frac {\\mathrm {d} _ {\\mathrm {m}}}{2}\\right) ^ {0. 0 8} \\cdot \\left(\\frac {(1 - \\nu^ {2})}{E}\\right) ^ {0. 9 2} \\tag {14}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            601,
+            60,
+            901,
+            99
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\nc _ {o} = 2. 6 6 \\cdot \\left(\\frac {\\mathrm {t}}{1 + D / d _ {m}}\\right) ^ {0. 0 9} \\cdot \\left(\\frac {(1 - \\nu^ {2})}{E}\\right) ^ {0. 9 1}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            581,
+            99,
+            825,
+            133
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "and",
+        "bbox": [
+            504,
+            138,
+            532,
+            150
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\nl = \\frac {L}{n} \\tag {15}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            684,
+            157,
+            901,
+            186
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The expressions",
+        "bbox": [
+            504,
+            194,
+            607,
+            208
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\frac {c _ {i} ^ {1 / 0 . 9 2}}{l} = s _ {i} \\tag {16}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            669,
+            212,
+            901,
+            252
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\frac {c _ {0} ^ {1 / 0 . 9 1}}{l} = s _ {o}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            669,
+            252,
+            736,
+            284
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "are the elastic compliances associated with each slice in contact with either inner or outer race.",
+        "bbox": [
+            503,
+            291,
+            901,
+            316
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "So far, we have followed the common process applied in simpler slicing techniques, where all slices are treated independently. Making a similar assumption as in the half-space theory, however, a force at slice  $j$  also contributes to the deformation in a distant slice  $k$ . For each slice, different weighting functions can be defined to account for this influence. The results are two systems of linear equations for inner and outer race, respectively, which can be written in matrix form as follows:",
+        "bbox": [
+            503,
+            316,
+            901,
+            417
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\left[ S _ {w} \\right] _ {i} \\cdot \\{q \\} _ {i} = \\{\\Delta \\} _ {i} \\tag {17}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            647,
+            422,
+            901,
+            446
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\left[ S _ {w} \\right] _ {o} \\cdot \\{q \\} _ {o} = \\{\\Delta \\} _ {o}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            647,
+            446,
+            759,
+            462
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In each of them,  $[S_w]$  is the matrix of weighted influence coefficients, normalized by the mean value of all weighting functions:",
+        "bbox": [
+            503,
+            465,
+            901,
+            493
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\left[ S _ {w} \\right] = \\frac {n}{\\sum_ {j , k} w _ {j , k}} \\left[ \\begin{array}{c c c} s \\cdot w _ {j, k} & \\dots & s \\cdot w _ {j, n} \\\\ \\vdots & \\ddots & \\vdots \\\\ s \\cdot w _ {n, k} & \\dots & s \\cdot w _ {n, n} \\end{array} \\right] \\quad \\text {f o r} j = 1 \\dots n,\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            524,
+            497,
+            880,
+            551
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\nk = 1 \\dots n \\tag {18}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            668,
+            558,
+            901,
+            571
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Note that the influence coefficient matrix is symmetric, meaning that",
+        "bbox": [
+            503,
+            577,
+            901,
+            602
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\nw _ {j, k} = w _ {k, j} \\tag {19}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            669,
+            612,
+            901,
+            627
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "$\\{\\Delta\\}$  is the vector of deflections measured for each slice. The deflection is taken as the theoretical interpenetration of the rigid contact partners",
+        "bbox": [
+            503,
+            630,
+            901,
+            669
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\{\\Delta \\} = \\left\\{ \\begin{array}{c} \\delta_ {j} ^ {1 / e x} \\\\ \\vdots \\\\ \\delta_ {n} ^ {1 / e x} \\end{array} \\right\\}, \\quad \\text {f o r} j = 1 \\dots n \\tag {20}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            602,
+            674,
+            901,
+            722
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where  $ex = 0.92$  for inner and  $ex = 0.91$  for outer race contact, respectively.",
+        "bbox": [
+            503,
+            727,
+            901,
+            753
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "$\\{q\\}$  is the vector of unknown forces",
+        "bbox": [
+            519,
+            753,
+            740,
+            767
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\n\\{q \\} = \\left\\{ \\begin{array}{l} q _ {j} \\\\ \\vdots \\\\ q _ {n} \\end{array} \\right\\}, \\quad \\text {f o r} j = 1 \\dots n \\tag {21}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            611,
+            772,
+            901,
+            818
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Singh and Paul [11] suggested, that to a first approximation, the influence of a unit pressure at one cell of their model on the deflection of a distant cell decreases by  $1 / r$ , where  $r$  is taken as the distance between the two cell reference points. They also mentioned, that a better approximation involves considerable computational effort but does not significantly improve solution accuracy. Taking this idea, the influence coefficients might be calculated from the following expression:",
+        "bbox": [
+            501,
+            821,
+            901,
+            925
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "footer",
+        "text": "Journal of Tribology",
+        "bbox": [
+            94,
+            940,
+            241,
+            955
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "footer",
+        "text": "JULY 2004, Vol. 126",
+        "bbox": [
+            715,
+            940,
+            852,
+            953
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "439",
+        "bbox": [
+            872,
+            941,
+            901,
+            953
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "aside_text",
+        "text": "Downloaded from http://asmedigitalcollection.asme.org/tribology/article-pdf/126/3/436/5753578/436_1.pdf by Korea Institute of Machinery & Material (KIMM) user on 07 July 2025",
+        "bbox": [
+            955,
+            198,
+            973,
+            797
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\nw _ {j, k} = \\left(\\frac {1}{r _ {j , k}}\\right) ^ {1 / e x} \\quad \\text {f o r} j \\neq k \\tag {22}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            209,
+            42,
+            490,
+            75
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where  $r_{j,k}$  is the distance between slice  $j$  and slice  $k$  with respect to respective mid-planes. Influence coefficients for cases where  $j = k$  are approximated by the following expression, which might be interpreted as the influence of two half slices on the mid-plane of the original slice:",
+        "bbox": [
+            93,
+            80,
+            490,
+            145
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\nw _ {j, k} = \\left(\\frac {4}{l}\\right) ^ {1 / e x} \\quad \\text {f o r} j = k \\tag {23}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            215,
+            148,
+            488,
+            181
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The sets of linear equations may be solved by Gaussian elimination or other standard numerical means. Note that iterations are only necessary if one slice is shifted out of contact by the action of forces in neighboring slices. Misalignment and profiling of rollers and/or raceways are taken into account by a different initial interpenetration calculated for each slice.",
+        "bbox": [
+            93,
+            185,
+            491,
+            262
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Discussion of Results",
+        "text_level": 1,
+        "bbox": [
+            94,
+            289,
+            246,
+            301
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Comparison With FEM. Figure 6 shows a comparison of total contact force between our alternative slicing technique and aforementioned FE model for a rigid body approach of  $\\alpha = \\delta = 0.01\\mathrm{mm}$  and  $t / D = 1$ . The no. of slices used for the AST approach is varied from 10 to 1000.",
+        "bbox": [
+            93,
+            311,
+            491,
+            375
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "It can be observed that the contact forces calculated with only few slices slightly over-estimate values calculated from the simple curve-fit to Dinnik's deflection-load relationship. They are in very good agreement, however, with the values calculated from the FE model. If more slices are used, the values obtained from the alternative model slowly converge towards the Dinnik curve-fit.",
+        "bbox": [
+            93,
+            375,
+            490,
+            450
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "In Fig. 7 a comparison of the peak pressures along the line of contact for  $t / D = 2$  is presented. Both the FE model and our alternative slicing technique show the typical pressure concentrations towards the ends of the unprofiled roller. With a number of 100 slices, both methods agree fairly well, but with a number of only 30 slices, the estimated pressure values are already reasonable.",
+        "bbox": [
+            93,
+            450,
+            491,
+            526
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "It should be noted that our model predicts a more \"barreled\" pressure distribution; a fact that was also observed with the model of de Mul, Kalker, and Fredriksson in [9].",
+        "bbox": [
+            93,
+            525,
+            491,
+            563
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Even on a low-performance PC (Intel Pentium 200 mmx, 96 MB RAM), only fractions of a second were needed for the calculation of a single contact with applied numbers of slices ranging between 30 and 100.",
+        "bbox": [
+            93,
+            563,
+            491,
+            613
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Application to Profiled Rollers. In order to show the effect of profiling on the pressure distribution along the line of contact, the roller was profiled according to Lundberg's suggestion [3]",
+        "bbox": [
+            93,
+            621,
+            491,
+            660
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/7e199a09582f58778aa9985d8f5255ad5869b969657cb556e9ab76300b54381f.jpg",
+        "image_caption": [
+            "Fig. 6 Comparison of alternative slicing technique (AST) total contact load with FEM data"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            142,
+            695,
+            444,
+            890
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/2730ad078a1c80ea72209e6ce30e1f6884a387ffe586035e09610308dc5d76d4.jpg",
+        "image_caption": [
+            "Fig. 7 Comparison of AST pressure distribution with FEM data"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            557,
+            42,
+            851,
+            261
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\nf _ {1} (x) + f _ {2} (x) = \\left(\\frac {1 - v _ {1} ^ {2}}{E _ {1}} + \\frac {1 - v _ {2} ^ {2}}{E _ {2}}\\right) \\cdot \\frac {Q}{L} \\cdot f (2 x / L) \\tag {24}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            558,
+            320,
+            901,
+            354
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where",
+        "bbox": [
+            504,
+            358,
+            545,
+            369
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "text": "\n$$\nf (2 x / L) = \\frac {1}{\\pi} \\cdot \\ln \\frac {1}{1 - \\left(\\frac {2 \\cdot x}{L}\\right) ^ {2}} \\tag {25}\n$$\n",
+        "text_format": "latex",
+        "bbox": [
+            614,
+            380,
+            901,
+            428
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Obviously, the latter equation is only valid in the range 0  $\\leqslant |2x / L| < 1$ . Our model, however, uses slices of a certain length (thickness), referenced in the mid plane of the slice. Therefore, the case that  $|2x / L| = 1$  cannot occur by definition, i.e., the equation is unconditionally valid in our case.",
+        "bbox": [
+            503,
+            431,
+            901,
+            496
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Lundberg's theory assumes that the contacting bodies merge into infinite half-spaces outside the region of contact. To account for this assumption, a very thick plate  $(t / D = 500)$  was modeled. All other data, including the rigid body approach of  $\\alpha = \\delta = 0.01$  mm, were kept to the values mentioned in the last section.",
+        "bbox": [
+            503,
+            496,
+            901,
+            559
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Figure 8 compares the pressure distribution along the roller axis of a profiled and an un-profiled roller. It can be observed that the peak pressures at both ends of the roller are much reduced for the profiled case. Even though the overall pressure is more evenly distributed, small pressure peaks are still existent. This is in accordance with the findings of Kunert [7], who stated that for the case of a cylindrically shaped body contacting a flat half-space, no optimum profile can be found. To reduce the pressure and to avoid",
+        "bbox": [
+            503,
+            559,
+            901,
+            660
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/85f4b47e18b51bb275f241e6bec9f97842061be193ce238bb81d0b42ba5597c3.jpg",
+        "image_caption": [
+            "Fig. 8 Application of AST to a Lundberg-profiled roller in contact with a thick plate"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            557,
+            698,
+            851,
+            890
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "440",
+        "bbox": [
+            94,
+            940,
+            124,
+            952
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "footer",
+        "text": "Vol. 126, JULY 2004",
+        "bbox": [
+            135,
+            940,
+            282,
+            953
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "footer",
+        "text": "Transactions of the ASME",
+        "bbox": [
+            715,
+            940,
+            901,
+            953
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "aside_text",
+        "text": "Downloaded from http://asmedigitalcollection.asme.org/tribology/article-pdf/126/3/436/5753578/436_1.pdf by Korea Institute of Machinery & Material (KIMM) user on 07 July 2025",
+        "bbox": [
+            955,
+            198,
+            973,
+            797
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/0669c728c2222ea3572714812f78e3eab5fd7bd32aa38b57d276bd1877dfc4b0.jpg",
+        "image_caption": [],
+        "image_footnote": [
+            "—AST 30 Slices —AST 100 Slices"
+        ],
+        "bbox": [
+            145,
+            42,
+            441,
+            224
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "stress concentrations, he suggested a corrected, more tapered profile. He still assumed, however, that the roller contacts an infinite half-space.",
+        "bbox": [
+            96,
+            330,
+            488,
+            367
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Figure 9 again shows the pressure distribution along the axis of a Lundberg-like profiled roller. The plate thickness, however, was reduced in this model to  $t / D = 10$ . Since the same rigid body approach, i.e., the same penetration was assumed, respectively, the contact load calculated was higher than in the case with the thicker plate. As the Lundberg profile is dependent on the load, a different optimum profile was calculated from Eqs. (22) and (23). In fact, the profile was more tapered so that the contact pressure was reduced towards the ends of the roller; the opposite behavior than presented in Fig. 8.",
+        "bbox": [
+            96,
+            367,
+            488,
+            493
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Therefore, it can be concluded that the calculation of an optimum roller profile should involve both the loading conditions and some reference thicknesses of the contacting parts.",
+        "bbox": [
+            96,
+            493,
+            488,
+            532
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Application to Misaligned Rollers. In rolling bearing applications, races can be tilted against each other leading to a misalignment of roller and raceway. Since the pressure distribution is affected, a proper model should take this into account. In fact, this misalignment is one of the reasons why slicing techniques are frequently applied to calculate the load distribution in rolling bearings. Since pressure peaks are usually not taken into account, however, common slicing techniques may still be inaccurate.",
+        "bbox": [
+            96,
+            539,
+            488,
+            640
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/92c769dbbff48f7a47eaa47e39398ad586df26a0bcd979d1a4975da92b0496f1.jpg",
+        "image_caption": [
+            "Fig. 10 Application of AST to the contact of two disks taken from [9], no misalignment"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            145,
+            670,
+            441,
+            890
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "image",
+        "img_path": "images/8083c3356955f5c4e76618f2403f91753eb8cab335f06f1349cdc028d35e6d81.jpg",
+        "image_caption": [
+            "Fig. 9 Application of AST to a Lundberg-profiled roller in contact with a thinner plate",
+            "Fig. 11 Application of AST to the contact of two disks taken from [9], misalignment  $\\theta = 0.05$  deg"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            509,
+            42,
+            898,
+            214
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "To show the advantages of our model in this respect, the technique was applied to a case study discussed in reference [9]. In this, de Mul et al. compared their half-space model to the experimental work of Kannel and Hartnett carried out on a two-disk test rig. For comparison, the same contact load of  $Q = 2224 \\mathrm{~N}$  as by de Mul et al. was assumed. For more information on the disk geometry and the test set-up the reader is referred to reference [9].",
+        "bbox": [
+            506,
+            280,
+            900,
+            368
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Figure 10 shows the pressure distribution along the roller axis for the case when no misalignment is present. Due to the profile of one disk, the pressure is quite evenly distributed, showing only minor peaks at the roller ends. The slightly \"barreled\" shape in the middle region, mentioned by de Mul et al. in [9], can also be observed. Values from our model taken in that region compare well with the values given in [9]. However, pressure peaks and oscillations towards the end of the roller cannot exactly be met. The latter might be due to the fact that the disK profile was only approximated on basis of a diagram plotted in [9].",
+        "bbox": [
+            506,
+            369,
+            900,
+            494
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In Fig. 11, the pressure distribution for a tilting angle of  $\\theta = 0.86$  mrad $\\approx$ 0.05 deg is compared with the results of de Mul et al. [9]. Some values from the reference are again plotted into the diagram. It can be observed that the results of our model agree well with the values taken from the reference. The very high pressure peak at the end of the disk, however, could not completely be confirmed.",
+        "bbox": [
+            506,
+            494,
+            900,
+            582
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Towards the opposite end of the contact area, our model slightly overestimated the values given by de Mul et al. However, the data measured by Kannel and Hartnett, referenced in [9], also show this tendency.",
+        "bbox": [
+            506,
+            583,
+            900,
+            633
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Both measurements by Kannel and Hartnett and the model of de Mul et al. showed an oscillation of the pressure near the end of the roller. In an effort to prove these oscillations, the slice length in our model was chosen to be the same as the width of the miniature transducer Kannel and Hartnett used for their measurements [9]. With the resulting 320 slices, the oscillatory behavior could be confirmed although the peak pressures in this region were still slightly lower than the pressure values predicted by de Mul et al. Again, this might be due to the approximated disc profile used for the analysis.",
+        "bbox": [
+            506,
+            633,
+            900,
+            758
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Conclusions",
+        "text_level": 1,
+        "bbox": [
+            506,
+            779,
+            593,
+            792
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In this paper, an alternative slicing technique has been proposed which accounts for a more exact pressure distribution in a line contact.",
+        "bbox": [
+            506,
+            797,
+            900,
+            834
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In order to avoid time-consuming iterations, two simple deflection-load relationships were developed by curve-fitting a well-known implicit expression. One can be applied to inner race, the other to outer race type contacts in a roller bearing. Results calculated from one of these curve-fits compared well to values obtained from a simplified FE model of a roller contacting a flat plate.",
+        "bbox": [
+            506,
+            835,
+            900,
+            922
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "footer",
+        "text": "Journal of Tribology",
+        "bbox": [
+            96,
+            941,
+            240,
+            954
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "footer",
+        "text": "JULY 2004, Vol. 126",
+        "bbox": [
+            715,
+            941,
+            852,
+            953
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "441",
+        "bbox": [
+            874,
+            941,
+            898,
+            952
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "aside_text",
+        "text": "Downloaded from http://asmedigitalcollection.asme.org/tribology/article-pdf/126/3/436/5753578/436_1.pdf by Korea Institute of Machinery & Material (KIMM) user on 07 July 2025",
+        "bbox": [
+            957,
+            200,
+            970,
+            797
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Based on the developed deflection-load relationships, a common slicing technique was extended to incorporate interactions of the slices among each other. The introduction of weighting functions to consider the influence of a force in one slice on the deflection of another lead to linear systems of equations which were solved by a standard Gaussian elimination procedure.",
+        "bbox": [
+            93,
+            42,
+            491,
+            118
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For validation purposes, pressures obtained by applying the new technique were compared with the results from aforementioned FE model and data published in the literature. The comparison with the FE model showed very good agreement but a slightly more \"barreled\" shape of the pressure along the line of contact; a fact that had also been observed before in the literature.",
+        "bbox": [
+            93,
+            118,
+            491,
+            193
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The profiling of the roller according to Lundberg's equation confirmed the suitability of the technique to this kind of application. In this context it is interesting to note that the optimum profile was found to be dependent on the contact load and the thicknesses of the contacting bodies. That means that classic half-space theory, where contacting bodies are assumed to be of infinite depth, holds only partly in a practical application.",
+        "bbox": [
+            93,
+            193,
+            491,
+            281
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The comparison with a case study discussed in [9] revealed that the proposed method can also be adopted in cases where misalignment is present. The high peak pressure predicted by the calculation found in the literature at the very edge of the roller could not fully be confirmed through our model, though. This inaccuracy might however be due to the applied profile, which could only be approximated from a sketch plotted in the reference.",
+        "bbox": [
+            93,
+            281,
+            491,
+            369
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Due to its fastness the proposed method has its particularly advantages when several contacts have to be evaluated at the same time (e.g., in bearing load distribution calculations) and where a great number of iterations are needed to satisfy overall constraints (e.g., in dynamic applications). Iterations due to the method itself are only necessary if slices are shifted out of contact due to the action of forces on others. The method has proven to be stable over a wide range of applied number of slices.",
+        "bbox": [
+            93,
+            369,
+            491,
+            470
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The fairly high accuracy of pressure distribution is also an important feature of the method. Especially in the dynamic analysis of bearings, where the roller kinematics—such as skewing and tilting—are particularly affected by peak pressures at the end of the roller. Besides that, modern bearing life calculations may be improved by considering local pressure concentrations within the contact area.",
+        "bbox": [
+            93,
+            470,
+            491,
+            559
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Nomenclature",
+        "text_level": 1,
+        "bbox": [
+            94,
+            569,
+            199,
+            583
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The units used throughout the paper are based on SI standards, except that meters have been replaced by millimeters to account for the scale of the problems in question.",
+        "bbox": [
+            93,
+            587,
+            490,
+            627
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$b =$  semi-width of contact area",
+        "bbox": [
+            125,
+            631,
+            325,
+            643
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$c =$  constant",
+        "bbox": [
+            127,
+            645,
+            214,
+            655
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$d_{m} =$  bearing pitch diameter",
+        "bbox": [
+            117,
+            657,
+            299,
+            670
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "ex = exponent",
+        "bbox": [
+            117,
+            670,
+            218,
+            681
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$f =$  function",
+        "bbox": [
+            127,
+            683,
+            214,
+            694
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$l =$  length of one slice [mm]",
+        "bbox": [
+            129,
+            695,
+            313,
+            707
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$n =$  number of slices",
+        "bbox": [
+            127,
+            708,
+            263,
+            718
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$p_0 =$  maximum contact pressure",
+        "bbox": [
+            119,
+            720,
+            325,
+            732
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$q =$  load per slice",
+        "bbox": [
+            127,
+            734,
+            245,
+            744
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$\\{q\\} =$  vector of slice loads",
+        "bbox": [
+            117,
+            744,
+            285,
+            757
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$s =$  elastic compliance per slice",
+        "bbox": [
+            540,
+            42,
+            741,
+            56
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$t =$  raceway  $^+$  housing/plate thickness",
+        "bbox": [
+            540,
+            56,
+            774,
+            68
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$w =$  weighting function",
+        "bbox": [
+            537,
+            69,
+            687,
+            80
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$x =$  contact area longitudinal direction",
+        "bbox": [
+            539,
+            80,
+            779,
+            93
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$y =$  contact area transverse direction",
+        "bbox": [
+            539,
+            94,
+            767,
+            104
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$D =$  roller diameter",
+        "bbox": [
+            537,
+            106,
+            663,
+            117
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$E =$  modulus of elasticity",
+        "bbox": [
+            537,
+            118,
+            700,
+            131
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$L =$  total length of contact area",
+        "bbox": [
+            537,
+            132,
+            736,
+            143
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$O =$  total contact load",
+        "bbox": [
+            537,
+            143,
+            679,
+            155
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$R =$  radius of curvature",
+        "bbox": [
+            537,
+            156,
+            689,
+            167
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$[S_w] =$  matrix of weighted influence coefficients",
+        "bbox": [
+            517,
+            167,
+            820,
+            181
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$\\alpha =$  rigid body approach",
+        "bbox": [
+            539,
+            183,
+            696,
+            195
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$\\delta =$  contact deflection/interpenetration",
+        "bbox": [
+            539,
+            195,
+            777,
+            207
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$\\nu =$  Poisson's ratio",
+        "bbox": [
+            539,
+            208,
+            663,
+            219
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$\\theta =$  misalignment angle",
+        "bbox": [
+            539,
+            220,
+            691,
+            232
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$\\Sigma \\rho =$  sum of curvature of contacting bodies",
+        "bbox": [
+            527,
+            233,
+            803,
+            244
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$\\{\\Delta \\} =$  vector of contact deflections",
+        "bbox": [
+            527,
+            244,
+            745,
+            257
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$\\Omega =$  contact area",
+        "bbox": [
+            535,
+            258,
+            647,
+            268
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Indices",
+        "text_level": 1,
+        "bbox": [
+            506,
+            273,
+            555,
+            286
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$1 =$  rolling element",
+        "bbox": [
+            539,
+            292,
+            666,
+            305
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "2 = raceway/plate",
+        "bbox": [
+            539,
+            306,
+            656,
+            316
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$i =$  inner race",
+        "bbox": [
+            539,
+            318,
+            635,
+            329
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$j, k =$  row, column index",
+        "bbox": [
+            526,
+            330,
+            686,
+            342
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$o =$  outer race",
+        "bbox": [
+            539,
+            344,
+            635,
+            354
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$r =$  distance between slices",
+        "bbox": [
+            539,
+            356,
+            714,
+            367
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "$rp =$  roller-plate",
+        "bbox": [
+            529,
+            369,
+            640,
+            382
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 1,
+        "bbox": [
+            506,
+            406,
+            586,
+            419
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Hertz, H., 1882, “Über die Berührung fester elastischer Körper,” Journal für reine und angewandte Mathematik, 92, pp. 156–171.",
+            "[2] Brändlein, J., Eschmann, P., Hasbargen, L., and Weigand, K., 1995, Die Wölzagerpraxis, 3rd ed., Vereinigte Fachverlage GmbH.",
+            "[3] Lundberg, G., 1939, “Elastische Berührung zweier Halbräume,” Forschung auf dem Gebiete des Ingenieurwesens, 10(5), pp. 201-211.",
+            "[4] Rothbart, H. A., 1985, Mechanical Design and Systems Handbook, 2nd ed., McGraw-Hill.",
+            "[5] Young, W. C., and Roark, J. R., 1989, Roark's Formulas for Stress and Strain, 6th ed., McGraw-Hill Professional.",
+            "[6] Palmgren, A., 1959, Grundlagen der Wölzlagertechnik, 2nd ed., Franckh'sche Verlagshandlung, W. Keller & Co.",
+            "[7] Kunert, K., 1961, \"Spannungsverteilung im Halbraum bei elliptischer Flächenpressungsverteilung über einer rechtekigen Druckfläche,\" Forschung auf dem Gebiete des Ingenieurwesen, 27(6), pp. 165-174.",
+            "[8] Houpert, L., 2001, “An Engineering Approach to Hertzian Contact Elasticity—Part I,” ASME J. Tribol., 123, pp. 582-588.",
+            "[9] De Mul, J. M., Kalker, J. J., and Fredriksson, B., 1986, \"The Contact Between Arbitrarily Curved Bodies of Finite Dimensions,\" ASME J. Tribol., **108**, pp. 140–148.",
+            "[10] Conry, T. F., and Seirig, A., 1971, “A Mathematical Programming Method for Design of Elastic Bodies in Contact,” ASME J. Appl. Mech., pp. 387–392.",
+            "[11] Singh, K. P., and Paul, B., 1974, “Numerical Solution of Non-Hertzian Elastic Contact Problems,” ASME J. Appl. Mech., pp. 484–490.",
+            "[12] Reusner, H., 1977, “Druckflächenbelastung und Oberflächenverschiebung im Wölzkontakt von Rotationskorpern,” Dissertation, University of Karlsruhe, Germany.",
+            "[13] Nayak, L., and Johnson, K. L., 1979, \"Pressure Between Elastic Bodies Having a Slender Area of Contact and Arbitrary Profiles,\" Int. J. Mech. Sci., 21, pp. 237-247, Pergamon Press.",
+            "[14] Hartnett, M. J., 1980, “A General Numerical Solution For Elastic Body Contact Problems,” ASME J. Appl. Mech., 39, pp. 51–66.",
+            "[15] Harris, T. A., 1984, Rolling Bearing Analysis, 2nd ed., John Wiley & Sons, Inc."
+        ],
+        "bbox": [
+            513,
+            422,
+            901,
+            758
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "aside_text",
+        "text": "Downloaded from http://asmedigitalcollection.asme.org/tribology/article-pdf/126/3/436/5753578/436_1.pdf by Korea Institute of Machinery & Material (KIMM) user on 07 July 2025",
+        "bbox": [
+            955,
+            198,
+            973,
+            797
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "442",
+        "bbox": [
+            94,
+            940,
+            124,
+            953
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "footer",
+        "text": "Vol. 126, JULY 2004",
+        "bbox": [
+            135,
+            940,
+            282,
+            953
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "footer",
+        "text": "Transactions of the ASME",
+        "bbox": [
+            715,
+            940,
+            901,
+            953
+        ],
+        "page_idx": 6
+    }
+]
