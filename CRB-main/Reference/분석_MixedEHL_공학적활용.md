@@ -106,6 +106,68 @@ $$
 
 Hamrock, Schmid & Jacobson(*Fundamentals of Fluid Film Lubrication*, 2nd ed., 2004)의 통상 경계는 $\Lambda<1$ 경계윤활, $1\le\Lambda\le3$ 혼합윤활, $\Lambda>3$ 완전유막이다(문헌별로 경계/완전유막 컷오프는 다소 상이 — `[VERIFY]`). Zhu & Wang(2012)은 이 고정 경계가 과단순임을 지적한다(2.4).
 
+### 2.6 [보론] 두 접근의 갈림길 — 통계 평균유동(2.1–2.2) vs 일반 Reynolds+진폭저감
+
+거칠기를 Mixed EHL에 넣는 방법은 크게 둘로 갈린다. **(A) 2.1–2.2의 통계적 평균유동+통계돌기**와, **(B) Morales‑Espejel/SKF 마이크로피팅 모델(2011)이 쓰는 일반 Reynolds+진폭저감(amplitude reduction)**. 둘은 **$h^3$ 비선형을 처리하는 방식**과 **출력의 성격**이 근본적으로 다르다.
+
+**(B)의 지배식 — 소진폭 선형화된 Reynolds (SKF 2011, 식 [2]):**
+Hertz 중심부에서 미시형상 진폭이 유막보다 훨씬 작으면, Reynolds 식의 **변동량 곱(fluctuation product: $\delta p\!\cdot\!\delta h$)과 도함수 곱을 무시**할 수 있어 식이 **선형**이 된다:
+$$
+\frac{h^3}{12}\left(\frac{1}{\eta_x}\frac{\partial^2 p}{\partial x^2}+\frac{1}{\eta_y}\frac{\partial^2 p}{\partial y^2}\right)=\bar u\frac{\partial h}{\partial x}+\frac{\partial h}{\partial t}+\frac{h}{B}\left(\bar u\frac{\partial p}{\partial x}+\frac{\partial p}{\partial t}\right)\tag{[2]}
+$$
+($B$=윤활유 체적탄성계수, $d\rho/dp=\rho/B$). 정현 조도 1성분에 대해 압력 리플 진폭이 닫힌형으로 나온다(식 [5]):
+$$
+\frac{p_a}{r_a}=\frac{\kappa E'}{4}\,\frac{iQ}{1-iQ-iCQ}
+$$
+Greenwood & Morales‑Espejel(1994)에 따르면 이동 조도 문제의 해는 **두 성분**: ① **particular integral**(미시형상이 변형된 채 조도면 속도 $u_2$ 로 이동) + ② **complementary function**(입구에서 생성돼 평균 이송속도 $\bar u$ 로 전파되는 파). 즉 **파동 전파** 그림이다. 이 선형화가 바로 **푸리에 중첩·전달함수·FFT**를 가능케 한다(부록1 A1.2(b)·A1.3-보론).
+
+**핵심 대비:**
+
+| 항목 | (A) 평균유동+통계돌기 (2.1–2.2) | (B) 일반 Reynolds+진폭저감 (식 [2]) |
+|---|---|---|
+| 거칠기 처리 | 통계적 **평균화**(flow factor $\phi$, 높이분포 $\phi(z)$) — 미해상 | 결정론 **미시형상 해상**(푸리에 하모닉) |
+| $h^3$ 비선형 | 완전 비선형 유지 → **앙상블 평균**으로 flow factor에 흡수 | **소진폭 선형화**(변동량 곱 무시) |
+| 출력 압력 | 평균 $\bar p,\ p_a$ — **매끈(첨두 없음)** | **결정론 압력 리플(스파이크)** |
+| 돌기접촉 | 포함(GW/GT 경계·혼합·완전유막) | **미포함**(완전유막·고 $\Lambda$) → **결합모델(B+)로 확장** |
+| 대표 목적 | 하중분담비·마찰·Stribeck·평균유막 | **국부 압력·표면응력·마이크로피팅** |
+| 물리 그림 | 앙상블 평균 → 스파이크 소멸 | 파동 전파(이송파+입구파) → 스파이크 보존 |
+| 속도/한계 | 전 레짐, 그러나 국부 스파이크 없음 | 빠름(FFT), 그러나 소진폭·완전유막·(기본)Newtonian |
+
+**수리적 요점(부록3 A3.7.1과 연결):** 윤활은 $h^3$ 때문에 강한 비선형이라, **(A)는 평균만 닫히고 (B)는 소진폭 선형화만 닫힌다.** (A)는 평균이라 스파이크가 지워지고, (B)는 결정론 섭동이라 스파이크가 살지만 **소진폭·완전유막**에 갇힌다. **스파이크와 돌기접촉을 동시에** 원하면 어느 쪽도 아니고 **2.3의 결정론 통합 Reynolds(Hu–Zhu)** 가 필요하다(대신 느림).
+
+**직관·용도 선택:**
+- "평균적으로 거칠기가 유막·하중분담을 어떻게 바꾸나?" → **(A)** (마찰·레짐·수명평균, 경계접촉 포함).
+- "이 거칠기가 굴러 지나갈 때 실제 압력 물결이 어떻게 생기고 전파되나?" → **(B)** (국부 응력·마이크로피팅, 고 $\Lambda$·소진폭). *진폭저감 = 유막압력이 조도 마루를 탄성적으로 눌러 평탄화하는 정도.*
+- "저 $\Lambda$·큰 진폭에서 스파이크+접촉 동시" → **2.3 Hu–Zhu 통합 Reynolds** 또는 아래 **(B+) 결합모델**.
+
+**(B+) 부분윤활 결합모델 (Combined Model for Partial Lubrication) — (B)로 돌기접촉을 다루는 법 (SKF 2011):**
+
+**동기(왜 필요한가):** Morales‑Espejel et al.(2011)이 지적하듯, 표면속도가 0이 아니고 벽면 slip이 없으면 **Reynolds 식은 원리적으로 dry contact(film breakdown)를 만들 수 없다.** 진폭저감(B) 단독으로는 파장이 길고 유막이 얇을수록 조도가 **무한정 탄성 평탄화**되어(비물리적) 실제 돌기접촉을 못 만든다. → **매우 얇은 간극 영역은 연속체(윤활) 대신 건접촉(dry contact) 모델로 푸는 것이 오차가 적다.** SKF는 이를 **건접촉 모델(접촉 spot)+윤활 모델(완전유막)의 결합**으로 해결한다.
+
+**① 하중분담 알고리즘(Johnson et al., 질량보존 반복):**
+- 매끈면 중심유막 $\bar h$ 를 EHL 식으로, 초기 평균압=최대 Hertz $p_h$ 로 둔다.
+- **건(dry) 돌기 분담 하중비 $\phi_{bl}$** 가정 → 나머지는 윤활 spot. 건·윤활 모델로 국부압·간극 계산 → 새 건/윤활 영역 식별 → **하중분담 수렴까지 반복**(유량 balance 유지, 변형 간극을 상하로 이동).
+- 압축성: 윤활 분담비 변화에 따라 중심유막을 **압축성 보정계수 $c_p$** 로 조정.
+
+**② 건/윤활 patch 식별 + 천이 간극·압력(주파수영역 max):** 단순히 윤활 간극에서 접촉 spot을 건접촉해로 치환하면 (B)의 "연속 평탄화" 문제가 남는다 → 조도 변형은 **건접촉 문제로 제한**돼야 한다. 장파장 성분이 진폭이 커 접촉하기 쉬우므로, **FFT 후 주파수 성분별로 건/윤활 간극을 비교해 절댓값 최대를 선택:**
+$$
+h_{tran(i,j)}=\mathrm{IFFT}\{\max(|\tilde h_{dry(i,j)}|,\ |\tilde h_{lub(i,j)}|)\}
+$$
+대응 압력은 탄성변위로부터 식 [1]의 역과정으로 복원($w$=주파수응답함수 FRF, $\mathbf r-\mathbf h_{tran}=\mathbf u$):
+$$
+p_{tran}=\mathrm{IFFT}\{\,w^{-1}\cdot\mathrm{FFT}(\mathbf r-\mathbf h_{tran})\,\}
+$$
+소성 발생 시 $p_{tran}\le p_{lim}$, 캐비테이션(음압) 시 $p_{tran}=0$(고진폭 미시형상 회피로 오차 최소화).
+
+**③ 두 조도면·마찰:** 두 조도면이면 건접촉은 두 면으로, 윤활은 각 면 반복 → 총 유체압 $p_{lub}=p_{lub1}+p_{lub2}$. 표면 트랙션 $q(x,y)=\mu(x,y)\,p(x,y)$, $\mu$=완전유막 $\mu_{ehl}$ 또는 경계 $\mu_{bl}$.
+
+**위치 정리(3-way 통합):**
+- (B+)는 **(B)의 결정론 리플을 유지하면서 건접촉·하중분담을 얹어** (B)의 "돌기접촉 미포함" 한계를 메운다 = **결정론 하이브리드**.
+- (A)의 하중분담은 **통계**($\phi(z)$·flow factor·GT 평균)인 반면, (B+)는 **결정론**(측정조도 건접촉해 + 진폭저감 리플 + Johnson 질량보존 + 주파수 max).
+- 2.3 Hu–Zhu는 **단일 방정식**(monolithic, $h\to0$ 자동 축퇴)으로 같은 목표를 이루지만, (B+)는 **두 모델(건+윤활)을 하중분담·주파수 max로 접합한 모듈형 하이브리드** — FFT 기반이라 빠르나 근사(연속체 대신 건접촉으로 얇은 간극을 근사).
+
+> **연결:** (B)의 진폭저감은 sliding/비뉴턴에서 Hooke(2006) 스킴으로 확장(SKF 2011); (B+) 결합모델이 그 위에 건접촉·하중분담을 얹은 완성형이다. 이 골격이 **부록1 A1.2(b)·A1.3-보론(식 12·13)** 과 **부록3 A3.7(C: 스펙트럼 유막압력 리플)** 의 기반이며, **부록1 A1.5의 결정론 파이프라인**과도 직결된다. (A)는 **부록3 A3.7(A·B)** 및 **부록2($L_a$)** 와 연결된다.
+
 ---
 
 ## 3. 출력 → 공학적 물리량 변환
@@ -703,4 +765,357 @@ $a_{\text{ISO}}$ 는 아표면 피로를 이미 잘 다룬다($\kappa$ 로). $L_
 - (본문 참조) Masjedi & Khonsari 2012 [B1]; Akchurin et al. 2015 [B6]; Hu–Zhu 2000.
 
 > **검증 메모:** $\kappa\approx\Lambda^{1.3}$ 지수는 secondary 다수 인용이나 ISO 1차 원문 미추출(`[VERIFY]`). Moallem 2016의 ~97% 일치·Spies 2025의 분포 의존성은 abstract/open-text로 확인. $L_a$ 임계 부재는 조사범위 내 일관 확인(부재 입증의 한계상 "조사범위 내 미발견").
+
+---
+
+# 부록 3. 확률과정/스펙트럼 접근 — 가우시안 조도에서 압력·6응력성분을 통계적으로 계산할 수 있는가
+
+> **검토 가설:** "MK(2012)가 거칠기를 가우시안으로 모델링해 돌기하중비를 계산하듯, 거칠기가 가우시안이면 (i) 돌기하중비·(ii) 압력분포를 **통계적으로 명시 표현**할 수 있고, 나아가 (iii) 표면피로에 필요한 **6자유도 표면/표면하 응력**도 통계적으로 계산할 수 있지 않은가?"
+> **검토 방식:** 수리·물리 분석 + 병렬 문헌조사(2축). 결론: **타당하며, "확률과정/스펙트럼 접촉역학(stochastic/spectral contact mechanics)"으로 이미 정립.** 단 명제별 성립 조건·한계가 다름.
+
+## A3.1 가설의 3분해와 판정
+
+### 명제 1. 가우시안 → 돌기하중비 통계 명시 — ✅ (단 '평균')
+
+MK의 $L_a$ 는 이미 **통계적 기댓값**이다. Greenwood–Williamson(1966)/Greenwood–Tripp(1970)에서 돌기하중은 가우시안 높이분포 $\phi(z)$ 의 앙상블 기댓값:
+
+$$
+W_a=\tfrac{4}{3}E'N\sqrt{\beta}\!\int_d^\infty(z-d)^{3/2}\phi(z)\,dz\propto F_{3/2}(\lambda),\quad
+F_n(\lambda)=\tfrac{1}{\sqrt{2\pi}}\!\int_\lambda^\infty(s-\lambda)^n e^{-s^2/2}ds=\mathbb{E}[(s-\lambda)^n;s>\lambda]
+$$
+
+즉 $L_a$ 는 분포값이 아니라 분포의 **1차 모멘트(평균)** 가 닫힌형으로 나온 것. 실현치별 $L_a$ 의 분산도 원리상 계산 가능하나 MK는 평균만 제공.
+
+### 명제 2. 가우시안 → 압력분포 통계 표현 — 🟧 부분적 ✅ (레짐 의존)
+
+결정적 갈림길이 있다(Persson 2001; Yastrebov et al. 2015):
+
+- **완전접촉/소거칠기(선형) 레짐:** 압력이 표면높이의 **선형 범함수** → 압력장도 **가우시안 랜덤필드**. $p(q)=\tfrac12E^*q\,h(q)$ (Persson 2008, Eq.4) → 압력 PSD $C_p(q)=\tfrac14E^{*2}q^2C(q)$, 분산 $\langle p^2\rangle\propto\int q^3C(q)dq$ (=rms 기울기).
+- **부분접촉(현실) 레짐:** $p\ge0$ 제약(인장 불가)으로 압력은 **비가우시안·단측(one-sided)**. Persson은 **확산(Fokker–Planck) 방정식**으로 압력확률분포 $P(p,\zeta)$ 를 준해석적으로 제공:
+$$
+\frac{\partial P_0}{\partial\zeta}=f(\zeta)\frac{\partial^2P_0}{\partial p^2},\quad
+f(\zeta)=\frac{1}{8\zeta}\!\int q^3C(q)dq,\quad P_0(0,\zeta)=0\ (\text{무인장})
+$$
+
+즉 **전체 압력분포는 통계 표현 가능**하나 가우시안이 아니라 Persson 이론으로. MK/GW의 매끈한 $P_a$ 는 이 분포의 **평균**일 뿐(부록1 A1.0-보론과 일치).
+
+### 명제 3. 가우시안 → 6응력성분 통계 계산 — ✅ (가장 강력히 성립)
+
+**핵심.** 응력은 압력의 **선형 범함수**이고, 파수 $q=\sqrt{\alpha^2+\beta^2}$ 의 각 압력 하모닉은 깊이로 $(a+bz)e^{-qz}$ 커널(=부록1 A1.3-보론의 Morales‑Espejel 식 12·13 = Westergaard/Johnson)로 전파된다. 압력이 PSD $C_p(q)$ 인 랜덤필드면 각 응력성분도 랜덤필드이고:
+
+$$
+\boxed{\;\mathrm{Var}[\sigma_{ij}(z)]=\int|H_{ij}(q,z)|^2\,C_p(q)\,d^2q,\quad
+\mathrm{Cov}[\sigma_{ij},\sigma_{kl}](z)=\int H_{ij}H_{kl}^*\,C_p\,d^2q\;}
+$$
+
+→ **6성분 응력장의 2차 통계(평균+분산+공분산)가 깊이 $z$ 마다 닫힌형 스펙트럼 적분**으로. 결정론 실현 불필요. 이미 수행된 연구:
+- **Müser(2018, *JMPS* 119:73–82):** 랜덤조도 아래 **von Mises 분산·분포를 깊이의 함수로** 계산. 최댓값이 접촉부 바로 아래(근표면), 감쇠길이는 **높이차 자기상관 포화거리**($q$ 비례 지수감쇠 → 단파장=근표면).
+- **Persson(2008, *JPCM* 20:312001):** 계면 응력상관 $\langle\sigma(q)\sigma(-q)\rangle=A_0(E^*/4\pi)^2q^2C(q)P(q)$ — "stress PSD = |필터|²×조도 PSD" 자체.
+- **Persson(2023, *Tribology Letters* 71:115):** **전체 분포(가우시안)+극값(extreme-value) 첨두**. $\sigma_{rms}\propto$ rms기울기 $\xi$, $\sigma_{\max}\approx\sqrt{2\ln N}\,\sigma_{rms}$ (전형적으로 작용응력 ~10배).
+
+## A3.2 통합 수리 골격 (가설의 엄밀한 형태)
+
+$$
+\underbrace{C(q)}_{\text{조도 PSD}}\xrightarrow[\text{(EHL 시 진폭감쇠 }T(q))]{p(q)=\frac12E^*q\,h(q)}
+\underbrace{C_p(q)}_{\text{압력 PSD}}\xrightarrow[H_{ij}(q,z)=(a+bz)e^{-qz}]{\text{식(12,13) 커널}}
+\underbrace{\mathrm{Var}[\sigma_{ij}(z)]}_{\text{6성분 응력 통계}}\xrightarrow[\text{Rice/극값}]{}\sigma_{\max}\to\text{피로}
+$$
+
+가우시안 조도 → (선형/EHL 전달함수) → 압력 PSD → (반무한체 커널) → 6응력 통계 → 극값 → 피로. **전 과정이 PSD의 닫힌형 적분.**
+
+## A3.3 결정적 한계 (가설이 깨지는 지점)
+
+1. **비가우시안 압력 = 핵심 약점.** $p\ge0$ 로 부분접촉에서 압력 비가우시안. 깔끔한 가우시안-선형 응력통계는 **완전접촉/소거칠기 근처에서만** 정확하고, **$L_a$ 가 커질수록(혼합윤활 심화) 정확도 저하** → Persson 비선형 이론 필요. 하필 메인베어링 중요 영역에서 가장 부정확.
+2. **피로엔 분산이 아니라 극값.** 표면피로는 **첨두응력**이 구동 → 극값통계(Rice/peak) 한 겹 더 필요(Persson 2023). 가우시안 꼬리가 실제 꼬리를 과소/과대평가 가능.
+3. **다축·비례경로(Dang Van).** 6성분은 상관 랜덤필드이고 굴림 진행 **응력이력(비비례경로)** 필요 → 공분산행렬+시간상관까지 있어야 Dang Van을 닫음.
+4. **소성 절단.** 돌기 첨두는 항복으로 잘림 → 선형탄성 극값은 과대.
+
+## A3.4 문헌 지도
+
+| 단계 | 통계량 | 핵심 문헌 |
+|---|---|---|
+| 조도 랜덤과정 | 스펙트럼 모멘트 $m_0,m_2,m_4$ | Nayak(1971); Longuet‑Higgins(1957) |
+| 돌기하중=기댓값 | 평균 | GW(1966), GT(1970) |
+| 압력 **분포** | 비가우시안 PDF(확산방정식) | Persson(2001); Manners‑Greenwood(2006) |
+| 계면 응력상관 | 분산(PSD 적분) | Persson(2008) |
+| 표면하 응력 vs 깊이 | von Mises **분산·분포** | **Müser(2018)** |
+| 응력 **분포+극값** | 전체분포+첨두 | **Persson(2023)** |
+| 깊이 커널 | 결정론 하모닉 | Westergaard(1939)/Johnson(1985)/M‑E 식12·13 |
+
+## A3.5 종합 판단 + 연구 공백(기회)
+
+- 가설은 수리·물리적으로 타당하며 "스펙트럼 접촉역학"으로 이미 정립. 특히 **명제 3(6응력 통계)은 Müser 2018·Persson 2008/2023으로 직접 입증**.
+- 단 **MK의 $L_a$ 는 평균일 뿐**, 완전한 통계압력은 Persson, 응력통계는 PSD+커널 적분이 담당.
+- **결정적 발견(연구 공백):** 두 조사 모두 **"스펙트럼-통계 응력 → 다축피로(Dang Van) → 마이크로피팅"을 결합한 모델은 문헌에 없다**고 확인. 기존 마이크로피팅 모델은 전부 **결정론(Morales‑Espejel–Brizmer)**. 즉 **"가우시안 PSD → 통계 6응력 → 통계 표면피로" 파이프라인은 미발표 공백 = 신규 기여 가능 영역**.
+
+> **한 줄 결론:** "가우시안 → 통계 압력·응력"은 **완전접촉/선형 근처에서 닫힌형 성립**(Persson·Müser), 그러나 **혼합윤활의 비가우시안성과 피로의 극값성**이 두 관문. 이를 극값통계+EHL 전달함수로 연결하면 **결정론 수치해석을 대체하는 "통계적 표면피로 스크리닝"** 이 가능 — 현재 **미개척 연구주제**. (부록1 결정론 파이프라인과 상보: 결정론=검증·소수케이스, 통계=고속 스크리닝·다수케이스.)
+
+## A3.6 부록 3 참고문헌
+
+- [D1] Nayak, P. R. (1971). Random Process Model of Rough Surfaces. *J. Lubrication Technology (Trans. ASME)* 93(3):398–407. DOI 10.1115/1.3451608.
+- [D2] Longuet‑Higgins, M. S. (1957). Statistical properties of an isotropic random surface. *Phil. Trans. R. Soc. A* 250:157–174. `[VERIFY]`.
+- [D3] Greenwood, J. A., Williamson, J. B. P. (1966). Contact of Nominally Flat Surfaces. *Proc. R. Soc. A* 295(1442):300–319.
+- [D4] Greenwood, J. A., Tripp, J. H. (1970/71). The Contact of Two Nominally Flat Rough Surfaces. *Proc. IMechE* 185(1):625–633.
+- [D5] Persson, B. N. J. (2001). Theory of rubber friction and contact mechanics. *J. Chem. Phys.* 115(8):3840–3861. DOI 10.1063/1.1388626.
+- [D6] Persson, B. N. J., Bucher, F., Chiaia, B. (2002). Elastic contact between randomly rough surfaces… *Phys. Rev. B* 65:184106. `[VERIFY]` 페이지.
+- [D7] Manners, W., Greenwood, J. A. (2006). Some observations on Persson's diffusion theory of elastic contact. *Wear* 261(5–6):600–610. DOI 10.1016/j.wear.2006.01.007.
+- [D8] Yastrebov, V. A., Anciaux, G., Molinari, J.-F. (2015). From infinitesimal to full contact between rough surfaces… *Int. J. Solids Struct.* 52:83–102 (arXiv:1401.3800).
+- [D9] Persson, B. N. J. (2008). On the elastic energy and stress correlation in the contact between elastic solids with randomly rough surfaces. *J. Phys.: Condens. Matter* 20:312001 (arXiv:0805.0712).
+- [D10] **Müser, M. H. (2018).** Internal, elastic stresses below randomly rough contacts. *J. Mech. Phys. Solids* 119:73–82. DOI 10.1016/j.jmps.2018.06.012. (단독저자 — "Müser & Dapp" 아님)
+- [D11] **Persson, B. N. J. (2023).** Surface roughness induced stress concentration. *Tribology Letters* 71:115. DOI 10.1007/s11249-023-01741-4 (arXiv:2304.02159).
+- [D12] Pohrt, R., Popov, V. L. (2012). Normal Contact Stiffness of Elastic Solids with Fractal Rough Surfaces. *Phys. Rev. Lett.* 108:104301.
+- [D13] Bush, A. W., Gibson, R. D., Thomas, T. R. (1975). The elastic contact of a rough surface. *Wear* 35(1):87–111. `[VERIFY]` 페이지.
+- (본문 참조) 깊이 커널: Westergaard 1939 [B10], Johnson 1985 [B15], Morales‑Espejel 식12·13(부록1 A1.3-보론).
+
+> **검증 메모:** Persson 2008·2023, Müser 2018, Persson 2001 확산방정식은 원문(arXiv 포함) 직접 확인. Nayak summit-PDF 정확식, Longuet‑Higgins/Bush 페이지, Persson–Bucher–Chiaia 페이지는 `[VERIFY]`. Persson erf 면적-하중식의 분모 상수는 이론버전별 상이(함수형은 견고, 상수는 soft).
+
+---
+
+## A3.7 [추가조사] 윤활(Mixed EHL) 조건에서의 통계화 — A3.1~A3.6의 한계와 정정
+
+> **비판적 단서(중요):** A3.1~A3.6의 핵심 문헌(Persson·Müser·Nayak·GW/GT)은 **대부분 dry elastic contact(윤활 미고려)** 다. 실제 필요한 것은 **유막압력 $p_h$ 와 돌기압력 $p_a$ 를 함께 다루는 Mixed EHL의 통계화**이며, 이는 별개 계보다. 본 절은 그 계보를 추가조사해 A3의 적용범위를 정정한다. **결론: 윤활에서는 $h^3$ 비선형 때문에 통계화가 '평균/스펙트럼'까지만 닫히고, 완전 결합분포→응력통계는 미발표 공백.**
+
+### A3.7.1 왜 윤활이 dry보다 본질적으로 어려운가 (핵심 물리)
+
+- **Dry 탄성접촉:** 압력이 표면높이의 **선형 범함수** → 가우시안 → 분포가 닫힘(A3.1~A3.6, Persson/Müser).
+- **윤활:** Reynolds의 Poiseuille 항이 $h^3$(횡방향 거칠기는 $1/h^3$) → **강한 비선형** → 평균연산이 비선형항과 교환 안 됨:
+$$
+E(h^3)\neq (E\,h)^3,\qquad E(1/h^3)\neq 1/(E\,h)^3
+$$
+→ **평균만 닫히고 분포는 닫히지 않는다.** 이것이 dry의 "가우시안→통계압력" 기계가 윤활에서 평균 수준에서 멈추는 근본 이유다(Christensen, Patir–Cheng가 모두 평균만 주는 이유).
+
+### A3.7.2 윤활-통계 계보 (세 갈래, 어느 것도 완전치 않음)
+
+**(A) 유막압력 $p_h$ 통계 — 평균만**
+- **Christensen(1969, *Proc. IMechE* 184:1013–1026):** 최초의 확률(stochastic) Reynolds. 기대압력 $E(p)$ 를 거칠기 방향별로 구분 — 횡방향 $\partial_x[\,(1/E(1/h^3))\,\partial_x E(p)\,]$, 종방향 $\partial_x[\,E(h^3)\,\partial_x E(p)\,]$.
+- **Patir–Cheng(1978/79):** 평균유동(flow factor)으로 앙상블 평균 유막압력 $\bar p$ (부록1 A1.2(a)와 동일).
+- **Elrod(1979), Bayada–Chambat(1988), Almqvist–Dasht(2006):** 다중스케일/호모지나이제이션 → 유효(평균) 압력. ❗ 전부 **1차 모멘트(평균)만**, 분산/PDF 없음.
+
+**(B) 돌기압력 $p_a$ 통계 — 평균(분담비)**
+- Johnson–Greenwood–Poon(1972, *Wear* 19:91–108), Gelinck–Schipper(2000), **Masjedi–Khonsari(2012)**: GW/GT 통계돌기 + 평균유동 → 평균 돌기하중/분담비 $L_a$(부록2와 연결).
+
+**(C) 스펙트럼 유막압력 리플 — 분산/PSD(2차 모멘트)**
+- **Greenwood–Morales‑Espejel(1994, *Proc. IMechE C* 208:121–132), Chapkov–Venner–Lubrecht(2006, *ASME J. Tribol.* 128(4):753–760), Morales‑Espejel(2014 리뷰):** EHL 진폭감쇠 전달함수 $T(q)$ 를 표면 PSD에 적용 → 유막압력 리플 **스펙트럼**. 단 결정론-하모닉, **돌기접촉은 빠짐**.
+
+**(D) "양쪽을 PSD에서" 최근접 — Persson–Scaraggi ★**
+- **Persson & Scaraggi(2009, *J. Phys.: Condens. Matter* 21(18):185002; 2011, *Eur. Phys. J. E* 34:113):** 조도 PSD $C(q)$ 에서 flow factor + 하중분담 + Stribeck. **돌기측은 분포적($P(p,\zeta)$), 유체측은 homogenize된 평균 flow factor** → "양쪽 통계화"에 가장 근접하나 출력은 평균·분담.
+- **Prajapati & Björling(2024, *Lubricants* 12(3):71):** PSD/Weibull(비가우시안) 표면을 Mixed Lubrication에 투입 — **입력 통계적·솔버 결정론·출력 평균**.
+
+### A3.7.3 정직한 판정 — 어디까지 되고 무엇이 공백인가
+
+| 목표 | 가능 여부 | 최선의 도구 |
+|---|---|---|
+| $p_h,p_a$ **평균** 통계화 | ✅ 확립 | Masjedi–Khonsari 2012 / Persson–Scaraggi |
+| $p_h$ **리플 스펙트럼**(분산) | ✅ (소진폭·완전유막) | 진폭감쇠 $T(q)$ × 표면 PSD |
+| $p_a$ **분포** | 🟧 부분(돌기측) | Persson–Scaraggi $P(p,\zeta)$ |
+| $p_h,p_a$ **완전 결합분포** → 표면하 응력통계 | ❌ **공백(윤활판 미발표)** | 없음 — 결정론 수치해석만 |
+
+→ **A3.1~A3.6의 통계 파이프라인은 dry에선 성립하나, 윤활(현실)에선 $h^3$ 비선형 때문에 평균/스펙트럼까지만**이 정직한 현황. dry의 Müser/Persson 응력통계에 **대응하는 윤활판은 존재하지 않음**(두 조사 일관 확인).
+
+### A3.7.4 현실적 최선 + 신규 기여 후보
+
+- **지금 쓸 수 있는 것:** 평균 = Masjedi–Khonsari $L_a$ + Persson–Scaraggi 하중분담; 유막 리플 응력 = **진폭감쇠 $T(q)$ × PSD × 식12·13 커널**(부록1 A1.3 골격의 *윤활판* — dry 커널 앞에 $T(q)$ 만 추가).
+- **6응력 표면피로 실값:** 여전히 **부록1 결정론 Mixed EHL + FFT 응력**이 필요(통계는 스크리닝 보조).
+- **신규 기여 후보(미개척):** $h^3$ 비선형을 우회하는 통계적 유막압력 분포(예: polynomial chaos, 또는 Persson–Scaraggi + 진폭감쇠 결합)로 **$p_h,p_a$ 결합분포 → 응력통계 → 표면피로**를 닫는 것.
+
+### A3.7.5 추가조사 참고문헌
+
+- [D14] Christensen, H. (1969–70). Stochastic Models for Hydrodynamic Lubrication of Rough Surfaces. *Proc. IMechE* 184(Pt1,No.55):1013–1026. DOI 10.1243/PIME_PROC_1969_184_074_02.
+- [D15] Patir, N., Cheng, H. S. (1978). An Average Flow Model… *ASME J. Lubr. Technol.* 100(1):12–17. (1979: 101(2):220–229.) ※부록1 [B-]·본문 §2.1과 동일.
+- [D16] Elrod, H. G. (1979). A General Theory for Laminar Lubrication with Reynolds Roughness. *ASME J. Lubr. Technol.* 101(1):8–14.
+- [D17] Bayada, G., Chambat, M. (1988). New Models in the Theory of the Hydrodynamic Lubrication of Rough Surfaces. *ASME J. Tribology* 110(3):402–407.
+- [D18] Almqvist, A., Dasht, J. (2006). The homogenization process of the Reynolds equation… *Tribology International* 39(9):994–1002.
+- [D19] **Persson, B. N. J., Scaraggi, M. (2009).** On the transition from boundary lubrication to hydrodynamic lubrication in soft contacts. *J. Phys.: Condens. Matter* 21(18):185002.
+- [D20] **Persson, B. N. J., Scaraggi, M. (2011).** Lubricated sliding dynamics: Flow factors and Stribeck curve. *Eur. Phys. J. E* 34:113. DOI 10.1140/epje/i2011-11113-9.
+- [D21] Greenwood, J. A., Morales‑Espejel, G. E. (1994). The behaviour of transverse roughness in EHL contacts. *Proc. IMechE Part C* 208(C2):121–132.
+- [D22] Chapkov, A. V., Venner, C. H., Lubrecht, A. A. (2006). Roughness Amplitude Reduction Under Non-Newtonian EHD Lubrication Conditions. *ASME J. Tribology* 128(4):753–760.
+- [D23] Prajapati, D. K., Björling, M. (2024). The Influence of Non-Gaussian Roughness and Spectral Properties on Mixed Lubrication… *Lubricants* 12(3):71. DOI 10.3390/lubricants12030071.
+- (본문 참조) Masjedi–Khonsari 2012 [B1]; Johnson–Greenwood–Poon, Gelinck–Schipper(부록1 [B4][B5]); Morales‑Espejel 2014 [B12].
+
+> **검증 메모:** Persson–Scaraggi(2009/2011)·Christensen(1969)·Patir–Cheng·Prajapati–Björling(2024) 서지 확인. Christensen의 $35/32c^7$ PDF·브래킷 계수, Patir–Cheng 계수 배치는 교과서 표준형(원문 paywall, `[VERIFY]`). "윤활판 응력통계 부재"는 조사범위 내 일관(부재 입증 한계상 "미발견"). 진폭감쇠 $T(q)$ 닫힌형은 원문 대조 권장.
+
+---
+
+# 부록 4. 거칠기 피크 보존 모델링 → FFT 압력해석 (4축 체계 조사 + 계보도·영향도)
+
+> **목적:** 거칠기 **피크 돌기를 보존·표현**하는 수학적 도구를 4축(A 생성 / B 비가우시안·프랙탈 / C summit·극값 / D FFT 압력)으로 체계 조사하고, **실측 베어링 표면 표현력**을 평가하며, 각 논문의 **계보·저널·인용수 기반 영향도**를 누적. 지속 연구 확장의 토대.
+> **인용수 표기:** Semantic Scholar/Crossref, **수집일 2026-06-30** (Google Scholar 대비 1.5~2.5배 낮은 보수적 하한). 미확보는 `[CC?]`.
+> **계획서:** `분석계획_거칠기피크모델링.md`.
+
+## A4.1 전제 정정 (피크가 사라지는 진짜 원인)
+
+1. **"가우시안 분포"가 아니라 "평균(기댓값) 연산"이 피크를 제거한다.** 가우시안 표면의 *한 실현(realization)* 은 높은 돌기를 포함하고, 이를 FFT-접촉에 넣으면 피크 압력이 나온다. 매끈해지는 건 앙상블 평균 $E[p]$ 를 취할 때뿐(부록3 A3.1·A3.7).
+2. **단, 실제 표면은 비가우시안.** 가공·런인 표면은 음의 skewness·높은 kurtosis → 가우시안은 **피크가 모인 꼬리(tail)를 잘못 표현**. 피크 충실엔 비가우시안 marginal 필요.
+3. **PSD는 표면을 유일하게 결정하지 않는다 — 위상(phase) 정보 손실.** $S(k)=|\hat z(k)|^2$ 는 위상을 버린다. 피크는 부분적으로 위상 상관(국소화)에 들어 있어, random-phase 가우시안 복원은 **피크의 공간 응집을 흩뜨린다.** → 실측 피크엔 **측정 위상** 또는 **비가우시안 marginal** 필요.
+
+## A4.2 축 A — 표면 표현·생성 (수식)
+
+**(A-1) 스펙트럼 합성(SRM) — 빠르나 가우시안(피크 손실):**
+$$
+z_{ij}=\sum_k\sum_l \sqrt{S_{kl}}\,e^{i\phi_{kl}}\,e^{i2\pi(ki/M+lj/N)},\quad \phi_{kl}\sim U[0,2\pi]
+$$
+random phase → 중심극한정리로 **가우시안** marginal(피크 비국소화). Newland(교과서); **Wu(2000, *Tribology Int.* 33(1):47–58, [CC 253])**.
+
+**(A-2) 디지털 필터/ACF — 비가우시안 가능(피크 보존 트렁크):**
+$$
+Z=K\otimes R,\quad C=K\otimes K,\quad K=\mathrm{ifft2}\!\big(\sqrt{\mathrm{fft2}(C)}\big)
+$$
+백색잡음 $R$ 에 FIR 필터 $K$, 목표 ACF=$C$. **★Hu & Tønder(1992, *Int. J. Mach. Tools Manuf.* 32:83–90, [CC 345] — 본 축 keystone).**
+
+**(A-3) Johnson 변환 — 목표 $S_{sk},S_{ku}$ 부여:**
+$$
+z=\gamma+\delta\,f\!\Big(\tfrac{x-\xi}{\lambda}\Big),\quad z\sim N(0,1)
+$$
+- $S_U$(무계): $x=\xi+\lambda\sinh\frac{z-\gamma}{\delta}$ / $S_B$(유계): 로지스틱 / $S_L$: 로그정규.
+- **Johnson(1949, *Biometrika* 36:149) → Watson–Spedding(1982, *Wear* 83:215, [CC 94]) → Hu–Tønder(1992) → Bakolas(2003, *Wear* 254:546, [CC 156]).**
+
+**(A-4) PSD+비가우시안 동시 — 순서 함정:** filter→translate는 PSD 왜곡, translate→filter는 marginal이 가우시안으로 끌림(moment 감쇠). 정확한 동시해 일반적으로 없음 → 반복/하이브리드. **Manesh(2010, *Wear* 268:1371, [CC 96]), Pawar(2013, *J.Tribol.* 135:011401, [CC 59]), Francisco–Brunetière(2016, *Proc.IMechE J* 230:747, [CC 33], 해석커널로 ACF 엄밀 일치).**
+
+## A4.3 축 B — 비가우시안·프랙탈 (수식)
+
+**(B-1) 프랙탈 W–M:** $z(x)=G^{D-1}\sum_n \cos(2\pi\gamma^n x)/\gamma^{(2-D)n}\ (1{<}D{<}2)$, PSD $S(\omega)\propto G^{2(D-1)}/\omega^{5-2D}$. **Berry–Lewis(1980) → Majumdar–Bhushan(1990/91, *J.Tribol.*; MB 1991 [CC 1,284]) → Yan–Komvopoulos(1998, *JAP*, 3D [CC 686]).** MB 접촉: $P\propto A_r^{(3-D)/2}$.
+**(B-2) Self-affine:** $C(q)\propto q^{-2(1+H)}$, $D_f=3-H$. **Palasantzas(1993, *PRB* 48:14472); Persson(2001, *JCP* 115:3840).**
+**(B-3) bi-Gaussian/stratified(plateau):** 두 가우시안 중첩, material probability curve. **Leefe(1998); ISO 13565-3:1998; Hu(2019, *Tribol.Int.* 134:427, bi-fractal).** → run-in/honed raceway.
+**(B-4) Weibull height + PSD:** **Prajapati–Björling(2024, *Lubricants* 12(3):71)** — shape param이 skew 제어, 음의 skew가 유막형성 유리.
+**(B-5) 실측 증거:** **Harvey et al.(2025, *Surf.Topogr.* 13(3))** — 베어링강 run-in 시 $S_{sk}{<}0,\ S_{ku}{\uparrow}$.
+
+## A4.4 축 C — 피크·summit·극값 통계 (수식)
+
+**(C-1) 스펙트럼 모멘트·Nayak:** $m_0$(분산),$m_2$(MS기울기),$m_4$(MS곡률), **대역폭 $\alpha=m_0m_4/m_2^2\ge1.5$**.
+$$
+D_{sum}=\frac{1}{6\pi\sqrt3}\frac{m_4}{m_2},\quad R=\frac{3}{8}\sqrt{\frac{\pi}{m_4}},\quad \langle\kappa\rangle=\frac{8}{3\sqrt\pi}\sqrt{m_4},\quad \sigma_{summit}=\sqrt{m_0}\sqrt{1-\frac{0.8968}{\alpha}}
+$$
+**Longuet-Higgins(1957, *Phil.Trans.R.Soc.A* 250:157) → Nayak(1971, *J.Lubr.Technol.* 93:398, [CC≈901]).** ★가우시안 표면이라도 **summit 높이분포는 비가우시안**(α 의존 skew).
+**(C-2) 돌기접촉:** **GW(1966, *Proc.R.Soc.A* 295:300, [CC≈5,900])** $\psi=\frac{E^*}{H}\sqrt{\sigma/R}$, $A\propto W$; **BGT(1975, *Wear* 35:87)** 타원포물면, $A\approx\sqrt{2\pi}\,W/(E^*\sqrt{m_2})$; **McCool(1986, *Wear* 107:37)** 표면→$(m_0,m_2,m_4)$→GW, 단순≈완전.
+**(C-3) skew/kurtosis 효과:** **McCool(1992, *IJMTM* 32:115, [CC 79])** 동일 RMS서 $S_{sk}{=}{+}1\to$ 평균 돌기압 **~1.4배↑**, ${-}1\to$ **~1.7배↓**; **Kotwal–Bhushan(1996, *Tribol.Trans.*, [CC 118])** 양 skew→면적↓·최조기 최대압→마모취약; **Yu–Polycarpou(2004, *J.Tribol.* 126:225, [CC 59])** 결합 시 가우시안화.
+**(C-4) ★해상도 의존성(핵심 — 피크는 자[ruler]의 성질):** 자기-affine PSD $C(q)\propto q^{-2(1+H)}$ 에서 곡률 모멘트가 **발산**:
+$$
+(h''_{rms})^2=\frac{1}{8\pi}\int q^5 C(q)\,dq=\frac{1}{16\pi}\frac{C_0}{2-H}\,q_s^{\,4-2H}\ \Rightarrow\ h''_{rms}\propto q_s^{\,2-H}\to\infty
+$$
+($q_s$=단파장 컷오프=해상도). 평균 summit 곡률 $\sqrt{m_4}$·반경·Nayak $\alpha$ 모두 해상도 의존 → "asperity는 길이척도 없이는 ill-defined"; 높이 $m_0$ 만 수렴(robust). **Whitehouse–Archard(1970, *Proc.R.Soc.A* 316:97, [CC 919]) → Greenwood–Wu(2001, *Meccanica* 36:617, [CC 259] "an apology" — GW 저자 본인이 peak 정의 철회) → Greenwood(2006, *Wear* 261:191, [CC 222]); 현대 처방 Jacobs–Junge–Pastewka(2017, *Surf.Topogr.* 5:013001, [CC 430], 대역폭 명시 PSD 모멘트); Persson(2001, [CC≈1,484]) magnification으로 컷오프를 명시변수화.** → A4.8 해상도 규약의 근거.
+**(C-5) 극값(피크 = 평균 아닌 최댓값):** 최댓값 조건 $\int_{x_{\max}}^\infty P\,dx\approx 1/N$ → 가우시안서 **$x_{\max}\approx\sqrt{2\ln N}\,x_{rms}$** (Gumbel/Fisher–Tippett), $N\sim(q_1/q_0)^2$(파장비). 피크높이 분포는 대역폭 $\varepsilon^2=1-m_2^2/(m_0 m_4)$ 의존(narrow→Rayleigh, broad→Gaussian). **Rice(1944/45, BSTJ) → Cartwright–Longuet-Higgins(1956, *Proc.R.Soc.A* 237:212, [CC 439]) → Persson(2023, *Tribol.Lett.* 71:74, $\sqrt{2\ln N}$); EVT 적용 Ponthus et al.(2019, *PRE* 99:023004), Malekan–Rouhani(2019, *Friction* 7:327, Gumbel→Amontons).** ⚠️ 첫 접촉·국부 소성·시일 누설은 평균 아닌 **최고 돌기**가 지배.
+
+## A4.5 축 D — FFT 결정론 압력해석 (단일 실현→피크 압력)
+
+**계보:** **Ju–Farris(1996, *J.Tribol.* 118:320, 2D 스펙트럼 시조) → Stanley–Kato(1997, *J.Tribol.* 119:481, [CC 289], 변분+FFT, $C(\mathbf k)=2/(E^*|\mathbf k|)$) → Polonsky–Keer(1999, *Wear* 231:206, [CC 629], CGM+MLMS/FFT, 표준 솔버) → DC-FFT Liu–Wang–Liu(2000, *Wear* 243:101, [CC 735, 본 축 최다], 영패딩·wrap-around로 비주기 정확).**
+- **해상도 핵심:** **Müser et al.(2017, *Tribol.Lett.* 65:118, [CC 324]) Contact-Mechanics Challenge** — 결정론 FFT-BEM/GFMD는 정확, 돌기모델은 체계편차; **돌기당 수 격자점 필요**(coarse면 피크 압력 절단).
+- **탄소성:** Tian–Bhushan(1996), **Jacq–Nélias(2002, *J.Tribol.* 124:653, [CC 282]) SAM**(베어링강 표준), Wang(2010).
+- **윤활 대응:** **Hu–Zhu(2000, *J.Tribol.* 122:1, [CC 546])** unified Reynolds — $h\to0$ 서 dry 접촉으로 축퇴(부록1 A1.2(b)·부록3 연결).
+- **물리:** $\tilde p(\mathbf k)$ 가 $\propto|\mathbf k|$ 강성으로 단파장 피크에 **국부 고압(스파이크)** 부여 + 단측제약($p\ge0$)이 최고 피크에 하중 집중 → 통계평균이 지운 sporadic 피크를 **결정론이 복원**.
+
+## A4.6 ★실측 베어링 표면 표현력 랭킹
+
+**근거 문헌: Borodich, Jin & Pepelyshev(2020, *Front. Mech. Eng.* 6:64)** — 단일 프랙탈 $D$·PSD-only 모두 **비유일**(동일 PSD라도 반전복제본은 정반대 접촉거동; "PSD 분석은 본질상 프랙탈 접근의 재공식화"); 물리적 프랙탈은 ~1.5 decade만; **조합 descriptor(Abbott 곡선) 권고**. Hu(2019) bi-fractal: stratified 표면은 층마다 다른 $D$.
+
+| 순위 | 모델 | 실측 베어링 표현력 | 근거 |
+|---|---|---|---|
+| 1 | **조합/하이브리드** (Abbott + bi-Gaussian + bi/multi-fractal + PSD) | 최상 | Borodich 2020 |
+| 2 | **bi-Gaussian/stratified + bi-fractal** (run-in·honed raceway) | 높음 | Leefe 1998; ISO 13565-3; Hu 2019 |
+| 3 | **비가우시안 skewed(Weibull/Pearson) + self-affine PSD** | 높음 | Prajapati–Björling 2024; Harvey 2025 |
+| 4 | self-affine PSD / Persson | 중 | Persson 2001 (PSD 비유일성 한계) |
+| 5 | **단일-D 프랙탈(Majumdar–Bhushan)** | 낮음(run-in서 최약) | Borodich 2020; Hu 2019 비판 |
+| 6 | **순수 가우시안(GW)** | superfinish 전($S_{sk}{\approx}0$)에만 적정 | Borodich 2020; Harvey 2025 |
+
+> **핵심 결론(질문 #3):** 실측 베어링 raceway(특히 run-in 후 음의 skew·plateau)는 **단일-D 프랙탈도 순수 가우시안도 부적합**하며, **bi-Gaussian/stratified + 비가우시안 marginal + (측정)PSD 조합**이 표현력 최상. FFT-접촉 전처리엔 **디지털필터(Hu–Tønder)+비가우시안 marginal** 트렁크가 정답(피크 보존).
+
+## A4.7 계보도 + 영향도 트래커
+
+### 4축 통합 계보(요약)
+```
+Fourier/Wiener–Khinchin ─┬─ Newland/Wu2000(SRM, 가우시안) ─────────────┐
+Longuet-Higgins1957 ─► Nayak1971(α, m0m2m4) ─► BGT1975, McCool1986     │ (FFT 전처리)
+   └─► GW1966 ─► Whitehouse-Archard1970(해상도) ─► Greenwood-Wu2001     │
+Johnson1949 ─► Watson-Spedding1982 ─► ★Hu-Tønder1992 ─► Bakolas/Manesh/Francisco
+Mandelbrot ─► Berry-Lewis1980 ─► Majumdar-Bhushan1990/91 ─► Yan-Komvopoulos1998
+   └─(self-affine) Palasantzas1993, Persson2001
+Whitehouse ─► Leefe1998/ISO13565 ─► Hu2019(bi-fractal) ─► Prajapati2024 ─► Harvey2025
+   └─[통합·비판] Borodich-Jin-Pepelyshev2020
+Ju-Farris1996 ─► Stanley-Kato1997 ─► Polonsky-Keer1999 ─► DC-FFT(Liu-Wang2000) ─► Müser2017
+   └─(E-P) Jacq-Nélias2002  └─(윤활) Hu-Zhu2000
+```
+
+### 4축 통합 계보 (개조식 풀이 — 직관 정리)
+
+**① 통계의 뿌리 — "표면을 파동의 합으로 본다" (축 C 근간)**
+- Fourier/Wiener–Khinchin: 표면을 여러 파장의 사인파 합으로 보고 PSD로 기술하는 토대.
+- Rice(1944) → Longuet-Higgins(1957): 그 파동 합(가우시안 랜덤필드)에서 "봉우리(극대점)가 단위면적당 몇 개·얼마나 높은가"를 처음 수학화.
+- **Nayak(1971): 이를 트라이볼로지로 가져와 $m_0,m_2,m_4$·대역폭 $\alpha$ 로 요약** → summit 밀도·곡률 공식 확립(이 줄기의 keystone).
+
+**② 통계로 접촉을 풀다 — 그러나 해상도에서 무너진다 (축 C 응용·위기)**
+- Greenwood–Williamson(1966): summit 통계를 Hertz에 넣어 실접촉·하중 계산(가장 많이 인용된 접촉모델).
+- Bush–Gibson–Thomas(1975)·McCool(1986): GW를 스펙트럼 모멘트로 엄밀화·실용화.
+- ★위기: Whitehouse–Archard(1970) "봉우리 곡률은 측정 간격에 의존" 경고 → **Greenwood–Wu(2001) "asperity 정의는 틀렸다"는 자기비판(apology)**. 즉 평균·summit 모델은 **해상도에 발이 묶임**.
+
+**③ 피크를 살리는 생성법 (축 A)**
+- Johnson(1949): 임의 skew·kurtosis를 만드는 변환계(통계학 뿌리).
+- Watson–Spedding(1982) → **★Hu–Tønder(1992): 디지털 필터로 목표 PSD+비가우시안을 동시 부여**(피크 보존 트렁크의 핵심).
+- Bakolas·Manesh·Francisco: 이방성·3D·하이브리드로 확장.
+
+**④ 프랙탈로 멀티스케일을 담다 (축 B — 프랙탈 분기)**
+- Mandelbrot → Berry–Lewis(1980): W–M 함수(자기닮음 거칠기의 수학).
+- Majumdar–Bhushan(1990/91): 접촉에 적용(프랙탈 접촉모델) → Yan–Komvopoulos(1998): 3D 확장.
+- 평행 분기(self-affine): Palasantzas(1993)·Persson(2001) — PSD 지수 $H$ 로 멀티스케일 기술.
+
+**⑤ 실측 표면의 진실 + 통합 비판 (축 B — 실측 분기, ★핵심 질문)**
+- Whitehouse → Leefe(1998)/ISO 13565: 실제 가공면은 **두 층(plateau+valley) = bi-Gaussian**.
+- Hu(2019): 층마다 다른 프랙탈 차원(bi-fractal) → Prajapati–Björling(2024): Weibull로 음의 skew 반영 → Harvey(2025): 베어링강 run-in 실측이 음의 skew·높은 kurtosis 확인.
+- ★**Borodich–Jin–Pepelyshev(2020): "단일-D도 PSD-only도 표면을 유일하게 못 정한다 → 조합 descriptor를 써라"** — 표현력 랭킹(A4.6)의 근거.
+
+**⑥ 피크를 압력으로 — FFT 해석 (축 D)**
+- Ju–Farris(1996, 스펙트럼 접촉 시조) → Stanley–Kato(1997, FFT+변분) → Polonsky–Keer(1999, CGM+FFT 표준 솔버) → **DC-FFT(Liu–Wang 2000, 비주기 오차 해결로 실용화)**.
+- Müser(2017) Challenge: "결정론 FFT는 정확하나 **격자 해상도가 관건**" 재확인(②의 해상도 경고와 호응).
+- 분기: 탄소성(Jacq–Nélias 2002 SAM), 윤활(Hu–Zhu 2000 — $h\to0$ 서 dry 접촉으로 축퇴).
+
+**⑦ 네 줄기가 어떻게 합류하는가 (4축 → 하나의 파이프라인)**
+- A·B(피크 보존 표면 생성) → C(피크·해상도·극값 통계로 "무엇을 봐야 하나" 규정) → D(FFT로 피크 압력) → 부록1(응력·피로).
+- **한 줄 요약: "표면을 옳게 만들고(A·B) → 피크를 옳게 세고(C) → 빠르게 눌러본다(D)."**
+- 공통 교훈(②·⑥ 공명): **해상도(컷오프)를 명시하지 않으면 피크는 재현 불가** — 4축 전체를 관통하는 단일 제약.
+
+### 영향도 트래커 (인용수 = SS/Crossref, 2026-06-30; GS는 1.5~2.5배)
+
+| 논문 | 저널 | 인용수 | 역할 | 베어링 표현력 |
+|---|---|---|---|---|
+| Greenwood–Williamson 1966 | Proc.R.Soc.A | ≈5,900 | 창시(통계 돌기) | 가우시안 한정 |
+| Nayak 1971 | J.Lubr.Technol. | ≈901 | 창시(스펙트럼 모멘트) | 기반 |
+| Majumdar–Bhushan 1991 | J.Tribol. | 1,284 | 창시(프랙탈 접촉) | 낮음(단일 D) |
+| DC-FFT Liu–Wang–Liu 2000 | Wear | 735 | 표준 도구(FFT) | 도구 |
+| Polonsky–Keer 1999 | Wear | 629 | 표준 솔버(CGM+FFT) | 도구 |
+| Hu–Zhu 2000 | J.Tribol. | 546 | 창시(윤활 결정론) | 도구(윤활) |
+| Liu–Wang 2002 | J.Tribol. | 349 | 응력 FFT | 도구 |
+| Hu–Tønder 1992 | IJMTM | 345 | ★창시(비가우시안 생성) | 높음(피크 보존) |
+| Müser et al. 2017 | Tribol.Lett. | 324 | 검증(해상도) | 도구 |
+| Stanley–Kato 1997 | J.Tribol. | 289 | 창시(FFT 접촉) | 도구 |
+| Jacq–Nélias 2002 | J.Tribol. | 282 | 창시(SAM 탄소성) | 도구 |
+| Yan–Komvopoulos 1998 | JAP | 686 | 확장(3D 프랙탈) | 중 |
+| Wu 2000 | Tribol.Int. | 253 | 확장(SRM/FFT) | 가우시안 |
+| Tian–Bhushan 1996 | J.Tribol. | 217 | 확장(변분 E-P) | 도구 |
+| Bakolas 2003 | Wear | 156 | 확장(비가우시안 3D) | 높음 |
+| Kotwal–Bhushan 1996 | Tribol.Trans. | 118 | 확장(비가우시안 접촉) | 중 |
+| Pohrt–Li 2014 | Phys.Mesomech. | 106 | 확장(FFT-BEM 마찰) | 도구 |
+| Manesh 2010 | Wear | 96 | 응용(이방·areal) | 높음 |
+| Watson–Spedding 1982 | Wear | 94 | 확장(ARMA+Johnson) | 높음 |
+| McCool 1992 | IJMTM | 79 | 확장(Weibull skew) | 중 |
+| Yu–Polycarpou 2004 | J.Tribol. | 59 / Pawar 2013 59 | 확장 | 중 |
+| Francisco–Brunetière 2016 | Proc.IMechE J | 33 | 응용(하이브리드 생성) | 높음 |
+
+`[CC?]` 미확보: Longuet-Higgins 1957, Johnson 1949(book/old), Whitehouse–Archard 1970, BGT 1975, McCool 1986, Persson 2001, Borodich 2020, Leefe 1998, Hu 2019, Prajapati 2024, Harvey 2025, Greenwood 2006 — Google Scholar 직접 재수집 권장.
+
+## A4.8 종합 + 연구확장 우선순위
+
+1. **피크 보존 정답 경로:** (실측 위상 보유) 측정 토포그래피 **또는** Hu–Tønder 디지털필터 + **비가우시안 marginal(음의 $S_{sk}$, 높은 $S_{ku}$)** → **DC-FFT 결정론 접촉(Polonsky–Keer/Stanley–Kato)** → 피크 압력분포 → 부록1 응력·피로.
+2. **해상도 규약 필수:** $m_4$/summit 발산 때문에 **컷오프·격자(돌기당 수 점)·대역폭을 명시**(Müser 2017, Greenwood–Wu 2001) — 안 하면 피크 압력 비재현.
+3. **베어링 표현력:** bi-Gaussian/stratified + 비가우시안 + PSD 조합(A4.6) 채택.
+4. **연구확장 후보(미개척):** 부록3과 결합 — 비가우시안 PSD 표면의 **윤활(Mixed EHL) 결정론 피크 압력 → 통계 응력 → 표면피로**를 닫는 것(부록3 A3.7.4 공백과 동일 표적).
+
+## A4.9 부록 4 참고문헌 [E#]
+
+**축 A** [E1] Wu 2000, *Tribol.Int.* 33(1):47–58, DOI 10.1016/S0301-679X(00)00016-5. [E2] Hu & Tønder 1992, *IJMTM* 32(1-2):83–90, DOI 10.1016/0890-6955(92)90064-N. [E3] Johnson 1949, *Biometrika* 36:149–176. [E4] Watson & Spedding 1982, *Wear* 83:215–231. [E5] Bakolas 2003, *Wear* 254:546–554. [E6] Manesh et al. 2010, *Wear* 268:1371–1379. [E7] Pawar et al. 2013, *J.Tribol.* 135:011401. [E8] Francisco & Brunetière 2016, *Proc.IMechE J* 230:747–768. [E9] Newland, *Random Vibrations…*, 3rd ed.
+
+**축 B** [E10] Berry & Lewis 1980, *Proc.R.Soc.A* 370:459–484. [E11] Majumdar & Bhushan 1990, *J.Tribol.* 112:205–216; [E12] 1991, *J.Tribol.* 113:1–11. [E13] Yan & Komvopoulos 1998, *JAP* 84:3617–3624. [E14] Palasantzas 1993, *PRB* 48:14472. [E15] Persson 2001, *JCP* 115:3840. [E16] Leefe 1998, *Tribol.Ser.* 34:281–290; ISO 13565-2/3. [E17] Hu et al. 2019, *Tribol.Int.* 134:427–434. [E18] Prajapati & Björling 2024, *Lubricants* 12(3):71. [E19] Harvey et al. 2025, *Surf.Topogr.* 13(3). [E20] **Borodich, Jin & Pepelyshev 2020, *Front.Mech.Eng.* 6:64.** [E21] Bhushan (ed.) 2001, *Modern Tribology Handbook*, CRC.
+
+**축 C** [E22] Longuet-Higgins 1957, *Phil.Trans.R.Soc.A* 250:157–174, DOI 10.1098/rsta.1957.0018. [E23] Nayak 1971, *J.Lubr.Technol.* 93:398–407, DOI 10.1115/1.3451608. [E24] Greenwood & Williamson 1966, *Proc.R.Soc.A* 295:300–319. [E25] Whitehouse & Archard 1970, *Proc.R.Soc.A* 316:97–121. [E26] Bush, Gibson & Thomas 1975, *Wear* 35:87–111. [E27] McCool 1986, *Wear* 107:37–60. [E28] McCool 1992, *IJMTM* 32:115–123. [E29] Kotwal & Bhushan 1996, *Tribol.Trans.* 39:890–898. [E30] Chilamakuri & Bhushan 1998, *Proc.IMechE J* 212:19–32. [E31] Yu & Polycarpou 2004, *J.Tribol.* 126:225–232. [E32] Greenwood & Wu 2001, *Meccanica* 36:617–630; Greenwood 2006, *Wear* 261:191–200. [E33] Jacobs, Junge & Pastewka 2017, *Surf.Topogr.* 5:013001. [E33b] Whitehouse & Phillips 1978, *Phil.Trans.R.Soc.A* 290:267–298. [E33c] Rice 1944/45, *Bell Syst.Tech.J.* 23:282 / 24:46. [E33d] Cartwright & Longuet-Higgins 1956, *Proc.R.Soc.A* 237:212–232. [E33e] Persson 2023, *Tribol.Lett.* 71:74 (arXiv:2304.02159) — $x_{\max}\approx\sqrt{2\ln N}\,x_{rms}$; Persson 2023, *Tribol.Lett.* 71:29 — max-height 파라미터 비신뢰성. [E33f] Ponthus et al. 2019, *Phys.Rev.E* 99:023004; Malekan & Rouhani 2019, *Friction* 7:327–339.
+
+**축 D** [E34] Ju & Farris 1996, *J.Tribol.* 118:320–328. [E35] Stanley & Kato 1997, *J.Tribol.* 119:481–485. [E36] Polonsky & Keer 1999, *Wear* 231:206–219. [E37] Liu, Wang & Liu 2000, *Wear* 243:101–111. [E38] Liu & Wang 2002, *J.Tribol.* 124:36–45. [E39] Tian & Bhushan 1996, *J.Tribol.* 118:33–42. [E40] Jacq, Nélias et al. 2002, *J.Tribol.* 124:653–667. [E41] Pohrt & Li 2014, *Phys.Mesomech.* 17:334–340. [E42] **Müser et al. 2017, *Tribol.Lett.* 65:118.** [E43] Hu & Zhu 2000, *J.Tribol.* 122:1–9.
+
+> **검증 메모:** 인용수는 SS/Crossref(2026-06-30), GS는 1.5~2.5배 — 절대값보다 **상대 영향도·계보 위치**가 목적. DOI 다수 확인, 일부 페이지·`[CC?]`는 원문/Scholar 대조 권장. McCool 1992의 1.4×/1.7×, Nayak 0.8968/α 계수는 2차자료 일관(원문 paywall). "Pawar–Sundararajan" 생성논문은 미발견 → Pawar–Pawlus–Etsion–Raeymaekers로 대체. 핵심 질문 #3 근거는 Borodich 2020[E20](원문 정독 권장).
 

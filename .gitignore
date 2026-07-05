@@ -1,2 +1,6 @@
 # GitHub 파일당 100MB 제한 초과로 push가 거부되는 대용량 PDF (git 추적 제외, 로컬 보관)
 논문 취합/03. 정리/2025. (SKF) Rolling bearing_tribology damage modes and life modelling .pdf
+
+# MinerU 중간 산출물(전체 논문명이 반복되는 깊은 경로 + 대용량 origin.pdf 사본) — 커밋 제외
+.mineru_out/
+**/.mineru_out/
