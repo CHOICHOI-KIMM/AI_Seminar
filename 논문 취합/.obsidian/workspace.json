@@ -4,53 +4,24 @@
     "type": "split",
     "children": [
       {
-        "id": "a105a915b0ef474b",
+        "id": "60ee0b9478d19203",
         "type": "tabs",
         "children": [
           {
-            "id": "3f1a5da42df48ede",
+            "id": "91df4521a1848ff0",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "03. 정리/논문 구현_P2-1_통합이론검토서_양식.md",
+                "file": "03. 정리/P1_추출_원자료_파일럿_M1M4.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "논문 구현_P2-1_통합이론검토서_양식"
-            }
-          },
-          {
-            "id": "bdd8bc68808e9cca",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "03. 정리/논문 구현_P2-2_검증데이터검토서_양식.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "논문 구현_P2-2_검증데이터검토서_양식"
-            }
-          },
-          {
-            "id": "095f3a0ccd28a796",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "03. 정리/논문 구현_P2-3_알고리즘검토서_양식.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "논문 구현_P2-3_알고리즘검토서_양식"
+              "title": "P1_추출_원자료_파일럿_M1M4"
             }
           }
-        ],
-        "currentTab": 2
+        ]
       }
     ],
     "direction": "vertical"
@@ -107,8 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 606.5,
-    "collapsed": true
+    "width": 606.5
   },
   "right": {
     "id": "8012113ae87356d2",
@@ -213,8 +183,19 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "095f3a0ccd28a796",
+  "active": "91df4521a1848ff0",
   "lastOpenFiles": [
+    "03. 정리/논문 구현_P2-1_통합이론검토서_파일럿_M1M4_초안.md",
+    "03. 정리/논문 구현_P2-2_검증데이터검토서_파일럿_M1M4_초안.md",
+    "03. 정리/P1_추출_원자료_파일럿_M1M4.md",
+    "03. 정리/논문 구현_P1-P2_무인병렬_실행계획.md",
+    "03. 정리/검토_큐_파일럿_M1M4.md",
+    "03. 정리/논문 구현_P2-3_알고리즘검토서_파일럿_M1M4_초안.md",
+    "03. 정리/논문 구현_P2-1_통합이론검토서_파일럿_M1M4_초안.md.tmp.33860.7dea00a6f4e6",
+    "03. 정리/논문 구현_P2-3_알고리즘검토서_양식.md",
+    "03. 정리/논문 구현_P1-P2_무인병렬_실행계획.md.tmp.33860.cd64bd83c806",
+    "03. 정리/2010. (Portu) Surface initiated tooth flank damage. Part II_Prediction of_7f7b10.md",
+    "03. 정리/2010. (Portu) Surface initiated tooth flank damage_Part I_Numerical model.md",
     "03. 정리/2008. (Mobil) An Experimental Investigation of Micropitting Using a Rolle_f32efa.md",
     "03. 정리/2008_Mobil_An_Experimental_Investigation/img_0014.jpg",
     "03. 정리/2008_Mobil_An_Experimental_Investigation/img_0013.jpg",
@@ -229,7 +210,6 @@
     "03. 정리/2008_Mobil_An_Experimental_Investigation",
     "03. 정리/논문 구현_P2-2_검증데이터검토서_양식.md",
     "03. 정리/논문 구현_P2-1_통합이론검토서_양식.md",
-    "03. 정리/논문 구현_P2-3_알고리즘검토서_양식.md",
     "03. 정리/2010. (SKF) Micro-Geometry Effects on the Sliding Friction Transition in Elastoh.md",
     "03. 정리/풍력_메인베어링_LDD_등가하중_이론정리.md",
     "03. 정리/2004. (MASTA) An alternative slicing technique.md",

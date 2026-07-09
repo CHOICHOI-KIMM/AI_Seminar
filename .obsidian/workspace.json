@@ -1,0 +1,262 @@
+{
+  "main": {
+    "id": "570a52f814ffe0d7",
+    "type": "split",
+    "children": [
+      {
+        "id": "28a85a540581acf3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "da057f4c463af349",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "논문 취합/03. 정리/논문 구현_연구자검토큐_통합.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "논문 구현_연구자검토큐_통합"
+            }
+          },
+          {
+            "id": "343b76c3e63e2d81",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.1.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "연구보고서_드라이브트레인_메인베어링_V0.1"
+            }
+          },
+          {
+            "id": "7584b1c68b240fdb",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "연구보고서_드라이브트레인_메인베어링_V0.2"
+            }
+          },
+          {
+            "id": "d0faa19f24b56e36",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Main bearing/01. 정리/연구보고서_수정사항.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "연구보고서_수정사항"
+            }
+          }
+        ],
+        "currentTab": 3
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "afb5fd899e1ed625",
+    "type": "split",
+    "children": [
+      {
+        "id": "d931cf457f3c35ff",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1c25fa60a853f0d4",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "파일 탐색기"
+            }
+          },
+          {
+            "id": "296f0d012b4be260",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "검색"
+            }
+          },
+          {
+            "id": "9dbef222e214a83b",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "북마크"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 490.5,
+    "collapsed": true
+  },
+  "right": {
+    "id": "ffd4c2560da4cca8",
+    "type": "split",
+    "children": [
+      {
+        "id": "0ac02364b54d4f7b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "642a36647d98ee98",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Main bearing/01. 정리/연구보고서_수정사항.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "연구보고서_수정사항 의 백링크"
+            }
+          },
+          {
+            "id": "7e3cdff64a06d852",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Main bearing/01. 정리/연구보고서_수정사항.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "연구보고서_수정사항 의 나가는 링크"
+            }
+          },
+          {
+            "id": "d87671f390e70752",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "태그"
+            }
+          },
+          {
+            "id": "ae62ef553e9ace3a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "모든 속성"
+            }
+          },
+          {
+            "id": "b03a1a2449d10e56",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Main bearing/01. 정리/연구보고서_수정사항.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "연구보고서_수정사항 의 개요"
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 281.5
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:빠른 전환기 열기": false,
+      "graph:그래프 뷰 열기": false,
+      "canvas:새 캔버스 만들기": false,
+      "daily-notes:오늘의 일일 노트 열기": false,
+      "templates:템플릿 삽입": false,
+      "command-palette:명령어 팔레트 열기": false,
+      "bases:새 베이스 생성하기": false
+    }
+  },
+  "active": "d0faa19f24b56e36",
+  "lastOpenFiles": [
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md",
+    "Main bearing/01. 정리/연구보고서_수정사항.md",
+    "Main bearing/01. 정리/연구보고서_수정사항.md.tmp.26588.17e324e17b46",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.1.md",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md.tmp.26588.d39ebb289348",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md.tmp.26588.92e9dfc51624",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md.tmp.26588.a55132371057",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md.tmp.26588.b451f269e9c5",
+    "Main bearing/01. 정리/설계보고서_드라이브트레인_메인베어링_V0.1.md",
+    "논문 취합/03. 정리/논문 구현_연구자검토큐_통합.md",
+    "논문 취합/03. 정리/논문구현_P3_총괄계획.md",
+    "논문 취합/03. 정리/논문구현_P3_총괄계획.md.tmp.34336.f735e1c5dc21",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md.tmp.26588.1271dce9d19e",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md.tmp.26588.399c53dbd5eb",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md.tmp.26588.2d323588d1c0",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md.tmp.26588.56aaef08d171",
+    "논문 취합/03. 정리/P1_보강_M3재추출_T3정정.md",
+    "논문 취합/03. 정리/검토_큐_잔여_통합.md",
+    "논문 취합/03. 정리/논문 구현_P2-3_알고리즘검토서_통합_M1-M6.md",
+    "논문 취합/03. 정리/논문 구현_P2-2_검증데이터검토서_통합_M1-M6.md",
+    "논문 취합/03. 정리/논문 구현_P2-1_통합이론검토서_통합_M1-M6.md",
+    "논문 취합/03. 정리/2003. (SKF) Frequency Response Functions and Rough Surface.md",
+    "논문 취합/03. 정리/2003_SKF_Frequency_Response_Functions_an/img_0005.jpg",
+    "논문 취합/03. 정리/2003_SKF_Frequency_Response_Functions_an/img_0006.jpg",
+    "논문 취합/03. 정리/2003_SKF_Frequency_Response_Functions_an/img_0003.jpg",
+    "논문 취합/03. 정리/2003_SKF_Frequency_Response_Functions_an/img_0002.jpg",
+    "논문 취합/03. 정리/2003_SKF_Frequency_Response_Functions_an/img_0004.jpg",
+    "논문 취합/03. 정리/2003_SKF_Frequency_Response_Functions_an/img_0001.jpg",
+    "Main bearing/01. 정리/연구보고서_전환계획.md"
+  ]
+}
