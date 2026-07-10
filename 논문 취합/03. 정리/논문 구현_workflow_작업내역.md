@@ -156,7 +156,7 @@
 | Workflow Run ID | `wf_ec5435b8-7c0` (Task `wk3as8mpq`) |
 | 에이전트 수 | **8** (에러 0) · ~542K 토큰 · ~25.7분 |
 | Phase | Phase0(crate+SSOT+util) → Phase1(M1/M2/M6 병렬) → Phase2(통합+G3 크리틱) |
-| crate 위치 | `Main bearing/01. 정리/논문구현_P3/micropitting-model/` |
+| crate 위치 | `논문 취합/03. 정리/논문구현_P3/micropitting-model/` |
 
 ### 독립 검증 (직접 `cargo test`)
 - ✅ **31 단위 + 1 통합(M1+M2→M6 하중보존)·doc-test 전부 통과, 0 실패.** 무인 생성 Rust가 실제 빌드·테스트됨.
