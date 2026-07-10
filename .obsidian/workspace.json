@@ -48,9 +48,23 @@
               "icon": "lucide-file",
               "title": "검토_큐_잔여_통합"
             }
+          },
+          {
+            "id": "a85b034bff7d8577",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "논문 취합/03. 정리/논문 구현_P2-1_통합이론검토서_통합_M1-M6.md",
+                "mode": "preview",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "논문 구현_P2-1_통합이론검토서_통합_M1-M6"
+            }
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -107,8 +121,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 490.5,
-    "collapsed": true
+    "width": 490.5
   },
   "right": {
     "id": "ffd4c2560da4cca8",
@@ -124,7 +137,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "논문 취합/03. 정리/검토_큐_잔여_통합.md",
+                "file": "논문 취합/03. 정리/논문 구현_P2-1_통합이론검토서_통합_M1-M6.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -134,7 +147,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "검토_큐_잔여_통합 의 백링크"
+              "title": "논문 구현_P2-1_통합이론검토서_통합_M1-M6 의 백링크"
             }
           },
           {
@@ -143,12 +156,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "논문 취합/03. 정리/검토_큐_잔여_통합.md",
+                "file": "논문 취합/03. 정리/논문 구현_P2-1_통합이론검토서_통합_M1-M6.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "검토_큐_잔여_통합 의 나가는 링크"
+              "title": "논문 구현_P2-1_통합이론검토서_통합_M1-M6 의 나가는 링크"
             }
           },
           {
@@ -186,13 +199,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "논문 취합/03. 정리/검토_큐_잔여_통합.md",
+                "file": "논문 취합/03. 정리/논문 구현_P2-1_통합이론검토서_통합_M1-M6.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "검토_큐_잔여_통합 의 개요"
+              "title": "논문 구현_P2-1_통합이론검토서_통합_M1-M6 의 개요"
             }
           }
         ],
@@ -214,20 +227,23 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "3a2e096227445221",
+  "active": "a85b034bff7d8577",
   "lastOpenFiles": [
-    "논문 취합/03. 정리/논문 구현_workflow_작업내역.md.tmp.34336.169719417e32",
+    "논문 취합/03. 정리/논문구현_P3_작업결과.md",
+    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/micropitting_model-2g52omqeskl89/s-hk8b4t0wiw-13go2au-2j9zkhwg66ai92tdt4wyo3yps/query-cache.bin",
+    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/micropitting_model-2g52omqeskl89/s-hk8b4t0wiw-13go2au-2j9zkhwg66ai92tdt4wyo3yps/work-products.bin",
+    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/micropitting_model-2g52omqeskl89/s-hk8b4t0wiw-13go2au-2j9zkhwg66ai92tdt4wyo3yps/f5g2i5ekae4xn7g6csug3btnc.o",
+    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/micropitting_model-2g52omqeskl89/s-hk8b4t0wiw-13go2au-2j9zkhwg66ai92tdt4wyo3yps/f4awrx2hsag14cgyo04wxohh0.o",
+    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/micropitting_model-2g52omqeskl89/s-hk8b4t0wiw-13go2au-2j9zkhwg66ai92tdt4wyo3yps/f270xgq7af8dnoitgk0r0thjc.o",
+    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/micropitting_model-2g52omqeskl89/s-hk8b4t0wiw-13go2au-2j9zkhwg66ai92tdt4wyo3yps/ey8yg0ovqfr4iik84i372zwa4.o",
+    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/micropitting_model-2g52omqeskl89/s-hk8b4t0wiw-13go2au-2j9zkhwg66ai92tdt4wyo3yps/ey9ms2l1p2wplgu2rna7ovw1n.o",
+    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/micropitting_model-2g52omqeskl89/s-hk8b4t0wiw-13go2au-2j9zkhwg66ai92tdt4wyo3yps/erjbl7ty94c8iub2jtsxppbcl.o",
+    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/micropitting_model-2g52omqeskl89/s-hk8b4t0wiw-13go2au-2j9zkhwg66ai92tdt4wyo3yps/erbpvit4fz69h9jay1lorvjzf.o",
+    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/micropitting_model-2g52omqeskl89/s-hk8b4t0wiw-13go2au-2j9zkhwg66ai92tdt4wyo3yps/eocxxbk7s2498035pjyfasos0.o",
+    "논문 취합/03. 정리/논문구현_P3/논문구현_P3_작업결과.md",
+    "논문 취합/03. 정리/논문구현_P3/D0_규약조정표.md",
+    "논문 취합/03. 정리/검토_큐_잔여_통합.md",
     "Main bearing/01. 정리/논문구현_P3/논문구현_P3_작업결과.md",
-    "Main bearing/01. 정리/논문구현_P3/micropitting-model/target/debug/deps/integration_m1m2_to_m6-c4b11c65603ead94.pdb",
-    "Main bearing/01. 정리/논문구현_P3/micropitting-model/target/debug/deps/integration_m1m2_to_m6-c4b11c65603ead94.exe",
-    "Main bearing/01. 정리/논문구현_P3/micropitting-model/target/debug/deps/rustcxTSel3/symbols.o",
-    "Main bearing/01. 정리/논문구현_P3/micropitting-model/target/debug/deps/rustcxTSel3/linker-arguments",
-    "Main bearing/01. 정리/논문구현_P3/micropitting-model/target/debug/deps/rustcxTSel3",
-    "Main bearing/01. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hk8b7kg8yg-1xu6dpu-9p0kwea560rv4yuf3s792w10b/work-products.bin",
-    "Main bearing/01. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hk8b7kg8yg-1xu6dpu-9p0kwea560rv4yuf3s792w10b/query-cache.bin",
-    "Main bearing/01. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hk8b7kg8yg-1xu6dpu-9p0kwea560rv4yuf3s792w10b/f0ix3w3g6uauhpcf4b1e7f611.o",
-    "Main bearing/01. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hk8b7kg8yg-1xu6dpu-9p0kwea560rv4yuf3s792w10b/e87qhd2v4r4kl7dl6kzjiefpv.o",
-    "Main bearing/01. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hk8b7kg8yg-1xu6dpu-9p0kwea560rv4yuf3s792w10b/dep-graph.bin",
     "Main bearing/01. 정리/논문구현_P3/D0_규약조정표.md",
     "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md",
     "논문 취합/03. 정리/논문 구현_연구자검토큐_통합.md",
@@ -236,7 +252,6 @@
     "Main bearing/01. 정리/설계보고서_드라이브트레인_메인베어링_V0.1.md",
     "논문 취합/03. 정리/논문구현_P3_총괄계획.md",
     "논문 취합/03. 정리/P1_보강_M3재추출_T3정정.md",
-    "논문 취합/03. 정리/검토_큐_잔여_통합.md",
     "논문 취합/03. 정리/논문 구현_P2-3_알고리즘검토서_통합_M1-M6.md",
     "논문 취합/03. 정리/논문 구현_P2-2_검증데이터검토서_통합_M1-M6.md",
     "논문 취합/03. 정리/논문 구현_P2-1_통합이론검토서_통합_M1-M6.md",
