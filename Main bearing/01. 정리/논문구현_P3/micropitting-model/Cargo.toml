@@ -1,0 +1,14 @@
+[package]
+name = "micropitting_model"
+version = "0.1.0"
+edition = "2021"
+
+# P3 Phase 0 — 공유 기반(shared foundation) crate.
+# 참조-재구현 원칙: CRB 코드는 알고리즘/계수 참조만. 직접 의존은 아래 3종 + dev.
+[dependencies]
+rustfft = "6"
+nalgebra = "0.33"
+rayon = "1"
+
+[dev-dependencies]
+approx = "0.5"

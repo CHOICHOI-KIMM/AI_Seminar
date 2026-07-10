@@ -139,4 +139,40 @@
 
 ---
 
+## 2026-07-09 — P3 착수 준비 (잔여큐 확정 + M1+M2+M6 구조)
+
+- ✅ **잔여 큐 확정**: [[검토_큐_잔여_통합]]의 RQ-01~14 해소경로 + C-1~C-10 조치를 **추천안대로 확정**(가정+민감도·전략 B·참조-재구현). P3 진입 승인.
+- ✅ **P3 착수 범위**: **부분윤활 서브시스템 M1+M2+M6 동시**(Phase 0 공유기반 → 병렬 3 → 통합). [[논문구현_P3_총괄계획]] §5.4 반영.
+- ✅ **환경**: cargo 1.95.0 · rustc 1.95.0 · Python 3.13.7 확인(무인 `cargo test` 가능).
+- ⏳ 다음: **Phase 0**(crate 스캐폴드·D0 규약조정표·공유 types/유틸·Python 오라클 venv·작업결과.md).
+
+---
+
+## 2026-07-09 — P3 실행: 부분윤활 서브시스템(M1+M2+M6) 무인
+
+### 실행 정보
+| 항목 | 값 |
+|---|---|
+| Workflow Run ID | `wf_ec5435b8-7c0` (Task `wk3as8mpq`) |
+| 에이전트 수 | **8** (에러 0) · ~542K 토큰 · ~25.7분 |
+| Phase | Phase0(crate+SSOT+util) → Phase1(M1/M2/M6 병렬) → Phase2(통합+G3 크리틱) |
+| crate 위치 | `Main bearing/01. 정리/논문구현_P3/micropitting-model/` |
+
+### 독립 검증 (직접 `cargo test`)
+- ✅ **31 단위 + 1 통합(M1+M2→M6 하중보존)·doc-test 전부 통과, 0 실패.** 무인 생성 Rust가 실제 빌드·테스트됨.
+- Phase0: SSOT 동결(**E_red 표준·SI·alpha 3분리**), `D0_규약조정표.md`, util 재구현(Hertz·Dowson-Toyoda(보정제외)·FFT) 회귀검증 통과. edition 2021.
+- 파일: types·units·util{hertz,film,fft}·m1_dry·m2_lub·m6_share + tests/integration.
+
+### G3 적대 크리틱 — **M1 pass · M2 fail · M6 fail** (green ≠ 검증)
+- **M1**: p_h 규약 불일치(types=peak vs 사용=mean), 하중∝도메인크기(매크로 R·w′ 미유도), flat 테스트 부분 tautology(단 Hertz 오라클은 진짜 검증). *(pass지만 위 3건 개선 권고)*
+- **M2**: ★**핵심 계수 Q 오라클 tautology** — Test5가 검증 대상 함수로 기대값을 생성 → 계수 24↔12·지수 |k|²↔|k|³ 오류도 통과. 독립 GW1994 정량점 부재, 가정(C=0·Barus·상보파) 민감도 부재, Nyquist 대칭 결함.
+- **M6**: ★**하중분담 폐합이 무인용 휴리스틱**(자유계수 k_film=0.5·c_film0=0.3 미표기), load_conservation이 구성상 항등(물리 검증 아님), compressibility 테스트가 지배효과와 반대방향, 이종 스펙트럼(간극 vs 유막) 혼합.
+
+### 판정 / 후속
+- **코드는 green이나 부분윤활 G3 미충족(M2/M6)** — 무인 하네스가 tautology·무인용을 정직하게 적발(human-gate 작동).
+- **Phase 1b 개선 라운드 필요**: M2 Q **독립 오라클**(손계산 수치 or 독립 Reynolds 단일모드 해)·M6 폐합 **출처화+실패가능 오라클(극한 phi→0/1, GW 닫힌형)+민감도**·M1 p_h 규약 수정 → 재크리틱 → 부분윤활 G3.
+- 산출: `논문구현_P3_작업결과.md`(crate 옆, 전체 상세).
+
+---
+
 **끝**
