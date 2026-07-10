@@ -201,7 +201,14 @@ pub struct MaterialProps {
 /// 접촉 운전 조건 (접촉 패치 기준, SI).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct OperatingConditions {
-    /// 최대 Hertz 압력 p_H [Pa].
+    /// **최대(peak) Hertz 압력** p_H = p0 [Pa]. (원 논문 Nomenclature 규약: peak.)
+    ///
+    /// M1(dry)에서 이 값은 거칠기 창(window) 위 **공칭(평균)압** `p̄` 로도 쓰인다:
+    /// 시료(창)가 Hertz 반접촉폭 a 보다 훨씬 작고(창≪a) 접촉 중앙에 위치하면
+    /// 국부 압력이 거의 균일 ≈ peak 이므로 `p̄ = p_h` (P2-1 §3 L202; ME 2003; ref(21)).
+    /// 따라서 창 목표하중 `W = p̄·A_window = p_h·Lx·Ly`. (peak↔mean 은 이 가정으로 일치;
+    /// M2 barus_visc·M6 c_ρ 도 동일하게 p_h 를 대표 Hertz압으로 사용.)
+    /// 창≪a 유효성은 잔여 가정(민감도 대상, RQ-M1-win).
     pub p_h: f64,
     /// 평균 구름속도(entrainment) u_mean = (u1+u2)/2 [m/s].
     pub u_mean: f64,

@@ -24,7 +24,8 @@ fn build_input() -> PartialLubInput {
     let dx = grid.dx();
     let dy = grid.dy();
 
-    // 표면 1, 2 거칠기 — 서로 다른 파장/진폭(평균 ~0), 진폭 O(0.1 μm).
+    // 표면 1, 2 거칠기 — 서로 다른 파장/진폭(평균 ~0), 진폭 O(0.2 μm).
+    // (진폭을 유막 h̄=10 nm 대비 충분히 크게 잡아 혼합윤활 접촉을 유발.)
     let kx1 = 2.0 * PI * 5.0 / lx;
     let ky1 = 2.0 * PI * 4.0 / ly;
     let kx2 = 2.0 * PI * 7.0 / lx;
@@ -35,8 +36,8 @@ fn build_input() -> PartialLubInput {
         for i in 0..nx {
             let x = i as f64 * dx;
             let y = j as f64 * dy;
-            rough1.set(i, j, 0.10e-6 * (kx1 * x).cos() * (ky1 * y).cos());
-            rough2.set(i, j, 0.08e-6 * (kx2 * x).sin() * (ky2 * y).sin());
+            rough1.set(i, j, 0.20e-6 * (kx1 * x).cos() * (ky1 * y).cos());
+            rough2.set(i, j, 0.16e-6 * (kx2 * x).sin() * (ky2 * y).sin());
         }
     }
 
@@ -48,7 +49,10 @@ fn build_input() -> PartialLubInput {
             e_red: E_RED_STEEL_PA,
             nu: NU_STEEL,
             hardness: 7.0e9,
-            p_lim: 4.0e9,
+            // 소성절단 비활성(≫peak): 본 스모크는 M1→M2→M6 하중분담 배선/보존을 격리 검증한다.
+            // p_lim 절단은 M1 자체 오라클(plastic_clamp_caps_pressure)이 담당하며, 여기서
+            // 절단이 작동하면 M1 이 하중을 잘라 배선 보존검사가 오염되므로 크게 둔다.
+            p_lim: 1.0e30,
         },
         op: OperatingConditions {
             p_h: 1.5e9,
@@ -60,7 +64,10 @@ fn build_input() -> PartialLubInput {
             tau0: 5.0e6,
             temp: 353.0,
         },
-        h_bar: 1.4e-7,
+        // 혼합윤활(mixed) 영역: 중앙유막 h̄ 를 거칠기 진폭(≈0.2 μm) 대비 얇게(10 nm) 잡아
+        // 아스페리티 접촉이 실제로 발생하도록(interior phi_bl). 완전분리(두꺼운 유막)면
+        // 물리적으로 phi_bl→0 이 옳으므로, M6 하중분담의 실검증에는 혼합영역이 필요하다.
+        h_bar: 1.0e-8,
     }
 }
 
@@ -102,9 +109,12 @@ fn m1m2_to_m6_load_conservation_and_finite() {
         *v += input.op.p_h;
     }
 
-    // ── M6: 실결선 하중분담 결합 ──
+    // ── M6: 실결선 flow-balance 하중분담 결합 ──
+    // p_tran 탄성복원(식[258]) 은 E_red·p_lim 을 SharePolicy 로 받는다.
     let policy = SharePolicy {
         w_total: w_target,
+        e_red: input.mat.e_red,
+        p_lim: input.mat.p_lim,
         ..Default::default()
     };
     let (res, trace) =
@@ -113,21 +123,31 @@ fn m1m2_to_m6_load_conservation_and_finite() {
     // 유한성.
     assert!(res.p_tran.data.iter().all(|v| v.is_finite()), "p_tran non-finite");
     assert!(res.h_tran.data.iter().all(|v| v.is_finite()), "h_tran non-finite");
+    // cavitation: p_tran ≥ 0.
+    assert!(res.p_tran.data.iter().all(|&v| v >= 0.0), "p_tran must be ≥0 (cavitation)");
     // 차원 계약.
     assert_eq!(res.p_tran.nx, grid.nx);
     assert_eq!(res.p_tran.ny, grid.ny);
     assert_eq!(res.h_tran.len(), grid.len());
-    // phi_bl 내부값.
+    // 혼합영역: phi_bl 내부값 + 실제 아스페리티 접촉 발생(영역 재식별 유효).
     assert!(res.phi_bl > 0.0 && res.phi_bl < 1.0, "phi_bl not interior: {}", res.phi_bl);
+    assert!(
+        trace.contact_count > 0 && trace.contact_count < grid.len(),
+        "expected partial asperity contact, got {} / {}",
+        trace.contact_count,
+        grid.len()
+    );
 
-    // ── 하중 보존: ∫p_tran dA = W (엄밀 보존, 반올림 오차만) ──
+    // ── 하중 보존(회귀 가드): ∫p_tran dA ≈ W (탄성복원 DC 보존; cavitation 절단 오차만) ──
     let w_tran: f64 = res.p_tran.data.iter().map(|&p| p * da).sum();
     assert!(
-        (w_tran - w_target).abs() / w_target < 1e-3,
+        (w_tran - w_target).abs() / w_target < 5e-2,
         "M6 load not conserved: {w_tran:.6e} vs W={w_target:.6e} (resid trace={})",
         trace.load_residual
     );
-    assert!(trace.load_residual < 1e-3, "trace load_residual {}", trace.load_residual);
+    assert!(trace.load_residual < 5e-2, "trace load_residual {}", trace.load_residual);
+    // flow-balance 절차⑤ 항등: mean(h_tran)=c_ρ·h̄.
+    assert!(trace.flow_balance_residual < 1e-9, "flow-balance residual {}", trace.flow_balance_residual);
     assert!(trace.converged, "flow-balance did not converge in {} iters", trace.iters);
     assert!(w_target > 0.0);
 }

@@ -48,7 +48,19 @@ const TOL: f64 = 1e-8;
 /// 건식 rough 접촉 해석.
 ///
 /// 복합 표면 `s = rough1 + rough2`(평균 0) 로부터 미변형 간극 `h = max(s) − s ≥ 0` 을
-/// 구성하고, 목표하중 `W = p_h · Lx · Ly` (평균압력 규약; RQ 참조) 로 FFT 변분 접촉을 푼다.
+/// 구성하고, **매크로 Hertz 기하에서 유도된 창 목표하중** `W = p̄·A_window` 로 FFT
+/// 변분 접촉을 푼다.
+///
+/// ## 목표하중의 근거 (M1-1/M1-2 조치)
+/// * `op.p_h` = **최대(peak) Hertz압** p0 (types 규약). 매크로 선접촉에서는
+///   `p_h = hertz_line(w', E_red, R).p0` 로 매크로 기하(w'[N/m], R[m])에 소급된다
+///   ([`crate::util::hertz::hertz_line`], 재사용 #2). 즉 하중은 격자가 아니라 매크로
+///   기하에서 나온다.
+/// * 창(window)이 Hertz 반접촉폭 a 보다 훨씬 작고 중앙에 있으면 국부압이 균일 ≈ peak
+///   이므로 창 위 **공칭(평균)압** `p̄ = p_h` (P2-1 §3 L202; ME 2003; ref(21)).
+/// * 따라서 창 목표하중 `W = p̄·A_window = p_h·Lx·Ly`. 이는 **해상도(nx,ny) 불변**이며
+///   창 면적에 비례(공칭압 고정 시 물리적으로 정당) — 매크로 하중 w' 은 p_h 를 통해 반영.
+///   창≪a 유효성은 잔여 가정(민감도 대상, RQ-M1-win).
 ///
 /// 반환: [`DryResult`] { `p_dry` [Pa], `h_dry` [m] }.
 pub fn solve_dry(input: &PartialLubInput) -> DryResult {
@@ -72,7 +84,10 @@ pub fn solve_dry(input: &PartialLubInput) -> DryResult {
     let gap0_data: Vec<f64> = s.iter().map(|&si| s_max - si).collect();
     let gap0 = Field2::from_vec(nx, ny, gap0_data);
 
-    // 목표하중 W = p_h · Lx · Ly  (평균압력 = p_h 규약; 매크로 곡률·R 미제공으로 인한 가정 — RQ)
+    // 창 목표하중 W = p̄·A_window = p_h·Lx·Ly.
+    //   p̄(공칭 평균압) = p_h(peak) : 창≪Hertz 반접촉폭 a 가정 (P2-1 §3 L202; ME2003; ref21).
+    //   p_h 는 매크로 Hertz peak p0 = hertz_line(w',E_red,R).p0 로 매크로 기하에 소급(재사용#2)
+    //   → 하중은 격자가 아니라 매크로 기하(w',R)에서 유도됨. 해상도(nx,ny) 불변, 창면적 비례.
     let target_load = input.op.p_h * g.lx * g.ly;
 
     dry_contact(g, &gap0, input.mat.e_red, input.mat.p_lim, target_load)
@@ -348,7 +363,9 @@ mod tests {
         }
     }
 
-    /// solve_dry 스모크: 평탄 표면(거칠기 0) → 균일 압력 = 평균압력 규약(p_h).
+    /// **회귀 가드**(물리검증 아님): 평탄 표면(거칠기 0)에서는 asperity 집중이 없어
+    /// peak=mean 이 붕괴 없이 일치 → 전점 압력 ≈ 공칭압 p̄=p_h. 목표하중 정규화·균일간극
+    /// 처리를 지키는지 확인(자기충족 회피용 물리검증은 아래 두 오라클로 이관).
     #[test]
     fn solve_dry_flat_uniform_pressure() {
         let inp = dummy_input();
@@ -359,6 +376,99 @@ mod tests {
         let pmin = r.p_dry.min().unwrap();
         assert!((pmax - inp.op.p_h).abs() / inp.op.p_h < 1e-3);
         assert!((pmin - inp.op.p_h).abs() / inp.op.p_h < 1e-3);
+    }
+
+    /// **독립 오라클 (M1-2/M1-3)**: 창 목표하중을 *매크로 Hertz 기하*(w',R)에서
+    /// [`hertz_line`](crate::util::hertz::hertz_line) 로 **독립 산출**한 p_h 로 부과하고,
+    /// rough 표면에 대해 solve_dry 가 그 하중을 지키며 물리적으로 옳게 재분배하는지 검증.
+    ///
+    /// tautology 회피: 기대 공칭압 p_h 는 검증 대상(solve_dry)이 아니라 독립 모듈
+    /// hertz_line 에서 유도. 실패가능 물리성분:
+    ///  (a) 하중보존 ∑p·dA = p_h·A_window (매크로 기하 유도값과 대조),
+    ///  (b) asperity 집중 ⇒ peak p_max > 공칭 p_h (평탄해엔 없는 성질),
+    ///  (c) 골 분리 ⇒ 최소압 = 0 (부분접촉),
+    ///  (d) 해상도(nx) 배가에도 공칭 평균압 불변 (M1-2: 하중 ∝ 도메인 오용 회귀검출).
+    #[test]
+    fn rough_window_load_traces_to_macro_hertz() {
+        let e_red = E_RED_STEEL_PA;
+        // 매크로 선접촉 기하 → 독립적으로 peak p0 = 공칭 p̄ 산출.
+        let w_per_len = 1.0e5_f64; // [N/m]
+        let r_macro = 0.01_f64; // [m]
+        let (p_h, _b) = hertz_line(w_per_len, e_red, r_macro);
+        assert!(p_h > 0.0);
+
+        // 창(window): Hertz 반접촉폭 대비 작은 로컬 패치 + 단일주파수 거칠기.
+        let nx = 64usize;
+        let ny = 4usize;
+        let lx = 2.0e-5_f64; // ≪ b(≈1e-4) : 창≪a 가정 근접
+        let ly = 2.0e-5_f64;
+        let grid = Grid::new(nx, ny, lx, ly);
+        // 거칠기: 진폭 0.2 µm 코사인 파(평균 0). asperity/valley 유발.
+        let amp = 0.2e-6_f64;
+        let mut r1 = vec![0.0f64; nx * ny];
+        for j in 0..ny {
+            for i in 0..nx {
+                let x = i as f64 / nx as f64;
+                r1[i + j * nx] = amp * (2.0 * PI * 3.0 * x).cos();
+            }
+        }
+        let rough1 = Field2::from_vec(nx, ny, r1);
+        let rough2 = Field2::zeros(nx, ny);
+
+        let mut inp = dummy_input();
+        inp.grid = grid;
+        inp.rough1 = rough1;
+        inp.rough2 = rough2;
+        inp.op.p_h = p_h; // 독립 산출한 공칭압 부과
+        inp.mat.e_red = e_red;
+        inp.mat.p_lim = 1.0e30; // 소성절단 비활성(탄성 물리만 검증)
+
+        let res = solve_dry(&inp);
+
+        // (a) 하중보존: ∑p·dA == 매크로 기하 유도 W = p_h·A_window
+        let da = grid.dx() * grid.dy();
+        let load: f64 = res.p_dry.data.iter().sum::<f64>() * da;
+        let w_expected = p_h * lx * ly;
+        assert!(
+            (load - w_expected).abs() / w_expected < 1e-3,
+            "load {:.4e} vs macro-derived W {:.4e}",
+            load,
+            w_expected
+        );
+        // 공칭 평균압이 독립 p_h 와 일치
+        let mean_p = load / (lx * ly);
+        assert!((mean_p - p_h).abs() / p_h < 1e-3, "mean {:.4e} vs p_h {:.4e}", mean_p, p_h);
+
+        // (b) asperity 집중: peak > 공칭 p_h (평탄해면 등호 → 이 부등식이 rough 물리 검출)
+        let pmax = res.p_dry.max().unwrap();
+        assert!(pmax > p_h * 1.05, "no asperity concentration: pmax {:.4e} vs p_h {:.4e}", pmax, p_h);
+
+        // (c) 골 분리: 최소압 = 0 (부분접촉)
+        let pmin = res.p_dry.min().unwrap();
+        assert!(pmin <= p_h * 1e-6, "no valley separation: pmin {:.4e}", pmin);
+
+        // (d) 해상도 배가에도 공칭 평균압 불변 (하중 ∝ 도메인 오용 회귀검출)
+        let nx2 = 128usize;
+        let mut r1b = vec![0.0f64; nx2 * ny];
+        for j in 0..ny {
+            for i in 0..nx2 {
+                let x = i as f64 / nx2 as f64;
+                r1b[i + j * nx2] = amp * (2.0 * PI * 3.0 * x).cos();
+            }
+        }
+        let mut inp2 = inp.clone();
+        inp2.grid = Grid::new(nx2, ny, lx, ly); // 동일 물리도메인, 배가 해상도
+        inp2.rough1 = Field2::from_vec(nx2, ny, r1b);
+        inp2.rough2 = Field2::zeros(nx2, ny);
+        let res2 = solve_dry(&inp2);
+        let da2 = inp2.grid.dx() * inp2.grid.dy();
+        let mean_p2 = res2.p_dry.data.iter().sum::<f64>() * da2 / (lx * ly);
+        assert!(
+            (mean_p2 - p_h).abs() / p_h < 1e-3,
+            "mean pressure resolution-dependent: {:.4e} vs {:.4e}",
+            mean_p2,
+            p_h
+        );
     }
 
     /// **오라클**: 매끈 선접촉 → FFT 변분해가 Hertz p0(최대압) 를 재현(상대오차 ≤ 2%).
