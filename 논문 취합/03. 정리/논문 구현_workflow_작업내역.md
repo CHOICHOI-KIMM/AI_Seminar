@@ -229,6 +229,23 @@
 
 ---
 
+## 2026-07-13 — Phase 1b-r1: 잔여 RQ 조치 반영 (Roelands·하중재균형·hbar 유지)
+
+### 업무
+- 연구자 결정 3건을 코드에 직접 반영(무인 아님·직접 편집 + 독립 cargo test). 커밋 `270f4ed` (branch `phase1b-remediation`, 날짜접두어 규약 적용).
+
+### 반영 내용
+- **RQ-3 (M2) → Roelands 도입**: `m2_lub::roelands_visc`(`c_p=1.96e8`, `Z=α·c_p/(ln η0+9.67)`)로 Barus 캡(`BARUS_ARG_CAP`) 폐기. η@1.5GPa `exp(30)≈1e11 Pa·s`(비물리)→유계, 저압 Barus 1차정합. test `roelands_bounded_and_low_p_matches_barus`. **RQ-3 해소**.
+- **CV-M6-Load → A안 즉시**: `m6_share::recover_p_tran` 에 균일오프셋 이분법 재균형(강체접근량) 추가 → `∫p_tran·dA=W` 강제(cavitation 절단분 복원). load_residual **~1.9%→≤0.1%**(허용치 `5e-2→1e-3`). `w_total≤0` 이면 비활성 → 식[258] 독립오라클 보존.
+- **RQ-M6-hbar → 현재식 유지**: `h̄=mean(h_lub)`(Dowson–Toyoda) 무변경(가정 확정).
+
+### 검증 / 판정
+- 독립 cargo test **41 단위 + 1 통합 green**. 자의적 계수 없음(Roelands Z=α 소급, A안=M1 Polonsky–Keer 하중정규화 원리). 매끈가드·물리 극한 오라클 유지.
+- 문서: `작업결과.md` 결정 블록·게이지 갱신.
+- **미결**: RQ-M6-cρ(φ_bl vs 1−φ_bl 민감도)·RQ-vel(M2 대류속도)·B안(Phase 2 물리충실 하중루프).
+
+---
+
 ## 누적 요약 (2026-07-05 ~ 07-13, 갱신)
 - Workflow **5회**(파일럿·확장·최종화·P3 최초·**Phase 1b**) + Tripp PDF 파이프라인 1회. 에이전트 누계 **77개·에러 0**.
 - **P1→G1→P2 전 6모델 완료** → **P3 부분윤활 서브시스템 M1+M2+M6 구현·G3 통과**(Rust crate, cargo test 41+1 green). main 안정 + `phase1b-remediation` 브랜치.

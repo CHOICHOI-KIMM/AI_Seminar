@@ -803,6 +803,21 @@ mod tests {
     //  c_ρ 압축성 보정 (원 논문 nomenclature 식)
     // ═══════════════════════════════════════════════════════════════════════
 
+    /// **RQ-M6-cρ 검증(①②)**: `c_ρ` 가 논문 Dowson–Higginson 밀도식 값을 재현하는지 독립 대조.
+    /// `φ_bl=1` 로 밀도식을 분리(φ_bl 인자 선택과 무관한 계수·형태 검증). ① 대압 점근값 =
+    /// 논문 명시 계수 1.34 (P2-2 G-M6-2). ② 교과서 D–H `ρ/ρ₀=(0.59+1.34p)/(0.59+p)` [p:GPa]
+    /// 스팟값(소수 하드코딩·수식 재계산 아님) vs 코드 — 계수(0.59,1.34) 오류 시 FAIL(자기충족 아님).
+    #[test]
+    fn c_rho_reproduces_dowson_higginson_values() {
+        // ② D–H 독립 스팟값(소수 하드코딩).
+        assert!((c_rho(1.0, 0.5e9) - 1.155963).abs() < 1e-4, "D-H @0.5GPa");
+        assert!((c_rho(1.0, 1.0e9) - 1.213836).abs() < 1e-4, "D-H @1.0GPa");
+        assert!((c_rho(1.0, 1.5e9) - 1.244019).abs() < 1e-4, "D-H @1.5GPa (운전점)");
+        assert!((c_rho(1.0, 2.0e9) - 1.262548).abs() < 1e-4, "D-H @2.0GPa");
+        // ① 대압 점근값 → 논문 명시 계수 1.34.
+        assert!((c_rho(1.0, 1.0e15) - 1.34).abs() < 1e-3, "asymptote → paper 1.34");
+    }
+
     /// c_ρ: `c_ρ(0,·)=1`, `φ·p̄` 단조증가, 상한 1.34 (식 nomenclature).
     #[test]
     fn c_rho_properties() {
@@ -813,8 +828,7 @@ mod tests {
         let c = c_rho(1.0, 3.0e9);
         assert!(a > 1.0 && b > a && c > b, "c_rho not monotonic increasing in φ·p̄");
         assert!(c < 1.34 + 1e-9, "c_rho upper bound 1.34 violated: {c}");
-        // 독립 손계산: φ=1, p̄=1.5GPa → (0.59+1.34·1.5)/(0.59+1.5)=2.6/2.09.
-        assert_relative_eq!(c_rho(1.0, 1.5e9), 2.6 / 2.09, max_relative = 1e-12);
+        // (정량 스팟값·점근 대조는 c_rho_reproduces_dowson_higginson_values 로 이관 — 자기충족 제거.)
     }
 
     /// **c_ρ 2차효과 격리(M6-3)**: p̄↑ → c_ρ↑ → h_sep↑ → phi_bl↓ (밀도 2차경로).
