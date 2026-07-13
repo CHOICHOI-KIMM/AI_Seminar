@@ -34,9 +34,9 @@
 //! 소성 발생 시 `p_tran ≤ p_lim`, cavitation(음압) 시 `p_tran = 0`(원 논문 L261).
 //!
 //! ## 잔여 가정(가정+민감도; 침묵 선택 금지)
-//! * **RQ-M6-cρ (G-M6-2)**: `c_ρ` 압력인자로 `phi_bl`(dry분율)을 채택 — 두 독립출처
-//!   ([21] L411 · 원 논문 nomenclature) 모두 `phi_bl` 로 일치(원문 충실). 물리적으로는
-//!   유막부담분율 `(1−phi_bl)` 예상 → **물리해석 미검증**, `(1−phi_bl)` 대안 민감도 대상.
+//! * **RQ-M6-cρ (G-M6-2) [확정]**: `c_ρ` 압력인자 = `phi_bl` — 두 독립출처([21] L411 ·
+//!   원 논문 nomenclature) 일치(원문 충실) + D–H 밀도식 논문값 재현 검증
+//!   (`c_rho_reproduces_dowson_higginson_values`). `(1−phi_bl)` 대안은 **불필요**(연구자 결정).
 //! * **RQ-M6-tol (G-M6-3)**: flow-balance 수렴 tol·해법(이분법)은 논문 미제공 →
 //!   가정([21] §4.2-7 `ε∈[1e-4,1e-3]`; [23] App. II). 이분법은 (23) flow-balance 근을
 //!   단조성 기반으로 확정하는 강건형(under-relaxation 상위호환).
@@ -61,8 +61,9 @@ use std::f64::consts::PI;
 ///
 /// 인자(SI): `phi_bl`[-], `p_bar_pa`[Pa](내부에서 GPa 로 무차원화).
 ///
-/// 근거: P2-1 L148·P2-3 L203·P2-2 M6-2. 압력인자 `phi_bl` 채택은 두 독립출처 일치
-/// (원문 충실); 물리해석 미검증(`(1−phi_bl)` 대안 민감도) — 모듈 doc RQ-M6-cρ.
+/// 근거: P2-1 L148·P2-3 L203·P2-2 M6-2. 압력인자 `phi_bl` 은 두 독립출처 일치(원문 충실)
+/// + D–H 논문값 재현 검증(`c_rho_reproduces_dowson_higginson_values`)으로 **확정**;
+/// `(1−phi_bl)` 대안 불필요(연구자 결정).
 pub fn c_rho(phi_bl: f64, p_bar_pa: f64) -> f64 {
     let x = phi_bl.max(0.0) * (p_bar_pa.max(0.0) / 1.0e9); // φ_bl·p̄ [GPa 관례]
     (0.59 + 1.34 * x) / (0.59 + x)
