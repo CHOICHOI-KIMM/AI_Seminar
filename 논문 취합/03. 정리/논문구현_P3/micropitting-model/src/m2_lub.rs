@@ -125,10 +125,10 @@ pub fn roelands_visc(eta0: f64, alpha_visc: f64, p: f64) -> f64 {
 ///
 /// 계수 24(=48/E')·지수 |k|³ 은 `q_independent_oracle_from_eq2` 가 식[2] 손유도로 독립 강제.
 ///
-/// 주의(잔여큐 RQ-vel): 특수해는 표면2 거칠기와 함께 `u₂` 로 이동하므로 대류속도는
-/// 평균구름 `ū` 가 아니라 `(u₂−ū)=−Δu/2`(미끄럼 절반)이다. 현 [`solve_full_film`] 은
-/// op 속도필드(`u2`,`u_mean`,`slide_roll`)의 상호일관성 미확정 + 상보파(`ū` 전파) 미구현
-/// 으로 잠정 `op.u_mean` 을 대입한다(식[2] 근거값은 `(u₂−ū)`; 오케스트레이터 판단 대기).
+/// 대류속도: 특수해는 표면2 거칠기와 함께 `u₂` 로 이동하므로 `(u₂−ū)=−Δu/2`(미끄럼 절반).
+/// [`solve_full_film`] 은 이를 `u_conv=−slide_roll·u_mean/2` 로 결선한다(식[2] 대로).
+/// 상보파(`ū` 전파·비뉴턴 감쇠, 식[7][8])는 별도 미구현 → 순수 rolling(`u₂→ū`) 근처
+/// 특수해 리플이 0 으로 과소예측(잔여: 상보파 Phase). 이때 리플은 상보파가 담당.
 pub fn amplitude_q(
     eta_eff: f64,
     u_conv: f64,
@@ -250,6 +250,8 @@ pub fn solve_full_film(input: &PartialLubInput) -> LubResult {
     let eta_local = roelands_visc(op.eta0, op.alpha_visc, op.p_h);
     let d_u = (op.slide_roll * op.u_mean).abs(); // |Δu| = |SRR|·u_mean
     let gamma_s = if h0 > 0.0 { d_u / h0 } else { 0.0 };
+    // 식[2] 특수해 대류속도 (u₂−ū) = −Δu/2 = −slide_roll·u_mean/2 (RQ-vel: 논문대로 정의).
+    let u_conv = -0.5 * op.slide_roll * op.u_mean;
     let tau0 = op.tau0;
     let c_comp = 0.0_f64; // 비압축·등점도 극한(상보파 Phase 에서 C≠0 정밀화; RQ-2)
 
@@ -283,10 +285,10 @@ pub fn solve_full_film(input: &PartialLubInput) -> LubResult {
                 continue;
             }
             let eta_mode = directional_visc(eta_local, gamma_s, tau0, kx, ky);
-            // NOTE(RQ-vel): 식[2] 근거 대류속도는 (u₂−ū)=−Δu/2 이나, op 속도필드 상호
-            // 일관성 미확정+상보파(ū 전파) 미구현으로 잠정 op.u_mean 대입(오케스트레이터
-            // 판단 대기). amplitude_q 계수24·|k|³ 는 q_independent_oracle_from_eq2 로 독립검증.
-            let q = amplitude_q(eta_mode, op.u_mean, h0, kx, k_mag, e_red);
+            // 식[2] 특수해 대류속도 = (u₂−ū) = −Δu/2 (위 u_conv). 상보파(ū 전파·비뉴턴
+            // 감쇠, 식[7][8])는 별도 미구현 → 순수 rolling(u₂→ū) 근처 특수해 리플 과소예측
+            // (잔여: 상보파 Phase). amplitude_q 계수24·|k|³ 는 q_independent_oracle_from_eq2 독립검증.
+            let q = amplitude_q(eta_mode, u_conv, h0, kx, k_mag, e_red);
             let mut pt = pressure_ripple_transfer(k_mag, e_red, q, c_comp);
             let mut ht = film_ripple_transfer(k_mag, e_red, q, c_comp);
             // M2-4: x-Nyquist bin(짝수 nx, a=nx/2)은 ±kx 가 동일 bin 으로 접혀 kx 부호가
@@ -340,7 +342,7 @@ mod tests {
         OperatingConditions {
             p_h: 1.5e9,
             u_mean: 1.0,
-            u2: 0.9,
+            u2: 0.95, // = u_mean − slide_roll·u_mean/2 (u_mean·slide_roll 규약 정합)
             slide_roll: 0.1,
             eta0: 0.01,
             alpha_visc: 2e-8,
@@ -475,7 +477,8 @@ mod tests {
         let eta_local = roelands_visc(input.op.eta0, input.op.alpha_visc, input.op.p_h);
         let gamma_s = (input.op.slide_roll * input.op.u_mean).abs() / input.h_bar;
         let eta_mode = directional_visc(eta_local, gamma_s, input.op.tau0, kx, 0.0);
-        let q = amplitude_q(eta_mode, input.op.u_mean, input.h_bar, kx, k_mag, input.mat.e_red);
+        let u_conv = -0.5 * input.op.slide_roll * input.op.u_mean; // 식[2] (u₂−ū)
+        let q = amplitude_q(eta_mode, u_conv, input.h_bar, kx, k_mag, input.mat.e_red);
         let p_gain = pressure_ripple_transfer(k_mag, input.mat.e_red, q, 0.0).norm();
         let h_gain = film_ripple_transfer(k_mag, input.mat.e_red, q, 0.0).norm();
 
@@ -688,7 +691,8 @@ mod tests {
         let eta_local = roelands_visc(input.op.eta0, input.op.alpha_visc, input.op.p_h);
         let gamma_s = (input.op.slide_roll * input.op.u_mean).abs() / input.h_bar;
         let eta_mode = directional_visc(eta_local, gamma_s, input.op.tau0, kx, ky);
-        let q = amplitude_q(eta_mode, input.op.u_mean, input.h_bar, kx, k_mag, input.mat.e_red);
+        let u_conv = -0.5 * input.op.slide_roll * input.op.u_mean; // 식[2] (u₂−ū)
+        let q = amplitude_q(eta_mode, u_conv, input.h_bar, kx, k_mag, input.mat.e_red);
         let t_re = pressure_ripple_transfer(k_mag, input.mat.e_red, q, 0.0).re; // 실수투영분
         // Nyquist 는 자명 실수(Im(T)=0 아님 → 실수투영이 반드시 필요).
         let t_full = pressure_ripple_transfer(k_mag, input.mat.e_red, q, 0.0);

@@ -57,7 +57,7 @@ fn build_input() -> PartialLubInput {
         op: OperatingConditions {
             p_h: 1.5e9,
             u_mean: 1.0,
-            u2: 0.9,
+            u2: 0.95, // = u_mean − slide_roll·u_mean/2 (u_mean·slide_roll 규약 정합)
             slide_roll: 0.1,
             eta0: 0.01,
             alpha_visc: 2.0e-8,
