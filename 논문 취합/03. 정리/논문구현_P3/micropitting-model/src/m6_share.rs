@@ -388,6 +388,9 @@ pub fn combine_share_traced(
         p_tran,
         h_tran,
         phi_bl: phi,
+        // 마찰 트랙션은 μ 물성을 아는 상위 오케스트레이터(partial_lub)가 채운다.
+        // 순수 커널(M6)은 μ 를 모르므로 0 placeholder (단일책임 유지).
+        q_tran: Field2::zeros(nx, ny),
     };
     let trace = ShareTrace {
         phi_history: history,

@@ -9,6 +9,7 @@
 use micropitting_model::m1_dry::solve_dry;
 use micropitting_model::m2_lub::solve_full_film;
 use micropitting_model::m6_share::{combine_share_traced, SharePolicy};
+use micropitting_model::partial_lub::{solve_partial_traced, MU_BL, MU_EHL};
 use micropitting_model::types::{
     Field2, Grid, MaterialProps, OperatingConditions, PartialLubInput, E_RED_STEEL_PA, NU_STEEL,
 };
@@ -150,4 +151,42 @@ fn m1m2_to_m6_load_conservation_and_finite() {
     assert!(trace.flow_balance_residual < 1e-9, "flow-balance residual {}", trace.flow_balance_residual);
     assert!(trace.converged, "flow-balance did not converge in {} iters", trace.iters);
     assert!(w_target > 0.0);
+}
+
+/// Phase 2 완전결합 solver(`partial_lub::solve_partial`) 공개 API 실결선 스모크.
+///
+/// 크레이트 외부에서 `PartialLubInput` → `PartialLubResult{p_tran,h_tran,phi_bl,q_tran}` 를
+/// 한 번에 산출: 하중보존(CV-M6-Load ≤0.1%)·φ_bl∈[0,1]·마찰 트랙션 q=μ·p 를 확인한다.
+#[test]
+fn partial_lub_solve_partial_end_to_end() {
+    let input = build_input(); // 혼합윤활(h̄=10nm) 입력 재사용.
+    let grid = input.grid;
+    let da = grid.dx() * grid.dy();
+    let w_target = input.op.p_h * grid.lx * grid.ly;
+
+    let (res, tr) = solve_partial_traced(&input);
+
+    // 유한성·차원.
+    assert_eq!(res.p_tran.len(), grid.len());
+    assert_eq!(res.q_tran.len(), grid.len());
+    assert!(res.p_tran.data.iter().all(|v| v.is_finite()), "p_tran non-finite");
+    assert!(res.q_tran.data.iter().all(|v| v.is_finite()), "q_tran non-finite");
+    // cavitation.
+    assert!(res.p_tran.data.iter().all(|&v| v >= 0.0), "p_tran ≥ 0");
+    // CV-M6-Load 하중보존 ≤0.1%.
+    let w_tran: f64 = res.p_tran.data.iter().map(|&p| p * da).sum();
+    assert!(
+        (w_tran - w_target).abs() / w_target < 1e-3,
+        "partial_lub load not conserved: {w_tran:.6e} vs W={w_target:.6e}"
+    );
+    // φ_bl 내부값(혼합) + flow-balance 항등.
+    assert!(res.phi_bl > 0.0 && res.phi_bl < 1.0, "phi_bl not interior: {}", res.phi_bl);
+    assert!(tr.share.flow_balance_residual < 1e-9, "flow-balance residual");
+    assert!(tr.outer_converged, "outer loop converged");
+    // 마찰 트랙션 q=μ_eff·p, μ_eff∈[μ_ehl,μ_bl].
+    assert!(tr.mu_eff >= MU_EHL - 1e-12 && tr.mu_eff <= MU_BL + 1e-12);
+    for k in 0..res.p_tran.len() {
+        let e = tr.mu_eff * res.p_tran.data[k];
+        assert!((res.q_tran.data[k] - e).abs() <= e.abs() * 1e-12 + 1e-6, "q≠μ·p");
+    }
 }

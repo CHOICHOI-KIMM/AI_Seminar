@@ -278,6 +278,34 @@
 
 ---
 
+## 2026-07-13 — 무인: 상보파+Phase 2 구현
+
+### 요지
+- 총괄계획 §8.A(상보파=M2 완성) + §8.B(Phase 2=`partial_lub.rs`) 무인 순차 구현. 브랜치 `phase2-partial-lub`, **커밋 안 함**(오케스트레이터 최종검토 대기). 모델 `claude-opus-4-8`.
+- **§8.A 상보파** — `src/m2_lub.rs` 단일파일. `types.rs` 동결·`LubResult` 시그니처 불변. 신규 pub API 6종(COMP_INLET_RATIO, complementary_wavenumber/pressure_stiffness/wave, dispersion_psi, complementary_inlet_ratio). `solve_full_film` 동작만 2성분 합성(특수해+상보파)으로 변경. 식(30)ψ분산·식(28)강성 Ω·E_red/2·식(25)전파·ω_c=kx·u₂/ū 소급.
+- **§8.B Phase 2** — 신규 `partial_lub.rs`. (21)(23) flow-balance 절차·식[252]max엔벨로프·식[258]w⁻¹복원·두 거친면 p_lub1+p_lub2·마찰 q_tran=μ_eff·p_tran. `types::PartialLubResult` 에 q_tran:Field2 추가 + serde derive(파생만). μ_bl=0.12/μ_ehl=0.05 Table1/2 소급.
+
+### 게이트
+- cargo test(offline): **단위 57(신규 partial_lub 9 + m2 상보파 6 포함) + 통합 2 + doc 0 = 전부 green, 경고 0**.
+- 상보파 변이 3종: β부호반전 CAUGHT·상보파제거 CAUGHT·**g×0.5 MISSED(정직)**. 진폭 절대크기 핀할 독립오라클 부재(G-M2-1) → 강제통과·오라클약화·날조 없이 정직 보고. `all_mutations_caught=false`.
+- Phase 2 변이 5종: μ스왑·단일표면화·표면속도하드코딩·접촉집합반전·w⁻¹부호반전 **전부 CAUGHT**. `all_mutations_caught=true`. 각 변이 원복 후 green 재확인.
+
+### 판정 (재크리틱 3렌즈)
+- 상보파: 3렌즈 전부 pass. fabrication 없음·핵심구조 verbatim 소급. VC-M2-Spot 정직 정정(GW1994 Table1 은 정상상태 특수해 스팟 → 零자유계수 C소거 교차검증 pass). (31) 진폭 보간표 미제공 → **conditional** 정직 표기(★날조 안 함).
+- Phase 2: 3렌즈 전부 pass. fabrication 없음·자유계수 0. tautology_remaining=true(외부루프 p̄고정점·CV-M6-Load 는 A안 구성상 회귀가드로 정직 라벨). RP-Field 정량임계·이미지fit 없음(정성 불변식만).
+
+### 잔여
+- **G-M2-1**(conditional): 상보파 절대진폭 g=0.5 = GW1994 half-pumping+민감도[0.45,0.6]. (31) 보간표 확보 시 절대크기 오라클 추가 → 변이 g×0.5 CAUGHT 전환 권고.
+- **G-M2-2/3**: dispersion ψ₀·tol·비수렴폴백(구조는 식(30)잔차 검증) · x_transit=0.5lx·cavitation clamp(격자기하 소급).
+- **RP-Field 정성 한계**: SKF Fig6/15 이미지 → 정량 임계 금지 준수. vM 최대 표면하는 M3 소관(미산출).
+- **Phase 2 외부루프**: A안 하중고정으로 자명수렴(p̄ 크기는 창≪a 규약 의존, M-4 미CAUGHT) — §8.B.0 임시조치 잔여.
+- **다음**: M3(표면하 응력) — p_tran/q_tran 입력 vM 산출.
+
+### 문서 규약
+- 본 기록은 지시대로 **`작업결과.md`(§상보파+Phase 2 구현 결과) + 본 `작업내역.md`** 에 함께 반영. 커밋은 오케스트레이터 최종검토 후.
+
+---
+
 ## 누적 요약 (2026-07-05 ~ 07-13, 갱신)
 - Workflow **5회**(파일럿·확장·최종화·P3 최초·**Phase 1b**) + Tripp PDF 파이프라인 1회. 에이전트 누계 **77개·에러 0**.
 - **P1→G1→P2 전 6모델 완료** → **P3 부분윤활 서브시스템 M1+M2+M6 구현·G3 통과**(Rust crate, cargo test 41+1 green). main 안정 + `phase1b-remediation` 브랜치.
