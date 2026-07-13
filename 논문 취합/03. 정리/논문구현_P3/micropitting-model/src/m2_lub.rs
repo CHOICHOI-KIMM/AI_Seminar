@@ -91,26 +91,21 @@ pub fn barus_visc(eta0: f64, alpha_visc: f64, p: f64) -> f64 {
     eta0 * (alpha_visc * p).exp()
 }
 
-/// Barus 지수 인수 상한 `α·p` [-] (수치 폭주 방지 캡).
-///
-/// Barus `η=η0·exp(α·p)` 는 고압(>~1 GPa)에서 급격히 과대예측한다. 본 논문 운전점
-/// (`α_visc=2e-8, p_h=1.5 GPa`)에서 `α·p≈30 → exp(30)≈1.07e13` 배 → `η≈1e11 Pa·s`
-/// 로 비물리적. 원 논문은 접촉 중앙 점도를 **Eyring 유효점도(식[6]) 운전점**에서 평가하며
-/// Barus 를 peak Hertz압에 그대로 적용하지 않는다. 물리적 대안(포화형 Roelands)은 미구현
-/// → **잔여큐 RQ-3**. 임시로 지수 인수를 이 상한으로 캡하여 폭주를 억제한다.
-///
-/// 상한값(=12) 자체는 '가정+민감도'(RQ-3): `exp(12)≈1.6e5` 배 → `η0=0.01→~1.6e3 Pa·s`
-/// 로 EHL 중앙 점도 현실범위(10²–10⁴). `barus_arg_cap_sensitivity` 가 캡 발동·유계성을 강제.
-const BARUS_ARG_CAP: f64 = 12.0;
+/// Roelands 압력상수 `c_p` [Pa] (Roelands 1966 표준값).
+const ROELANDS_CP: f64 = 1.96e8;
 
-/// 캡이 적용된 Barus 국소 점도 [Pa·s]: `η = η0·exp(min(α·p, cap))`.
+/// Roelands 압점도 국소 점도 [Pa·s] — **RQ-3 해소**(Barus exp 폭주를 포화형으로 대체).
 ///
-/// 고압 폭주(exp(30)) 억제. `cap` 은 RQ-3 가정(민감도 대상, [`BARUS_ARG_CAP`]).
-/// `cap` 미도달(저압)에서는 순수 [`barus_visc`] 와 동일.
+/// `η = η0·exp{ (ln η0 + 9.67)·[ (1 + p/c_p)^Z − 1 ] }`, `c_p = 1.96e8 Pa` (Roelands 1966).
+/// 압점도 지수 `Z = α_visc·c_p/(ln η0 + 9.67)` 로 **저압에서 Barus 기울기**(dη/dp|₀=η0·α_visc)
+/// 와 1차 일치 → 입력 `α_visc` 에 소급(자의적 계수 없음). 고압(운전점 1.5 GPa)에서 유계로
+/// 포화하여 Barus `exp(30)≈1e11 Pa·s` 비물리를 제거. 원 논문 식[6] Eyring 운전점 η 계열
+/// ((30) Ehret; Roelands 압점도). `roelands_bounded_and_low_p_matches_barus` 가 유계·정합 강제.
 #[inline]
-fn barus_visc_capped(eta0: f64, alpha_visc: f64, p: f64, cap: f64) -> f64 {
-    let arg = (alpha_visc * p).min(cap);
-    eta0 * arg.exp()
+pub fn roelands_visc(eta0: f64, alpha_visc: f64, p: f64) -> f64 {
+    let z_denom = eta0.ln() + 9.67; // η0 [Pa·s]
+    let z = alpha_visc * ROELANDS_CP / z_denom;
+    eta0 * (z_denom * ((1.0 + p / ROELANDS_CP).powf(z) - 1.0)).exp()
 }
 
 /// 무차원 진폭감소 파라미터 `Q` [-] (SSOT, 식[5] 부속 Q정의).
@@ -249,10 +244,10 @@ pub fn solve_full_film(input: &PartialLubInput) -> LubResult {
     let h0 = input.h_bar;
     let op = &input.op;
 
-    // 국소 압점도(Barus, 폭주 캡 BARUS_ARG_CAP; RQ-3) + 미끄럼 전단률.
-    // full p_h 에 exp(α·p) 오적용 시 α·p≈30→exp(30) 비물리(η~1e11 Pa·s). 지수 인수 캡으로
-    // 억제(원 논문은 식[6] Eyring 운전점 η 사용; Roelands 포화형 미구현 → RQ-3).
-    let eta_local = barus_visc_capped(op.eta0, op.alpha_visc, op.p_h, BARUS_ARG_CAP);
+    // 국소 압점도(Roelands 포화형; RQ-3 해소) + 미끄럼 전단률. Barus exp(α·p) 는 운전점
+    // (α·p≈30→exp(30)) 에서 비물리(η~1e11 Pa·s)이므로 포화형 Roelands 로 유계 평가
+    // (원 논문 식[6] Eyring 운전점 η 계열; (30) Ehret).
+    let eta_local = roelands_visc(op.eta0, op.alpha_visc, op.p_h);
     let d_u = (op.slide_roll * op.u_mean).abs(); // |Δu| = |SRR|·u_mean
     let gamma_s = if h0 > 0.0 { d_u / h0 } else { 0.0 };
     let tau0 = op.tau0;
@@ -476,9 +471,8 @@ mod tests {
         };
         let res = solve_full_film(&input);
 
-        // 해석 기대값: 모드에 쓰인 것과 동일한 파라미터로 전달함수 재계산(캡 반영).
-        let eta_local =
-            barus_visc_capped(input.op.eta0, input.op.alpha_visc, input.op.p_h, BARUS_ARG_CAP);
+        // 해석 기대값: 모드에 쓰인 것과 동일한 파라미터로 전달함수 재계산(Roelands).
+        let eta_local = roelands_visc(input.op.eta0, input.op.alpha_visc, input.op.p_h);
         let gamma_s = (input.op.slide_roll * input.op.u_mean).abs() / input.h_bar;
         let eta_mode = directional_visc(eta_local, gamma_s, input.op.tau0, kx, 0.0);
         let q = amplitude_q(eta_mode, input.op.u_mean, input.h_bar, kx, k_mag, input.mat.e_red);
@@ -631,26 +625,25 @@ mod tests {
         assert!(h_c4 > h_c0 && h_c4 < 1.0, "C-sensitivity bound: h0={h_c0}, h4={h_c4}");
     }
 
-    // ── M2-3: Barus 폭주 캡 — full p_h 오적용(exp(30)) 억제·유계(RQ-3). ──
+    // ── M2-3: Roelands 포화형 — 저압 Barus 정합 + 고압 유계(RQ-3 해소). ──
     #[test]
-    fn barus_arg_cap_sensitivity() {
-        // 무캡 Barus 는 운전점(α·p=30)에서 폭주.
-        let raw = barus_visc(0.01, 2e-8, 1.5e9); // exp(30)≈1.07e13 배
-        assert!(raw > 1e9, "uncapped Barus should blow up: {raw}");
-        // 캡 적용 → 지수 인수 = BARUS_ARG_CAP, 유계.
-        let capped = barus_visc_capped(0.01, 2e-8, 1.5e9, BARUS_ARG_CAP);
+    fn roelands_bounded_and_low_p_matches_barus() {
+        // 저압(p=1e6): Roelands ≈ Barus (Z=α·c_p/(ln η0+9.67) 로 기울기 1차 정합).
+        let r_lo = roelands_visc(0.01, 2e-8, 1.0e6);
+        let b_lo = barus_visc(0.01, 2e-8, 1.0e6);
         assert!(
-            (capped - 0.01 * BARUS_ARG_CAP.exp()).abs() <= capped * 1e-12,
-            "capped value != η0·exp(cap)"
+            (r_lo - b_lo).abs() / b_lo < 1e-2,
+            "Roelands should match Barus at low p: {r_lo} vs {b_lo}"
         );
-        assert!(capped < raw, "cap must reduce viscosity");
-        assert!(capped.is_finite() && capped < 1e6, "capped η out of physical range: {capped}");
-        // 저압(캡 미발동, α·p=2<cap)에서는 순수 Barus 와 동일.
-        let low = barus_visc_capped(0.01, 2e-8, 1.0e8, BARUS_ARG_CAP);
-        assert!(
-            (low - barus_visc(0.01, 2e-8, 1.0e8)).abs() <= low * 1e-12,
-            "cap must be inactive below threshold"
-        );
+        // 고압 운전점(1.5 GPa): 유계 & Barus exp(30) 폭주보다 훨씬 작음.
+        let r_hi = roelands_visc(0.01, 2e-8, 1.5e9);
+        let b_hi = barus_visc(0.01, 2e-8, 1.5e9); // exp(30)≈1.07e11 Pa·s
+        assert!(r_hi.is_finite(), "Roelands η must be finite");
+        assert!(r_hi < b_hi, "Roelands must be below Barus blowup: {r_hi} vs {b_hi}");
+        assert!(r_hi < 1.0e9, "Roelands η far below Barus exp(30): {r_hi}");
+        // 단조 증가.
+        let r_mid = roelands_visc(0.01, 2e-8, 0.5e9);
+        assert!(r_lo < r_mid && r_mid < r_hi, "Roelands not monotonic in p: {r_lo},{r_mid},{r_hi}");
     }
 
     // ── M2-4: 짝수격자 x-Nyquist Hermitian 처리 회귀. ──
@@ -692,12 +685,7 @@ mod tests {
         assert!(res.h_lub.data.iter().all(|v| v.is_finite()), "h_lub non-finite");
 
         // 기대: x-Nyquist 실수투영 → p = Re(T)·r_a·(−1)^i·cos(ky y).
-        let eta_local = barus_visc_capped(
-            input.op.eta0,
-            input.op.alpha_visc,
-            input.op.p_h,
-            BARUS_ARG_CAP,
-        );
+        let eta_local = roelands_visc(input.op.eta0, input.op.alpha_visc, input.op.p_h);
         let gamma_s = (input.op.slide_roll * input.op.u_mean).abs() / input.h_bar;
         let eta_mode = directional_visc(eta_local, gamma_s, input.op.tau0, kx, ky);
         let q = amplitude_q(eta_mode, input.op.u_mean, input.h_bar, kx, k_mag, input.mat.e_red);

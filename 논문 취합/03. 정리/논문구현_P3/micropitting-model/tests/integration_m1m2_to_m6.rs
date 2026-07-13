@@ -138,14 +138,14 @@ fn m1m2_to_m6_load_conservation_and_finite() {
         grid.len()
     );
 
-    // ── 하중 보존(회귀 가드): ∫p_tran dA ≈ W (탄성복원 DC 보존; cavitation 절단 오차만) ──
+    // ── 하중 보존(A안 재균형): ∫p_tran dA = W (cavitation 절단분을 균일 오프셋으로 복원, ≤0.1%) ──
     let w_tran: f64 = res.p_tran.data.iter().map(|&p| p * da).sum();
     assert!(
-        (w_tran - w_target).abs() / w_target < 5e-2,
+        (w_tran - w_target).abs() / w_target < 1e-3,
         "M6 load not conserved: {w_tran:.6e} vs W={w_target:.6e} (resid trace={})",
         trace.load_residual
     );
-    assert!(trace.load_residual < 5e-2, "trace load_residual {}", trace.load_residual);
+    assert!(trace.load_residual < 1e-3, "trace load_residual {}", trace.load_residual);
     // flow-balance 절차⑤ 항등: mean(h_tran)=c_ρ·h̄.
     assert!(trace.flow_balance_residual < 1e-9, "flow-balance residual {}", trace.flow_balance_residual);
     assert!(trace.converged, "flow-balance did not converge in {} iters", trace.iters);

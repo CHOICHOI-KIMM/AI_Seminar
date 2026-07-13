@@ -165,11 +165,16 @@ fn transition_fluct(h_dry: &Field2, h_lub: &Field2) -> Vec<f64> {
     c.iter().map(|z| z.re).collect()
 }
 
-/// 전이 압력장 `p_tran` [Pa] 탄성복원 (식 [258]).
+/// 전이 압력장 `p_tran` [Pa] 탄성복원 (식 [258]) + 하중 재균형(CV-M6-Load A안).
 ///
 /// `p_tran = p_dry + IFFT{ w^{-1}·FFT(h_dry − h_tran) }`, `w^{-1}(k)=E_red·k/2`, DC=0.
 /// (dry 해 `p̂_dry=w^{-1}(r̂−ĥ_dry)` 로 미변형 거칠기 `r` 일관 소거 — 모듈 doc 참조.)
 /// cavitation: 음압 → 0 (L261); 소성: `p_lim>0` 이면 `p_tran≤p_lim`.
+///
+/// **하중 재균형(A안)**: `w_total>0` 이면 cavitation 절단이 깬 하중보존을 복원하기 위해
+/// 균일 오프셋 δ(강체접근량)를 이분법으로 조정해 `∫p_tran·dA = w_total` 을 강제한다
+/// (`Σclip(raw+δ)` 는 δ 에 단조증가 → 유일근). M1 Polonsky–Keer 하중정규화와 동일 원리.
+/// `w_total≤0` 이면 재균형 없이 순수 복원(식[258] 오라클용).
 fn recover_p_tran(
     p_dry: &Field2,
     h_dry: &Field2,
@@ -177,6 +182,8 @@ fn recover_p_tran(
     grid: &Grid,
     e_red: f64,
     p_lim: f64,
+    w_total: f64,
+    da: f64,
 ) -> Field2 {
     let nx = grid.nx;
     let ny = grid.ny;
@@ -200,16 +207,47 @@ fn recover_p_tran(
     }
     fft2_inverse(&mut d, nx, ny);
 
+    // 클리핑 전 원압(raw) = p_dry + 탄성복원 보정.
+    let raw: Vec<f64> = (0..n).map(|k| p_dry.data[k] + d[k].re).collect();
+    // 클리핑: cavitation(≥0) + 소성(p_lim>0 이면 ≤p_lim).
+    let clip = |v: f64| -> f64 {
+        let mut v = if v < 0.0 { 0.0 } else { v };
+        if p_lim > 0.0 && v > p_lim {
+            v = p_lim;
+        }
+        v
+    };
+
+    // 하중 재균형(A안): `Σclip(raw+δ)·da = w_total` 되는 균일 오프셋 δ 를 이분법으로.
+    let offset = if w_total > EPS && da > 0.0 {
+        let sum_at = |dlt: f64| -> f64 { raw.iter().map(|&r| clip(r + dlt)).sum::<f64>() * da };
+        let max_raw = raw.iter().cloned().fold(f64::MIN, f64::max);
+        let lo0 = -(max_raw.abs() + 1.0); // Σ(lo0)=0 < w_total
+        let mut lo = lo0;
+        let mut hi = 0.0_f64;
+        // Σ(hi) < w_total 이면(소성절단 등) hi 를 위로 확장.
+        let step = max_raw.abs().max(1.0);
+        let mut guard = 0;
+        while sum_at(hi) < w_total && guard < 200 {
+            hi += step;
+            guard += 1;
+        }
+        for _ in 0..100 {
+            let mid = 0.5 * (lo + hi);
+            if sum_at(mid) < w_total {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+        }
+        0.5 * (lo + hi)
+    } else {
+        0.0
+    };
+
     let mut p = Field2::zeros(nx, ny);
     for k in 0..n {
-        let mut v = p_dry.data[k] + d[k].re;
-        if v < 0.0 {
-            v = 0.0; // cavitation (음압 → 0)
-        }
-        if p_lim > 0.0 && v > p_lim {
-            v = p_lim; // 소성 절단
-        }
-        p.data[k] = v;
+        p.data[k] = clip(raw[k] + offset);
     }
     p
 }
@@ -323,7 +361,7 @@ pub fn combine_share_traced(
     let h_sep = cr * h_bar;
     let h_tran_data: Vec<f64> = fluct.iter().map(|&f| h_sep + f).collect();
     let h_tran = Field2::from_vec(nx, ny, h_tran_data);
-    let p_tran = recover_p_tran(&dry.p_dry, &dry.h_dry, &h_tran, grid, e_red, p_lim);
+    let p_tran = recover_p_tran(&dry.p_dry, &dry.h_dry, &h_tran, grid, e_red, p_lim, w, da);
 
     // ── 진단(회귀 가드·플래그) ──
     let (w_asp_final, _w_film_final, contact_count) = load_fraction(h_sep);
@@ -711,7 +749,7 @@ mod tests {
         let h_tran = Field2::from_vec(nx, ny, h_tran_data);
 
         // p_lim=0(비활성). p_dc 크게 잡아 cavitation 절단 없음.
-        let p_tran = recover_p_tran(&p_dry, &h_dry, &h_tran, &grid, e_red, 0.0);
+        let p_tran = recover_p_tran(&p_dry, &h_dry, &h_tran, &grid, e_red, 0.0, 0.0, 0.0);
 
         // 손유도 닫힌형(recover 미사용): 계수 E_red·kx/2.
         let amp = p1 + (e_red * kx / 2.0) * (hd - hl);
@@ -750,7 +788,7 @@ mod tests {
         let hd_mean = h_dry.data.iter().sum::<f64>() / (nx * ny) as f64;
         let h_tran_data: Vec<f64> = h_dry.data.iter().map(|&v| v - hd_mean + 4.0e-8).collect();
         let h_tran = Field2::from_vec(nx, ny, h_tran_data);
-        let p_tran = recover_p_tran(&p_dry, &h_dry, &h_tran, &grid, e_red, 0.0);
+        let p_tran = recover_p_tran(&p_dry, &h_dry, &h_tran, &grid, e_red, 0.0, 0.0, 0.0);
         for k in 0..nx * ny {
             assert!(
                 (p_tran.data[k] - p_dry.data[k]).abs() <= p_dry.data[k].abs() * 1e-9 + 1.0,
