@@ -403,10 +403,34 @@ main (203bc4f, origin/main 동기)
 5. **G3 마일스톤 annotated tag** 고려(`p3-phase2-g3` @병합점): 브랜치 포인터보다 durable 한 참조점.
 6. **push 주기**: 코드/문서 커밋 후 정기 push(로컬 단독 상태 최소화).
 
-### D. 실행 보류 (승인 게이트)
+### D. 실행 완료 (2026-07-14, 연구자 승인)
 
-- push 는 저손실이나, **main 병합·브랜치 삭제는 outward·비가역** → **연구자 승인 후 실행**(프로젝트 연구자 게이트 준수). 본 항목은 **분석·안내 기록**이며 병합/삭제 미실행.
-- 실행 시점 권장: **M3 무인 착수 직전**(현 문서 마일스톤 마감 후).
+연구자 지시로 실행(당초 보류 → 승인 후 즉시 실행). 결과:
+- **태그**: `P3_phase1b_G3`(b18c0b9, Phase1b G3 마일스톤)·`P3_M1,2,6`(2498f9a=phase2 tip, M1/M2/M6 서브시스템 G3) — annotated, 둘 다 origin 푸시. ※ 당초 `P3_M1/2/6`(슬래시) 지정이었으나 **슬래시가 ref 중첩디렉터리(`refs/tags/P3_M1/2/6`) 생성 → 조합 명령서 실제 오류** 실증 → **ref-safe `P3_M1,2,6`(콤마, 문서명 규칙 일관)로 교체**.
+- **병합**: `phase2-partial-lub → main` **`--no-ff`** (병합커밋 `68f847d`, 16파일·+3708/−685). main origin 푸시. **17커밋 granular provenance 보존**(squash 안 함).
+- **브랜치 정리**: `phase1b-remediation`·`phase2-partial-lub` 로컬/원격 삭제(둘 다 main에 포함 확인 후, 무손실). phase2는 미푸시분이 main에 병합돼 `-D` 안전 삭제.
+- **신규 분기**: `P3_M3`(main 기준) 생성·체크아웃·origin 추적 푸시. **M3 작업 브랜치**.
+- **gotcha(기록)**: 라이브 Obsidian이 `.obsidian/workspace.json`(tracked·브랜치 간 상이)을 계속 재기록해 checkout/merge를 반복 차단 → `checkout -- <file> && merge && push` **원자적 실행**으로 통과. Windows 파일락(열린 docx)으로 `stash -u` 부분실패 → 잔여 `stash@{0}`(무관 Main bearing 변경 중복백업, 무해; working tree에 원본 보존됨).
+- **최종 구조**: `main`(68f847d, blessed baseline) + `P3_M3`(작업) + 태그 2개. **main 재병합 트리거 = M3 G3 통과 시**(후보 A) 권장.
+
+---
+
+## 2026-07-14 — M3 표면하 응력 무인 구현 (Tripp 2003) — G3 통과
+
+- **브랜치**: `P3_M3`. Phase0 선행(오케스트레이터): types.rs 확장(r_x·StressResult, 커밋 `bb9c58e`, 58+2 회귀).
+- **무인 워크플로 `wf_7cc32e63`**(5에이전트·에러0·~440K토큰·~27분): 순차 백본(M3Impl→MutationGate) + 병렬 3-크리틱.
+  - **M3Impl**: src/m3_stress.rs(917줄) — Tripp 2003 식[10]/[16] 폐형식(2011 σ_y 손상식 미사용) 2D-FFT 모드중첩, 오라클 11개(VC-M3-Sin/Trace/Limit/경계/Hertz/RP-Depth). 69단위+2통합 green.
+  - **변이게이트 3/3 CAUGHT**(감쇠부호·트레이스계수·감쇠제거)·정확 원복·잔재 0.
+  - **적대 3-크리틱 전부 pass·fabrication_found=false**. human-gate 1건: VC-M3-Hertz가 실피크 0.5973(+7.1%)를 8%밴드로 겨우 통과 지적.
+- **오케스트레이터 조치(human-gate 해소)**: 근원=DC(ζ=0) 측방항 0 처리 → **근거교정** σ_xx=σ_yy=ν/(1−ν)σ_zz(구속 균일하중 고전값, Hooke ε_lat=0) → 편향 +7.1%→+3.4%, tol 8%→5%, 잔차(periodic-window 평균 아티팩트) 정직 공시(RQ-M3-DC). dc_uniform_pressure 테스트 동반 갱신.
+- **독립 검증·커밋**: cargo test 69+2 green, types 불변, 변이잔재 없음. 커밋 `8342e2d`(코드), 문서 `작업결과_M3,4,5.md` §M3 + 본 항목.
+- **하네스 교훈 재확인**: 프롬프트에 식 미주입("원문 유도") → 에이전트가 Tripp 2003 verbatim 소급 성공. green≠검증 — 적대 크리틱이 DC 편향(헐거운 밴드)을 human-gate로 포착 → 오케스트레이터가 근거교정으로 해소(fudge 아님).
+- **다음**: M4(Dang Van, Desimone 식1~7·MCE) — M3 응력장 시간이력(x-스냅샷) 소비.
+
+### 2026-07-14 후속 — VC-M3-Hertz <1% 결선 + 접선 DC 정본확정(RQ-M3-DC 해소)
+- **VC-M3-Hertz "실피크" 정밀화**: 실피크=매끈 Hertz→솔버 표면하 vM 축상최대(McEwen 0.5575 기준). 편향 원천=periodic-window 평균(DC) 아티팩트(∝1/창). 2단 결선: DC 측방항 ν/(1−ν)σ_zz 교정(+7.1%→+3.4%)+대형창 256b(+0.49%<1%, dx무영향=순수 창효과 실측). tol 8%→1%, 비용 ny4·nz31로 3.7s. 커밋 `94ccf83`.
+- **접선(q) DC 완전형 결선(대안①)**: 균일 표면전단→반공간 **단순전단** σ_xz=q(전깊이)·나머지0·vM=√3q(평형·적합성·BC 만족 유일 응력해). 현 구현 이미 정확 — `dc_uniform_traction` 오라클로 검증(**변이 2/2 CAUGHT**: 성분제거·허위주입 모두 포착). **법선·접선 DC 모두 정본 확정** → RQ-M3-DC 해소(잔여=실사용 매크로 정밀도 평균분리 P2-3 §3.3 enhancement, 리플 목적 불요). 대안②평균분리/③대형창/④DC제외 비교표 작업결과 §3c. 커밋 `4d3bef2`.
+- 독립 cargo test **70단위+2통합 green**. 작업결과_M3,4,5 §3b/§3c 상세.
 
 ---
 

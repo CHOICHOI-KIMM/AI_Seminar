@@ -64,6 +64,7 @@ fn build_input() -> PartialLubInput {
             alpha_visc: 2.0e-8,
             tau0: 5.0e6,
             temp: 353.0,
+            r_x: 0.02,
         },
         // 혼합윤활(mixed) 영역: 중앙유막 h̄ 를 거칠기 진폭(≈0.2 μm) 대비 얇게(10 nm) 잡아
         // 아스페리티 접촉이 실제로 발생하도록(interior phi_bl). 완전분리(두꺼운 유막)면
