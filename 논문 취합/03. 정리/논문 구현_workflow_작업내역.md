@@ -415,6 +415,20 @@ main (203bc4f, origin/main 동기)
 
 ---
 
+## 2026-07-14 — M3 표면하 응력 무인 구현 (Tripp 2003) — G3 통과
+
+- **브랜치**: `P3_M3`. Phase0 선행(오케스트레이터): types.rs 확장(r_x·StressResult, 커밋 `bb9c58e`, 58+2 회귀).
+- **무인 워크플로 `wf_7cc32e63`**(5에이전트·에러0·~440K토큰·~27분): 순차 백본(M3Impl→MutationGate) + 병렬 3-크리틱.
+  - **M3Impl**: src/m3_stress.rs(917줄) — Tripp 2003 식[10]/[16] 폐형식(2011 σ_y 손상식 미사용) 2D-FFT 모드중첩, 오라클 11개(VC-M3-Sin/Trace/Limit/경계/Hertz/RP-Depth). 69단위+2통합 green.
+  - **변이게이트 3/3 CAUGHT**(감쇠부호·트레이스계수·감쇠제거)·정확 원복·잔재 0.
+  - **적대 3-크리틱 전부 pass·fabrication_found=false**. human-gate 1건: VC-M3-Hertz가 실피크 0.5973(+7.1%)를 8%밴드로 겨우 통과 지적.
+- **오케스트레이터 조치(human-gate 해소)**: 근원=DC(ζ=0) 측방항 0 처리 → **근거교정** σ_xx=σ_yy=ν/(1−ν)σ_zz(구속 균일하중 고전값, Hooke ε_lat=0) → 편향 +7.1%→+3.4%, tol 8%→5%, 잔차(periodic-window 평균 아티팩트) 정직 공시(RQ-M3-DC). dc_uniform_pressure 테스트 동반 갱신.
+- **독립 검증·커밋**: cargo test 69+2 green, types 불변, 변이잔재 없음. 커밋 `8342e2d`(코드), 문서 `작업결과_M3,4,5.md` §M3 + 본 항목.
+- **하네스 교훈 재확인**: 프롬프트에 식 미주입("원문 유도") → 에이전트가 Tripp 2003 verbatim 소급 성공. green≠검증 — 적대 크리틱이 DC 편향(헐거운 밴드)을 human-gate로 포착 → 오케스트레이터가 근거교정으로 해소(fudge 아님).
+- **다음**: M4(Dang Van, Desimone 식1~7·MCE) — M3 응력장 시간이력(x-스냅샷) 소비.
+
+---
+
 ## 누적 요약 (2026-07-05 ~ 07-13, 갱신)
 - Workflow **5회**(파일럿·확장·최종화·P3 최초·**Phase 1b**) + Tripp PDF 파이프라인 1회. 에이전트 누계 **77개·에러 0**.
 - **P1→G1→P2 전 6모델 완료** → **P3 부분윤활 서브시스템 M1+M2+M6 구현·G3 통과**(Rust crate, cargo test 41+1 green). main 안정 + `phase1b-remediation` 브랜치.
