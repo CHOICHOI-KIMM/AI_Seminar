@@ -23,6 +23,7 @@ pub mod util;
 pub mod m1_dry;
 pub mod m2_lub;
 pub mod m3_stress;
+pub mod m4_fatigue;
 pub mod m6_share;
 
 pub mod partial_lub;
