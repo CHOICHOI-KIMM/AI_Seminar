@@ -372,6 +372,44 @@ M3/M4/M5 작업 착수에 앞서 내용 정리·종합 검토 수행(연구자 �
 
 ---
 
+## 2026-07-14 — 브랜치/커밋 관리 검토 (M3 착수 전, 연구자 지시)
+
+### A. 현재 브랜치 상태 — **완전 선형(분기 없음)**
+
+```
+main (203bc4f, origin/main 동기)
+ └─[8 commits: Phase 1b G3 조치]→ phase1b-remediation (b18c0b9, origin 동기)
+      └─[9 commits: 상보파·Phase2·M3/4/5 계획]→ phase2-partial-lub (1b1a75a, HEAD)  ★현재
+           └─ 최근 4 commits origin/phase2 **미푸시**(이번 세션 문서: feasibility·M3/4/5검토·M4재조사·§8.D)
+```
+
+- **선형성 확정**: merge-base(main,phase2)=main HEAD → main 은 phase2 대비 **0 behind**(분기 없음, **fast-forward 가능**). merge-base(phase1b,phase2)=phase1b HEAD → **phase1b ⊂ phase2**(phase2 가 phase1b 전체 포함).
+- main..phase2 = **17 commits**. 그중 **코드(src) 변경 = 7개**(a8d1fb0·270f4ed·f3bd3a0·a2d3c95·bdc34f6 Phase1b-r1, 3745eec 상보파+Phase2, **085b06d M2 g오라클=최종 검증 코드**). **085b06d 이후 5커밋은 전부 문서만**(45353a4·3ce96c0·2a26f7e·f3e394b·1b1a75a).
+- **코드 기준선 = 085b06d**(cargo test 58단위+2통합 green, M1+M2+M6 G3 통과). 이후 문서만 쌓임.
+
+### B. 소프트웨어 공학 분석
+
+- **건강한 상태**: 선형·비분기·ff 가능 → 브랜치들은 **병렬 발산선이 아니라 순차 마일스톤**(main→Phase1b→Phase2). 충돌·rebase 부담 없음.
+- **phase1b-remediation 은 잉여 포인터**: 내용이 phase2 에 완전 포함 → 활성 브랜치로는 불필요(마일스톤 표식 가치만).
+- **현재가 자연 merge 지점**: (1) 부분윤활 서브시스템(M1+M2+M6) **G3 완료·검증**(자기완결 단위), (2) 코드=085b06d 그린(반쪽 구현 없음), (3) M3/4/5 **코드 미착수**. → **M3(새 코드 라인) 착수 전에 phase2→main 병합**하면 M3 가 깨끗한 안정 기준선에서 분기 가능.
+- **merge 전략**: ff 가능하나, **`--no-ff`(병합커밋) 권장** — 근거기반 원칙상 **granular 커밋 이력(RQ 해소·오라클·변이게이트 추적)이 연구 provenance** 라 보존 필수. **squash 금지**(17→1 로 접으면 provenance 소멸). `--no-ff` 는 이력 보존 + Phase2 마일스톤 경계도 명시.
+
+### C. 권장 관리 방침 (SE 베스트프랙티스)
+
+1. **미푸시 4커밋 즉시 push**(로컬 단독 손실 방지) — origin/phase2 동기화.
+2. **phase2 → main `--no-ff` 병합**(M3 착수 직전, 연구자 승인 후). 안정 기준선 확정.
+3. **phase1b-remediation 아카이브**: 병합 후 annotated tag(`p3-phase1b-g3`)로 마일스톤 고정 후 브랜치 삭제(or 유지). 잉여 활성브랜치 정리.
+4. **M3 부터 새 브랜치**: 갱신된 main 기준 신규(예 `phase3-m3-stress` 또는 `phase3-m3m4m5`). phase2 이름은 M1/M2/M6 용이라 M3 작업에 부적합 → 재사용 금지.
+5. **G3 마일스톤 annotated tag** 고려(`p3-phase2-g3` @병합점): 브랜치 포인터보다 durable 한 참조점.
+6. **push 주기**: 코드/문서 커밋 후 정기 push(로컬 단독 상태 최소화).
+
+### D. 실행 보류 (승인 게이트)
+
+- push 는 저손실이나, **main 병합·브랜치 삭제는 outward·비가역** → **연구자 승인 후 실행**(프로젝트 연구자 게이트 준수). 본 항목은 **분석·안내 기록**이며 병합/삭제 미실행.
+- 실행 시점 권장: **M3 무인 착수 직전**(현 문서 마일스톤 마감 후).
+
+---
+
 ## 누적 요약 (2026-07-05 ~ 07-13, 갱신)
 - Workflow **5회**(파일럿·확장·최종화·P3 최초·**Phase 1b**) + Tripp PDF 파이프라인 1회. 에이전트 누계 **77개·에러 0**.
 - **P1→G1→P2 전 6모델 완료** → **P3 부분윤활 서브시스템 M1+M2+M6 구현·G3 통과**(Rust crate, cargo test 41+1 green). main 안정 + `phase1b-remediation` 브랜치.
