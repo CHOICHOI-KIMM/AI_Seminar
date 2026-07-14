@@ -278,6 +278,7 @@ mod tests {
                 alpha_visc: 2.0e-8,
                 tau0: 5.0e6,
                 temp: 353.0,
+                r_x: 0.02,
             },
             h_bar,
         }

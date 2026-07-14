@@ -230,6 +230,14 @@ pub struct OperatingConditions {
     pub tau0: f64,
     /// 접촉 온도 [K].
     pub temp: f64,
+    /// 등가(환산) 반경 R_x [m] — `1/R_x = 1/R1 + 1/R2` (Hertz 선접촉 구름방향).
+    ///
+    /// **용도(공유 enabler)**: 접촉 반폭 `b` 유도의 유일 입력. Hertz 선접촉
+    /// `p_h = 2w'/(πb)` + `b² = 8w'R_x/(πE')` (E'=2·E_red) 결합 →
+    /// **`b = 4·R_x·p_h/E' = 2·R_x·p_h/E_red`** (w' 소거, p_h·R_x·E_red 만으로 산출).
+    /// M3 표면하 깊이범위(z=0~0.25b)·Hertz 검증(z/b), M5 사이클당 미끄럼거리(∝접촉폭),
+    /// (P4) M2 상보파 파장의존 ∇=(λ/b)·… 에 공통 사용. `r_x≤0` 이면 b 미정의(사용처 방어).
+    pub r_x: f64,
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -288,6 +296,41 @@ pub struct PartialLubResult {
     /// M6 순수 커널([`crate::m6_share`])은 μ 물성을 모르므로 0 placeholder 를 두고,
     /// 상위 오케스트레이터([`crate::partial_lub`])가 μ_eff·p_tran 으로 채운다.
     pub q_tran: Field2,
+}
+
+/// 한 깊이층의 표면하 응력 텐서 6성분 (각 [`Field2`] [Pa]).
+///
+/// 좌표(SSOT): x=구름방향, y=횡방향, z=깊이(+내부). **부호: 인장 +**.
+/// 대칭텐서 6독립성분. M3([`crate::m3_stress`])이 산출하고 M4(피로)가 소비한다.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StressTensor6 {
+    /// σ_x (구름방향 수직응력) [Pa].
+    pub sxx: Field2,
+    /// σ_y (횡방향 수직응력) [Pa].
+    pub syy: Field2,
+    /// σ_z (깊이방향 수직응력) [Pa].
+    pub szz: Field2,
+    /// τ_xy 전단응력 [Pa].
+    pub sxy: Field2,
+    /// τ_yz 전단응력 [Pa].
+    pub syz: Field2,
+    /// τ_xz 전단응력 [Pa].
+    pub sxz: Field2,
+}
+
+/// M3 표면하 응력 해석 결과 — 깊이층별 6성분 응력장 + von Mises.
+///
+/// 세 `Vec` 는 동일 길이 `nz`(깊이층 수), 인덱스 `l` 이 깊이 `z[l]`[m] 에 대응.
+/// 각 성분/응력은 격자(x,y) 위 [`Field2`]. M4 는 이 응력장을 **시간이력**(정상상태서
+/// x-스냅샷=이동하중)으로 소비해 Dang Van 위험계수를 산출한다.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StressResult {
+    /// 깊이 좌표 [m] (z>0=내부, 오름차순), 길이 nz.
+    pub z: Vec<f64>,
+    /// 층별 응력텐서 6성분 [Pa], 길이 nz.
+    pub stress: Vec<StressTensor6>,
+    /// 층별 von Mises 등가응력 [Pa], 길이 nz.
+    pub von_mises: Vec<Field2>,
 }
 
 #[cfg(test)]
