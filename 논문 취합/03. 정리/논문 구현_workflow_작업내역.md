@@ -342,6 +342,18 @@
 
 ---
 
+## 2026-07-14 — RQ-M2-comp-curve 재착수 착수전 가능성판단: **정직 이월(P4)** 결정
+
+지난 실패(`wf_2638d46e`) 반복 회피 위해 **착수 전 물리 feasibility 를 먼저 평가**. 원문 재정독(Venner1997 (15)·Venner2000 (31)) + Moes 체인 독립 수치검증 결과, **fudge 없이는 전곡선 결선 불가**로 판단 → **코드 무변경, P4 이월**(연구자 승인).
+
+- **② ∇ 계산 자체는 입력 R 1개 추가로 가능**: Venner1997 line 정의(Nomenclature L36-53)로 `b=4R·p_h/E'`, `w'=2πR·p_h²/E'`, `W=w'/(E'R)=2π p_h²/E'²`(R소거), `U=η0ū/(E'R)`, `G=αE'`. `r_x` 1필드만 OperatingConditions 에 추가하면 기존 p_h·u_mean·eta0·alpha_visc·e_red 로 M·L·∇(λ) 유도. types 확장범위 타당.
+- **③ "핵심앵커" (31) Table1 은 점접촉(circular), CRB 는 선접촉 — 카테고리 불일치**: Table1 파라미터로 Moes 체인 독립재현 — G=4972✓·U=1.72e-11(표1.773e-11)✓·W=1.433e-5✓·**M=W(2U)^{−3/4}=1007.9**(표1007.6, **점접촉 지수−3/4**)✓·L=G(2U)^{1/4}=12.05✓. 그러나 우리 코드가 쓸 **선접촉 M=W(2U)^{−1/2}** 를 같은 입력에 넣으면 **2.44≠1007.6**. (31)로 line-M 검증하면 지난 H_c↔M-L 혼동과 동형의 **접촉형 오류 반복**. Venner1997(선접촉, M=100/L=11)엔 **차원 파라미터표가 repo 부재**(grep 무결과) → 배포할 line-M 지수는 in-repo worked-number 앵커 부재(교과서 정의로만 grounding). anti-fudge 앵커#1 성립 불가.
+- **④ 구조적 결정타 — 순수 rolling 서 particular 유막 미평탄화(h_part=1, 해석적 확정)**: `film_ripple_transfer(Q=0)=1+(2/E_redκ)·pressure_ripple_transfer(Q=0)=1+0=1`. 총 유막리플 `|h_part+h_comp|=|1+g(∇)·phase|∈[1−g,1+g]≠Venner A_d/A_i=g(∇)`. **anti-fudge test#3 전제("particular은 Q=0→기여0")가 압력(=0)과 유막(=1)을 혼동** — Q=0 서 particular 압력은 0이나 유막은 1(최대). g=g(∇) 로 상보파만 파장의존화해도 총곡선 불일치, 맞추려면 particular 유막을 순수 rolling 서 강제평탄화(particular 해 물리 Q∝sliding→0 과 모순 → 대수술/fudge). **지난 실패가 정확히 이 벽을 H_c 튜닝으로 우회한 지점**.
+- **결정**: g=0.5 **단일점 검증 + RQ-M2-comp-curve open** 유지가 가장 정직한 지점. P4 CRB 통합이 (a) R·w'·b·M·L 직접제공(자연결선) (b) particular/complementary 분해를 실제 line EHL 해와 정합시켜 h_part 평탄화 해소할 유일한 맥락. **무리한 전곡선 오라클(=tautological eq(5)↔Table1 또는 점접촉 앵커 의존)은 fudge 재발 위험**이라 미착수.
+- **하네스 적용**: 워크플로 미기동(착수 전 feasibility gate 에서 정직 보류). 무리한 통과보다 정직 보류 우선 원칙 준수.
+
+---
+
 ## 누적 요약 (2026-07-05 ~ 07-13, 갱신)
 - Workflow **5회**(파일럿·확장·최종화·P3 최초·**Phase 1b**) + Tripp PDF 파이프라인 1회. 에이전트 누계 **77개·에러 0**.
 - **P1→G1→P2 전 6모델 완료** → **P3 부분윤활 서브시스템 M1+M2+M6 구현·G3 통과**(Rust crate, cargo test 41+1 green). main 안정 + `phase1b-remediation` 브랜치.
