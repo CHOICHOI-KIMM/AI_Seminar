@@ -65,10 +65,11 @@
 //! Tripp 2003 은 DC(공간평균) 전달함수를 명시하지 않는다(in-plane 항 `a²/ζ²` 는 (0,0)서 0/0).
 //! **균일 표면하중의 고전 참응답**을 채택: 법선 균일하중 → 구속(오이도미터) 상태
 //! `σ_zz=p_DC`, `σ_xx=σ_yy=ν/(1−ν)·σ_zz`(Hooke `ε_xx=ε_yy=0` 유도), 접선 → `τ_xz=q_DC`, 나머지 0.
-//! (측방항을 0 으로 두면 vM 편향 — 교정 전 VC-M3-Hertz +7.1% → 교정 후 +3.4%.)
-//! **잔여(RQ-M3-DC)**: 남는 +3.4% 는 periodic-window 평균 아티팩트(유한창 평균압이 고립 Hertz
-//! 엔 없는 구속하중으로 기여) — 완전정합은 상위 평균분리(P2-3 §3.3 "평균 Hertz 해석해 분리").
-//! 접선 DC 완전형도 잔여. → **RQ-M3-DC**(정량 정합 잔차, 정직 공시).
+//! (측방항을 0 으로 두면 vM 편향 — 교정 전 VC-M3-Hertz +7.1% → 교정 후 +3.4%@32b창.)
+//! **periodic-window 평균 아티팩트**(유한창 평균압이 고립 Hertz 엔 없는 구속하중으로 기여)는
+//! 창 크기에 반비례(∝1/창; 실측 32b→+3.4%, 128b→+0.93%, 256b→+0.49%) → **대형창으로 <1% 수렴**
+//! (VC-M3-Hertz 는 256b 서 +0.49%). 완전 결선(작은 창 <1%)은 평균분리(P2-3 §3.3 "평균 Hertz
+//! 해석해 분리") 로 가능하나 대형창이 등가·단순. **잔여 RQ-M3-DC**: 접선(q) DC 완전형은 미검증.
 
 use crate::types::{Field2, Grid, MaterialProps, OperatingConditions, StressResult, StressTensor6};
 use crate::util::fft::{fft2_forward, fft2_inverse};
@@ -725,9 +726,12 @@ mod tests {
         let nu = 0.3;
         let p_h = 1.0e9;
         let b = 1.0e-4; // 접촉반폭 100 μm (규모만 중요; 무차원 결과)
-        let nx = 1024usize;
-        let ny = 8usize; // y-불변(횡방향 균일)
-        let lx = 32.0 * b; // 큰 창(±16b) + zero-pad → 주기성 오차 최소(Polonsky-Keer)
+        // 창 크기 = 편향의 지배원. periodic-window 평균(DC) 아티팩트 ∝ 1/창 → 창을 키워
+        // 고립 Hertz 로 수렴시킨다(측정: 32b→+3.4%, 64b→+1.8%, 128b→+0.93%, 256b→+0.49%;
+        // dx 세분은 무영향 → 편향은 순수 창 효과). 256b·nx8192(dx=b/32)로 <1% 달성.
+        let nx = 8192usize;
+        let ny = 4usize; // y-불변(횡방향 균일) → 최소 격자로 비용 절감(결과 불변)
+        let lx = 256.0 * b; // 큰 창(±128b) + zero-pad → 주기성/DC 아티팩트 <1% (수렴 실측)
         let ly = 4.0 * b;
         let grid = Grid::new(nx, ny, lx, ly);
         let dx = lx / nx as f64;
@@ -749,9 +753,11 @@ mod tests {
         }
         let q = Field2::zeros(nx, ny);
 
-        // 깊은 z 범위(최대는 z≈0.7b) — 주 진입점(0.25b)이 아닌 커스텀 배열.
-        let nz = 60usize;
-        let z_depths: Vec<f64> = (0..nz).map(|l| 1.2 * b * l as f64 / (nz - 1) as f64).collect();
+        // 깊은 z 범위(피크 z≈0.7b 부근 집중) — 주 진입점(0.25b)이 아닌 커스텀 배열. 피크가
+        // 견고히 0.70b 이므로 [0.4,1.0]b 를 조밀 탐색(비용 절감; 깊이 assertion [0.55,0.90] 포함).
+        let nz = 31usize;
+        let z_depths: Vec<f64> =
+            (0..nz).map(|l| b * (0.4 + 0.6 * l as f64 / (nz - 1) as f64)).collect();
         let res = solve_stress_at_depths(&grid, &p, &q, nu, &z_depths);
 
         // 솔버 on-axis(중심열 i0) vM 최대·깊이.
@@ -792,14 +798,12 @@ mod tests {
         assert!((mc_max - 0.557).abs() < 0.01, "McEwen ref off: {mc_max}");
         assert!((mc_z - 0.70).abs() < 0.06, "McEwen depth off: {mc_z}");
 
-        // 솔버 vs 고전값: 실측 vm_max_norm≈0.5766 = 고전값의 +3.4%(잔차). 이 잔차는 DC 측방
-        // 교정(σ_xx=σ_yy=ν/(1−ν)σ_zz) 후 **남는 periodic-window 평균 아티팩트**(유한창 ±16b 에
-        // 실린 평균압이 구속하중으로 전 깊이 기여 — 고립 Hertz 엔 없음; 완전정합은 평균분리
-        // P2-3 §3.3, RQ-M3-DC). 튜닝 아님 — 편향의 물리적 원천 공시. 허용 ≤5%(실측 3.4%<5%),
-        // 깊이 [0.55,0.90]b. (교정 전 +7.1% → 후 +3.4%.)
+        // 솔버 vs 고전값: 256b 창서 실측 vm_max_norm≈0.5602 = 고전값의 **+0.49%**(<1%).
+        // DC 측방 교정(σ_xx=σ_yy=ν/(1−ν)σ_zz) + 대형창(창→고립 수렴, ∝1/창)의 결합으로
+        // periodic-window 평균 아티팩트를 <1% 로 억제. 허용 ≤1%(실측 0.49%), 깊이 [0.55,0.90]b.
         assert!(
-            (vm_max_norm - mc_max).abs() <= 0.05 * mc_max,
-            "Hertz vM peak {vm_max_norm} vs classical {mc_max} (>5%)"
+            (vm_max_norm - mc_max).abs() <= 0.01 * mc_max,
+            "Hertz vM peak {vm_max_norm} vs classical {mc_max} (>1%)"
         );
         assert!(
             (0.55..=0.90).contains(&z_norm),
