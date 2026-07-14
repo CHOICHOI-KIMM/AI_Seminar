@@ -306,6 +306,32 @@
 
 ---
 
+## 2026-07-14 — 무인: 상보파 진폭 오라클(Venner 15/31) 결선·G-M2-1 완전해소
+
+### 요지
+- G-M2-1(상보파 절대 유입진폭 g=`COMP_INLET_RATIO`=0.5) 을 **Venner 출판 데이터로 정량 검증**하는 오라클 결선. 브랜치 `phase2-partial-lub`, **커밋 안 함**(오케스트레이터 최종검토 대기), 모델 `claude-opus-4-8`. 단일파일 `src/m2_lub.rs` 편집, `types.rs` 무변경(SSOT 동결)·공개 시그니처 불변.
+- **(15) Venner1997·(31) Venner2000 원문 직접 정독**(요약 아님): eq(5) `1/(1+0.17∇+0.03∇²)`·∇=(λ/b)M^{3/4}/L^{1/2}·M=100/L=11·Table1(0.183/0.394/0.660)·정확도 2~5% / (31) 2성분해 L631(고하중 순수 rolling 서 정상성분 평탄화→상보파가 A_d 지배⇒A_d/A_i=g)·eq(29) 예제.
+
+### 결선 내용
+- 신규(병합) 단일 2단 오라클 `vc_m2_comp_amplitude_venner`: **Part A** eq(5)↔Table1 3스팟 2.17/1.84/3.84%(≤5%)·∇·단조·극한 외부검증(비-tautology) / **Part B** 모델 g 를 `solve_full_film` 경로(`dispersion_psi`+`complementary_wave`, slip=0→β=0→|h_comp|=g)에서 추출→eq(5) 역산 λ/b=0.3773 가 Table1 A_d/A_i=0.5 교차구간 (0.25,0.5) 착지(g-민감).
+- 게이트가 분리 2오라클(Part A 가 g 무관→g×0.5 MISSED)을 **단일 2단으로 병합**해 g-민감을 명명 오라클에 직결. 크리틱 지적(주석 L1231-1232 파장영역 오기)도 원문대로 정정.
+
+### 게이트
+- `cargo test`(전 크레이트): **단위 58 + 통합 2 + doc 0 = 전부 green, 경고 0**(상보파 진폭 오라클 순증분 반영).
+- 변이 3필수 **전부 CAUGHT**: **g×0.5(=0.25)→λ/b=0.79 구간이탈 FAIL(신규 CAUGHT, 07-13 의 MISSED 해소)**·β부호반전 CAUGHT·상보파제거 CAUGHT. 각 변이 주입→FAIL 확인→원복.
+
+### 판정 (재크리틱 2렌즈, 전부 pass)
+- 근거추적·tautology/g-calibration 전부 pass: eq(5) 상수·∇매핑·Table1·eq(29) 전부 원문 verbatim 소급, 구간·역산식 외부 grounding(비-tautology), 날조 없음. g=0.5 가 Venner 유도 허용창 (0.401,0.635) 내(GW fit 0.45/Hooke 0.60 정합) → **캘리브레이션 변경 불요**.
+
+### 잔여
+- **RQ-M2-comp-curve(신규)**: 파장의존 g(∇) 곡선 전체 미결선 — (a) 동결 types 로 Venner ∇ 산출용 b/R/M/L 부재, (b) 모델 특수해 유막이 순수 rolling 서 미평탄화(h_part=1)라 총유막비 1±g(λ무관)≠Venner 곡선. g 는 **단일점 검증**에 한정(상보파 성분만 앵커).
+- 구조적 발견: 순수 rolling 서 모델 압력/유막 귀속이 Venner 와 반대(EHL 진폭감소는 piezoviscous/하중효과이지 모델 Q 의 sliding 효과 아님) → 대수술 필요, 현 스코프 밖. G-M2-2/3 불변.
+
+### 문서 규약
+- 본 기록은 지시대로 **`논문구현_P3_작업결과.md`(§G-M2-1 해소 추가) + 본 `작업내역.md`** 에 함께 반영. 기존 §A-2/§A-4(ii)/§C 잔여도 병합 단일오라클·(ii) CAUGHT 로 정합 갱신. 커밋은 오케스트레이터 최종검토 후.
+
+---
+
 ## 누적 요약 (2026-07-05 ~ 07-13, 갱신)
 - Workflow **5회**(파일럿·확장·최종화·P3 최초·**Phase 1b**) + Tripp PDF 파이프라인 1회. 에이전트 누계 **77개·에러 0**.
 - **P1→G1→P2 전 6모델 완료** → **P3 부분윤활 서브시스템 M1+M2+M6 구현·G3 통과**(Rust crate, cargo test 41+1 green). main 안정 + `phase1b-remediation` 브랜치.

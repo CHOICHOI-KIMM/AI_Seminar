@@ -192,6 +192,14 @@ pub fn film_ripple_transfer(kappa: f64, e_red: f64, q: f64, c: f64) -> Complex<f
 /// 보간표 수치는 우리 문서에 **미제공**(G-M2-1). 따라서 GW1994 "half pumping" 을 근거
 /// **기본값 0.5** 로 채택. ref(28) Fig.10 상보파 최대≈0.6·GW fit 0.45 범위가 **민감도 대역**
 /// (RQ-M2-comp1). 파장의존 정밀 보간은 데이터 부재로 상수근사 + 민감도로 정직 처리.
+///
+/// **G-M2-1 정량 검증(2026-07-14, ref(15) Venner1997 원문 소급)**: 고하중 순수 rolling 서
+/// 정상(특수해) 유막 평탄화·상보파 지배(ref(31) L631) ⇒ A_d/A_i=g. Venner eq(5)
+/// `1/(1+0.17∇+0.03∇²)` 를 g 로 역산한 λ/b 가 Table1 실측 A_d/A_i=0.5 교차구간 (0.25,0.5) 안:
+/// g=0.5 → λ/b≈0.377(∇≈3.60), GW half-pumping 중앙곡선점과 정합 → **단일점 검증됨**.
+/// 오라클 `vc_m2_comp_amplitude_venner`(단일 2단): Part A 가 eq(5)↔Table1 정확도(2~5%)로 외부
+/// 기준곡선을 확정하고 Part B 가 모델 g 를 그 곡선에 anchor(g-민감·변이 g×0.5 CAUGHT). 곡선
+/// 전체(파장의존 g(∇)) 는 types 동결로 ∇ 산출(b,M,L) 불가 → 잔여 RQ-M2-comp-curve.
 pub const COMP_INLET_RATIO: f64 = 0.5;
 
 /// 상보파 유입진폭비 g (기본 [`COMP_INLET_RATIO`]). 민감도/변이게이트용 접근자.
@@ -1179,5 +1187,118 @@ mod tests {
             assert!(v < prev, "A_d/A_i must be monotone decreasing in ∇₂");
             prev = v;
         }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    //  VC-M2-Comp-Amplitude — 상보파 절대진폭 g 의 Venner1997 정량 검증 (G-M2-1 해소)
+    //  ★ 원문(15) 직접 정독: eq(5) 1/(1+0.17∇+0.03∇²), ∇=(λ/b)M^{3/4}/L^{1/2},
+    //    Table1(M=100,L=11) 스팟. (31) eq(29) 교차확인은 vc_m2_master_venner2000 이 담당.
+    // ════════════════════════════════════════════════════════════════════
+
+    // ── VC-M2-Comp-Amplitude: 상보파 절대진폭 g 를 Venner1997 데이터로 정량 검증 [ref(15)] ──
+    //
+    // **단일 오라클 2단**(G-M2-1 해소, 이번 라운드 결선점):
+    //  ▸ Part A — 외부 기준곡선 확정(비-tautology): 순수 rolling 진폭감소 마스터커브
+    //    A_d/A_i = 1/(1+0.17∇+0.03∇²), ∇=(λ/b)·M^{3/4}/L^{1/2} ((15) §4.4 식(5)·§3.1 M=100·L=11)
+    //    가 Table1(수치해) 스팟 λ/b=1.0→0.183·0.5→0.394·0.25→0.660 을 논문 명시 정확도 2~5% 내로
+    //    재현하는지 대조. Venner 상수(0.17/0.03)·Table1 수치는 **외부 출판치를 하드코딩**(모델에서
+    //    재계산하지 않음) → fit↔numerics 둘 다 외부 grounding.
+    //  ▸ Part B — 모델 g 를 그 외부 곡선에 정량 anchor(**g-민감**): (31)Venner2000 L631 2성분해에서
+    //    고하중 순수 rolling 시 정상(특수해) 유막은 완전평탄화되고 상보파(입구 excitation)가 유막
+    //    A_d 를 지배 → A_d/A_i = 상보파 진폭비 = g. 모델의 상보파 g 를 solve_full_film 과 동일 경로
+    //    (complementary_wave, slip=0→β=0→|h_comp|=g)로 추출 → COMP_INLET_RATIO 변이에 직접 민감.
+    //    eq(5)를 g 로 역산한 λ/b 가 Table1 실측 A_d/A_i=0.5 교차구간 (0.25,0.5)(λ/b=0.25→0.660>0.5,
+    //    0.5→0.394<0.5) 안에 드는지 검증 → g=0.5(GW half-pumping, fit r₂=0.45)와 3자 정합.
+    //
+    // ★ 비-tautology: 구간 (0.25,0.5)·역산식·2~5% 대조는 **Venner 출판 Table1/eq(5)**(외부)에서만 옴.
+    //   모델 g 만 흔들면(Part B) 반드시 검출되고, Part A(순수 외부수치)는 g 와 무관하게 고정.
+    // ★ g-민감(변이게이트 (i)): g→g×0.5=0.25 시 λ/b→0.7929 로 구간 이탈 → 이 오라클 FAIL(CAUGHT).
+    // ★ 정직 한계: 본 모델은 특수해 유막을 평탄화하지 않아(순수 rolling h_part=1) **총** 유막비는
+    //   1±g 로 Venner 곡선과 불일치 — 여기선 (31) 2성분해 정의대로 **상보파 성분 g** 만 Venner A_d
+    //   로 앵커한다. 총유막 평탄화·파장의존 g(∇) 는 별도 잔여(RQ-M2-comp-curve; types 동결로
+    //   ∇=(λ/b)M^{3/4}/L^{1/2} 의 b,M,L 산출 불가 → 곡선 전체 결선 차단).
+    #[test]
+    fn vc_m2_comp_amplitude_venner() {
+        // ══ Part A — Venner1997 eq(5) 마스터커브 vs Table1 수치해 (외부 기준곡선 확정) ══
+        // ∇ = (λ/b)·M^{3/4}/L^{1/2}, M=100, L=11 (Venner1997 §3.1 numerical-accuracy case).
+        let m = 100.0_f64;
+        let l = 11.0_f64;
+        let grad = |lob: f64| lob * m.powf(0.75) / l.sqrt();
+        let ad_ai = |lob: f64| {
+            let n = grad(lob);
+            1.0 / (1.0 + 0.17 * n + 0.03 * n * n) // 식(5) — Venner 상수 0.17/0.03 외부 하드코딩
+        };
+        // Table1 스팟(외부 출판 수치해; (15) L122-124). 앵커역 λ/b∈[0.25,1.0](A_d/A_i≈0.5 교차부)
+        // 서 fit↔numerics 2~5% 대조. 큰 ∇ 꼬리 λ/b≥2 은 단일(M,L) fit 산포가 5% 초과(λ/b=2→~9.6%)
+        // 라 스팟서 제외. eq(5) 과소예측역은 0.5<A_d/A_i<1(단파장·작은 λ/b), A_d/A_i≤0.5 는
+        // 장파장(큰 λ/b·큰 ∇)쪽이다((15) §4.4; L1245 물리극한과 정합).
+        let spots = [(1.0_f64, 0.183_f64), (0.5, 0.394), (0.25, 0.660)];
+        for (lob, table) in spots {
+            let fit = ad_ai(lob);
+            let rel = (fit - table).abs() / table;
+            assert!(
+                rel <= 0.05,
+                "eq(5) vs Table1 @λ/b={lob}: fit={fit:.4}, table={table}, rel={rel:.3} (>5%)"
+            );
+        }
+        // ∇·eq(5) 스팟(기계정밀 고정): λ/b=0.5 → ∇=4.76734, A_d/A_i=0.40122.
+        assert!((grad(0.5) - 4.76734).abs() < 1e-4, "∇(λ/b=0.5)={}", grad(0.5));
+        assert!((ad_ai(0.5) - 0.40122).abs() < 1e-4, "eq(5)(λ/b=0.5)={}", ad_ai(0.5));
+        // 물리 극한(식(5) 자명): 단파장(∇→0)→1(거칠기 지속), 장파장(∇→∞)→0(완전평탄화).
+        assert!(ad_ai(1e-4) > 0.999, "short-λ: roughness persists (A_d/A_i→1)");
+        assert!(ad_ai(1e4) < 1e-3, "long-λ: fully flattened (A_d/A_i→0)");
+        // ∇ 에 대해 단조 감소.
+        let mut prev = 2.0;
+        for i in 1..=40 {
+            let v = ad_ai(0.05 * i as f64);
+            assert!(v < prev, "A_d/A_i must be monotone decreasing in ∇");
+            prev = v;
+        }
+
+        // ══ Part B — 모델 상보파 진폭 g 를 위 외부곡선에 정량 anchor (g-민감·비-tautology) ══
+        // 모델의 상보파 g 를 solve_full_film 과 동일 경로(complementary_wave, 순수 rolling
+        // slip=0 → β=0 → |h_comp|=g_inlet)에서 추출 → COMP_INLET_RATIO 변이에 직접 민감.
+        let e_red = E_RED_STEEL_PA;
+        let h = 1.4e-7;
+        let lx = 1.0e-3;
+        let kx = 2.0 * PI * 4.0 / lx; // 임의 모드(순수 rolling |h_comp|=g 는 kx 무관)
+        let psi = dispersion_psi(kx, 0.0, h, e_red, 5e6, 1.0, 1.0)
+            .expect("pure-rolling dispersion converges (β=0)");
+        let (h_comp, _p) =
+            complementary_wave(psi, 0.0, e_red, complementary_inlet_ratio(), 0.5 * lx);
+        let g_model = h_comp.norm(); // 순수 rolling: |h_comp| = g_inlet (모델 상보파 진폭비)
+        assert!(
+            (g_model - complementary_inlet_ratio()).abs() < 1e-12,
+            "model complementary amplitude must equal g_inlet in pure rolling: {g_model}"
+        );
+
+        // Venner1997 eq(5) 역산: A_d/A_i=g 인 ∇ 양근. 0.03∇²+0.17∇+(1−1/g)=0.
+        let factor = m.powf(0.75) / l.sqrt(); // ∇ = factor·(λ/b), factor≈9.5347 (Part A 와 동일 M,L)
+        let invert_lob = |g: f64| {
+            let cc = 1.0 - 1.0 / g; // 상수항
+            let nab = (-0.17 + (0.17 * 0.17 - 4.0 * 0.03 * cc).sqrt()) / (2.0 * 0.03);
+            nab / factor // λ/b
+        };
+        let lob = invert_lob(g_model);
+
+        // 외부 앵커: (15) Table1 실측 A_d/A_i=0.5 교차구간 (0.25,0.5).
+        assert!(
+            lob > 0.25 && lob < 0.5,
+            "g={g_model} → λ/b={lob:.4} outside Venner Table1 0.5-crossing bracket (0.25,0.5)"
+        );
+        // g=0.5 → λ/b≈0.3773 (∇≈3.598): GW half-pumping 중앙곡선점.
+        assert!(
+            (lob - 0.3773).abs() < 1e-3,
+            "g=0.5 anchor λ/b={lob:.4} (expect 0.3773, ∇≈3.598)"
+        );
+        // 민감도 대역 [0.45,0.6](RQ-M2-comp1) 은 구간 내(정상).
+        assert!(invert_lob(0.45) > 0.25 && invert_lob(0.45) < 0.5, "g=0.45 in-bracket");
+        assert!(invert_lob(0.60) > 0.25 && invert_lob(0.60) < 0.5, "g=0.60 in-bracket");
+        // 변이게이트 (i): g 반감(0.25) → 구간 이탈(검출력 영구 고정, 이 오라클이 직접 CAUGHT).
+        let mutated = invert_lob(g_model * 0.5);
+        assert!(
+            !(mutated > 0.25 && mutated < 0.5),
+            "MUTATION UNDETECTED: g×0.5 → λ/b={mutated:.4} still in Venner bracket"
+        );
     }
 }
