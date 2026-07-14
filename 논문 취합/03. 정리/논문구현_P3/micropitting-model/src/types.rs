@@ -5,6 +5,12 @@
 //! 각 필드에 단위 주석을 명시한다.
 //!
 //! 좌표 규약: 접촉 패치 로컬. x=구름방향, y=횡방향, z=깊이(+). 인장 응력 +.
+//!
+//! ## serde (Phase 2 §8.B.3)
+//! 시간루프·프런트(P4) 직렬화를 위해 격자·필드·입력·결과 struct 에 `Serialize`/
+//! `Deserialize` 를 유도한다. 순수 데이터 계약이므로 파생만 추가(로직/필드의미 불변).
+
+use serde::{Deserialize, Serialize};
 
 // ─────────────────────────────────────────────────────────────────────────
 //  SSOT 상수
@@ -30,7 +36,7 @@ pub const EPS: f64 = 1e-12;
 
 /// 접촉 패치 로컬 계산 격자.
 /// x=구름방향, y=횡방향. 물리 도메인 크기는 `lx × ly` [m].
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Grid {
     /// x(구름방향) 격자점 수 [-]
     pub nx: usize,
@@ -83,7 +89,7 @@ impl Grid {
 
 /// 격자 위 2D 스칼라 필드 (row-major: index = i + j*nx, i는 x, j는 y).
 /// 단위는 저장하는 물리량에 따름(압력 Pa, 유막/거칠기 m 등) — 사용처에서 명시.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Field2 {
     /// x(구름방향) 격자점 수 [-]
     pub nx: usize,
@@ -185,7 +191,7 @@ impl Field2 {
 // ─────────────────────────────────────────────────────────────────────────
 
 /// 접촉쌍 재료 물성 (환산값 기준).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct MaterialProps {
     /// 환산탄성계수 E_red [Pa]. `1/E_red=(1-nu1^2)/E1+(1-nu2^2)/E2`.
     /// (논문 E' 사용 식에서는 `E' = 2*E_red` 로 치환.)
@@ -199,9 +205,16 @@ pub struct MaterialProps {
 }
 
 /// 접촉 운전 조건 (접촉 패치 기준, SI).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct OperatingConditions {
-    /// 최대 Hertz 압력 p_H [Pa].
+    /// **최대(peak) Hertz 압력** p_H = p0 [Pa]. (원 논문 Nomenclature 규약: peak.)
+    ///
+    /// M1(dry)에서 이 값은 거칠기 창(window) 위 **공칭(평균)압** `p̄` 로도 쓰인다:
+    /// 시료(창)가 Hertz 반접촉폭 a 보다 훨씬 작고(창≪a) 접촉 중앙에 위치하면
+    /// 국부 압력이 거의 균일 ≈ peak 이므로 `p̄ = p_h` (P2-1 §3 L202; ME 2003; ref(21)).
+    /// 따라서 창 목표하중 `W = p̄·A_window = p_h·Lx·Ly`. (peak↔mean 은 이 가정으로 일치;
+    /// M2 barus_visc·M6 c_ρ 도 동일하게 p_h 를 대표 Hertz압으로 사용.)
+    /// 창≪a 유효성은 잔여 가정(민감도 대상, RQ-M1-win).
     pub p_h: f64,
     /// 평균 구름속도(entrainment) u_mean = (u1+u2)/2 [m/s].
     pub u_mean: f64,
@@ -224,7 +237,7 @@ pub struct OperatingConditions {
 // ─────────────────────────────────────────────────────────────────────────
 
 /// 부분윤활(mixed/partial EHL) 해석 입력.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PartialLubInput {
     /// 계산 격자.
     pub grid: Grid,
@@ -241,7 +254,7 @@ pub struct PartialLubInput {
 }
 
 /// 건식(dry) 접촉 해석 결과.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DryResult {
     /// 건식 접촉 압력장 p_dry [Pa] (압축 하중, 부호는 인장 + 규약상 접촉면은 음압이나
     /// 관례상 압력 크기를 양수로 저장 — 사용처 주석 준수).
@@ -251,7 +264,7 @@ pub struct DryResult {
 }
 
 /// 완전윤활(full-film EHL) 해석 결과.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LubResult {
     /// EHL 압력장 p_lub [Pa].
     pub p_lub: Field2,
@@ -260,7 +273,7 @@ pub struct LubResult {
 }
 
 /// 부분윤활(partial/mixed) 해석 결과.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PartialLubResult {
     /// 전이(transition) 압력장 p_tran [Pa] (아스페리티+유막 합).
     pub p_tran: Field2,
@@ -268,6 +281,13 @@ pub struct PartialLubResult {
     pub h_tran: Field2,
     /// 경계윤활 분율 phi_bl [-] (아스페리티 접촉 하중분율, 0~1).
     pub phi_bl: f64,
+    /// 마찰 트랙션장 q_tran [Pa] (M3 표면하 응력 입력; 원 논문 `q=μ·p`, Coulomb).
+    ///
+    /// `q_tran = μ_eff·p_tran`, `μ_eff = φ_bl·μ_bl + (1−φ_bl)·μ_ehl`
+    /// (경계마찰 `μ_bl`·유막마찰 `μ_ehl` 을 경계윤활 분율 φ_bl 로 가중; Table 1/2).
+    /// M6 순수 커널([`crate::m6_share`])은 μ 물성을 모르므로 0 placeholder 를 두고,
+    /// 상위 오케스트레이터([`crate::partial_lub`])가 μ_eff·p_tran 으로 채운다.
+    pub q_tran: Field2,
 }
 
 #[cfg(test)]
