@@ -403,10 +403,15 @@ main (203bc4f, origin/main 동기)
 5. **G3 마일스톤 annotated tag** 고려(`p3-phase2-g3` @병합점): 브랜치 포인터보다 durable 한 참조점.
 6. **push 주기**: 코드/문서 커밋 후 정기 push(로컬 단독 상태 최소화).
 
-### D. 실행 보류 (승인 게이트)
+### D. 실행 완료 (2026-07-14, 연구자 승인)
 
-- push 는 저손실이나, **main 병합·브랜치 삭제는 outward·비가역** → **연구자 승인 후 실행**(프로젝트 연구자 게이트 준수). 본 항목은 **분석·안내 기록**이며 병합/삭제 미실행.
-- 실행 시점 권장: **M3 무인 착수 직전**(현 문서 마일스톤 마감 후).
+연구자 지시로 실행(당초 보류 → 승인 후 즉시 실행). 결과:
+- **태그**: `P3_phase1b_G3`(b18c0b9, Phase1b G3 마일스톤)·`P3_M1,2,6`(2498f9a=phase2 tip, M1/M2/M6 서브시스템 G3) — annotated, 둘 다 origin 푸시. ※ 당초 `P3_M1/2/6`(슬래시) 지정이었으나 **슬래시가 ref 중첩디렉터리(`refs/tags/P3_M1/2/6`) 생성 → 조합 명령서 실제 오류** 실증 → **ref-safe `P3_M1,2,6`(콤마, 문서명 규칙 일관)로 교체**.
+- **병합**: `phase2-partial-lub → main` **`--no-ff`** (병합커밋 `68f847d`, 16파일·+3708/−685). main origin 푸시. **17커밋 granular provenance 보존**(squash 안 함).
+- **브랜치 정리**: `phase1b-remediation`·`phase2-partial-lub` 로컬/원격 삭제(둘 다 main에 포함 확인 후, 무손실). phase2는 미푸시분이 main에 병합돼 `-D` 안전 삭제.
+- **신규 분기**: `P3_M3`(main 기준) 생성·체크아웃·origin 추적 푸시. **M3 작업 브랜치**.
+- **gotcha(기록)**: 라이브 Obsidian이 `.obsidian/workspace.json`(tracked·브랜치 간 상이)을 계속 재기록해 checkout/merge를 반복 차단 → `checkout -- <file> && merge && push` **원자적 실행**으로 통과. Windows 파일락(열린 docx)으로 `stash -u` 부분실패 → 잔여 `stash@{0}`(무관 Main bearing 변경 중복백업, 무해; working tree에 원본 보존됨).
+- **최종 구조**: `main`(68f847d, blessed baseline) + `P3_M3`(작업) + 태그 2개. **main 재병합 트리거 = M3 G3 통과 시**(후보 A) 권장.
 
 ---
 
