@@ -69,7 +69,12 @@
 //! **periodic-window 평균 아티팩트**(유한창 평균압이 고립 Hertz 엔 없는 구속하중으로 기여)는
 //! 창 크기에 반비례(∝1/창; 실측 32b→+3.4%, 128b→+0.93%, 256b→+0.49%) → **대형창으로 <1% 수렴**
 //! (VC-M3-Hertz 는 256b 서 +0.49%). 완전 결선(작은 창 <1%)은 평균분리(P2-3 §3.3 "평균 Hertz
-//! 해석해 분리") 로 가능하나 대형창이 등가·단순. **잔여 RQ-M3-DC**: 접선(q) DC 완전형은 미검증.
+//! 해석해 분리") 로 가능하나 대형창이 등가·단순.
+//!
+//! **접선(q) DC**: 균일 표면전단 → 반공간 **단순전단** `σ_xz=q_DC`(전 깊이), 나머지 0, vM=√3·q
+//! (평형·적합성·BC(σ_zz(0)=0·τ_xz(0)=q) 만족 유일 응력해; u_x∝z 발산이나 응력은 잘 정의).
+//! `dc_uniform_traction` 이 검증(구 미검증 gap 폐색). → **RQ-M3-DC 의 법선·접선 DC 응답은 정본 확정**;
+//! 잔여는 실사용 매크로 정밀도(평균분리 P2-3 §3.3)뿐 — 리플(비-DC) 목적엔 불요·enhancement.
 
 use crate::types::{Field2, Grid, MaterialProps, OperatingConditions, StressResult, StressTensor6};
 use crate::util::fft::{fft2_forward, fft2_inverse};
@@ -880,6 +885,33 @@ mod tests {
                 assert!((st.sxx.data[k] - lat).abs() < 1.0, "σ_xx DC != ν/(1−ν)p");
                 assert!((st.syy.data[k] - lat).abs() < 1.0, "σ_yy DC != ν/(1−ν)p");
             }
+        }
+    }
+
+    // ── 접선 DC 검증(RQ-M3-DC 접선 완전형): 균일 트랙션 q → **단순전단** σ_xz=q(전 깊이),
+    //    나머지 5성분 0, vM=√3·q. (균일 표면전단 → 반공간 단순전단; 평형·적합성·BC
+    //    (σ_zz(0)=0·τ_xz(0)=q) 만족 유일 응력해. 변위 u_x∝z 발산이나 응력은 잘 정의.
+    //    dc_uniform_pressure(법선 구속하중) 의 접선 대응 — 접선 DC 미검증 gap 폐색.) ──
+    #[test]
+    fn dc_uniform_traction() {
+        let (nx, ny) = (16usize, 16usize);
+        let grid = Grid::new(nx, ny, 1e-4, 1e-4);
+        let p = Field2::zeros(nx, ny);
+        let q = Field2::filled(nx, ny, 4.0e8); // 균일 접선 트랙션
+        let res = solve_stress_at_depths(&grid, &p, &q, 0.3, &[0.0, 1e-5, 5e-5]);
+        for l in 0..3 {
+            let st = &res.stress[l];
+            for k in 0..nx * ny {
+                assert!((st.sxz.data[k] - 4.0e8).abs() < 1.0, "τ_xz DC != q (단순전단)");
+                assert!(st.sxx.data[k].abs() < 1.0, "σ_xx DC != 0");
+                assert!(st.syy.data[k].abs() < 1.0, "σ_yy DC != 0");
+                assert!(st.szz.data[k].abs() < 1.0, "σ_zz DC != 0");
+                assert!(st.sxy.data[k].abs() < 1.0, "τ_xy DC != 0");
+                assert!(st.syz.data[k].abs() < 1.0, "τ_yz DC != 0");
+            }
+            // vM = √3·q (순수전단).
+            let vm = res.von_mises[l].at(0, 0);
+            assert!((vm - 3f64.sqrt() * 4.0e8).abs() < 1.0, "vM DC != √3·q");
         }
     }
 
