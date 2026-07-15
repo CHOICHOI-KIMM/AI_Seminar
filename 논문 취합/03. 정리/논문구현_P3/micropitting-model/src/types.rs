@@ -333,6 +333,21 @@ pub struct StressResult {
     pub von_mises: Vec<Field2>,
 }
 
+/// M4 다축피로(Dang Van) 해석 결과 — 깊이층별 위험계수·수명.
+///
+/// M3([`StressResult`])의 응력장을 **시간이력**(정상상태서 x-스냅샷=이동하중, `T=x/ū`)으로
+/// 소비해 각 물질점 (x,y,z) 의 Dang Van 위험계수와 수명을 산출한다(M4 [`crate::m4_fatigue`]).
+/// 세 `Vec` 는 동일 길이 `nz`(깊이층), 인덱스 `l` 이 깊이 `z[l]`[m] 에 대응.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FatigueResult {
+    /// 깊이 좌표 [m] (z>0=내부, 오름차순), 길이 nz.
+    pub z: Vec<f64>,
+    /// 층별 Dang Van 위험계수 `D` [-] (D≥1 → 피로한계 초과). 길이 nz.
+    pub dang_van_d: Vec<Field2>,
+    /// 층별 수명 `N` [cycles] (Wöhler 대입, 식[11]). 길이 nz.
+    pub life_n: Vec<Field2>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

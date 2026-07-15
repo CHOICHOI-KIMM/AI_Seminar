@@ -434,6 +434,21 @@ main (203bc4f, origin/main 동기)
 
 ---
 
+## 2026-07-14 — M4 다축피로(Dang Van) 무인 구현 — G3 통과 (human-gate 조치)
+
+- **브랜치**: `P3_M4`(main←P3_M3 병합 후 분기). Phase0(FatigueResult, 커밋 `b7faaad`).
+- **무인 워크플로 `wf_a5672054`**(5에이전트·에러0·~428K토큰·~25분): 순차백본(M4Impl→변이) + 병렬 3크리틱.
+  - **M4Impl**: src/m4_fatigue.rs — Desimone 식(1)~(7)+MCE(5D 최소외접구 Bădoiu–Clarkson)+Wöhler(A=−43·B=1220)+Milano 닫힌해 오라클. 시간이력=x-스냅샷. 78단위 green.
+  - **변이 4/4 CAUGHT**(MCE무력화·Tresca·α_dv·Wöhler A부호).
+  - **적대 3크리틱**: grounding·fabrication **pass**(fabrication 크리틱이 meb_center6 비대칭 독립복제→알고리즘 정확 확인). **tautology FAIL(human-gate)**.
+- **human-gate(정당·중대)**: 기존 오라클 전수 대칭→MEB중심≡centroid → **MCE 검증 사각지대**(centroid 스텁이 8오라클 전부 통과 재현). damage_life_consistency 내부 round-trip.
+- **오케스트레이터 조치**: (a) **비대칭 MCE 오라클 신설**(vc_m4_mce_nonproportional 법선/전단 지배쌍 z\*·τ̂ 손유도 대조 + meb_center_known_geometry 지배쌍 assertion). (b) **변이-증명**: centroid 스텁 재주입→신규 2오라클만 FAIL(77 pass)=사각지대 폐색 확정. (c) provenance 출처명시·damage_life 역할한정 주석.
+- **독립 cargo test 79단위+2통합 green**. 커밋 `54423aa`(코드). 작업결과_M3,4,5 §M4 상세.
+- **하네스 교훈(중대)**: 변이 4/4·크리틱 2/3 pass여도 **green≠검증** — tautology 크리틱이 핵심 수치커널(MCE)의 대칭-오라클 사각지대 포착. **수치 알고리즘은 그것이 실제 필요한 비자명(비대칭) 케이스로 검증**(대칭 극한은 검출력 0). 오케스트레이터가 비대칭 오라클+변이증명으로 폐색.
+- **다음**: M5(Archard 마모, p_tran·u_s·phi_bl, M3 비의존).
+
+---
+
 ## 누적 요약 (2026-07-05 ~ 07-13, 갱신)
 - Workflow **5회**(파일럿·확장·최종화·P3 최초·**Phase 1b**) + Tripp PDF 파이프라인 1회. 에이전트 누계 **77개·에러 0**.
 - **P1→G1→P2 전 6모델 완료** → **P3 부분윤활 서브시스템 M1+M2+M6 구현·G3 통과**(Rust crate, cargo test 41+1 green). main 안정 + `phase1b-remediation` 브랜치.
