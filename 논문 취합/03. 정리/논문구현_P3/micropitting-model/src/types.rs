@@ -348,6 +348,19 @@ pub struct FatigueResult {
     pub life_n: Vec<Field2>,
 }
 
+/// M5 마모(수정 Archard) 해석 결과 — 사이클당 국소 마모깊이.
+///
+/// M6 전이압 `p_tran`·미끄럼속도 `u_s`·경계윤활분율 `phi_bl` 을 소비(M3/M4 비의존)해
+/// Archard 식[14] `Δh_w/Δn = k·p·u_s/H` 로 산출한다(M5 [`crate::m5_wear`]).
+/// 시간루프가 `Δn` 스텝마다 `dh_w` 로 형상(양 표면 절반)·손상맵을 갱신한다.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WearResult {
+    /// 국소 마모깊이율 `Δh_w/Δn` [m/cycle] (식[14], 격자점별). 접촉 밖은 0.
+    pub dh_w: Field2,
+    /// 면적평균 마모층율 [m/cycle] (식[15], `∫k·p dA` 기반).
+    pub dh_w_mean: f64,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
