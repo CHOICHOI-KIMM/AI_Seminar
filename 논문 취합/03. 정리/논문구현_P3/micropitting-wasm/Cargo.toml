@@ -10,7 +10,17 @@ edition = "2021"
 #   "인프로세스 네이티브 Rust — 사이드카/외부바이너리/WASM 없음" 으로 못박으므로, 이 크레이트는
 #   micropitting-model 에 의존만 하고 그 반대는 없다(단방향).
 #
-# Phase 0 스파이크 범위 = solve_wear 1개만. 나머지 진입점은 기준 통과 후 Phase 2 에서 확장.
+# ★ 빌드 (2026-07-17): wasm-pack.exe 가 OS 레벨에서 실행 차단(Access is denied; ACL·Zone 정상,
+#   백신/EDR 휴리스틱 추정)되어 **2단계 직접 빌드**로 우회한다. wasm-pack 은 아래 두 단계의
+#   래퍼일 뿐이라 산출물은 동등하다. wasm-bindgen CLI 버전은 Cargo.lock 의 wasm-bindgen crate
+#   버전과 **정확히 일치**해야 한다(현 0.2.126).
+#
+#   cargo build --target wasm32-unknown-unknown --release
+#   wasm-bindgen --target nodejs --out-dir pkg-node \
+#       target/wasm32-unknown-unknown/release/micropitting_wasm.wasm
+#   node verify_phase2.js        # 신선도 가드 포함
+#
+#   (브라우저용은 --target web)
 
 [lib]
 crate-type = ["cdylib", "rlib"]

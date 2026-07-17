@@ -491,6 +491,21 @@ pub fn solve_full_film(input: &PartialLubInput) -> LubResult {
 ///
 /// 인터페이스 안정성을 위해 유지하되, 현 Phase 에서는 완전유막 특수해를 전이장으로
 /// 통과시키고 경계윤활 분율 `phi_bl=0` 을 반환한다(하중분담 결합은 잔여큐 RQ-1).
+///
+/// # ⚠️ 이 함수는 스텁이다 — `partial_lub::solve_partial` 과 혼동 금지
+///
+/// 두 함수는 **시그니처가 동일**해서 잘못 `use` 해도 조용히 컴파일된다. 그 결과
+/// `phi_bl = 0` 이 M5 로 흘러가면 [`crate::m5_wear::wear_coefficient`] 의 건마모 항이
+/// 사라져 **마모 없는 결과가 정상처럼 보인다**(무증상 실패). 실제 부분윤활 결합·마찰은
+/// [`crate::partial_lub::solve_partial`] 이 담당한다.
+///
+/// `#[deprecated]` 는 **거동을 바꾸지 않는다** — 오사용을 컴파일 경고로 드러내
+/// 함정을 문서가 아니라 컴파일러가 지키게 할 뿐이다(시각화 HTML 계획 R4).
+#[deprecated(
+    since = "0.1.0",
+    note = "패스스루 스텁(phi_bl=0·q_tran=0). 실제 부분윤활은 partial_lub::solve_partial 사용. \
+            phi_bl=0 이 M5 로 가면 건마모가 조용히 사라진다."
+)]
 pub fn solve_partial(input: &PartialLubInput) -> PartialLubResult {
     let full = solve_full_film(input);
     let (nx, ny) = (input.grid.nx, input.grid.ny);
@@ -716,7 +731,11 @@ mod tests {
     }
 
     // ── 6. 인터페이스 유지: solve_partial 통과 + phi_bl=0 ──
+    //
+    // 이 테스트는 **스텁이 스텁임을 고정**하는 것이 목적(phi_bl=0 을 명시적으로 assert)이므로
+    // deprecated 경고를 의도적으로 허용한다. 다른 곳에서의 사용은 경고로 드러나야 한다.
     #[test]
+    #[allow(deprecated)]
     fn partial_passthrough() {
         let input = PartialLubInput {
             grid: Grid::new(8, 8, 1e-4, 1e-4),
