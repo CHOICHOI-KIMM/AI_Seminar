@@ -1,0 +1,4 @@
+/target
+# wasm-pack 산출물 — 빌드로 재생성(896MB target 과 함께 커밋 금지, 100MB 제한).
+/pkg
+/pkg-node

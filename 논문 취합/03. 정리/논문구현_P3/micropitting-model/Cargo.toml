@@ -5,10 +5,17 @@ edition = "2021"
 
 # P3 Phase 0 — 공유 기반(shared foundation) crate.
 # 참조-재구현 원칙: CRB 코드는 알고리즘/계수 참조만. 직접 의존은 아래 3종 + dev.
+[features]
+# 기본 = 병렬(네이티브·CRB 통합 경로). 검증은 양쪽 모두 green 이어야 한다.
+default = ["parallel"]
+# `parallel` off = 단일스레드. wasm32 는 rayon 스레드 스폰 불가 → 필수
+# (시각화 HTML 계획 §3; CRB-main 통합 경로는 default 그대로 = 영향 없음).
+parallel = ["dep:rayon"]
+
 [dependencies]
 rustfft = "6"
 nalgebra = "0.33"
-rayon = "1"
+rayon = { version = "1", optional = true }
 # 시간루프/프런트 직렬화(Phase 2 §8.B.3): 결과·입력 struct serde derive.
 serde = { version = "1", features = ["derive"] }
 

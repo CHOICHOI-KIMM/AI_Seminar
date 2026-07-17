@@ -48,6 +48,7 @@
 //! - `alpha_dv`(≈0.232, 무차원) 은 `alpha_wave`(1/m)·`alpha_visc`(1/Pa)와 **혼용 금지**.
 
 use crate::types::{Field2, FatigueResult, StressResult};
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -376,9 +377,16 @@ pub fn solve_fatigue(stress: &StressResult, params: &FatigueParams) -> FatigueRe
 
     for l in 0..nz {
         let st = &stress.stress[l];
-        // 열(물질점 (y=j))별 (D,N) 병렬 산출.
-        let cols: Vec<(f64, f64)> = (0..ny)
-            .into_par_iter()
+        // 열(물질점 (y=j))별 (D,N) 산출.
+        // 병렬/직렬 경로는 **동일 물리**: 열 j 는 상호 독립이고 rayon `collect::<Vec<_>>()` 는
+        // 순서를 보존하므로 `cols` 가 동일하다. `--no-default-features` 로 오라클 green 유지가
+        // 이 등가성의 기계 증명(시각화 HTML 계획 §3.2 기준 ④).
+        #[cfg(feature = "parallel")]
+        let col_iter = (0..ny).into_par_iter();
+        #[cfg(not(feature = "parallel"))]
+        let col_iter = 0..ny;
+
+        let cols: Vec<(f64, f64)> = col_iter
             .map(|j| {
                 let hist: Vec<[f64; 6]> = (0..nx)
                     .map(|i| {

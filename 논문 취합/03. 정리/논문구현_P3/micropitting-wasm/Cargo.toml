@@ -1,0 +1,25 @@
+[package]
+name = "micropitting_wasm"
+version = "0.1.0"
+edition = "2021"
+
+# P3 시각화 HTML — WASM 경계 셸 (계획 §4.2).
+#
+# ★ 역할 한정: 얇은 경계 어댑터. **물리 로직 금지** — 모든 수치는 micropitting_model 이 낸다.
+# ★ CRB-main 통합 경로(native Tauri)와 무관한 **병렬 산출물**. 총괄계획 §1.1 은 CRB 를
+#   "인프로세스 네이티브 Rust — 사이드카/외부바이너리/WASM 없음" 으로 못박으므로, 이 크레이트는
+#   micropitting-model 에 의존만 하고 그 반대는 없다(단방향).
+#
+# Phase 0 스파이크 범위 = solve_wear 1개만. 나머지 진입점은 기준 통과 후 Phase 2 에서 확장.
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# 단일스레드 = wasm32 필수(rayon 스레드 스폰 불가). 계획 §3.1.
+micropitting_model = { path = "../micropitting-model", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
