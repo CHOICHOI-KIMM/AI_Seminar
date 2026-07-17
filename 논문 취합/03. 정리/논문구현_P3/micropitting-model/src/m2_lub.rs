@@ -1091,15 +1091,16 @@ mod tests {
         let alpha = 12.0e-9; // 압점도 [1/Pa]
         let hbar = 0.3e-6; // 평균유막 [m]
         let c = 0.03_f64; // 압축성항(대표값; C=hE'κ/(4B) 계열, 여기선 파라미터로 고정)
-        let a_of = |lam: f64| 2.0 * lam / (PI * alpha * hbar * e_prime); // 식(15) A
+        // 식(15) A — reference(leaf) 소유.
+        let a_of = |lam: f64| crate::reference::gw1994_a(lam, alpha, hbar, e_prime);
         // 파장 스윕: 단파장→장파장.
         let lams = [1e-5, 3e-5, 1e-4, 3e-4, 1e-3];
         let mut prev_h = -1.0_f64;
         let mut prev_p = f64::INFINITY;
         for &lam in &lams {
             let a = a_of(lam);
-            let h_ratio = c / (c + a); // 식(16) |H₁/Z₁|
-            let p_ratio = 1.0 / (c + a); // 식(15) |P₁/Z₁|
+            let h_ratio = crate::reference::gw1994_h1_over_z1(c, a); // 식(16) |H₁/Z₁|
+            let p_ratio = crate::reference::gw1994_p1_over_z1(c, a).abs(); // 식(15) |P₁/Z₁|
             // 물리: 장파장(A↑) → H₁/Z₁↓(평탄화), P₁/Z₁↓.
             if prev_h >= 0.0 {
                 assert!(h_ratio < prev_h, "H₁/Z₁ must decrease with λ(A↑): λ={lam}");
@@ -1112,8 +1113,14 @@ mod tests {
         // 단파장 극한 A→0: H₁/Z₁→1(거칠기 지속), 장파장 A→∞: →0(평탄화).
         let a_tiny = a_of(1e-7);
         let a_huge = a_of(1.0);
-        assert!(c / (c + a_tiny) > 0.99, "short-λ: roughness should persist (H₁/Z₁→1)");
-        assert!(c / (c + a_huge) < 0.01, "long-λ: roughness flattened (H₁/Z₁→0)");
+        assert!(
+            crate::reference::gw1994_h1_over_z1(c, a_tiny) > 0.99,
+            "short-λ: roughness should persist (H₁/Z₁→1)"
+        );
+        assert!(
+            crate::reference::gw1994_h1_over_z1(c, a_huge) < 0.01,
+            "long-λ: roughness flattened (H₁/Z₁→0)"
+        );
         // 식(17) Aₙ=A/n: n 성분 파수 λ/n → A_n = A/n(선형).
         let a1 = a_of(4e-4);
         let a4 = a_of(4e-4 / 4.0);
@@ -1128,17 +1135,20 @@ mod tests {
     // 특수해 전달함수 형태를 문헌 실측치로 독립 검증. (상보파 진폭 g 는 별도 gap G-M2-1.)
     #[test]
     fn vc_m2_spot_gw1994_table1() {
-        // Table 2 입력 + Table 1 스팟 (L106·109·112·113·124·125). E'=227 GPa=2·E_red.
-        let e_prime = 227.0e9;
-        let lam = 0.2e-3; // 2λ=0.4mm → λ=0.2mm
-        let z1 = 0.25e-6; // z_max(정현파 진폭)
-        // (α[1/Pa], h̄[m], P₁[Pa], h₁[m])
+        // Table 2 입력 + Table 1 "Present theory" 스팟 — 전부 reference(leaf) 소유.
+        use crate::reference::{
+            gw1994_a, GW1994_E_PRIME_PA, GW1994_LAMBDA_M, GW1994_TABLE1_PRESENT,
+            GW1994_TABLE2_KWEH, GW1994_Z1_M,
+        };
+        let e_prime = GW1994_E_PRIME_PA;
+        let lam = GW1994_LAMBDA_M;
+        let z1 = GW1994_Z1_M;
         let cases = [
-            (14.8e-9, 1.341e-6, 0.388e9, 0.0331e-6), // 50℃
-            (12.3e-9, 0.698e-6, 0.413e9, 0.0185e-6), // 80℃
+            (GW1994_TABLE2_KWEH[0].0, GW1994_TABLE2_KWEH[0].1, GW1994_TABLE1_PRESENT[0].0, GW1994_TABLE1_PRESENT[0].1), // 50℃
+            (GW1994_TABLE2_KWEH[1].0, GW1994_TABLE2_KWEH[1].1, GW1994_TABLE1_PRESENT[1].0, GW1994_TABLE1_PRESENT[1].1), // 80℃
         ];
         for (alpha, hbar, p1, h1) in cases {
-            let a_data = 2.0 * lam / (PI * alpha * hbar * e_prime); // 기하 A(식15)
+            let a_data = gw1994_a(lam, alpha, hbar, e_prime); // 기하 A(식15)
             let a_inf = (z1 - h1) / (alpha * p1 * hbar); // 스팟서 C 소거한 A
             let rel = (a_data - a_inf).abs() / a_data;
             // 대조원 차등오차 내(<1%). 스팟 정량 재현 → 특수해 형태 검증.
@@ -1156,27 +1166,27 @@ mod tests {
     // 문헌 수치해 스팟 A_d=0.739·A_i 와 근사오차 수%(fit↔numerics) 내 정합.
     #[test]
     fn vc_m2_master_venner2000() {
-        let f_bar = |r: f64| if r > 1.0 { (1.0 - 1.0 / r).exp() } else { 1.0 };
-        let ad_ai = |nab2: f64, f: f64| {
-            let x = f * nab2;
-            1.0 / (1.0 + 0.15 * x + 0.015 * x * x)
+        // 식(29)·∇₂·f̄·예제·문헌 수치해 — 전부 reference(leaf) 소유.
+        use crate::reference::{
+            venner2000_amplitude_reduction, venner2000_f_bar, venner2000_nabla2, VENNER2000_EXAMPLE,
+            VENNER2000_EXAMPLE_NUMERICS,
         };
+        let f_bar = venner2000_f_bar;
+        let ad_ai = |nab2: f64, f: f64| venner2000_amplitude_reduction(nab2, f);
         // f̄ 정의 검증.
         assert!((f_bar(1.0) - 1.0).abs() < 1e-15, "f̄(1)=1");
         assert!((f_bar(2.0) - (0.5_f64).exp()).abs() < 1e-12, "f̄(2)=e^0.5");
         // 예제 스팟: ∇₂ 계산 → 식(29) 값.
-        let m = 1007.6_f64;
-        let l = 12.05_f64;
-        let lam_over_a = 0.25; // λ=a/4
-        let nab2 = lam_over_a * (m / l).sqrt();
+        let (m, l, lam_over_a) = VENNER2000_EXAMPLE;
+        let nab2 = venner2000_nabla2(lam_over_a, m, l);
         assert!((nab2 - 2.2861).abs() < 1e-3, "∇₂ example={nab2}");
         let ratio = ad_ai(nab2, 1.0);
         // 식(29) 자체 값(기계정밀): 0.7036.
         assert!((ratio - 0.70358).abs() < 1e-4, "eq(29) value={ratio}");
         // 문헌 수치해 0.739 와 fit 오차 수%(<6%) 내.
         assert!(
-            (ratio - 0.739).abs() / 0.739 < 0.06,
-            "master vs Venner numerics(0.739): {ratio}"
+            (ratio - VENNER2000_EXAMPLE_NUMERICS).abs() / VENNER2000_EXAMPLE_NUMERICS < 0.06,
+            "master vs Venner numerics({VENNER2000_EXAMPLE_NUMERICS}): {ratio}"
         );
         // 물리 극한: ∇₂→0(단파장/고주파) → A_d/A_i→1(불변), ∇₂→∞(장파장) → →0(완전변형).
         assert!(ad_ai(1e-4, 1.0) > 0.999, "high-freq: unchanged");
@@ -1222,18 +1232,20 @@ mod tests {
     fn vc_m2_comp_amplitude_venner() {
         // ══ Part A — Venner1997 eq(5) 마스터커브 vs Table1 수치해 (외부 기준곡선 확정) ══
         // ∇ = (λ/b)·M^{3/4}/L^{1/2}, M=100, L=11 (Venner1997 §3.1 numerical-accuracy case).
-        let m = 100.0_f64;
-        let l = 11.0_f64;
-        let grad = |lob: f64| lob * m.powf(0.75) / l.sqrt();
-        let ad_ai = |lob: f64| {
-            let n = grad(lob);
-            1.0 / (1.0 + 0.17 * n + 0.03 * n * n) // 식(5) — Venner 상수 0.17/0.03 외부 하드코딩
+        // 식(5)·상수(0.17/0.03)·Table1·앵커스팟 — 전부 reference(leaf) 소유. 뷰어 참조곡선과 동일 코드.
+        use crate::reference::{
+            venner1997_amplitude_reduction, venner1997_nabla, venner1997_nabla_from_ratio,
+            VENNER1997_ANCHOR_SPOTS, VENNER1997_HALF_CROSSING_BRACKET, VENNER1997_L, VENNER1997_M,
         };
+        let m = VENNER1997_M;
+        let l = VENNER1997_L;
+        let grad = |lob: f64| venner1997_nabla(lob, m, l);
+        let ad_ai = |lob: f64| venner1997_amplitude_reduction(grad(lob));
         // Table1 스팟(외부 출판 수치해; (15) L122-124). 앵커역 λ/b∈[0.25,1.0](A_d/A_i≈0.5 교차부)
         // 서 fit↔numerics 2~5% 대조. 큰 ∇ 꼬리 λ/b≥2 은 단일(M,L) fit 산포가 5% 초과(λ/b=2→~9.6%)
         // 라 스팟서 제외. eq(5) 과소예측역은 0.5<A_d/A_i<1(단파장·작은 λ/b), A_d/A_i≤0.5 는
         // 장파장(큰 λ/b·큰 ∇)쪽이다((15) §4.4; L1245 물리극한과 정합).
-        let spots = [(1.0_f64, 0.183_f64), (0.5, 0.394), (0.25, 0.660)];
+        let spots = VENNER1997_ANCHOR_SPOTS;
         for (lob, table) in spots {
             let fit = ad_ai(lob);
             let rel = (fit - table).abs() / table;
@@ -1273,19 +1285,18 @@ mod tests {
             "model complementary amplitude must equal g_inlet in pure rolling: {g_model}"
         );
 
-        // Venner1997 eq(5) 역산: A_d/A_i=g 인 ∇ 양근. 0.03∇²+0.17∇+(1−1/g)=0.
-        let factor = m.powf(0.75) / l.sqrt(); // ∇ = factor·(λ/b), factor≈9.5347 (Part A 와 동일 M,L)
-        let invert_lob = |g: f64| {
-            let cc = 1.0 - 1.0 / g; // 상수항
-            let nab = (-0.17 + (0.17 * 0.17 - 4.0 * 0.03 * cc).sqrt()) / (2.0 * 0.03);
-            nab / factor // λ/b
-        };
+        // Venner1997 eq(5) 역산: A_d/A_i=g 인 ∇ 양근 — reference(leaf) 소유.
+        // ∇ = factor·(λ/b), factor≈9.5347 (Part A 와 동일 M,L) → λ/b = ∇/factor.
+        let factor = venner1997_nabla(1.0, m, l);
+        let invert_lob =
+            |g: f64| venner1997_nabla_from_ratio(g).expect("g∈(0,1] 이므로 가역") / factor;
         let lob = invert_lob(g_model);
 
         // 외부 앵커: (15) Table1 실측 A_d/A_i=0.5 교차구간 (0.25,0.5).
+        let (br_lo, br_hi) = VENNER1997_HALF_CROSSING_BRACKET;
         assert!(
-            lob > 0.25 && lob < 0.5,
-            "g={g_model} → λ/b={lob:.4} outside Venner Table1 0.5-crossing bracket (0.25,0.5)"
+            lob > br_lo && lob < br_hi,
+            "g={g_model} → λ/b={lob:.4} outside Venner Table1 0.5-crossing bracket ({br_lo},{br_hi})"
         );
         // g=0.5 → λ/b≈0.3773 (∇≈3.598): GW half-pumping 중앙곡선점.
         assert!(
@@ -1293,12 +1304,13 @@ mod tests {
             "g=0.5 anchor λ/b={lob:.4} (expect 0.3773, ∇≈3.598)"
         );
         // 민감도 대역 [0.45,0.6](RQ-M2-comp1) 은 구간 내(정상).
-        assert!(invert_lob(0.45) > 0.25 && invert_lob(0.45) < 0.5, "g=0.45 in-bracket");
-        assert!(invert_lob(0.60) > 0.25 && invert_lob(0.60) < 0.5, "g=0.60 in-bracket");
+        let in_bracket = |v: f64| v > br_lo && v < br_hi;
+        assert!(in_bracket(invert_lob(0.45)), "g=0.45 in-bracket");
+        assert!(in_bracket(invert_lob(0.60)), "g=0.60 in-bracket");
         // 변이게이트 (i): g 반감(0.25) → 구간 이탈(검출력 영구 고정, 이 오라클이 직접 CAUGHT).
         let mutated = invert_lob(g_model * 0.5);
         assert!(
-            !(mutated > 0.25 && mutated < 0.5),
+            !in_bracket(mutated),
             "MUTATION UNDETECTED: g×0.5 → λ/b={mutated:.4} still in Venner bracket"
         );
     }

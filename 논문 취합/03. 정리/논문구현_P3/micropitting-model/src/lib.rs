@@ -19,6 +19,8 @@
 pub mod units;
 pub mod types;
 pub mod util;
+/// 문헌 폐형식·출판 데이터 (**leaf** — m1~m6 생산코드가 참조 금지; 자세히는 모듈 docstring).
+pub mod reference;
 
 pub mod m1_dry;
 pub mod m2_lub;

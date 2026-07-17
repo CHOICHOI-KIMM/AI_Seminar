@@ -460,11 +460,12 @@ mod tests {
         }
     }
 
-    // ── VC-M3-Sin(1): 단일 정현파 → 6응력 재구성이 식[10]/[16] 손유도 폐형식과 일치 ──
+    // ── VC-M3-Sin(1): 단일 정현파 → 6응력 재구성이 식[10]/[16] 폐형식과 일치 ──
     //
-    // 검증함수로 기대값 생성 금지 → 원문 식[10]/[16] 실수 cos/sin 폐형식을 **직접 전사**해
-    // 격자점에서 평가, 솔버 재구성장과 대조. (전달함수는 이 폐형식에서 소급했으나, 테스트는
-    // 복소 FRF 를 쓰지 않고 실수식만 쓰므로 복소↔실 변환·FFT 정규화·부호를 독립 검증.)
+    // 검증함수로 기대값 생성 금지 → 원문 식[10]/[16] 실수 cos/sin 폐형식을 기대값으로 쓴다.
+    // 폐형식은 **leaf 모듈** `crate::reference` 가 소유(계획 §4.1) — 뷰어 참조곡선과 **같은 코드**라
+    // 오라클이 지키는 곡선이 곧 화면에 그려지는 곡선이다(SSOT 단일). solver 는 복소 FRF·FFT 로
+    // 같은 장을 계산하므로, 실수식과의 대조는 복소↔실 변환·FFT 정규화·부호를 독립 검증한다.
     #[test]
     fn vc_m3_sin_normal() {
         let (nx, ny) = (32usize, 16usize);
@@ -482,41 +483,27 @@ mod tests {
         let z_depths = [0.0, 0.15 / zeta, 0.4 / zeta, 0.9 / zeta];
         let res = solve_stress_at_depths(&grid, &p, &q, nu, &z_depths);
 
+        let tol = p0 * 1e-6;
         for (l, &z) in z_depths.iter().enumerate() {
-            let e = (-zeta * z).exp();
             let st = &res.stress[l];
             for j in 0..ny {
                 let y = j as f64 * (ly / ny as f64);
                 for i in 0..nx {
                     let x = i as f64 * (lx / nx as f64);
-                    let cc = (alpha * x).cos() * (beta * y).cos();
-                    let ss = (alpha * x).sin() * (beta * y).sin();
-                    let cs = (alpha * x).cos() * (beta * y).sin();
-                    let sc = (alpha * x).sin() * (beta * y).cos();
-                    // 식[10] verbatim
-                    let ex_xx = p0
-                        * (alpha * alpha / (zeta * zeta) - alpha * alpha * z / zeta
-                            + 2.0 * nu * beta * beta / (zeta * zeta))
-                        * e
-                        * cc;
-                    let ex_yy = p0
-                        * (beta * beta / (zeta * zeta) - beta * beta * z / zeta
-                            + 2.0 * nu * alpha * alpha / (zeta * zeta))
-                        * e
-                        * cc;
-                    let ex_zz = p0 * (1.0 + zeta * z) * e * cc;
-                    let ex_xy = -p0 * (alpha * beta / (zeta * zeta)) * ((1.0 - 2.0 * nu) - zeta * z)
-                        * e
-                        * ss;
-                    let ex_yz = p0 * (beta * z) * e * cs;
-                    let ex_xz = p0 * (alpha * z) * e * sc;
-                    let tol = p0 * 1e-6;
-                    assert!((st.sxx.at(i, j) - ex_xx).abs() < tol, "sxx l={l} i={i} j={j}");
-                    assert!((st.syy.at(i, j) - ex_yy).abs() < tol, "syy l={l} i={i} j={j}");
-                    assert!((st.szz.at(i, j) - ex_zz).abs() < tol, "szz l={l} i={i} j={j}");
-                    assert!((st.sxy.at(i, j) - ex_xy).abs() < tol, "sxy l={l} i={i} j={j}");
-                    assert!((st.syz.at(i, j) - ex_yz).abs() < tol, "syz l={l} i={i} j={j}");
-                    assert!((st.sxz.at(i, j) - ex_xz).abs() < tol, "sxz l={l} i={i} j={j}");
+                    // 식[10] — reference(leaf) 소유
+                    let ex = crate::reference::tripp2003_normal_bisin(p0, alpha, beta, nu, x, y, z);
+                    let got = [
+                        st.sxx.at(i, j), st.syy.at(i, j), st.szz.at(i, j),
+                        st.sxy.at(i, j), st.syz.at(i, j), st.sxz.at(i, j),
+                    ];
+                    const NAMES: [&str; 6] = ["sxx", "syy", "szz", "sxy", "syz", "sxz"];
+                    for c in 0..6 {
+                        assert!(
+                            (got[c] - ex[c]).abs() < tol,
+                            "{} l={l} i={i} j={j}: got={} expect={}",
+                            NAMES[c], got[c], ex[c]
+                        );
+                    }
                 }
             }
         }
@@ -539,39 +526,28 @@ mod tests {
         let z_depths = [0.0, 0.15 / zeta, 0.4 / zeta, 0.9 / zeta];
         let res = solve_stress_at_depths(&grid, &p, &q, nu, &z_depths);
 
-        let (aoz, boz) = (alpha / zeta, beta / zeta);
+        let tol = q0 * 1e-6;
         for (l, &z) in z_depths.iter().enumerate() {
-            let e = (-zeta * z).exp();
             let st = &res.stress[l];
             for j in 0..ny {
                 let y = j as f64 * (ly / ny as f64);
                 for i in 0..nx {
                     let x = i as f64 * (lx / nx as f64);
-                    let cc = (alpha * x).cos() * (beta * y).cos();
-                    let ss = (alpha * x).sin() * (beta * y).sin();
-                    let cs = (alpha * x).cos() * (beta * y).sin();
-                    let sc = (alpha * x).sin() * (beta * y).cos();
-                    // 식[16] verbatim
-                    let ex_xx = q0 * aoz
-                        * (2.0 + 2.0 * nu * boz * boz - aoz * (alpha * z))
-                        * e
-                        * sc;
-                    let ex_yy =
-                        q0 * aoz * (2.0 * nu * aoz * aoz - boz * (beta * z)) * e * sc;
-                    let ex_zz = q0 * (alpha * z) * e * sc;
-                    let ex_xy = q0 * boz
-                        * (1.0 - 2.0 * nu * aoz * aoz - aoz * (alpha * z))
-                        * e
-                        * cs;
-                    let ex_yz = q0 * boz * (alpha * z) * e * ss;
-                    let ex_xz = q0 * (1.0 - aoz * (alpha * z)) * e * cc;
-                    let tol = q0 * 1e-6;
-                    assert!((st.sxx.at(i, j) - ex_xx).abs() < tol, "sxx l={l} i={i} j={j}");
-                    assert!((st.syy.at(i, j) - ex_yy).abs() < tol, "syy l={l} i={i} j={j}");
-                    assert!((st.szz.at(i, j) - ex_zz).abs() < tol, "szz l={l} i={i} j={j}");
-                    assert!((st.sxy.at(i, j) - ex_xy).abs() < tol, "sxy l={l} i={i} j={j}");
-                    assert!((st.syz.at(i, j) - ex_yz).abs() < tol, "syz l={l} i={i} j={j}");
-                    assert!((st.sxz.at(i, j) - ex_xz).abs() < tol, "sxz l={l} i={i} j={j}");
+                    // 식[16] — reference(leaf) 소유
+                    let ex =
+                        crate::reference::tripp2003_tangential_bisin(q0, alpha, beta, nu, x, y, z);
+                    let got = [
+                        st.sxx.at(i, j), st.syy.at(i, j), st.szz.at(i, j),
+                        st.sxy.at(i, j), st.syz.at(i, j), st.sxz.at(i, j),
+                    ];
+                    const NAMES: [&str; 6] = ["sxx", "syy", "szz", "sxy", "syz", "sxz"];
+                    for c in 0..6 {
+                        assert!(
+                            (got[c] - ex[c]).abs() < tol,
+                            "{} l={l} i={i} j={j}: got={} expect={}",
+                            NAMES[c], got[c], ex[c]
+                        );
+                    }
                 }
             }
         }
@@ -744,15 +720,11 @@ mod tests {
         let i0 = nx / 2;
 
         // Hertz 선접촉 압력 p(x)=p_h·√(1−((x−x0)/b)²), |x−x0|<b, 외부 0 (창·zero-pad).
+        // 분포식은 reference(leaf) 소유.
         let mut p = Field2::zeros(nx, ny);
         for j in 0..ny {
             for i in 0..nx {
-                let xr = (i as f64 * dx - x0) / b;
-                let v = if xr.abs() < 1.0 {
-                    p_h * (1.0 - xr * xr).sqrt()
-                } else {
-                    0.0
-                };
+                let v = crate::reference::hertz_line_pressure(p_h, b, i as f64 * dx - x0);
                 p.set(i, j, v);
             }
         }
@@ -778,27 +750,8 @@ mod tests {
         let vm_max_norm = vm_max / p_h;
         let z_norm = z_at / b;
 
-        // McEwen 독립 폐형식 최대(고전값).
-        let mcewen_vm = |zeta: f64| -> f64 {
-            let m = (1.0 + zeta * zeta).sqrt();
-            let sx = -((1.0 + 2.0 * zeta * zeta) / m - 2.0 * zeta);
-            let sz = -1.0 / m;
-            let sy = nu * (sx + sz);
-            (0.5 * ((sx - sy).powi(2) + (sy - sz).powi(2) + (sz - sx).powi(2))).sqrt()
-        };
-        let mut mc_max = 0.0;
-        let mut mc_z = 0.0;
-        {
-            let mut z = 0.01;
-            while z < 1.2 {
-                let v = mcewen_vm(z);
-                if v > mc_max {
-                    mc_max = v;
-                    mc_z = z;
-                }
-                z += 0.001;
-            }
-        }
+        // McEwen 독립 폐형식 최대(고전값) — reference(leaf) 소유.
+        let (mc_max, mc_z) = crate::reference::mcewen_von_mises_peak(nu, 0.001);
         // 고전값 자체 sanity (≈0.557 @ ≈0.70).
         assert!((mc_max - 0.557).abs() < 0.01, "McEwen ref off: {mc_max}");
         assert!((mc_z - 0.70).abs() < 0.06, "McEwen depth off: {mc_z}");

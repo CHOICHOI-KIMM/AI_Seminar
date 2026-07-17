@@ -553,8 +553,9 @@ mod tests {
         let tau_peak = ta.max(0.5 * sa); // sin=1 → τ_a; cos=1 → σ_a/2
         for k in 0..m {
             let wt = 2.0 * PI * k as f64 / m as f64;
-            let tau_cf = 0.5 * ((sa * wt.cos()).powi(2) + 4.0 * (ta * wt.sin()).powi(2)).sqrt();
-            let p_cf = (sa / 3.0) * (wt.cos() - 1.0);
+            // Milano A.8/A.10 — reference(leaf) 소유. 구현(MCE+Tresca)과 독립.
+            let tau_cf = crate::reference::milano2006_tau_dv(sa, ta, wt);
+            let p_cf = crate::reference::milano2006_sigma_h(sa, wt);
             // τ̂: MCE 정확도 지배 → 피크 대비 ≤1%.
             assert!(
                 (pr.tau_hat[k] - tau_cf).abs() <= 0.01 * tau_peak,
