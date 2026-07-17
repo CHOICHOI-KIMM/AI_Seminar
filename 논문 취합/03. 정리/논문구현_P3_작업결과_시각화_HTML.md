@@ -256,3 +256,113 @@ cargo test --manifest-path "논문 취합/03. 정리/논문구현_P3/micropittin
 # leaf 가드만
 cargo test --manifest-path "…/Cargo.toml" reference_is_leaf
 ```
+
+---
+
+## Phase 2 — 숙제 3건(무증상 실패 봉쇄) · **통과, R4·R5 해소**
+
+### 2.1 목적 — "진입점 추가"가 아니다
+
+Phase 0 이 남긴 숙제 3건은 **셋 다 무증상**(틀린 답이 정상처럼 보임)이다. Phase 0 을 `solve_wear` 하나로 좁게 자른 덕에 조용히 잠들어 있었을 뿐 사라진 게 아니다. → Phase 2 의 실질은 **틀린 상태를 도달 불가로 만드는 것**.
+
+| # | 무증상 실패 | 봉쇄 방식 |
+|---|---|---|
+| 1 | `grid`↔`Field2` 차원 불일치 → 조용한 오독 | `check_dims` 를 조립 **직전** 관문으로 — 통과 못하면 `*Input` 이 존재하지 않음 |
+| 2 | R4 `m2_lub::solve_partial` 스텁(`phi_bl=0`) → 건마모 소멸 | `partial_lub::` 만 import + 구조 가드 + 모델측 `#[deprecated]` |
+| 3 | R5 미수렴 해가 정상 해와 구분 불가 | `_traced` 만 사용 + `Diagnostics` **비-`Option`** |
+
+### 2.2 ★ 숙제 1 — 심각도 상향(실측)
+
+Phase 0 §0.8 은 이를 "WASM abort"로 기록했으나, **실측 결과 그건 안전한 쪽이었다**.
+
+`Field2::at` 은 `idx = i + j*self.nx` 로 **Field2 자신의 nx** 를 쓰고 호출측은 `grid.nx` 로 순회한다.
+
+| 경우 | 결과 |
+|---|---|
+| Field2 **작음** (Phase 0 fixture) | 인덱스가 `data.len()` 초과 → **패닉**(시끄러운 실패) |
+| Field2 **큼** | 인덱스가 범위 안 → **조용히 다른 원소를 읽음** ← 진짜 위험 |
+
+실측: Field2 4×4, grid 2×2 에서 `at(1,1)` → idx **5**(기대 3). 게다가 `debug_assert!(i < self.nx)` 는 `i < grid.nx ≤ self.nx` 라 **구조적으로 통과**해 못 잡고, release(=`wasm-pack --release`)에선 **컴파일 아웃**된다. → 경계 검사만이 유일한 방어.
+
+**패닉이 아니라 오류 반환인 이유**: WASM 에서 패닉은 abort = 모듈 인스턴스 오염 → 이후 호출까지 죽는다. 폼 입력 실수로 페이지를 새로고침하게 할 수는 없다.
+
+**모델 `at()` 은 무변경**(동결 유지). 조용한 오독은 네이티브에도 있는 잠재 버그지만, 고치면 **동결 코드의 거동 변경**(오독→패닉)이라 연구자 판단 필요 → **별건 상정**(§2.7).
+
+### 2.3 숙제 2 — `#[deprecated]` (비거동)
+
+스텁에 `#[deprecated]` 부착. **거동 무변경**(속성만) — rayon 게이팅과 같은 성격. 효과는 **크레이트 전역**에서 오사용이 컴파일 경고로 드러나는 것 = 함정을 문서가 아니라 **컴파일러가 지킨다**.
+
+실효성 확인(프로브 주입):
+```
+warning: use of deprecated function `m2_lub::solve_partial`:
+  패스스루 스텁(phi_bl=0·q_tran=0). 실제 부분윤활은 partial_lub::solve_partial 사용.
+  phi_bl=0 이 M5 로 가면 건마모가 조용히 사라진다.
+```
+스텁 자신의 테스트(`partial_passthrough`)에만 `#[allow(deprecated)]` — 그 테스트의 목적이 **스텁이 스텁임을 고정**(`phi_bl=0` assert)하는 것이라 정당.
+
+경고는 무시될 수 있으므로 셸에는 **구조 가드**를 별도로 둔다(§2.5).
+
+### 2.4 숙제 3 — 타입으로 진단 강제
+
+```rust
+pub struct PartialResponse { ok, result, diagnostics: Option<Diagnostics>, error }
+//                                        ^ 성공 시 항상 Some — 만드는 경로가 _traced 뿐
+```
+핵심은 "trace 를 노출한다"가 아니라 **trace 없는 경로를 셸에서 없앤다**는 것. `partial_lub::solve_partial`(trace 버림)을 쓰지 않으므로 진단을 숨기는 코드를 **쓸 수가 없다**.
+
+`Diagnostics`: `outer_converged`·`share_converged`·`outer_iters`·`share_iters`·`load_residual`·`flow_balance_residual`·`mu_eff`·`p_bar`·`asperity_degenerate`·`contact_count`.
+
+### 2.5 구조 가드 + 변이 3/3 CAUGHT
+
+Phase 1 의 `include_str!` 패턴 재사용(검증된 것). 가드 자체를 변이증명:
+
+| 변이 | FAIL |
+|---|---|
+| 셸에 `use m2_lub::solve_partial as stub_solve` 주입 | `shell_never_reaches_m2_lub_stub` — 위반 줄 지목 |
+| 셸에 `partial_lub::solve_partial(` (비-traced) 주입 | `shell_uses_only_traced_solver` — 위반 줄 지목 |
+| `check_dims` 무력화(`if false`) | `check_dims_rejects_smaller_field` · `_larger_field_silent_misread` · `run_wear_rejects_dim_mismatch_without_panic` (3건) |
+
+**범위 정확**(관련 테스트만), 원복 후 green.
+
+### 2.6 검증
+
+| 항목 | 결과 |
+|---|---|
+| 셸 `cargo test` | **7 green** |
+| 모델 `cargo test` (default / 직렬) | **106+2 green 양쪽**, `deprecated` 경고 0 |
+| WASM 실경로 `verify_phase2.js` | **8/8 PASS** |
+
+WASM 실측: `dh_w_mean=1.168e-15`(**Phase 0 과 동일** = 파리티 무회귀) · `phi_bl=0.0664 ≠ 0`(**스텁 아닌 진짜 오케스트레이터**) · `outer=true share=true` · `load_residual=1.54e-15` · `outerIters=2 shareIters=28 muEff=0.0546`.
+
+### 2.7 ★ 포착·조치
+
+| # | 포착 | 조치 |
+|---|---|---|
+| 1 | **`wasm-pack.exe` OS 레벨 실행 차단**(`Access is denied`, bash·PowerShell 양쪽). 17:58 까지 정상 → 이후 차단. ACL FullControl 정상·Zone.Identifier 없음·파일 무손상 → **백신/EDR 휴리스틱 추정**(Defender 서비스는 0x800106ba 로 미응답 = 서드파티 AV 정황) | **wasm-pack 우회** — `cargo build --target wasm32` + `wasm-bindgen` CLI **2단계 직접 빌드**. wasm-pack 은 이 둘의 래퍼일 뿐이라 산출물 동등. CLI 버전은 Cargo.lock 의 wasm-bindgen 과 **정확히 일치** 필요(0.2.126). 절차를 `micropitting-wasm/Cargo.toml` 주석에 고정 |
+| 2 | **stale pkg 로 옛 코드를 테스트해 "WASM 패닉"을 오진**. 원인: wasm-pack 이 조용히 실패했는데 내 grep 필터(`^error\|Done`)가 `Permission denied` 를 걸러냄 → 17:58 산출물이 그대로 남아 `check_dims` 없는 코드가 돌았다 | `verify_phase2.js` 에 **신선도 가드** 신설 — 진입점 3종 존재 + `wasm >= src` mtime 을 **테스트 전에** 확인, 미달 시 `exit 2`. **Phase 1 의 mv/mtime stale 과 동형 사고 2회째** → 가드를 스크립트에 영구 내장 |
+| 3 | 미사용 import `StressResult` | 제거 |
+
+> **교훈(누적 2회)**: stale 아티팩트는 **거짓 실패**(Phase 2, 패닉 오진)와 **거짓 성공**(Phase 1, 가드 통과 착각) 양방향으로 속인다. 빌드 산출물을 테스트하는 스크립트는 **신선도를 스스로 검증**해야 한다. 또한 **로그 필터가 실패를 숨길 수 있다** — `grep` 으로 빌드 출력을 좁히면 예상 밖 오류를 놓친다.
+
+### 2.8 판정
+
+**Phase 2 통과. R4·R5 해소 + Phase 0 숙제 3건 종결.** 세 무증상 실패가 전부 구조적으로 봉쇄되고, 봉쇄 자체가 변이증명됨.
+
+**모델 크레이트 변경 누계 = 비거동 3건**(rayon 게이팅 · reference 결선 · `#[deprecated]`) → 계획 §0 "CRB 통합 경로 비파괴"·R7 유지.
+
+**미해소 이월**: R6(시간진화 역피팅 — Phase 3) · R8(JS 물리 유입 — Phase 3) · **모델 `at()` 하드닝(별건, 연구자 판단 필요)** · wasm-pack 실행차단(환경).
+
+**재현 절차**
+```bash
+# 셸 + 모델
+cargo test                      # micropitting-wasm/ 에서 (7 green)
+cargo test --manifest-path "…/micropitting-model/Cargo.toml"                        # 106+2
+cargo test --manifest-path "…/micropitting-model/Cargo.toml" --no-default-features  # 106+2
+
+# WASM (wasm-pack 차단 → 2단계 직접 빌드)
+cargo build --target wasm32-unknown-unknown --release
+wasm-bindgen --target nodejs --out-dir pkg-node \
+    target/wasm32-unknown-unknown/release/micropitting_wasm.wasm
+node verify_phase2.js           # 신선도 가드 + 8/8
+```
+**환경 추가**: wasm-bindgen-cli 0.2.126 (wasm-pack 0.15.0 은 실행 차단 상태).

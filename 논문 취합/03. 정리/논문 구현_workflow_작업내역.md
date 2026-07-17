@@ -493,6 +493,21 @@ main (203bc4f, origin/main 동기)
 
 ---
 
+## 2026-07-17 — Phase 2 숙제 3건(무증상 실패 봉쇄) — 통과, R4·R5 해소
+
+- **관점**: 숙제 3건이 **셋 다 무증상**(틀린 답이 정상처럼 보임). Phase 0 을 `solve_wear` 하나로 좁힌 덕에 잠들어 있었을 뿐. → Phase 2 실질 = **틀린 상태를 도달 불가로 만들기**(검사 추가가 아님).
+- **★숙제 1 심각도 상향(실측)**: Phase 0 은 "WASM abort"로 기록했으나 **그건 안전한 쪽**이었다. `Field2::at` 은 `idx=i+j*self.nx`(Field2 자신의 nx), 호출측은 `grid.nx` 순회 → **Field2 가 크면 인덱스가 범위 안에 들어와 조용히 다른 원소를 읽는다**(실측: Field2 4×4/grid 2×2 → `at(1,1)`=idx **5**, 기대 3). `debug_assert!(i<self.nx)` 는 `i<grid.nx≤self.nx` 라 **구조적으로 통과**해 못 잡고 release(=`--release` wasm)에선 **컴파일 아웃**. → 경계 검사만이 유일 방어. **패닉 아닌 `{ok:false,error}` 반환**(WASM 패닉=abort=모듈 오염 → 폼 오타로 새로고침 강요 불가).
+- **숙제 2 (R4)**: 스텁에 **`#[deprecated]`**(비거동, 속성만 — rayon 게이팅과 동성격) → **크레이트 전역**에서 오사용이 컴파일 경고로 드러남 = 함정을 문서가 아니라 컴파일러가 지킴. 실효성 프로브로 확인(정확한 메시지 발화). 스텁 자기 테스트에만 `#[allow(deprecated)]`(그 테스트 목적이 **스텁이 스텁임을 고정**). 경고는 무시될 수 있으므로 셸에 구조 가드 별도.
+- **숙제 3 (R5)**: `Diagnostics` **비-Option** + **`_traced` 만 사용**. 핵심은 "trace 노출"이 아니라 **trace 없는 경로를 셸에서 없앰** → 진단을 숨기는 코드를 쓸 수가 없다.
+- **구조 가드 변이 3/3 CAUGHT·범위 정확**: 스텁 import 주입→`shell_never_reaches_m2_lub_stub` · 비-traced 주입→`shell_uses_only_traced_solver` · `check_dims` 무력화→차원 3건. 원복 green.
+- **검증**: 셸 `cargo test` **7 green** · 모델 **106+2 green**(default·직렬 양쪽, deprecated 경고 0) · **WASM 실경로 8/8 PASS**. 실측: `dh_w_mean=1.168e-15`(**Phase 0 과 동일**=파리티 무회귀) · **`phi_bl=0.0664≠0`**(스텁 아닌 진짜 오케스트레이터 증명) · outer/share 수렴 true · `load_residual=1.54e-15` · outerIters=2 shareIters=28 muEff=0.0546.
+- **★포착·조치 3건**: (a) **`wasm-pack.exe` OS 레벨 실행 차단**(`Access is denied`, bash·PowerShell 양쪽; 17:58까지 정상→이후 차단; ACL FullControl 정상·Zone 없음·파일 무손상 → 백신/EDR 휴리스틱 추정, Defender 는 0x800106ba 미응답=서드파티 AV 정황) → **wasm-pack 우회: `cargo build --target wasm32` + `wasm-bindgen` CLI 2단계 직접 빌드**(wasm-pack 은 이 둘의 래퍼일 뿐, 산출물 동등). CLI 버전은 Cargo.lock 의 wasm-bindgen 과 **정확 일치** 필요(0.2.126). 절차를 Cargo.toml 주석에 고정. (b) **stale pkg 로 옛 코드를 테스트해 "WASM 패닉"을 오진** — wasm-pack 이 조용히 실패했는데 **내 grep 필터(`^error|Done`)가 `Permission denied` 를 걸러냄** → 17:58 산출물이 그대로 돌았다. → `verify_phase2.js` 에 **신선도 가드** 내장(진입점 3종 + `wasm>=src` mtime 을 테스트 **전에** 확인, 미달 시 exit 2). (c) 미사용 import 제거.
+- **★교훈(stale 2회째)**: stale 아티팩트는 **거짓 실패**(Phase 2 패닉 오진)와 **거짓 성공**(Phase 1 가드 통과 착각) **양방향**으로 속인다 → 빌드 산출물을 쓰는 스크립트는 **신선도를 스스로 검증**해야 한다. 또한 **로그 필터가 실패를 숨긴다** — `grep` 으로 빌드 출력을 좁히면 예상 밖 오류를 놓친다.
+- **모델 변경 누계 = 비거동 3건**(rayon 게이팅·reference 결선·`#[deprecated]`) → 계획 §0 "CRB 통합 경로 비파괴"·R7 유지.
+- **다음**: Phase 3 뷰어 4탭. **미해소 이월**: R6(역피팅)·R8(JS 물리유입)·**모델 `at()` 하드닝(별건, 연구자 판단 — 동결 코드 거동변경)**·wasm-pack 실행차단(환경).
+
+---
+
 ## 누적 요약 (2026-07-05 ~ 07-13, 갱신)
 - Workflow **5회**(파일럿·확장·최종화·P3 최초·**Phase 1b**) + Tripp PDF 파이프라인 1회. 에이전트 누계 **77개·에러 0**.
 - **P1→G1→P2 전 6모델 완료** → **P3 부분윤활 서브시스템 M1+M2+M6 구현·G3 통과**(Rust crate, cargo test 41+1 green). main 안정 + `phase1b-remediation` 브랜치.
