@@ -479,6 +479,20 @@ main (203bc4f, origin/main 동기)
 
 ---
 
+## 2026-07-17 — Phase 1 `reference.rs`(leaf) — 통과, R3 해소
+
+- **브랜치**: `P3_M5`→main 병합(`a26c860`, 태그 `P3_M5_G3`) → **`P3_HTML` 분기**(main 기준). **M1~M6 전 모듈 main 등재 확인**(lib.rs 실측). ⚠️ 단 **"M1~M6 병합 = 논문 재현 완료" 아님** — 미구현분 = **시간루프(E)**, 이것이 Fig10/11/12(A_p) 부재의 원인.
+- **문헌 폐형식 8곳 → `src/reference.rs`(pub leaf) 이관**: GW1994 식(15)(16)(17)+Table1/2 · Venner1997 식(5)+**Table1 18점** · Venner2000 식(29) · Tripp2003 식[10]/[16]+trace항등 · McEwen · Milano2006 A.8/A.10/A.6 · Desimone2006 식(7)+R비표. **이관(move)이지 복제 아님** — 기존 VC 7건을 전부 `crate::reference` 호출로 **결선**. 복제로 두면 SSOT 이중화라 Phase 1 목적 자체가 소멸. → **뷰어 참조곡선 = 오라클 기대값**(같은 코드).
+- **★계획 정정 — 이관 대상 8곳 중 Archard 1곳은 이관 불가**: `vc_m5_archard_closed_form` 을 실제 판독하니 독립 폐형식이 아니라 **손유도 리터럴+대수항등**. Archard 식[14]는 `m5_wear::wear_depth_rate` **자체**라 복제 시 *같은 식의 복제본끼리 비교* = **R3 을 새로 만드는 꼴**(M2 Q oracle tautology 동형). → **실험 데이터만 등재**(Fig7 기울기 **1.00 황동/0.98 스텔라이트/표준오차 0.015**, 원문 L306 verbatim 확인). **판별기준 수립**: *"우리 모델이 곧 그 식인가?"* → 그렇다면 reference 에 두지 않는다.
+- **★leaf 불변식 + 가드 자체 변이증명**: (1) reference 는 types·units 외 import 금지 (2) m1~m6 **생산코드**는 reference 참조 금지(테스트는 허용=용도). `include_str!` + `#[cfg(test)]` 이전 절단으로 생산코드만 검사. **가드에 실제 위반 주입**(m5_wear 생산코드에 `use crate::reference::…`) → **CAUGHT**(파일명·위반줄 지목). 테스트 안 된 가드는 가드가 아니므로 필수 절차.
+- **변이 게이트 6/6 CAUGHT · 범위 정확**: Venner1997 eq(5) 0.17→0.34(**3건**) · McEwen sz 부호(2) · Tripp szz (1+ζz)→(1−ζz)(2) · Milano 4τ_a²→2τ_a²(2) · GW1994 2λ→3λ(2) · Venner1997 Table1 0.183→0.283(1). **전건 FAIL(결합과다) 아님 · 무FAIL(사문화) 아님** = 계획 §4.1 기준 충족. 원복 후 **106단위+2통합 green**(변이잔재 0). 주목: **Tripp 변이를 trace 항등이 포착** — 6성분식과 독립유도된 정본판별자(P2-1 L116)가 설계대로 작동.
+- **신규 오라클 19건**. 특기: `line_and_point_nabla_are_not_interchangeable` = **선접촉(1997)↔점접촉(2000) 카테고리 오류 차단**(총괄계획 L476)을 기계 고정 → 뷰어에서 두 축 겹쳐그리기 금지가 코드에 박힘. `venner1997_half_crossing_bracket_matches_table1` = 상수 (0.25,0.5) 의 **근거 자체**를 Table1 로 검증.
+- **검증**: 네이티브 `cargo test` **106단위+2통합 green**(default·`--no-default-features` 양쪽) · WASM 빌드 무회귀 · 파리티 문자열 동일 PASS.
+- **포착·조치 3건**: (a) Archard 이관불가(위) (b) `invert_lob` 이 민감도·변이게이트서도 사용 → 클로저 복원 + 하드코딩 구간을 `VENNER1997_HALF_CROSSING_BRACKET` 로 통일 (c) **`mv` 원복 후 가드 계속 FAIL — 내용은 원복됐으나 백업의 옛 mtime 탓에 cargo 재빌드 생략(stale)** → `touch` 후 green. **교훈: `include_str!` 가드는 mtime 역행에 취약, 변이실험 원복 후 touch 필수**.
+- **다음**: Phase 2 셸 확장(정식 진입점 + grid↔Field2 차원검사) → Phase 3 4탭. **미해소 이월**: R4(`solve_partial` 스텁 무증상)·R5(조용한 미수렴)·R6(역피팅)·R8(JS 물리유입).
+
+---
+
 ## 누적 요약 (2026-07-05 ~ 07-13, 갱신)
 - Workflow **5회**(파일럿·확장·최종화·P3 최초·**Phase 1b**) + Tripp PDF 파이프라인 1회. 에이전트 누계 **77개·에러 0**.
 - **P1→G1→P2 전 6모델 완료** → **P3 부분윤활 서브시스템 M1+M2+M6 구현·G3 통과**(Rust crate, cargo test 41+1 green). main 안정 + `phase1b-remediation` 브랜치.
