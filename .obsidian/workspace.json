@@ -8,49 +8,63 @@
         "type": "tabs",
         "children": [
           {
-            "id": "7584b1c68b240fdb",
+            "id": "1079a2353497a9e3",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md",
+                "file": "논문 취합/03. 정리/논문구현_P3_총괄계획.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "연구보고서_드라이브트레인_메인베어링_V0.2"
+              "title": "논문구현_P3_총괄계획"
             }
           },
           {
-            "id": "a85b034bff7d8577",
+            "id": "6661959dad17b4b9",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "논문 취합/03. 정리/논문 구현_P2-1_통합이론검토서_통합_M1-M6.md",
-                "mode": "preview",
+                "file": "논문 취합/03. 정리/논문구현_P3_작업결과_M3,4,5.md",
+                "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "논문 구현_P2-1_통합이론검토서_통합_M1-M6"
+              "title": "논문구현_P3_작업결과_M3,4,5"
             }
           },
           {
-            "id": "58e85b3f72f711a6",
+            "id": "9f14db4e0f030a06",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "논문 취합/03. 정리/논문구현_P3_작업결과.md",
+                "file": "논문 취합/03. 정리/논문 구현_P2-2_검증데이터검토서_통합_M1-M6.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "논문 구현_P2-2_검증데이터검토서_통합_M1-M6"
+            }
+          },
+          {
+            "id": "7732d2ba6aa688d7",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "논문 취합/03. 정리/논문 구현_P2-2_검증데이터검토서_통합_M1-M6_재검토.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "논문구현_P3_작업결과"
+              "title": "논문 구현_P2-2_검증데이터검토서_통합_M1-M6_재검토"
             }
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -186,17 +200,17 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "논문 취합/03. 정리/논문 구현_P2-1_통합이론검토서_통합_M1-M6.md",
+                "file": "논문 취합/03. 정리/논문분석_GBLM_비판적검토.md",
                 "followCursor": false,
-                "showSearch": false,
+                "showSearch": true,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "논문 구현_P2-1_통합이론검토서_통합_M1-M6 의 개요"
+              "title": "논문분석_GBLM_비판적검토 의 개요"
             }
           }
         ],
-        "currentTab": 4
+        "currentTab": 3
       }
     ],
     "direction": "horizontal",
@@ -214,87 +228,52 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "floating": {
-    "id": "5d1df4998b6d3faf",
-    "type": "floating",
-    "children": [
-      {
-        "id": "393be39f6fe54f22",
-        "type": "window",
-        "children": [
-          {
-            "id": "401c8a345711477e",
-            "type": "tabs",
-            "children": [
-              {
-                "id": "e9675281e52fffc6",
-                "type": "leaf",
-                "state": {
-                  "type": "markdown",
-                  "state": {
-                    "file": "논문 취합/03. 정리/논문 구현_P2-2_검증데이터검토서_통합_M1-M6.md",
-                    "mode": "preview",
-                    "source": false
-                  },
-                  "icon": "lucide-file",
-                  "title": "논문 구현_P2-2_검증데이터검토서_통합_M1-M6"
-                }
-              }
-            ]
-          }
-        ],
-        "direction": "vertical",
-        "x": -1123,
-        "y": -44,
-        "width": 835,
-        "height": 928,
-        "maximize": false,
-        "zoom": -1
-      }
-    ]
-  },
-  "active": "58e85b3f72f711a6",
+  "active": "7732d2ba6aa688d7",
   "lastOpenFiles": [
-    "논문 취합/03. 정리/논문구현_P3_작업결과.md.tmp.34336.59b272a70505",
-    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/deps/rustcVMIui6/linker-arguments",
-    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/deps/rustcVMIui6/symbols.o",
-    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/deps/rustcVMIui6",
-    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hkcg01vhe7-19oh3bb-baby09oz8cia1rcobi7bnek9u/work-products.bin",
-    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hkcg01vhe7-19oh3bb-baby09oz8cia1rcobi7bnek9u/query-cache.bin",
-    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hkcg01vhe7-19oh3bb-baby09oz8cia1rcobi7bnek9u/f0ix3w3g6uauhpcf4b1e7f611.o",
-    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hkcg01vhe7-19oh3bb-baby09oz8cia1rcobi7bnek9u/e87qhd2v4r4kl7dl6kzjiefpv.o",
-    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hkcg01vhe7-19oh3bb-baby09oz8cia1rcobi7bnek9u/dep-graph.bin",
-    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hkcg01vhe7-19oh3bb-baby09oz8cia1rcobi7bnek9u/cs1hyxbogt1hev03yyo5pnhfx.o",
-    "논문 취합/03. 정리/논문구현_P3/micropitting-model/target/debug/incremental/integration_m1m2_to_m6-085pbct1tk1kx/s-hkcg01vhe7-19oh3bb-baby09oz8cia1rcobi7bnek9u/bof4yjf7gy9vlnxaad829zhps.o",
     "논문 취합/03. 정리/논문 구현_P2-2_검증데이터검토서_통합_M1-M6.md",
+    "논문 취합/03. 정리/논문분석_GBLM_비판적검토.md",
+    "논문 취합/03. 정리/논문분석_GBLM_비판적검토.md.tmp.35500.0cb3da888de9",
+    "논문 취합/03. 정리/논문분석_GBLM_비판적검토.md.tmp.35500.86b57af9cdbe",
+    "논문 취합/03. 정리/논문분석_GBLM_비판적검토.md.tmp.35500.93451b1d06d2",
+    "논문 취합/03. 정리/논문분석_GBLM_비판적검토.md.tmp.35500.0f8928a7b5df",
+    "논문 취합/03. 정리/논문 구현_P2-2_검증데이터검토서_통합_M1-M6_재검토.md",
+    "논문 취합/03. 정리/논문분석_GBLM_비판적검토.md.tmp.35500.589c8c7261e0",
+    "논문 취합/03. 정리/논문분석_GBLM_비판적검토.md.tmp.35500.e5ff44b6cb42",
+    "논문 취합/03. 정리/논문분석_GBLM_비판적검토.md.tmp.35500.cc5ba95e993f",
+    "논문 취합/03. 정리/논문구현_P3_작업결과_M3,4,5.md",
+    "논문 취합/03. 정리/논문 구현_P2-2_검증데이터검토서_통합_M1-M6_재검토.md.tmp.28148.f230da7ad8a8",
+    "논문 취합/02. 분야별/06. 피로, 신뢰성/01. SKF/관련 문헌/1985. (Ioannides) A New Fatigue Life Model for Rolling Bearings.pdf",
+    "논문 취합/02. 분야별/06. 피로, 신뢰성/01. SKF/관련 문헌/1985. (Ioannides) A New Fatigue Life Model for Rolling Bearings.pdf.crdownload",
+    "논문 취합/03. 정리/논문분석_GBLM_참고문헌.md",
+    "논문 취합/03. 정리/2023. (SKF) A stress-based model for general rolling contacts with surfac_f4e12a.md",
+    "논문 취합/03. 정리/2023_SKF_A_stress_based_model_for_genera/img_0021.jpg",
+    "논문 취합/03. 정리/2023_SKF_A_stress_based_model_for_genera/img_0025.jpg",
+    "논문 취합/03. 정리/2023_SKF_A_stress_based_model_for_genera/img_0024.jpg",
+    "논문 취합/03. 정리/2023_SKF_A_stress_based_model_for_genera/img_0023.jpg",
+    "논문 취합/03. 정리/2023_SKF_A_stress_based_model_for_genera/img_0020.jpg",
+    "논문 취합/03. 정리/2023_SKF_A_stress_based_model_for_genera/img_0022.jpg",
+    "논문 취합/03. 정리/2023_SKF_A_stress_based_model_for_genera/img_0019.jpg",
+    "논문 취합/03. 정리/2023_SKF_A_stress_based_model_for_genera/img_0018.jpg",
+    "논문 취합/03. 정리/2023_SKF_A_stress_based_model_for_genera/img_0016.jpg",
+    "논문 취합/03. 정리/2023_SKF_A_stress_based_model_for_genera/img_0017.jpg",
+    "논문 취합/03. 정리/논문구현_P3_총괄계획.md",
+    "논문 취합/03. 정리/논문구현_P3_작업결과_M1,2,6.md",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md",
     "논문 취합/03. 정리/논문구현_P3_작업결과.md",
     "논문 취합/03. 정리/논문 구현_P2-1_통합이론검토서_통합_M1-M6.md",
+    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V1.0.md",
     "논문 취합/03. 정리/검토_큐_잔여_통합.md",
     "Main bearing/01. 정리/연구보고서_수정사항.md",
-    "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/images/fd7516f483247235f94b092d9c7eebfc25888e973cb13a068504dc8816fddff1.jpg",
-    "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/images/f75a450f36c9d886912dedde6c7c94e40b788ac2bf8c0dc66caa6e44fdfdd1f3.jpg",
-    "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/images/f310509f747caca21285ef6d641c355f63b89ea763d8ad09e3fa9d426307ce14.jpg",
-    "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/images/e31723a32225425fd68f9aebede9ed34f2521d3091efc2983342f7d4600ab77e.jpg",
-    "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/images/db72c5cfc194ddf60bf99b79281a853586c8d5a1c912b448dfcf3829f5a101ae.jpg",
-    "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/images/d442cefb1d971596987515d72ee9d9827ee3256b055351a0cae7304f3c09dd10.jpg",
-    "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/images/cf6ed3791de93267f50054b2c63d5a437923e448e73e89fc1b916a3f13171d94.jpg",
-    "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/images/ccb055ecb235133c37a257355d7f1e8f13ac39be721232e579cfb9fb5f44eeb5.jpg",
-    "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/images/c3dbccc64c79700f41b903d14e941421942324d3d978d293baa87fbbf94d6777.jpg",
-    "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/images/bef0c1975a1a7e392943711b50c343533a0c78765b73d251cceecc00136778ba.jpg",
     "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/MASTA Flexible Bearing Races.md",
     "논문 취합/04. 보고서/MASTA Flexible Bearing Races 2/full.md",
     "논문 취합/03. 정리/논문구현_P3/논문구현_P3_작업결과.md",
     "논문 취합/03. 정리/논문구현_P3/D0_규약조정표.md",
     "Main bearing/01. 정리/논문구현_P3/논문구현_P3_작업결과.md",
     "Main bearing/01. 정리/논문구현_P3/D0_규약조정표.md",
-    "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.2.md",
     "논문 취합/03. 정리/논문 구현_연구자검토큐_통합.md",
     "Main bearing/01. 정리/연구보고서_드라이브트레인_메인베어링_V0.1.md",
     "Main bearing/01. 정리/설계보고서_드라이브트레인_메인베어링_V0.1.md",
-    "논문 취합/03. 정리/논문구현_P3_총괄계획.md",
     "논문 취합/03. 정리/P1_보강_M3재추출_T3정정.md",
-    "논문 취합/03. 정리/논문 구현_P2-3_알고리즘검토서_통합_M1-M6.md",
-    "논문 취합/03. 정리/2003. (SKF) Frequency Response Functions and Rough Surface.md",
-    "Main bearing/01. 정리/연구보고서_전환계획.md"
+    "논문 취합/03. 정리/논문 구현_P2-3_알고리즘검토서_통합_M1-M6.md"
   ]
 }

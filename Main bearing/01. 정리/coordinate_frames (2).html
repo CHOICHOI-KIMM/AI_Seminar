@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>2-베어링 시스템 좌표계 정의</title>
+<style>
+ body{margin:0;background:#fff;color:#1f2933;font-family:'Segoe UI',system-ui,'Malgun Gothic',sans-serif}
+ .wrap{max-width:1000px;margin:0 auto;padding:16px 20px 24px}
+ h1{font-size:19px;margin:4px 0 2px}
+ p.sub{margin:0 0 10px;color:#52606d;font-size:13px}
+ .cap{font-size:12.5px;color:#52606d;margin-top:10px;line-height:1.6}
+ svg{display:block;width:100%;height:auto;border:1px solid #e4e7eb;border-radius:10px;background:#fff}
+ .g{color:#2e77d0;font-weight:700}.s{color:#c0392b;font-weight:700}.b{color:#0b7a4b;font-weight:700}
+</style></head><body><div class="wrap">
+<h1>2-베어링 이중지지 시스템 — 좌표계 3계층 (G · S · B₁,B₂), 틸트 +φ (Y_G 둘레 양의 회전)</h1>
+<p class="sub"><span class="g">글로벌 G</span> · <span class="s">샤프트 S</span>(틸트 +φ, 로터측 상승·축은 풍하로 하강) · <span class="b">베어링 로컬 B₁,B₂</span>. 양쪽 TRB가 O/X로 축 분담(Fa 부호 반대)→축 부정정·프리로드 분배. 자중은 외력 F에 포함. 틸트 φ 과장.</p>
+<svg viewBox="0 0 1000 540" role="img" aria-label="coordinate frames">
+ <defs>
+  <marker id="ah" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#1f2933"/></marker>
+  <marker id="ag" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#2e77d0"/></marker>
+  <marker id="as" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#c0392b"/></marker>
+  <marker id="ab" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#0b7a4b"/></marker>
+  <marker id="dim" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#9aa5b1"/></marker>
+  <marker id="dimL" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="#9aa5b1"/></marker>
+ </defs>
+
+ <!-- horizontal reference through O_S -->
+ <line x1="150" y1="220" x2="905" y2="220" stroke="#c9ced6" stroke-width="1.2" stroke-dasharray="6 5"/>
+ <text x="908" y="224" font-size="12" fill="#9aa5b1">수평</text>
+
+ <!-- tilted shaft: O_S(150,220) descending dir (0.970,0.242) -->
+ <line x1="150" y1="220" x2="790" y2="380" stroke="#1f2933" stroke-width="6" stroke-linecap="round"/>
+
+ <!-- rotor (upper-left, raised) -->
+ <ellipse cx="132" cy="216" rx="10" ry="34" fill="#e8edf1" stroke="#7b8794" stroke-width="1.4"/>
+ <text x="96" y="182" font-size="12" fill="#52606d">로터(상승)</text>
+
+ <!-- bearings: both TRB axial-sharing; triangle supports below shaft -->
+ <polygon points="441,293 428,317 454,317" fill="#0b7a4b"/>
+ <text x="398" y="334" font-size="12.5" class="b">MB1 (TRB)</text>
+ <polygon points="654,346 641,370 667,370" fill="#0b7a4b"/>
+ <text x="612" y="387" font-size="12.5" class="b">MB2 (TRB)</text>
+
+ <!-- axial reactions along shaft (opposite signs) -->
+ <line x1="441" y1="293" x2="487" y2="304" stroke="#c0392b" stroke-width="2" marker-end="url(#as)"/>
+ <text x="491" y="308" font-size="11.5" class="s">Fa₁</text>
+ <line x1="654" y1="346" x2="608" y2="335" stroke="#c0392b" stroke-width="2" marker-end="url(#as)"/>
+ <text x="556" y="332" font-size="11.5" class="s">Fa₂ (반대부호)</text>
+ <path d="M 462 300 C 520 314, 590 328, 634 340" fill="none" stroke="#c0392b" stroke-width="1.2" stroke-dasharray="4 3"/>
+ <text x="486" y="360" font-size="11" class="s">프리로드 s_k → 축 분배(부정정)</text>
+
+ <!-- ===== Global frame G ===== -->
+ <g>
+  <line x1="120" y1="474" x2="196" y2="474" stroke="#2e77d0" stroke-width="2" marker-end="url(#ag)"/>
+  <text x="200" y="478" font-size="13" class="g">X_G</text>
+  <line x1="120" y1="474" x2="120" y2="402" stroke="#2e77d0" stroke-width="2" marker-end="url(#ag)"/>
+  <text x="106" y="396" font-size="13" class="g">Z_G↑</text>
+  <circle cx="120" cy="474" r="3.2" fill="#2e77d0"/><circle cx="120" cy="474" r="7" fill="none" stroke="#2e77d0" stroke-width="1"/>
+  <text x="128" y="490" font-size="12" class="g">Y_G⊙</text>
+  <text x="120" y="512" font-size="11.5" fill="#52606d">글로벌 G (방향 기준)</text>
+ </g>
+
+ <!-- ===== Shaft frame S at O_S ===== -->
+ <g>
+  <!-- x_s along shaft (down-right) -->
+  <line x1="150" y1="220" x2="218" y2="237" stroke="#c0392b" stroke-width="2.2" marker-end="url(#as)"/>
+  <text x="222" y="240" font-size="13" class="s">x_s</text>
+  <!-- z_s = sinφ X + cosφ Z → screen (0.242,-0.970) up-right -->
+  <line x1="150" y1="220" x2="167" y2="152" stroke="#c0392b" stroke-width="2.2" marker-end="url(#as)"/>
+  <text x="150" y="146" font-size="13" class="s">z_s</text>
+  <circle cx="150" cy="220" r="3.2" fill="#c0392b"/><circle cx="150" cy="220" r="7" fill="none" stroke="#c0392b" stroke-width="1"/>
+  <text x="158" y="212" font-size="12" class="s">y_s⊙</text>
+  <!-- tilt angle +phi between horizontal and x_s (below horizontal) -->
+  <path d="M 214 220 A 64 64 0 0 1 212 236" fill="none" stroke="#1f2933" stroke-width="1.2"/>
+  <text x="220" y="238" font-size="13" font-style="italic">+φ</text>
+  <text x="150" y="256" font-size="11.5" class="s">샤프트 S @ O_S(로터허브)</text>
+ </g>
+
+ <!-- ===== Bearing frames B1,B2 ===== -->
+ <g>
+  <line x1="441" y1="293" x2="487" y2="304" stroke="#0b7a4b" stroke-width="1.6" marker-end="url(#ab)" opacity="0.5"/>
+  <line x1="441" y1="293" x2="458" y2="225" stroke="#0b7a4b" stroke-width="1.8" marker-end="url(#ab)"/>
+  <text x="462" y="222" font-size="11.5" class="b">z_b1</text>
+  <text x="452" y="205" font-size="10.5" class="b">B₁ (=S 평행이동 d₁)</text>
+  <line x1="654" y1="346" x2="671" y2="278" stroke="#0b7a4b" stroke-width="1.8" marker-end="url(#ab)"/>
+  <text x="675" y="275" font-size="11.5" class="b">z_b2</text>
+  <text x="664" y="258" font-size="10.5" class="b">B₂ (평행이동 d₂)</text>
+ </g>
+
+ <!-- ===== external rotor loads at O_S ===== -->
+ <g>
+  <line x1="108" y1="200" x2="148" y2="215" stroke="#1f2933" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="70" y="196" font-size="11.5">F_xs</text>
+  <text x="600" y="452" font-size="11" fill="#52606d">외부하중 F_s=(F_xs,F_ys,F_zs), M_s=(M_ys,M_zs)</text>
+  <text x="600" y="468" font-size="11" fill="#52606d">— 자중 포함(별도 중력항 없음)</text>
+ </g>
+
+ <!-- dimensions along shaft (offset) -->
+ <g>
+  <line x1="150" y1="252" x2="441" y2="325" stroke="#9aa5b1" stroke-width="1.1" marker-start="url(#dimL)" marker-end="url(#dim)"/>
+  <text x="286" y="300" font-size="12" fill="#52606d" transform="rotate(14 286 300)">L_h1</text>
+  <line x1="441" y1="325" x2="654" y2="378" stroke="#9aa5b1" stroke-width="1.1" marker-start="url(#dimL)" marker-end="url(#dim)"/>
+  <text x="540" y="360" font-size="12" fill="#52606d" transform="rotate(14 540 360)">L_12</text>
+ </g>
+</svg>
+<p class="cap">
+ <b>정의 요약:</b> <span class="g">G</span>는 방향 기준. <span class="s">S</span>는 축을 따라 <b>Y_G 둘레 +φ 회전(양의 방향)</b>한 작업 프레임 — x_s = cosφ·X_G − sinφ·Z_G(축·풍하, 로터측 상승), y_s = Y_G, z_s = sinφ·X_G + cosφ·Z_G. 모든 외력(자중 포함)은 S의 F_s·M_s에 반영. <span class="b">B₁·B₂</span>는 S를 d₁=L_h1, d₂=L_h1+L_12로 평행이동. 양쪽 TRB가 O/X로 축을 분담(Fa₁·Fa₂ 반대부호)→축 부정정, 공통 δ_x + 프리로드 s_k로 비선형 평형에서 분배. 강체 시 5-DOF·5식(평면 시 3·3).
+</p></div></body></html>
