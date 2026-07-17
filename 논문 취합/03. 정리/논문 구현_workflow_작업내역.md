@@ -463,6 +463,22 @@ main (203bc4f, origin/main 동기)
 
 ---
 
+## 2026-07-17 — 시각화 HTML 계획 수립 + Phase 0 WASM 스파이크 — 전건 통과(R1·R2 해소)
+
+- **연구자 지시**: M1~M6 기반 **파라미터 입력 + 인터랙티브 시각화 HTML**, P2-2·각 논문 그래프 재현. **3문 사인오프**: ① 착수순서=**HTML 먼저(정적 M1~M5)**, 시간루프 후속 ② 엔진=**Rust→WASM(SSOT 단일)**, JS 물리 재구현 금지 ③ 문헌 폐형식=**`src/reference.rs` 신설(leaf)**.
+- **계획 정본 신설**: `논문구현_P3_시각화_HTML.md` (§0~§8: 현황실측·산출물구조·Phase0~3·폼기본값·리스크R1~R8·게이트 G-VIS). 결과 = `논문구현_P3_작업결과_시각화_HTML.md`.
+- **★핵심 제약 발굴**: 총괄계획 §1.1(L30) — CRB-main = *"인프로세스 네이티브 Rust, 사이드카/외부바이너리/**WASM 없음**"* → **뷰어는 CRB 통합 경로가 아닌 병렬 산출물**. 모델 크레이트 변경을 **비파괴로 한정**(R7).
+- **★메모리/문서 정정**: Fig 10 = A_p vs **Λ**(peak Λ≈1.1) · Fig 11a = A_p vs **S**(peak S≈0.01) · **Fig 12 = A_p vs 사이클수**(← "vs time"인 건 이것). 종전 "Fig10/11 A_p·피팅율" 서술의 오인 소지 해소.
+- **Phase 0 스파이크 — 기준 4건 전건 통과**: ① wasm32 빌드 성공(**329KB**, 추정 1~2MB 하회) ② **WASM 출력 == 네이티브 출력(문자열 동일)** + **손계산 교차검증**(b=2.6e-4·s_cycle=1.04e-5·k=1.48e-9→3.298e-15 일치) ③ 네이티브 test **87+2 green**(default=parallel, 무회귀) ④ **`--no-default-features` 87+2 green**(직렬=wasm 경로).
+- **R1 해소(계획 최대 리스크)**: `rustfft 6.4.1`·`nalgebra 0.33.3` **wasm32 컴파일 확인**. 우리 코드 지표(I/O 0·rayon 2줄·serde 완비)는 유리했으나 **의존성 호환은 별개 문제**였고 실측으로 확정.
+- **R2 해소(M4 계산량)**: 단일스레드 WASM release — 128×16×15 **123ms** · 256×32×15 **272ms**(인터랙티브 가능) · 512×64×15 **1284ms**(Worker 충분). → **`wasm-bindgen-rayon` 불필요 확정**(SharedArrayBuffer+COOP/COEP → `file://` 불가 회피). max σ_vM 격자수렴(9.659→9.678→9.679e8) 부수확인. ⚠️ 벤치 하중장은 **계량용 합성** = 타이밍 부하이지 물리결과 아님.
+- **코드 변경 = 비파괴 2건**: `Cargo.toml` rayon `optional=true`+`[features] default=["parallel"]`; `m4_fatigue.rs` cfg 분기(`into_par_iter`↔`0..ny`). **직렬이 오히려 빠름**(5.62s vs 6.79s) = ny 작아 rayon 이득 없다는 예측 실측 확인. 기준 ④ = **병렬/직렬 동일물리 기계증명**(열 j 독립 + rayon collect 순서보존).
+- **신규 `micropitting-wasm/`**(셸, **물리 0건**): `run_wear`(순수)+`solve_wear_json`(wasm) 분리 = **동일 코드로 경계만 격리 측정**. lifetime `WearInput<'a>`·비-serde `WearParams` 는 셸에서 조립, **기본값은 모델이 소유**(SSOT). `ok` 필드·`deny_unknown_fields` 로 조용한 실패 차단.
+- **포착·조치 3건**: (a) fixture `grid`(64×16)↔`p_tran`(2×1) 불일치 → `Field2::at` 범위초과 **WASM abort** → 격자일치 + **Phase 2 정식 진입점에 차원검사 추가 대상**. (b) `Field2::max()`=`Option<f64>` → `filter_map`+`fold(0.0)`. (c) `micropitting-wasm/target` **896MB** → `.gitignore` 신설.
+- **다음**: Phase 1 `reference.rs`(leaf 불변식 + 변이증명 + 구조가드) → Phase 2 셸 확장 → Phase 3 4탭. **미해소 이월**: R3(tautology)·R4(`solve_partial` 스텁 무증상)·R5(조용한 미수렴)·R6(역피팅)·R8(JS 물리유입).
+
+---
+
 ## 누적 요약 (2026-07-05 ~ 07-13, 갱신)
 - Workflow **5회**(파일럿·확장·최종화·P3 최초·**Phase 1b**) + Tripp PDF 파이프라인 1회. 에이전트 누계 **77개·에러 0**.
 - **P1→G1→P2 전 6모델 완료** → **P3 부분윤활 서브시스템 M1+M2+M6 구현·G3 통과**(Rust crate, cargo test 41+1 green). main 안정 + `phase1b-remediation` 브랜치.
