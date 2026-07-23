@@ -17,6 +17,7 @@ function niceTicks(min, max, n = 6) {
 }
 
 function fmt(v) {
+  if (v === null || !Number.isFinite(v)) return "∞"; // serde_json: f64 ∞/NaN → null
   if (v === 0) return "0";
   const a = Math.abs(v);
   if (a >= 1e4 || a < 1e-3) return v.toExponential(1);
@@ -40,6 +41,8 @@ export function linePlot(canvas, opts) {
   for (const s of drawSeries) { xs = xs.concat(s.x); ys = ys.concat(s.y); }
   for (const p of opts.points || []) { xs.push(p.x); ys.push(p.y); }
   if (!xs.length) return;
+  xs = xs.filter(Number.isFinite); ys = ys.filter(Number.isFinite);
+  if (!xs.length || !ys.length) return;
   const xmin0 = Math.min(...xs), xmax0 = Math.max(...xs);
   let ymin = Math.min(...ys, 0), ymax = Math.max(...ys);
   if (ymax === ymin) ymax = ymin + 1;
@@ -140,8 +143,14 @@ export function heatmap(canvas, data, opts = {}) {
   ctx.clearRect(0, 0, W, H);
   const nz = data.length, nx = data[0]?.length || 0;
   if (!nz || !nx) return;
-  let vmin = Infinity, vmax = -Infinity;
-  for (const row of data) for (const v of row) { if (v < vmin) vmin = v; if (v > vmax) vmax = v; }
+  // null = serde_json 이 직렬화한 f64 ∞/NaN (예: Dang Van D 분모 τ_f−a·p̂ ≤ 0 → D=∞ = 기준 위배).
+  // 숨기지 않고 전용색으로 표시한다(무증상 금지).
+  let vmin = Infinity, vmax = -Infinity, hasInf = false;
+  for (const row of data) for (const v of row) {
+    if (v === null || !Number.isFinite(v)) { hasInf = true; continue; }
+    if (v < vmin) vmin = v; if (v > vmax) vmax = v;
+  }
+  if (!Number.isFinite(vmin)) { vmin = 0; vmax = 1; }
   if (vmax === vmin) vmax = vmin + 1;
   // viridis 근사 3-스톱 (렌더링 전용)
   const colorOf = (t) => {
@@ -154,7 +163,10 @@ export function heatmap(canvas, data, opts = {}) {
   for (let r = 0; r < nz; r++) {
     const rr = opts.yDown === false ? nz - 1 - r : r;
     for (let c = 0; c < nx; c++) {
-      ctx.fillStyle = colorOf((data[rr][c] - vmin) / (vmax - vmin));
+      const v = data[rr][c];
+      ctx.fillStyle = (v === null || !Number.isFinite(v))
+        ? "#e11d48" // ∞ 전용색 (컬러맵과 구분되는 마젠타-레드)
+        : colorOf((v - vmin) / (vmax - vmin));
       ctx.fillRect(L + c * cw, T + r * ch, cw + 0.6, ch + 0.6);
     }
   }
@@ -172,4 +184,10 @@ export function heatmap(canvas, data, opts = {}) {
   ctx.strokeRect(cbX, T, cbW, cbH);
   ctx.fillText(fmt(vmax), cbX - 4, T - 4);
   ctx.fillText(fmt(vmin), cbX - 4, T + cbH + 12);
+  if (hasInf) {
+    ctx.fillStyle = "#e11d48";
+    ctx.fillRect(cbX, T + cbH + 18, cbW, 8);
+    ctx.fillStyle = "#991b1b";
+    ctx.fillText("= ∞ (D 기준 위배)", cbX + cbW + 4, T + cbH + 26);
+  }
 }

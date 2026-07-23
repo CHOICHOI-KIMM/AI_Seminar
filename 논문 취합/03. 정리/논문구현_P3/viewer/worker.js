@@ -41,6 +41,14 @@ self.onmessage = async (ev) => {
         nz,
       };
       result = JSON.parse(solve_chain_json(JSON.stringify(args)));
+      // 입력 echo — WASM 에 투입된 **바로 그 배열**의 j0 행을 그대로 반환(표시=투입, 재계산 금지).
+      if (result.ok) {
+        const j0 = result.sliceJ ?? 0;
+        result.inputEcho = {
+          rough1: args.rough1.data.slice(j0 * grid.nx, (j0 + 1) * grid.nx),
+          rough2: args.rough2.data.slice(j0 * grid.nx, (j0 + 1) * grid.nx),
+        };
+      }
     } else if (cmd === "refCurve") {
       result = JSON.parse(reference_curve_json(payload.kind, JSON.stringify(payload.params || {})));
     } else if (cmd === "refTables") {

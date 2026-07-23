@@ -225,9 +225,14 @@
       <div class="card diag" id="diagBox" style="min-width:280px;">진단: (실행 전)</div>
     </div>
     <div class="row">
+      <canvas id="roughCanvas" width="1134" height="280"></canvas>
+    </div>
+    <div class="note" id="roughFormula">기준형상: 체인 실행 시 <b>실제 투입 파형</b>(worker echo — 표시 = 투입 동일 배열, 재계산 아님)이 여기 표시됩니다.</div>
+    <div class="row">
       <canvas id="profCanvas" width="560" height="330"></canvas>
       <canvas id="wearCanvas" width="560" height="330"></canvas>
     </div>
+    <div class="note" id="contactNote" style="display:none">붉은 음영 = <b>h_tran &lt; 0 접촉 간섭부</b> — h_tran 은 클램프 없는 <b>선형 중첩 간극함수</b>라 음수가 허용되며(간섭 깊이), 이 구간의 하중은 M1 dry 접촉이 받아 φ_bl 로 분담된다(진단 패널의 접촉점 수와 대응). 원논문 Fig 6(a) 변형 거칠기의 음수 표시와 같은 계열의 표현.</div>
     <div class="row">
       <canvas id="vmCanvas" width="560" height="330"></canvas>
       <canvas id="dvCanvas" width="560" height="330"></canvas>
@@ -423,6 +428,26 @@ $("runChain").onclick = async () => {
       `<span>Δh_w 평균</span><b>${r.dhWMean.toExponential(3)} m/cyc</b>` +
       `<span>계산</span><b>${ms} ms</b></div>`;
 
+    // 기준형상 (worker echo — 표시=투입)
+    if (r.inputEcho) {
+      const e = r.inputEcho;
+      const sum = e.rough1.map((v, i) => v + e.rough2[i]);
+      linePlot($("roughCanvas"), {
+        series: [
+          { x: r.x, y: e.rough1, label: "z₁ 디스크 [m]" },
+          { x: r.x, y: e.rough2, label: "z₂ 롤러 [m]" },
+          { x: r.x, y: sum, label: "z₁+z₂ 합성 [m]", dash: true },
+        ],
+        hlines: [{ y: payload.h_bar, label: "h̄" }],
+        title: "입력 기준형상 — 합성 거칠기 (worker echo)", xLabel: "x [m]", yLabel: "[m]",
+      });
+      $("roughFormula").innerHTML =
+        `기준형상 수식: <b>z<sub>i</sub>(x) = √2·Rq<sub>i</sub>·sin(2π·N·x / l<sub>x</sub>)</b> ` +
+        `— √2 는 사인파 RMS→진폭 환산(<b>입력 규격이지 물리 모델 아님</b>) · ` +
+        `현재값: Rq₁=${$("f_rq1").value} µm · Rq₂=${$("f_rq2").value} µm · N=${payload.waves} · ` +
+        `l<sub>x</sub>=${payload.grid.lx} m · h̄=${payload.h_bar} m. ` +
+        `합성 진폭이 h̄ 에 근접·초과하면 접촉 간섭 경향(변형 전 기준 — 실제 접촉은 EHL 평탄화 후 아래 h_tran&lt;0 음영).`;
+    }
     linePlot($("profCanvas"), {
       series: [
         { x: r.x, y: r.pTranProfile, label: "p_tran [Pa]" },
@@ -430,15 +455,25 @@ $("runChain").onclick = async () => {
       ],
       title: `압력·트랙션 x-프로파일 (y=j${r.sliceJ}) — 미마모·정성`, xLabel: "x [m]", yLabel: "[Pa]",
     });
+    const contactMask = r.hTranProfile.map((v) => (v < 0 ? 1 : 0));
     linePlot($("wearCanvas"), {
       series: [
-        { x: r.x, y: r.hTranProfile, label: "h_tran [m]" },
+        { x: r.x, y: r.hTranProfile, label: "h_tran [m] (음수=접촉간섭)" },
         { x: r.x, y: r.dhWProfile, label: "Δh_w [m/cyc]", dash: true },
+        { name: "contactMask", x: r.x, y: contactMask },
       ],
+      shadeMaskSeries: "contactMask",
       title: "유막·마모율 x-프로파일 — 미마모·정성", xLabel: "x [m]", yLabel: "[m]",
     });
+    $("contactNote").style.display = contactMask.some((v) => v > 0) ? "block" : "none";
     heatmap($("vmCanvas"), r.vmXz, { title: "σ_vM(x,z) @ y₀ [Pa] — 미마모·정성 (cf. Fig 6b)", xLabel: "x →", yLabel: "z(깊이) ↓" });
     heatmap($("dvCanvas"), r.dvYz, { title: "Dang Van D(y,z) [-] — 1사이클(x-스냅샷)", xLabel: "y →", yLabel: "z(깊이) ↓" });
+    if (new URLSearchParams(location.search).has("autorun")) {
+      fetch("/__viewer__/autorunPlotted").catch(() => {});
+    }
+  } catch (err) {
+    $("diagBox").innerHTML = `<span style="color:#991b1b">렌더 오류: ${err}</span>`;
+    fetch(`/__viewer__/chainError/${encodeURIComponent(String((err && err.stack) || err)).slice(0, 180)}`).catch(() => {});
   } finally {
     btn.disabled = false; btn.textContent = "체인 실행 (M1+M2+M6 → M3 → M4 → M5)";
   }
@@ -485,6 +520,9 @@ try {
   boot.className = pass ? "note okbadge" : "note warn";
   boot.textContent = pass ? "WASM 준비 완료 — 3탭 활성 (시간진화는 시간루프 G5 후)" : "자가점검 실패";
   document.title = pass ? "VIEWER-PASS" : "VIEWER-FAIL";
+  if (pass && new URLSearchParams(location.search).has("autorun")) {
+    $("runChain").click(); // 검수용: 렌더 경로까지 기계 확인 (autorunPlotted self-report)
+  }
   fetch(`/__viewer__/${document.title}`).catch(() => {});
 } catch (e) {
   boot.className = "note warn";
