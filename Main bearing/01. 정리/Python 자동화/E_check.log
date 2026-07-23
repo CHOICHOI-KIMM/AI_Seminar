@@ -1,0 +1,78 @@
+shaft_material type: ShaftMaterialForReports | 이름: Rigid Material 1
+
+[shaft_material 전체 속성]
+    all_properties_are_invalid = False
+    all_properties_are_read_only = False
+    cast_to = _Cast_ShaftMaterialForReports(__parent__=ShaftMaterialForReports...
+    casting_factor = '<ERR Unable to access Casting Factor be>'
+    casting_factor_condition = '<ERR Unable to access Casting Factor Co>'
+    consequence_of_failure = '<ERR Unable to access Consequence of Fa>'
+    constant_rpmax = '<ERR Unable to access Constant R<sub>p,>'
+    curve_model = '<ERR Unable to access Curve Model becau>'
+    endurance_limit = 500000000.0
+    factor_to_second_knee_point = '<ERR Unable to access Factor to Second >'
+    fatigue_strength_factor_for_normal_stress = '<ERR Unable to access Fatigue Strength >'
+    fatigue_strength_factor_for_shear_stress = '<ERR Unable to access Fatigue Strength >'
+    fatigue_strength_under_reversed_bending_stresses = 500000000.0
+    fatigue_strength_under_reversed_compression_tension_stresses = 400000000.0
+    fatigue_strength_under_reversed_torsional_stresses = 300000000.0
+    first_exponent = '<ERR Unable to access First Exponent be>'
+    hardening_type_for_agma60016101e08 = '<ERR Unable to access Hardening Type fo>'
+    has_hard_surface = False
+    invalid_properties = ['No History', 'Surface Hardness', 'Surface Hardness Range', 'Ha...
+    is_regularly_inspected = '<ERR Unable to access Is Regularly Insp>'
+    load_safety_factor = '<ERR Unable to access Load Safety Facto>'
+    lower_limit_of_the_effective_damage_sum = '<ERR Unable to access Lower Limit of th>'
+    material_details = ShaftMaterial(wrapped=<SMT.MastaAPI.Shafts.ShaftMaterial object ...
+    material_fatigue_limit = '<ERR Unable to access Material Fatigue >'
+    material_fatigue_limit_shear = '<ERR Unable to access Material Fatigue >'
+    material_group = '<ERR Unable to access Material Group be>'
+    material_safety_factor = '<ERR Unable to access Material Safety F>'
+    number_of_cycles_at_knee_point = '<ERR Unable to access Number of Cycles >'
+    number_of_cycles_at_second_knee_point = '<ERR Unable to access Number of Cycles >'
+    read_only_properties = []
+    report_names = ['All Properties Report', 'Default CAD Report']
+    second_exponent = '<ERR Unable to access Second Exponent b>'
+    temperature_factor = '<ERR Unable to access Temperature Facto>'
+    tensile_yield_strength = 750000000.0
+    total_safety_factor = '<ERR Unable to access Total Safety Fact>'
+    use_custom_sn_curve = False
+    wrapped = <SMT.MastaAPI.Shafts.ShaftMaterialForReports object at 0x000001D...
+
+[E 접근자 직접 시도]
+  sm.modulus_of_elasticity = "<ERR 'ShaftMaterialForReports' object h>"
+  sm.youngs_modulus = "<ERR 'ShaftMaterialForReports' object h>"
+  sm.young_modulus = "<ERR 'ShaftMaterialForReports' object h>"
+  sm.e_youngs_modulus = "<ERR 'ShaftMaterialForReports' object h>"
+  sm.elastic_modulus = "<ERR 'ShaftMaterialForReports' object h>"
+  sm.modulus = "<ERR 'ShaftMaterialForReports' object h>"
+
+(E 미검출 — 위 전체 덤프에서 modulus 관련 확인 필요)
+
+완료
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26B99300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26B99300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26B99300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26B99300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26B99300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

@@ -1,0 +1,247 @@
+
+======================================================================
+A. Root assembly 파트 & Point Load 탐색
+----------------------------------------------------------------------
+  [all_parts_of_type_point_load] → 1개; 첫: Point Load
+  point_load type: PointLoad
+
+======================================================================
+B. 속도 관련 파트(power load / speed) 탐색
+----------------------------------------------------------------------
+  [all_parts_of_type_abstract_shaft] → ['Main Shaft']
+  [all_parts_of_type_abstract_shaft_or_housing] → ['Main Shaft']
+  [all_parts_of_type_point_load] → ['Point Load']
+  [all_parts_of_type_shaft] → ['Main Shaft']
+
+======================================================================
+C. static load case: Mx_max / type=StaticLoadCase
+----------------------------------------------------------------------
+  ── load/point/force/moment/speed/for 관련 멤버 ──
+  advanced_time_stepping_analysis_for_modulation: AdvancedTimeSteppingAnalysisForModulation = AdvancedTimeSteppingAnalysisForModulation(wrapped=<SMT.MastaAPI.Sys...
+  ball_bearing_friction_model_for_gyroscopic_moment: FrictionModelForGyroscopicMoment = <FrictionModelForGyroscopicMoment.OUTER_RACEWAY_CONTROL: 0>
+  create_time_series_load_case: method ()
+  critical_speed_analysis: CriticalSpeedAnalysis = CriticalSpeedAnalysis(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAnd...
+  default_planetary_rating_load_sharing_method: <err Unable to access Default Planetary Rating Load Sharing Method because it is invalid (Mx_max\Default Planetary Rating Load Sharing Method)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)>
+  design_state_load_case_group: DesignState = DesignState(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndResults.Lo...
+  expand_grounded_nodes_for_thermal_effects: <err Unable to access Expand Grounded Nodes for Thermal Effects? because it is invalid (Mx_max\Expand Grounded Nodes for Thermal Effects?)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)>
+  force_multiple_mesh_nodes_for_unloaded_cylindrical_gear_meshes: bool = False
+  harmonic_analysis_for_advanced_time_stepping_analysis_for_modulation: HarmonicAnalysisForAdvancedTimeSteppingAnalysisForModulation = HarmonicAnalysisForAdvancedTimeSteppingAnalysisForModulation(wrappe...
+  harmonic_analysis_options_for_atsam: <err "Harmonic Analysis Options for ATSAM" - The property was found but its use is dependent on licence check which failed at runtime.
+Required feature code(s): 'NVH Advanced Time Stepping Analysis for Modulation (Non-Planetary)' (MA123)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)
+   위치: SMT.MastaAPI.APIBase.getExpandableProperty[TReturnType](String rpdName)>
+  hypoid_gear_wind_up_removal_method_for_misalignments: HypoidWindUpRemovalMethod = <HypoidWindUpRemovalMethod.INVARIANT_UNDER_RIGID_BODY_TRANSLATIONS_...
+  include_inner_race_distortion_for_flexible_pin_spindle: <err "Include Inner Race Distortion for Flexible Pin Spindle?" - The property was found but its use is dependent on licence check which failed at runtime.
+Required feature code(s): 'Flexible Pin Analysis' (MA207)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)>
+  include_profile_modifications_and_manufacturing_errors_during_cycloidal_analysis: <err Unable to access Include Profile Modifications and Manufacturing Errors During Cycloidal Analysis? because it is invalid (Mx_max\Include Profile Modifications and Manufacturing Errors During Cycloidal Analysis?)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)>
+  include_tilt_stiffness_for_bevel_hypoid_gears: bool = True
+  input_power_load: NoneType = None
+  input_shaft_cycles: float = 0.0
+  inputs_for_abstract_assembly: method ()
+  inputs_for_abstract_shaft: method ()
+  inputs_for_abstract_shaft_or_housing: method ()
+  inputs_for_abstract_shaft_to_mountable_component_connection: method ()
+  inputs_for_agma_gleason_conical_gear: method ()
+  inputs_for_agma_gleason_conical_gear_mesh: method ()
+  inputs_for_agma_gleason_conical_gear_set: method ()
+  inputs_for_assembly: method ()
+  inputs_for_bearing: method ()
+  inputs_for_belt_connection: method ()
+  inputs_for_belt_drive: method ()
+  inputs_for_bevel_differential_gear: method ()
+  inputs_for_bevel_differential_gear_mesh: method ()
+  inputs_for_bevel_differential_gear_set: method ()
+  inputs_for_bevel_differential_planet_gear: method ()
+  inputs_for_bevel_differential_sun_gear: method ()
+  inputs_for_bevel_gear: method ()
+  inputs_for_bevel_gear_mesh: method ()
+  inputs_for_bevel_gear_set: method ()
+  inputs_for_bolt: method ()
+  inputs_for_bolted_joint: method ()
+  inputs_for_clutch: method ()
+  inputs_for_clutch_connection: method ()
+  inputs_for_clutch_half: method ()
+  inputs_for_coaxial_connection: method ()
+  inputs_for_component: method ()
+  inputs_for_concept_coupling: method ()
+  inputs_for_concept_coupling_connection: method ()
+  inputs_for_concept_coupling_half: method ()
+  inputs_for_concept_gear: method ()
+  inputs_for_concept_gear_mesh: method ()
+  inputs_for_concept_gear_set: method ()
+  inputs_for_conical_gear: method ()
+  inputs_for_conical_gear_mesh: method ()
+  inputs_for_conical_gear_set: method ()
+  inputs_for_connection: method ()
+  inputs_for_connector: method ()
+  inputs_for_coupling: method ()
+  inputs_for_coupling_connection: method ()
+  inputs_for_coupling_half: method ()
+  inputs_for_cvt: method ()
+  inputs_for_cvt_belt_connection: method ()
+  inputs_for_cvt_pulley: method ()
+  inputs_for_cycloidal_assembly: method ()
+  inputs_for_cycloidal_disc: method ()
+  inputs_for_cycloidal_disc_central_bearing_connection: method ()
+  inputs_for_cycloidal_disc_planetary_bearing_connection: method ()
+  inputs_for_cylindrical_gear: method ()
+  inputs_for_cylindrical_gear_mesh: method ()
+  inputs_for_cylindrical_gear_set: method ()
+  inputs_for_cylindrical_planet_gear: method ()
+  inputs_for_datum: method ()
+  inputs_for_external_cad_model: method ()
+  inputs_for_face_gear: method ()
+  inputs_for_face_gear_mesh: method ()
+  inputs_for_face_gear_set: method ()
+  inputs_for_fe_part: method ()
+  inputs_for_flexible_pin_assembly: method ()
+  inputs_for_gear: method ()
+  inputs_for_gear_mesh: method ()
+  inputs_for_gear_set: method ()
+  inputs_for_guide_dxf_model: method ()
+  inputs_for_hypoid_gear: method ()
+  inputs_for_hypoid_gear_mesh: method ()
+  inputs_for_hypoid_gear_set: method ()
+  inputs_for_inter_mountable_component_connection: method ()
+  inputs_for_klingelnberg_cyclo_palloid_conical_gear: method ()
+  inputs_for_klingelnberg_cyclo_palloid_conical_gear_mesh: method ()
+  inputs_for_klingelnberg_cyclo_palloid_conical_gear_set: method ()
+  inputs_for_klingelnberg_cyclo_palloid_hypoid_gear: method ()
+  inputs_for_klingelnberg_cyclo_palloid_hypoid_gear_mesh: method ()
+  inputs_for_klingelnberg_cyclo_palloid_hypoid_gear_set: method ()
+  inputs_for_klingelnberg_cyclo_palloid_spiral_bevel_gear: method ()
+  inputs_for_klingelnberg_cyclo_palloid_spiral_bevel_gear_mesh: method ()
+  inputs_for_klingelnberg_cyclo_palloid_spiral_bevel_gear_set: method ()
+  inputs_for_mass_disc: method ()
+  inputs_for_measurement_component: method ()
+  inputs_for_microphone: method ()
+  inputs_for_microphone_array: method ()
+  inputs_for_mountable_component: method ()
+  inputs_for_oil_seal: method ()
+  inputs_for_part: method ()
+  inputs_for_part_to_part_shear_coupling: method ()
+  inputs_for_part_to_part_shear_coupling_connection: method ()
+  inputs_for_part_to_part_shear_coupling_half: method ()
+  inputs_for_planet_carrier: method ()
+  inputs_for_planetary_connection: method ()
+  inputs_for_planetary_gear_set: method ()
+  inputs_for_point_load: method ()
+  inputs_for_power_load: method ()
+  inputs_for_pulley: method ()
+  inputs_for_ring_pins: method ()
+  inputs_for_ring_pins_to_disc_connection: method ()
+  inputs_for_rolling_ring: method ()
+  inputs_for_rolling_ring_assembly: method ()
+  inputs_for_rolling_ring_connection: method ()
+  inputs_for_root_assembly: method ()
+  inputs_for_shaft: method ()
+  inputs_for_shaft_hub_connection: method ()
+  inputs_for_shaft_to_mountable_component_connection: method ()
+  inputs_for_specialised_assembly: method ()
+  inputs_for_spiral_bevel_gear: method ()
+  inputs_for_spiral_bevel_gear_mesh: method ()
+  inputs_for_spiral_bevel_gear_set: method ()
+  inputs_for_spring_damper: method ()
+  inputs_for_spring_damper_connection: method ()
+  inputs_for_spring_damper_half: method ()
+  inputs_for_straight_bevel_diff_gear: method ()
+  inputs_for_straight_bevel_diff_gear_mesh: method ()
+  inputs_for_straight_bevel_diff_gear_set: method ()
+  inputs_for_straight_bevel_gear: method ()
+  inputs_for_straight_bevel_gear_mesh: method ()
+  inputs_for_straight_bevel_gear_set: method ()
+  inputs_for_straight_bevel_planet_gear: method ()
+  inputs_for_straight_bevel_sun_gear: method ()
+  inputs_for_synchroniser: method ()
+  inputs_for_synchroniser_half: method ()
+  inputs_for_synchroniser_part: method ()
+  inputs_for_synchroniser_sleeve: method ()
+  inputs_for_torque_converter: method ()
+  inputs_for_torque_converter_connection: method ()
+  inputs_for_torque_converter_pump: method ()
+  inputs_for_torque_converter_turbine: method ()
+  inputs_for_unbalanced_mass: method ()
+  inputs_for_virtual_component: method ()
+  inputs_for_worm_gear: method ()
+  inputs_for_worm_gear_mesh: method ()
+  inputs_for_worm_gear_set: method ()
+  inputs_for_zerol_bevel_gear: method ()
+  inputs_for_zerol_bevel_gear_mesh: method ()
+  inputs_for_zerol_bevel_gear_set: method ()
+  is_stop_start_load_case: <err "Is Stop - Start Load Case?" - The property was found but its use is dependent on licence check which failed at runtime.
+Required feature code(s): 'Flexible Pin Analysis' (MA207)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)>
+  maximum_shaft_section_polar_area_moment_of_inertia_ratio: float = 10.0
+  micro_geometry_model_for_simple_mesh_stiffness: MicroGeometryModel = <MicroGeometryModel.ESTIMATED_FROM_MACRO_GEOMETRY: 1>
+  minimum_force_for_bearing_to_be_considered_loaded: Overridable_float = 1.0
+  minimum_moment_for_bearing_to_be_considered_loaded: Overridable_float = 0.1
+  minimum_power_for_gear_mesh_to_be_loaded: Overridable_float = 1.0
+  minimum_torque_for_gear_mesh_to_be_loaded: Overridable_float = 0.1
+  number_of_grid_points_across_rib_contact_width: Overridable_int = 7
+  number_of_grid_points_across_rib_height: Overridable_int = 51
+  number_of_stop_start_cycles: <err "Number of Stop - Start Cycles" - The property was found but its use is dependent on licence check which failed at runtime.
+Required feature code(s): 'Flexible Pin Analysis' (MA207)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)>
+  number_of_strips_for_roller_calculation: Overridable_int = 40
+  output_power_load: NoneType = None
+  peak_load_factor_for_shafts: <err Unable to access Peak Load Factor for Shafts because it is invalid (Mx_max\Peak Load Factor for Shafts)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)>
+  power_loads: list = []
+  refine_grid_around_contact_point: Overridable_bool = <mastapy._private._internal.implicit.overridable.bool.bool object a...
+  relative_tolerance_for_convergence: Overridable_float = 0.001
+  ring_ovality_scaling: <err Unable to access Ring Ovality Scaling because it is invalid (Mx_max\Ring Ovality Scaling)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)>
+  save_history_information: <err Unable to access Save History Information because it is invalid (Mx_max\Save History Information)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)
+   위치: SMT.MastaAPI.APIBase.getExpandableProperty[TReturnType](String rpdName)>
+  set_face_widths_for_specified_safety_factors_from_power_flow: method ()
+  set_first_element_angle_to_load_direction: Overridable_bool = <mastapy._private._internal.implicit.overridable.bool.bool object a...
+  speed_of_sound: Overridable_float = 343.2367605312694
+  stress_concentration_method_for_rating: StressConcentrationMethod = <StressConcentrationMethod.BASIC_STRESS_RISER_FUNCTION: 0>
+  te_set_up_for_dynamic_analyses_options: TESetUpForDynamicAnalysisOptions = TESetUpForDynamicAnalysisOptions(wrapped=<SMT.MastaAPI.SystemModel....
+  tolerance_factor_for_axial_internal_clearances: float = 0.5
+  tolerance_factor_for_inner_fit: float = 0.5
+  tolerance_factor_for_inner_mounting_sleeve_bore: Overridable_float = 0.5
+  tolerance_factor_for_inner_mounting_sleeve_outer_diameter: Overridable_float = 0.5
+  tolerance_factor_for_inner_ring: Overridable_float = 0.5
+  tolerance_factor_for_inner_support: Overridable_float = 0.5
+  tolerance_factor_for_outer_fit: float = 0.5
+  tolerance_factor_for_outer_mounting_sleeve_bore: Overridable_float = 0.5
+  tolerance_factor_for_outer_mounting_sleeve_outer_diameter: Overridable_float = 0.5
+  tolerance_factor_for_outer_ring: Overridable_float = 0.5
+  tolerance_factor_for_outer_support: Overridable_float = 0.5
+  tolerance_factor_for_radial_internal_clearances: float = 0.5
+  use_single_node_for_cylindrical_gear_meshes: Overridable_bool = <mastapy._private._internal.implicit.overridable.bool.bool object a...
+  use_single_node_for_spline_rigid_bond_detailed_connection_connections: Overridable_bool = <mastapy._private._internal.implicit.overridable.bool.bool object a...
+
+======================================================================
+D. 로드케이스에서 Point Load 입력 객체 얻기 시도
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\masta_inspect_load.py", line 93, in <module>
+    and callable(getattr(lc, m, None))]
+                 ~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\system_model\analyses_and_results\static_loads\_7490.py", line 976, in expand_grounded_nodes_for_thermal_effects
+    temp = pythonnet_property_get(
+        self.wrapped, "ExpandGroundedNodesForThermalEffects"
+    )
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_internal\python_net.py", line 250, in pythonnet_property_get
+    return getattr(caller, property_name)
+SMT.MastaAPIUtility.Exceptions.InvalidatedPropertyException: Unable to access Expand Grounded Nodes for Thermal Effects? because it is invalid (Mx_max\Expand Grounded Nodes for Thermal Effects?)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

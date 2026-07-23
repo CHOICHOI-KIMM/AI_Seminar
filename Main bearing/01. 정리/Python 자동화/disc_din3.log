@@ -1,0 +1,12 @@
+[sres.safety_factors.items]
+  name="<ERR 'SafetyFactorItem' object ha>"  value="<ERR 'SafetyFactorItem' object ha>"  factor="<ERR 'SafetyFactorItem' object ha>"  target="<ERR 'SafetyFactorItem' object ha>"
+      → safety_factor = 7.070398385024129
+  name="<ERR 'SafetyFactorItem' object ha>"  value="<ERR 'SafetyFactorItem' object ha>"  factor="<ERR 'SafetyFactorItem' object ha>"  target="<ERR 'SafetyFactorItem' object ha>"
+      → safety_factor = 21.571438581106737
+
+[worst 섹션의 safety_factors 직접]
+  worst.safety_factors: <ERR 'ShaftSectionEndResultsSyste>
+
+[요약] offset(worst)= 0.5
+완료
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

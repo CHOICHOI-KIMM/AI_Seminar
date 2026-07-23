@@ -1,0 +1,250 @@
+
+======================================================================
+J. ForceInputComponent (force_x) 전체 — 스칼라 세팅 방법 찾기
+----------------------------------------------------------------------
+  type: ForceInputComponent
+  TYPE: CLRMetatype ()
+  all_properties_are_invalid: bool = False
+  all_properties_are_read_only: bool = False
+  cast: method ()
+  cast_or_none: method ()
+  cast_to: _Cast_ForceInputComponent = _Cast_ForceInputComponent(__parent__=ForceInputComponent(wrapped=<SMT...
+  disconnect_from_masta: method ()
+  documentation_url: method ()
+  force: float = 6975400.0
+  get_active_report_with_encoded_images: method ()
+  get_default_report_with_encoded_images: method ()
+  get_named_report_with_encoded_images: method ()
+  get_property: method ()
+  include_values_before_zero_time: <err Unable to access Include Values Before Zero Time? >
+  initialize_lifetime_service: method ()
+  input_type: ValueInputOption = <ValueInputOption.CONSTANT: 0>
+  invalid_properties: list = ['Value vs. Time', 'Time Profile Repeats?', 'Single Point Selection M...
+  is_instance_of_wrapped_type: method ()
+  is_of_type: method ()
+  is_read_only: method ()
+  is_valid: method ()
+  output_active_report_as_text_to: method ()
+  output_active_report_to: method ()
+  output_default_report_to: method ()
+  output_named_report_as_masta_report: method ()
+  output_named_report_as_text_to: method ()
+  output_named_report_to: method ()
+  read_only_properties: list = []
+  report_names: list = ['All Properties Report', 'Default CAD Report']
+  set_property: method ()
+  single_point_selection_method_for_value_vs_time: <err Unable to access Single Point Selection Method For>
+  time_profile_repeats: <err Unable to access Time Profile Repeats? because it >
+  value_vs_angle: <err Unable to access Value vs. Angle because it is inv>
+  value_vs_angle_and_speed: <err Unable to access Value vs. Angle and Speed because>
+  value_vs_position: <err Unable to access Value vs. Position because it is >
+  value_vs_time: <err Unable to access Value vs. Time because it is inva>
+  wrapped: ForceInputComponent = <SMT.MastaAPI.NodalAnalysis.VaryingInputComponents.ForceInputComponen...
+
+======================================================================
+K. MomentInputComponent (moment_x) 전체
+----------------------------------------------------------------------
+  type: MomentInputComponent
+  TYPE: CLRMetatype ()
+  all_properties_are_invalid: bool = False
+  all_properties_are_read_only: bool = False
+  cast: method ()
+  cast_or_none: method ()
+  cast_to: _Cast_MomentInputComponent = _Cast_MomentInputComponent(__parent__=MomentInputComponent(wrapped=<S...
+  disconnect_from_masta: method ()
+  documentation_url: method ()
+  get_active_report_with_encoded_images: method ()
+  get_default_report_with_encoded_images: method ()
+  get_named_report_with_encoded_images: method ()
+  get_property: method ()
+  include_values_before_zero_time: <err Unable to access Include Values Before Zero Time? >
+  initialize_lifetime_service: method ()
+  input_type: ValueInputOption = <ValueInputOption.CONSTANT: 0>
+  invalid_properties: list = ['Value vs. Time', 'Time Profile Repeats?', 'Single Point Selection M...
+  is_instance_of_wrapped_type: method ()
+  is_of_type: method ()
+  is_read_only: method ()
+  is_valid: method ()
+  moment: float = -51424.0
+  output_active_report_as_text_to: method ()
+  output_active_report_to: method ()
+  output_default_report_to: method ()
+  output_named_report_as_masta_report: method ()
+  output_named_report_as_text_to: method ()
+  output_named_report_to: method ()
+  read_only_properties: list = []
+  report_names: list = ['All Properties Report', 'Default CAD Report']
+  set_property: method ()
+  single_point_selection_method_for_value_vs_time: <err Unable to access Single Point Selection Method For>
+  time_profile_repeats: <err Unable to access Time Profile Repeats? because it >
+  value_vs_angle: <err Unable to access Value vs. Angle because it is inv>
+  value_vs_angle_and_speed: <err Unable to access Value vs. Angle and Speed because>
+  value_vs_position: <err Unable to access Value vs. Position because it is >
+  value_vs_time: <err Unable to access Value vs. Time because it is inva>
+  wrapped: MomentInputComponent = <SMT.MastaAPI.NodalAnalysis.VaryingInputComponents.MomentInputCompone...
+
+======================================================================
+L. ForceSpecification enum 옵션 + 현재값
+----------------------------------------------------------------------
+  force_specification() 실패: 'PointLoadLoadCase' object has no attribute 'force_specification'
+  ForceSpecification members: ['FORCE_X_FORCE_Y', 'RADIAL_TANGENTIAL']
+
+======================================================================
+M. 16개 케이스별 point-load 성분값 (매핑 역산)
+----------------------------------------------------------------------
+  case                force_x          force_y            axial         moment_x         moment_y
+  Mx_max                    ?                ?                ?                ?                ?
+  Mx_min                    ?                ?                ?                ?                ?
+  My_max                    ?                ?                ?                ?                ?
+  My_min                    ?                ?                ?                ?                ?
+  Mz_max                    ?                ?                ?                ?                ?
+  Mz_min                    ?                ?                ?                ?                ?
+  Myz_max                   ?                ?                ?                ?                ?
+  Myz_min                   ?                ?                ?                ?                ?
+  Fx_max                    ?                ?                ?                ?                ?
+  Fx_min                    ?                ?                ?                ?                ?
+  Fy_max                    ?                ?                ?                ?                ?
+  Fy_min                    ?                ?                ?                ?                ?
+  Fz_max                    ?                ?                ?                ?                ?
+  Fz_min                    ?                ?                ?                ?                ?
+  Fyz_max                   ?                ?                ?                ?                ?
+  Fyz_min                   ?                ?                ?                ?                ?
+
+======================================================================
+N. 속도 추적 — load case의 cycle/speed/duration/time 관련
+----------------------------------------------------------------------
+  advanced_time_stepping_analysis_for_modulation: AdvancedTimeSteppingAnalysisForModulation = AdvancedTimeSteppingAnalysisForModulation(wrapped=<SMT.MastaAPI.Syste...
+  create_time_series_load_case: method ()
+  critical_speed_analysis: CriticalSpeedAnalysis = CriticalSpeedAnalysis(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndRe...
+  current_time: float = 0.0
+  duration: float = 360000.0
+  harmonic_analysis_for_advanced_time_stepping_analysis_for_modulation: HarmonicAnalysisForAdvancedTimeSteppingAnalysisForModulation = HarmonicAnalysisForAdvancedTimeSteppingAnalysisForModulation(wrapped=...
+  initialize_lifetime_service: method ()
+  input_shaft_cycles: float = 0.0
+  number_of_stop_start_cycles: <err "Number of Stop - Start Cycles" - The property was>
+  speed_of_sound: Overridable_float = 343.2367605312694
+  -- design 레벨 --
+  add_duty_cycle: method ()
+  compare_results_to_previous_masta_version: method ()
+  duty_cycle_named: method ()
+  duty_cycles: list = [DutyCycle(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndResults.LoadC...
+
+======================================================================
+완료
+----------------------------------------------------------------------
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001A9F6289300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

@@ -1,0 +1,39 @@
+======================================================================
+[1] DesignState 객체 확보
+======================================================================
+  lc0.design_state_load_case_group → DesignState 'Fatigue load case' 확보
+  dp.add_design_state (메서드)
+  dp.design_state_load_case_group_named (메서드)
+  dp.design_state_named (메서드)
+  dp.design_states = [DesignState(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndResults.LoadCaseGroups.DesignState object at 0x000001AFB548FF00>), DesignState(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndResults.LoadCaseGroups.DesignState object at 0x000001AFB548C900>)]
+  duty.duty_cycle_design_states: 2개
+    - SubGroupInSingleDesignState: name='Extrem load case'
+        .design_states = list 
+    - SubGroupInSingleDesignState: name='Fatigue load case'
+        .design_states = list 
+  lc0.design_state = str ''
+  lc0.design_state_load_case_group = DesignState 'Fatigue load case'
+  → 확보된 DesignState: DesignState 'Fatigue load case'
+
+======================================================================
+[2] duplicate(ds, name) 실동작 — 5케이스
+======================================================================
+  생성·하중설정 5개 (0.33s), static_loads=22개
+
+======================================================================
+[3] 전용 duty cycle 'probe_dc' + 일괄 해석 (2회)
+======================================================================
+  probe_dc 케이스 수: 5
+  1회차: 4.02s / 5케이스 = 805 ms/케이스
+  2회차: 0.00s / 5케이스 = 0 ms/케이스
+
+======================================================================
+[4] 케이스별 결과 추출·매핑 + 단일해석 대조
+======================================================================
+  results_for(UW): 1개
+    [0] BearingCompoundSystemDeflection 매핑='Main Bearing_UW' L10 실패 → 후보속성 ['analysis_time', 'component_analysis_cases', 'component_analysis_cases_ready', 'component_detailed_analysis', 'get_named_report_with_encoded_images', 'name', 'name_with_container', 'output_named_report_as_masta_report']
+
+  단일 해석(index0): L10=2.063811e+07  (0.26s)
+
+완료 (저장 안 함)
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

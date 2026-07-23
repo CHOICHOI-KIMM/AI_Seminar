@@ -1,0 +1,29 @@
+worst(infinite-life) type: ShaftSectionEndResultsSystemDeflection
+
+[worst 객체 — safety/factor/fatigue/infinite/reliability/offset 관련]
+    din743201212_fatigue_notch_factor_beta_sigma_beta_tau = ShaftAxialBendingTorsionalComponentValues(wrapped=<SM...
+    din743201212_geometrical_influence_factor_for_size_k2d = ShaftAxialBendingTorsionalComponentValues(wrapped=<SM...
+    din743201212_increase_factor_for_yield_point_gamma_f = ShaftAxialBendingTorsionalComponentValues(wrapped=<SM...
+    din743201212_static_support_factor_k2f = ShaftAxialBendingTorsionalComponentValues(wrapped=<SM...
+    din743201212_surface_roughness_influence_factor_kf_sigma_kf_tau = ShaftAxialBendingTorsionalComponentValues(wrapped=<SM...
+    din743201212_total_influence_factor_k_sigma_k_tau = ShaftAxialBendingTorsionalComponentValues(wrapped=<SM...
+    offset = 0.5
+
+[safety_factors(SafetyFactorGroup)]
+    all_properties_are_invalid = False
+    all_properties_are_read_only = False
+    cast_to = _Cast_SafetyFactorGroup(__parent__=SafetyFactorGroup(...
+    invalid_properties = []
+    items = [SafetyFactorItem(wrapped=<SMT.MastaAPI.Materials.Saf...
+    read_only_properties = []
+    wrapped = <SMT.MastaAPI.Materials.SafetyFactorGroup object at 0...
+
+[직접 접근자]
+  worst.reliability = "<ERR 'ShaftSectionEndResultsSystemD>"
+  worst.fatigue_safety_factor = "<ERR 'ShaftSectionEndResultsSystemD>"
+  worst.safety_factor = "<ERR 'ShaftSectionEndResultsSystemD>"
+  worst.fatigue_safety_factor_for_infinite_life = "<ERR 'ShaftSectionEndResultsSystemD>"
+  worst.offset = 0.5
+
+완료
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

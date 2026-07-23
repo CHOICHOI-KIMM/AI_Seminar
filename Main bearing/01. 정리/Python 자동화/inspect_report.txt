@@ -1,0 +1,376 @@
+
+======================================================================
+1. 모델 로드
+----------------------------------------------------------------------
+Design: "D:\AI\AI_Seminar\Main bearing\02. 자료\260720 검증용 자료_롤러 프로파일\26MW_메인베어링_기본설계_v1.2_샤프트 두께,형상 2안_강체,롤러프로파일만_260720.Masta": New Design
+Root assembly: New Design: 
+Design Datum, 
+Main Shaft, 
+Main Bearing_UW, 
+Main Bearing_DW, 
+Point Load
+
+======================================================================
+2. 베어링 목록
+----------------------------------------------------------------------
+  [all_parts_of_type_bearing] → 2개
+     - Main Bearing_UW
+     - Main Bearing_DW
+
+======================================================================
+3. 로드케이스 / 듀티사이클 경로
+----------------------------------------------------------------------
+  [OK] design_properties.design_states  →  컬렉션 (len=1)
+        first item: Extrem load case
+        → design_properties.design_states[0].static_loads : 16개 (예: Mx_max)
+  [OK] design_properties.duty_cycles  →  컬렉션 (len=1)
+        first item: All
+        → design_properties.duty_cycles[0].static_loads : 16개 (예: Mx_max)
+  [OK] design_properties.static_loads  →  컬렉션 (len=16)
+        first item: Mx_max
+  [OK] design_states  →  컬렉션 (len=1)
+        first item: Extrem load case
+        → design_states[0].static_loads : 16개 (예: Mx_max)
+  [OK] duty_cycles  →  컬렉션 (len=1)
+        first item: All
+        → duty_cycles[0].static_loads : 16개 (예: Mx_max)
+  [OK] static_loads  →  컬렉션 (len=16)
+        first item: Mx_max
+
+======================================================================
+4. System Deflection 결과 필드 (베어링 수명 확인)
+----------------------------------------------------------------------
+  사용할 load case: Mx_max
+  results_ready: True
+
+  베어링 '?' 결과 객체: BearingSystemDeflection
+  ── 사용 가능한 결과 속성 (이 이름을 batch 스크립트에 사용) ──
+     active_report_as_text: CustomReport = CustomReport(wrapped=<SMT.MastaAPI.Utility.Report.CustomR...
+     all_design_entities: list = [BearingSystemDeflection(wrapped=<SMT.MastaAPI.SystemMode...
+     all_properties_are_invalid: bool = False
+     all_properties_are_read_only: bool = False
+     all_status_errors: list = []
+     axial_stiffness: float = 9719925594.530537
+     cast_to: _Cast_BearingSystemDeflection = _Cast_BearingSystemDeflection(__parent__=BearingSystemDef...
+     comment: str = ''
+     component_angular_displacements: list = [Vector2D(-4.355978201816009e-06, -7.650305413446679e-05)]
+     component_axial_displacements: list = [-0.0002262910193803121]
+     component_design: Bearing = Bearing(wrapped=<SMT.MastaAPI.SystemModel.PartModel.Beari...
+     component_detailed_analysis: LoadedTaperRollerBearingResults = LoadedTaperRollerBearingResults(wrapped=<SMT.MastaAPI.Bea...
+     component_load_case: BearingLoadCase = BearingLoadCase(wrapped=<SMT.MastaAPI.SystemModel.Analyse...  ★
+     component_radial_displacements: list = [Vector2D(0.00023782737733528503, -1.3193231736971586e-05)]
+     connected_components_forces_in_lcs: list = [ForceResults(wrapped=<SMT.MastaAPI.MathUtility.MeasuredV...  ★
+     connected_components_forces_in_wcs: list = [ForceResults(wrapped=<SMT.MastaAPI.MathUtility.MeasuredV...  ★
+     convergence_delta_energy: float = 452.2489496036406
+     elements_in_contact: int = 36
+     force_on_outer_support_in_lcs: VectorWithLinearAndAngularComponents = VectorWithLinearAndAngularComponents(wrapped=<SMT.MastaAP...  ★
+     force_on_outer_support_in_wcs: VectorWithLinearAndAngularComponents = VectorWithLinearAndAngularComponents(wrapped=<SMT.MastaAP...  ★
+     forces_at_zero_displacement_for_inner_and_outer_nodes: list = [ForceResults(wrapped=<SMT.MastaAPI.MathUtility.MeasuredV...  ★
+     has_converged: bool = True
+     has_results: bool = True
+     have_all_elements_converged: bool = True
+     id: str = 'a2353553-4bbb-4a40-9125-6f02c2638440'
+     inner_fe_part: NoneType = None
+     internal_force: Vector3D = Vector3D(7090102.377012721, -394935.8034883329, 2791977.3...  ★
+     internal_moment: Vector3D = Vector3D(-218772.86090288765, -3927454.609295758, 0.0)
+     invalid_properties: list = ['Planet Index', 'Planet Angle', 'Parametric Study Index ...
+     is_loaded: bool = True  ★
+     linear_force_on_inner: Vector3D = Vector3D(-7090102.377012202, 394935.8034883009, -2791977....  ★
+     local_coordinate_system: CoordinateSystem3D = CoordinateSystem3D(wrapped=<SMT.MastaAPI.MathUtility.Coor...
+     mass_properties_from_node_model: MassProperties = MassProperties(wrapped=<SMT.MastaAPI.MathUtility.MassProp...
+     mass_properties_in_local_coordinate_system_from_node_model: MassProperties = MassProperties(wrapped=<SMT.MastaAPI.MathUtility.MassProp...
+     maximum_radial_stiffness: float = 56553314633.07892
+     maximum_tilt_stiffness: float = 17470159432.94226
+     moment_on_inner: Vector3D = Vector3D(218772.86090287124, 3927454.6092954776, 1.615587...
+     name: str = 'Main Bearing_UW'
+     name_with_container: str = 'New Design\\Main Bearing_UW'
+     node_results: list = [NodeResults(wrapped=<SMT.MastaAPI.MathUtility.MeasuredVe...
+     outer_fe_part: NoneType = None
+     percentage_of_iterations_converged: float = 0.2
+     planetary_original: BearingSystemDeflection = BearingSystemDeflection(wrapped=<SMT.MastaAPI.SystemModel...
+     power_flow_results: BearingPowerFlow = BearingPowerFlow(wrapped=<SMT.MastaAPI.SystemModel.Analys...
+     preload_spring_stiffness: NoneType = None  ★
+     race_mounting_options_for_analysis: list = [InnerBearingRaceMountingOptions(wrapped=<SMT.MastaAPI.Sy...
+     read_only_properties: list = ['Continue Dynamic Analysis', 'Dynamic Analysis']
+     reason_for_non_convergence: str = ''
+     relaxation: float = 0.0
+     report_names: list = ['Ball Bearing Track Truncation Report', 'Report R', 'Exp...
+     rigidly_connected_components: RigidlyConnectedComponentGroupSystemDeflection = RigidlyConnectedComponentGroupSystemDeflection(wrapped=<S...
+     safety_factors: SafetyFactorGroup = SafetyFactorGroup(wrapped=<SMT.MastaAPI.Materials.SafetyF...  ★
+     speed: float = 0.0
+     status: Status = Status(wrapped=<SMT.MastaAPI.Utility.ModelValidation.Stat...
+     stiffness_between_each_ring: list = [BearingStiffnessMatrixReporter(wrapped=<SMT.MastaAPI.Bea...
+     stiffness_between_rings: BearingStiffnessMatrixReporter = BearingStiffnessMatrixReporter(wrapped=<SMT.MastaAPI.Bear...
+     stiffness_matrix: BearingStiffnessMatrixReporter = BearingStiffnessMatrixReporter(wrapped=<SMT.MastaAPI.Bear...
+     system_deflection: SystemDeflection = SystemDeflection(wrapped=<SMT.MastaAPI.SystemModel.Analys...
+     three_d_isometric_view: PngImageFile = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300...
+     three_d_view_orientated_in_xy_plane_with_z_axis_pointing_into_the_screen: PngImageFile = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300...
+     three_d_view_orientated_in_xy_plane_with_z_axis_pointing_out_of_the_screen: PngImageFile = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300...
+     three_d_view_orientated_in_xz_plane_with_y_axis_pointing_into_the_screen: PngImageFile = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300...
+     three_d_view_orientated_in_xz_plane_with_y_axis_pointing_out_of_the_screen: PngImageFile = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300...
+     three_d_view_orientated_in_yz_plane_with_x_axis_pointing_into_the_screen: PngImageFile = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300...
+     three_d_view_orientated_in_yz_plane_with_x_axis_pointing_out_of_the_screen: PngImageFile = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300...
+     two_d_drawing_showing_axial_forces: PngImageFile = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=41x...  ★
+     two_d_drawing_showing_power_flow: PngImageFile = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=41x...
+     unique_name: str = "'New Design\\Main Bearing_UW' in 'System Deflection of M...
+     wrapped: BearingSystemDeflection = <SMT.MastaAPI.SystemModel.AnalysesAndResults.SystemDeflec...
+
+======================================================================
+4-2. component_detailed_analysis: LoadedTaperRollerBearingResults
+----------------------------------------------------------------------
+     all_mounting_results: list = [InnerRingFittingThermalResults(wrapped=<SMT.MastaAPI.Bea...
+     all_properties_are_invalid: bool = False
+     all_properties_are_read_only: bool = True
+     angle_of_gravity_from_z_axis: float = 1.5707963267948966
+     axial_displacement_preload: float = 0.0
+     axial_to_radial_load_ratio: float = 0.3931757066610957
+     bearing: TaperRollerBearing = TaperRollerBearing(wrapped=<SMT.MastaAPI.Bearings.Bearing...
+     cage_angular_velocity: float = 0.0
+     cast_to: _Cast_LoadedTaperRollerBearingResults = _Cast_LoadedTaperRollerBearingResults(__parent__=LoadedTa...
+     din7322010: DIN7322010Results = DIN7322010Results(wrapped=<SMT.MastaAPI.Bearings.BearingR...  ★
+     drag_loss_factor: float = 0.0
+     duration: float = 360000.0
+     dynamic_viscosity: float = 0.048051988624938424  ★
+     element_angular_velocity: float = 0.0
+     element_surface_velocity: float = 0.0
+     element_temperature: float = 80.0
+     fluid_film_density: float = 870.0
+     fluid_film_temperature_source: FluidFilmTemperatureOptions = <FluidFilmTemperatureOptions.USE_SPECIFIED_SUMP_TEMPERATU...
+     force_on_inner_race: VectorWithLinearAndAngularComponents = VectorWithLinearAndAngularComponents(wrapped=<SMT.MastaAP...
+     force_results_are_overridden: bool = False
+     frequency_of_over_rolling_on_inner_ring: float = nan
+     frequency_of_over_rolling_on_outer_ring: float = nan
+     frequency_of_over_rolling_on_rolling_element: float = nan
+     frictional_moment_of_drag_losses: float = nan
+     frictional_moment_of_seals: float = nan
+     hertzian_contact_width_inner: float = 0.0014178301543108555
+     hertzian_contact_width_outer: float = 0.001464096123615543
+     include_centrifugal_effects: bool = False
+     include_fitting_effects: bool = False
+     include_gear_blank_elastic_distortion: bool = False
+     include_inner_race_deflections: bool = False
+     include_thermal_expansion_effects: bool = False
+     inner_ring_angular_rotation: float = 0.0
+     inner_ring_angular_velocity: float = 0.0
+     invalid_properties: list = ['Specified Radial Internal Clearance', 'Inner Ring Fitti...
+     is_inner_ring_rotating_relative_to_load: bool = False
+     is_outer_ring_rotating_relative_to_load: bool = False
+     iso2812007: RollerISO2812007Results = RollerISO2812007Results(wrapped=<SMT.MastaAPI.Bearings.Be...  ★
+     iso762006: ISO762006Results = ISO762006Results(wrapped=<SMT.MastaAPI.Bearings.BearingRe...  ★
+     isotr1417912001: ISOTR1417912001Results = ISOTR1417912001Results(wrapped=<SMT.MastaAPI.Bearings.Bea...  ★
+     isotr1417922001: ISOTR1417922001Results = ISOTR1417922001Results(wrapped=<SMT.MastaAPI.Bearings.Bea...  ★
+     isots162812008: RollerISOTS162812008Results = RollerISOTS162812008Results(wrapped=<SMT.MastaAPI.Bearing...  ★
+     kinematic_viscosity: float = 5.523217083326256e-05
+     kinematic_viscosity_of_oil_for_efficiency_calculations: float = 5.523217083326256e-05
+     lambda_ratio_inner: float = 0.0
+     lambda_ratio_outer: float = 0.0
+     lubricant_film_temperature: float = 68.0
+     lubricant_flow_rate: float = 0.0
+     lubricant_windage_and_churning_temperature: float = 68.0
+     lubrication: LubricationDetail = LubricationDetail(wrapped=<SMT.MastaAPI.Materials.Lubrica...
+     maximum_normal_load_inner: float = 424343.7148741006
+     maximum_normal_load_outer: float = 424343.7148741006
+     maximum_normal_stress: float = 1528313608.8004231
+     maximum_normal_stress_inner: float = 1528313608.8004231
+     maximum_normal_stress_outer: float = 1482182072.0099905
+     maximum_operating_internal_clearance: InternalClearance = InternalClearance(wrapped=<SMT.MastaAPI.Bearings.BearingR...  ★
+     maximum_shear_stress_inner: float = 458926757.39384806
+     maximum_shear_stress_outer: float = 445074236.24182796
+     maximum_static_contact_stress: MaximumStaticContactStress = MaximumStaticContactStress(wrapped=<SMT.MastaAPI.Bearings...  ★
+     minimum_lubricating_film_thickness_inner: float = 0.0
+     minimum_lubricating_film_thickness_outer: float = 0.0
+     minimum_operating_internal_clearance: InternalClearance = InternalClearance(wrapped=<SMT.MastaAPI.Bearings.BearingR...  ★
+     number_of_elements_in_contact: int = 36
+     oil_dip_coefficient: float = 0.0
+     oil_sump_temperature: float = 68.0
+     operating_air_temperature: float = 20.0  ★
+     orientation: Orientations = <Orientations.DEFAULT: 1>
+     outer_ring_angular_rotation: float = 0.0
+     outer_ring_angular_velocity: float = 0.0
+     ratio_of_operating_element_diameter_to_element_pcd: float = 0.03317722933058013  ★
+     read_only_properties: list = []
+     relative_angular_velocity: float = 0.0
+     relative_axial_displacement: float = -0.0002262910193803121
+     relative_misalignment: float = 7.66269654755808e-05
+     relative_radial_displacement: float = 0.0002381930297999233
+     report_names: list = ['All Properties Report', 'Loaded Bearing Results Report'...
+     ring_results: list = [RingForceAndDisplacement(wrapped=<SMT.MastaAPI.Bearings....
+     rolling_frictional_moment: float = 0.0
+     rows: list = [LoadedTaperRollerBearingRow(wrapped=<SMT.MastaAPI.Bearin...
+     signed_relative_angular_velocity: float = 0.0
+     sliding_friction_coefficient: float = 0.15  ★
+     sliding_frictional_moment: float = 15642.526204997033  ★
+     specified_axial_internal_clearance: float = 0.0
+     speed_factor_dmn: float = 0.0
+     speed_factor_dn: float = 0.0
+     static_equivalent_load_capacity_ratio_limit: float = 1.5  ★
+     surrounding_lubricant_density: float = 870.0  ★
+     temperature_when_assembled: float = 20.0
+     total_element_raceway_contact_area_inner: float = 0.009425845249251249
+     total_element_raceway_contact_area_outer: float = 0.009728294351815645
+     total_frictional_moment_from_skf_loss_method: float = 15642.526204997033
+     wrapped: LoadedTaperRollerBearingResults = <SMT.MastaAPI.Bearings.BearingResults.Rolling.LoadedTaper...
+
+======================================================================
+4-2-nested: detail.iso2812007 → RollerISO2812007Results
+----------------------------------------------------------------------
+       all_properties_are_invalid: bool = False
+       all_properties_are_read_only: bool = False
+       axial_to_radial_load_ratio: float = 0.3931757066610957
+       axial_to_radial_load_ratio_exceeds_iso2812007e_limiting_value_for_dynamic_equivalent_load: bool = False  ★
+       basic_rating_life_cycles: float = 41246024.66950892  ★
+       basic_rating_life_damage: float = 0.0  ★
+       basic_rating_life_damage_rate: float = 0.0  ★
+       basic_rating_life_safety_factor: float = inf  ★
+       basic_rating_life_time: float = inf  ★
+       calculated_viscosity_ratio: float = 0.0
+       cast_to: _Cast_RollerISO2812007Results = _Cast_RollerISO2812007Results(__parent__=RollerISO2812007...
+       contamination_factor: float = 0.95449425639981
+       contamination_factor_from_calculated_viscosity_ratio: float = 0.95449425639981
+       dynamic_axial_load_factor: float = 0.0  ★
+       dynamic_equivalent_load: float = 7101093.2964860005  ★
+       dynamic_radial_load_factor: float = 1.0  ★
+       e_limiting_value_for_dynamic_equivalent_load: float = 0.5164914199344979  ★
+       invalid_properties: list = ['Life Modification Factor for Systems Approach with Calc...
+       life_modification_factor_for_reliability: float = 1.0  ★
+       life_modification_factor_for_systems_approach: float = 0.0999588845242213  ★
+       modified_rating_life_cycles: float = 4122906.617022625  ★
+       modified_rating_life_damage: float = 0.0  ★
+       modified_rating_life_damage_rate: float = 0.0  ★
+       modified_rating_life_safety_factor: float = inf  ★
+       modified_rating_life_time: float = inf  ★
+       read_only_properties: list = []
+       reference_kinematic_viscosity: float = inf
+       report_names: list = ['All Properties Report', 'Default CAD Report']
+       viscosity_ratio: float = 0.1
+       wrapped: RollerISO2812007Results = <SMT.MastaAPI.Bearings.BearingResults.Rolling.IsoRatingRe...
+
+======================================================================
+4-2-nested: detail.iso762006 → ISO762006Results
+----------------------------------------------------------------------
+       all_properties_are_invalid: bool = False
+       all_properties_are_read_only: bool = False
+       cast_to: _Cast_ISO762006Results = _Cast_ISO762006Results(__parent__=ISO762006Results(wrappe...
+       invalid_properties: list = []
+       read_only_properties: list = []
+       recommended_maximum_element_normal_stress: float = 4000000000.0
+       report_names: list = ['All Properties Report', 'Default CAD Report']
+       safety_factor: float = 12.5733022115808  ★
+       static_axial_load_factor: float = 0.6389263930886809  ★
+       static_equivalent_load: float = 7101093.2964860005  ★
+       static_radial_load_factor: float = 0.5  ★
+       wrapped: ISO762006Results = <SMT.MastaAPI.Bearings.BearingResults.Rolling.IsoRatingRe...
+
+======================================================================
+4-2-nested: detail.isotr1417912001 → ISOTR1417912001Results
+----------------------------------------------------------------------
+       all_properties_are_invalid: bool = False
+       all_properties_are_read_only: bool = False
+       bearing_dip_factor: float = 4.0
+       bearing_dip_factor_max: float = 8.0
+       bearing_dip_factor_min: float = 4.0
+       cast_to: _Cast_ISOTR1417912001Results = _Cast_ISOTR1417912001Results(__parent__=ISOTR1417912001Re...
+       dynamic_axial_load_factor: float = 0.0  ★
+       dynamic_equivalent_load: float = 7101093.2964860005  ★
+       dynamic_radial_load_factor: float = 0.0  ★
+       invalid_properties: list = ['Axial Load Dependent Moment', 'Frictional Moment of the...
+       load_dependent_torque: float = 9451.555177622868
+       no_load_bearing_resistive_torque: float = 2357.9476910000003
+       power_rating_f0: float = 4.0  ★
+       power_rating_f1: float = 0.0004  ★
+       read_only_properties: list = []
+       report_names: list = ['All Properties Report', 'Default CAD Report']
+       static_axial_load_factor: float = 0.6389263930886809  ★
+       static_equivalent_load: float = 7101093.2964860005  ★
+       static_radial_load_factor: float = 0.5  ★
+       wrapped: ISOTR1417912001Results = <SMT.MastaAPI.Bearings.BearingResults.Rolling.ISOTR141791...
+
+======================================================================
+4-2-nested: detail.isotr1417922001 → ISOTR1417922001Results
+----------------------------------------------------------------------
+       all_properties_are_invalid: bool = False
+       all_properties_are_read_only: bool = False
+       cast_to: _Cast_ISOTR1417922001Results = _Cast_ISOTR1417922001Results(__parent__=ISOTR1417922001Re...
+       coefficient_for_no_load_power_loss: float = 6.0
+       dynamic_axial_load_factor: float = 0.0  ★
+       dynamic_equivalent_load: float = 7101093.2964860005  ★
+       dynamic_radial_load_factor: float = 0.0  ★
+       invalid_properties: list = ['Axial Load Dependent Moment']
+       load_dependent_torque: float = 9451.555177622868
+       no_load_bearing_resistive_torque: float = 3536.9215365000005
+       power_rating_f0: float = 6.0  ★
+       power_rating_f1: float = 0.0004  ★
+       read_only_properties: list = []
+       report_names: list = ['All Properties Report', 'Default CAD Report']
+       static_axial_load_factor: float = 0.6389263930886809  ★
+       static_equivalent_load: float = 7101093.2964860005  ★
+       static_radial_load_factor: float = 0.5  ★
+       wrapped: ISOTR1417922001Results = <SMT.MastaAPI.Bearings.BearingResults.Rolling.ISOTR141792...
+
+======================================================================
+4-2-nested: detail.isots162812008 → RollerISOTS162812008Results
+----------------------------------------------------------------------
+       all_properties_are_invalid: bool = False
+       all_properties_are_read_only: bool = False
+       basic_dynamic_load_rating_of_a_bearing_lamina_of_the_inner_ring: float = 54399.52682643085  ★
+       basic_dynamic_load_rating_of_a_bearing_lamina_of_the_outer_ring: float = 59139.48709791091  ★
+       basic_reference_rating_life_cycles: float = 23152865.936267182  ★
+       basic_reference_rating_life_damage: float = 0.0  ★
+       basic_reference_rating_life_damage_rate: float = 0.0  ★
+       basic_reference_rating_life_safety_factor: float = inf  ★
+       basic_reference_rating_life_time: float = inf  ★
+       cast_to: _Cast_RollerISOTS162812008Results = _Cast_RollerISOTS162812008Results(__parent__=RollerISOTS1...
+       dynamic_equivalent_load_dynamic_capacity_ratio: float = 0.4693971847035054  ★
+       dynamic_equivalent_reference_load: float = 10173732.823350668  ★
+       equivalent_load_assuming_line_contacts: float = 11904483.738479674  ★
+       invalid_properties: list = []
+       life_modification_factor_for_reliability: float = 1.0  ★
+       life_modification_factor_for_systems_approach: float = 0.09996670336730414  ★
+       load_for_the_basic_dynamic_load_rating_of_the_inner_ring_or_shaft_washer: float = 958609.6180327319  ★
+       load_for_the_basic_dynamic_load_rating_of_the_outer_ring_or_housing_washer: float = 1042135.5560400855  ★
+       modified_reference_rating_life_cycles: float = 2314515.6811537817  ★
+       modified_reference_rating_life_damage: float = 0.0  ★
+       modified_reference_rating_life_damage_rate: float = 0.0  ★
+       modified_reference_rating_life_safety_factor: float = inf  ★
+       modified_reference_rating_life_time: float = inf  ★
+       read_only_properties: list = []
+       report_names: list = ['All Properties Report', 'Default CAD Report']
+       wrapped: RollerISOTS162812008Results = <SMT.MastaAPI.Bearings.BearingResults.Rolling.IsoRatingRe...
+
+======================================================================
+5. 사용 가능한 AnalysisType 멤버
+----------------------------------------------------------------------
+   - ADVANCED_SYSTEM_DEFLECTION
+   - ADVANCED_SYSTEM_DEFLECTION_SUB_ANALYSIS
+   - ADVANCED_TIME_STEPPING_ANALYSIS_FOR_MODULATION
+   - COMPOUND_PARAMETRIC_STUDY_TOOL
+   - CRITICAL_SPEED_ANALYSIS
+   - DYNAMIC_ANALYSIS
+   - DYNAMIC_MODEL_AT_A_STIFFNESS
+   - DYNAMIC_MODEL_FOR_HARMONIC_ANALYSIS
+   - DYNAMIC_MODEL_FOR_MODAL_ANALYSIS
+   - DYNAMIC_MODEL_FOR_STABILITY_ANALYSIS
+   - DYNAMIC_MODEL_FOR_STEADY_STATE_SYNCHRONOUS_RESPONSE
+   - HARMONIC_ANALYSIS
+   - HARMONIC_ANALYSIS_FOR_ADVANCED_TIME_STEPPING_ANALYSIS_FOR_MODULATION
+   - HARMONIC_ANALYSIS_OF_SINGLE_EXCITATION
+   - MODAL_ANALYSIS
+   - MODAL_ANALYSIS_AT_A_SPEED
+   - MODAL_ANALYSIS_AT_A_STIFFNESS
+   - MODAL_ANALYSIS_FOR_HARMONIC_ANALYSIS
+   - MULTIBODY_DYNAMICS_ANALYSIS
+   - NONE
+   - PARAMETRIC_STUDY_TOOL
+   - POWER_FLOW
+   - STABILITY_ANALYSIS
+   - STEADY_STATE_SYNCHRONOUS_RESPONSE
+   - STEADY_STATE_SYNCHRONOUS_RESPONSE_AT_A_SPEED
+   - STEADY_STATE_SYNCHRONOUS_RESPONSE_ON_A_SHAFT
+   - SYSTEM_DEFLECTION
+   - TORSIONAL_SYSTEM_DEFLECTION
+
+======================================================================
+완료
+----------------------------------------------------------------------
+이 출력을 저장/공유해 주시면 batch 스크립트를 확정합니다.
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

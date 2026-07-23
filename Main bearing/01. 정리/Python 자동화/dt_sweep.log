@@ -1,0 +1,165 @@
+D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\run_dt_sweep.py:190:
+UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\run_dt_sweep.py:190:
+UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\run_dt_sweep.py:190:
+UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\run_dt_sweep.py:190:
+UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\run_dt_sweep.py:190:
+UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\run_dt_sweep.py:190:
+UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\run_dt_sweep.py:190:
+UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\run_dt_sweep.py:190:
+UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\run_dt_sweep.py:190:
+UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\run_dt_sweep.py:190:
+UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+[설정] fatigue_config.xlsx 로드 (8개 항목)
+==============================================================
+ dt 수렴 스윕 (무인)
+==============================================================
+ 모델: 26MW_메인베어링_기본설계_v1.3_샤프트 두께,형상 2안_피로하중 반영_유연체_FE_260721.masta
+ 출력: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results
+ dt 목록: [10, 6, 4, 2, 1, 0.6, 0.4, 0.3, 0.2, 0.1]  (기존 재사용: 60, 20)
+[사전검증] 반경 전달률=108.5%  축 전달률=100.0%  (1점 4.67s)
+  → 정상 (스윕 진행)
+[예상] 총 14,720점 × 4.67s ≈ 1145분
+
+[1/10] dt=10s  (N=61)
+  [dt=10] 완료 61점 / 21s (348 ms/pt)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_10_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_10.xlsx
+  → 부록 F·그래프 갱신됨
+
+[2/10] dt=6s  (N=101)
+  [dt=6] 완료 101점 / 34s (338 ms/pt)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_6_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_6.xlsx
+  → 부록 F·그래프 갱신됨
+
+[3/10] dt=4s  (N=151)
+  [dt=4] 완료 151점 / 50s (331 ms/pt)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_4_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_4.xlsx
+  → 부록 F·그래프 갱신됨
+
+[4/10] dt=2s  (N=301)
+    … 200/301  (65s, 324 ms/pt)
+  [dt=2] 완료 301점 / 97s (322 ms/pt)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_2_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_2.xlsx
+  → 부록 F·그래프 갱신됨
+
+[5/10] dt=1s  (N=601)
+    … 200/601  (63s, 315 ms/pt)
+    … 400/601  (128s, 321 ms/pt)
+    … 600/601  (191s, 319 ms/pt)
+  [dt=1] 완료 601점 / 192s (319 ms/pt)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_1_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_1.xlsx
+  → 부록 F·그래프 갱신됨
+
+[6/10] dt=0.6s  (N=1001)
+    … 200/1001  (65s, 324 ms/pt)
+    … 400/1001  (129s, 322 ms/pt)
+    … 600/1001  (196s, 327 ms/pt)
+    … 800/1001  (262s, 327 ms/pt)
+    … 1000/1001  (328s, 328 ms/pt)
+  [dt=0.6] 완료 1001점 / 328s (328 ms/pt)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_0.6_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_0.6.xlsx
+  → 부록 F·그래프 갱신됨
+
+[7/10] dt=0.4s  (N=1501)
+    … 200/1501  (64s, 319 ms/pt)
+    … 400/1501  (128s, 320 ms/pt)
+    … 600/1501  (195s, 325 ms/pt)
+    … 800/1501  (259s, 324 ms/pt)
+    … 1000/1501  (329s, 329 ms/pt)
+    … 1200/1501  (392s, 327 ms/pt)
+    … 1400/1501  (457s, 327 ms/pt)
+  [dt=0.4] 완료 1501점 / 495s (329 ms/pt)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_0.4_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_0.4.xlsx
+  → 부록 F·그래프 갱신됨
+
+[8/10] dt=0.3s  (N=2001)
+    … 200/2001  (62s, 309 ms/pt)
+    … 400/2001  (128s, 320 ms/pt)
+    … 600/2001  (192s, 320 ms/pt)
+    … 800/2001  (256s, 320 ms/pt)
+    … 1000/2001  (326s, 326 ms/pt)
+    … 1200/2001  (396s, 330 ms/pt)
+    … 1400/2001  (462s, 330 ms/pt)
+    … 1600/2001  (525s, 328 ms/pt)
+    … 1800/2001  (602s, 334 ms/pt)
+    … 2000/2001  (676s, 338 ms/pt)
+  [dt=0.3] 완료 2001점 / 677s (338 ms/pt)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_0.3_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_0.3.xlsx
+  → 부록 F·그래프 갱신됨
+
+[9/10] dt=0.2s  (N=3001)
+    … 200/3001  (71s, 357 ms/pt)
+    … 400/3001  (138s, 344 ms/pt)
+    … 600/3001  (224s, 373 ms/pt)
+    … 800/3001  (290s, 362 ms/pt)
+    … 1000/3001  (362s, 362 ms/pt)
+    … 1200/3001  (440s, 367 ms/pt)
+    … 1400/3001  (507s, 362 ms/pt)
+    … 1600/3001  (596s, 373 ms/pt)
+    … 1800/3001  (670s, 372 ms/pt)
+    … 2000/3001  (738s, 369 ms/pt)
+    … 2200/3001  (798s, 363 ms/pt)
+    … 2400/3001  (863s, 359 ms/pt)
+    … 2600/3001  (927s, 357 ms/pt)
+    … 2800/3001  (993s, 354 ms/pt)
+    … 3000/3001  (1060s, 353 ms/pt)
+  [dt=0.2] 완료 3001점 / 1061s (353 ms/pt)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_0.2_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_0.2.xlsx
+  → 부록 F·그래프 갱신됨
+
+[10/10] dt=0.1s  (N=6001)
+    … 200/6001  (64s, 320 ms/pt)
+    … 400/6001  (125s, 313 ms/pt)
+    … 600/6001  (207s, 346 ms/pt)
+    … 800/6001  (291s, 364 ms/pt)
+    … 1000/6001  (353s, 353 ms/pt)
+    … 1200/6001  (415s, 346 ms/pt)
+    … 1400/6001  (485s, 347 ms/pt)
+    … 1600/6001  (558s, 349 ms/pt)
+    … 1800/6001  (620s, 344 ms/pt)
+    … 2000/6001  (685s, 342 ms/pt)
+    … 2200/6001  (751s, 341 ms/pt)
+    … 2400/6001  (821s, 342 ms/pt)
+    … 2600/6001  (884s, 340 ms/pt)
+    … 2800/6001  (946s, 338 ms/pt)
+    … 3000/6001  (1011s, 337 ms/pt)
+    … 3200/6001  (1081s, 338 ms/pt)
+    … 3400/6001  (1148s, 338 ms/pt)
+    … 3600/6001  (1215s, 338 ms/pt)
+    … 3800/6001  (1284s, 338 ms/pt)
+    … 4000/6001  (1349s, 337 ms/pt)
+    … 4200/6001  (1408s, 335 ms/pt)
+    … 4400/6001  (1468s, 334 ms/pt)
+    … 4600/6001  (1531s, 333 ms/pt)
+    … 4800/6001  (1595s, 332 ms/pt)
+    … 5000/6001  (1658s, 332 ms/pt)
+    … 5200/6001  (1722s, 331 ms/pt)
+    … 5400/6001  (1792s, 332 ms/pt)
+    … 5600/6001  (1881s, 336 ms/pt)
+    … 5800/6001  (1998s, 345 ms/pt)
+    … 6000/6001  (2068s, 345 ms/pt)
+  [dt=0.1] 완료 6001점 / 2069s (345 ms/pt)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_0.1_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_0.1.xlsx
+  → 부록 F·그래프 갱신됨
+
+==============================================================
+ 스윕 완료. 부록 F 및 convergence_dt.png 확인
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

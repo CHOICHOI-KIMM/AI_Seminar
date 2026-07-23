@@ -1,0 +1,166 @@
+
+========================================================================
+[Main Bearing_UW]  베어링 파트(TaperRollerBearing) 상수
+------------------------------------------------------------------------
+  bearing_life_adjustment_factor_for_operating_conditions: str = '<err Unable to access Bearing Life Adjustment>'
+  coordinate_system_euler_angles: Vector3D = Vector3D(0.0, 1.5707963267948966, 0.0)
+  diameter_at_middle_of_connection()
+  diameter_of_contact_on_inner_race_at_nominal_contact_angle: float = 3.2264097422105156
+  diameter_of_contact_on_left_race: str = '<err Unable to access Diameter of Contact on >'
+  diameter_of_contact_on_outer_race_at_nominal_contact_angle: float = 3.4353882577894796
+  diameter_of_contact_on_right_race: str = '<err Unable to access Diameter of Contact on >'
+  diameter_of_socket_for()
+  difference_between_inner_diameter_and_diameter_of_connected_component_at_inner_connection: float = 0.0
+  difference_between_outer_diameter_and_diameter_of_connected_component_at_outer_connection: float = 0.0
+  displacement_for_stiffness_operating_point: str = '<err Unable to access Displacement for Stiffn>'
+  documentation_url()
+  efficiency_rating_method: BearingEfficiencyRatingMethod = <BearingEfficiencyRatingMethod.ISOTR_1417912001: 0>
+  first_element_angle: Overridable_float = 0.05416539057913439
+  force_for_stiffness_operating_point: str = '<err Unable to access Force for Stiffness Ope>'
+  inner_diameter: str = '<err Unable to access Inner Diameter because >'
+  inner_mounting_sleeve_outer_diameter_tolerance: str = '<err Unable to access Inner Mounting Sleeve O>'
+  offset_of_contact_on_inner_race_at_nominal_contact_angle: float = 0.0027523419571909634
+  offset_of_contact_on_outer_race_at_nominal_contact_angle: float = 0.038730878706251436
+  outer_diameter: str = '<err Unable to access Outer Diameter because >'
+  outer_mounting_sleeve_outer_diameter_tolerance: str = '<err Unable to access Outer Mounting Sleeve O>'
+  percentage_difference_between_inner_diameter_and_diameter_of_connected_component_at_inner_connection: float = 0.0
+  percentage_difference_between_outer_diameter_and_diameter_of_connected_component_at_outer_connection: float = 0.0
+  permissible_axial_load_calculation_method: str = '<err Unable to access Permissible Axial Load >'
+
+  -- detail 직속 (정격/한계/기하) --
+  change_in_element_diameter_due_to_thermal_expansion: str = '<err Unable to access Change in Element Diame>'
+  change_in_operating_radial_internal_clearance_due_to_element_thermal_expansion: str = '<err Unable to access Change in Operating Rad>'
+  inner_ring_fitting_at_operating_conditions: str = '<err Unable to access Inner Ring Fitting at O>'
+  maximum_operating_internal_clearance: InternalClearance = InternalClearance(wrapped=<SMT.MastaAPI.Bearings.BearingResults...
+  minimum_operating_internal_clearance: InternalClearance = InternalClearance(wrapped=<SMT.MastaAPI.Bearings.BearingResults...
+  operating_air_temperature: float = 20.0
+  outer_ring_fitting_at_operating_conditions: str = '<err Unable to access Outer Ring Fitting at O>'
+  ratio_of_operating_element_diameter_to_element_pcd: float = 0.03317722933058013
+  static_equivalent_load_capacity_ratio_limit: float = 1.5
+
+  -- detail.iso2812007 (X/Y/e/등가하중/정격) --
+  axial_to_radial_load_ratio: float = 0.49576032145669274
+  axial_to_radial_load_ratio_exceeds_iso2812007e_limiting_value_for_dynamic_equivalent_load: bool = False
+  basic_rating_life_safety_factor: float = 7.042133035346482
+  contamination_factor: float = 0.9235990973398811
+  contamination_factor_from_calculated_viscosity_ratio: float = 0.9235990973398811
+  dynamic_axial_load_factor: float = 0.0
+  dynamic_equivalent_load: float = 8989489.7411685
+  dynamic_radial_load_factor: float = 1.0
+  e_limiting_value_for_dynamic_equivalent_load: float = 0.5164914199344979
+  life_modification_factor_for_reliability: float = 1.0
+  life_modification_factor_for_systems_approach: float = 0.31812610721335144
+  life_modification_factor_for_systems_approach_with_calculated_viscosity_ratio: str = '<err Unable to access Life Modification Facto>'
+  modified_rating_life_safety_factor: float = 4.99440801159222
+
+========================================================================
+[Main Bearing_DW]  베어링 파트(TaperRollerBearing) 상수
+------------------------------------------------------------------------
+  bearing_life_adjustment_factor_for_operating_conditions: str = '<err Unable to access Bearing Life Adjustment>'
+  coordinate_system_euler_angles: Vector3D = Vector3D(0.0, 1.5707963267948966, 0.0)
+  diameter_at_middle_of_connection()
+  diameter_of_contact_on_inner_race_at_nominal_contact_angle: float = 3.2264097422105156
+  diameter_of_contact_on_left_race: str = '<err Unable to access Diameter of Contact on >'
+  diameter_of_contact_on_outer_race_at_nominal_contact_angle: float = 3.4353882577894796
+  diameter_of_contact_on_right_race: str = '<err Unable to access Diameter of Contact on >'
+  diameter_of_socket_for()
+  difference_between_inner_diameter_and_diameter_of_connected_component_at_inner_connection: float = 0.0
+  difference_between_outer_diameter_and_diameter_of_connected_component_at_outer_connection: float = 0.0
+  displacement_for_stiffness_operating_point: str = '<err Unable to access Displacement for Stiffn>'
+  documentation_url()
+  efficiency_rating_method: BearingEfficiencyRatingMethod = <BearingEfficiencyRatingMethod.ISOTR_1417912001: 0>
+  first_element_angle: Overridable_float = 0.05416539057913439
+  force_for_stiffness_operating_point: str = '<err Unable to access Force for Stiffness Ope>'
+  inner_diameter: str = '<err Unable to access Inner Diameter because >'
+  inner_mounting_sleeve_outer_diameter_tolerance: str = '<err Unable to access Inner Mounting Sleeve O>'
+  offset_of_contact_on_inner_race_at_nominal_contact_angle: float = -0.0027523419571909634
+  offset_of_contact_on_outer_race_at_nominal_contact_angle: float = -0.038730878706251436
+  outer_diameter: str = '<err Unable to access Outer Diameter because >'
+  outer_mounting_sleeve_outer_diameter_tolerance: str = '<err Unable to access Outer Mounting Sleeve O>'
+  percentage_difference_between_inner_diameter_and_diameter_of_connected_component_at_inner_connection: float = 0.0
+  percentage_difference_between_outer_diameter_and_diameter_of_connected_component_at_outer_connection: float = 0.0
+  permissible_axial_load_calculation_method: str = '<err Unable to access Permissible Axial Load >'
+
+  -- detail 직속 (정격/한계/기하) --
+  change_in_element_diameter_due_to_thermal_expansion: str = '<err Unable to access Change in Element Diame>'
+  change_in_operating_radial_internal_clearance_due_to_element_thermal_expansion: str = '<err Unable to access Change in Operating Rad>'
+  inner_ring_fitting_at_operating_conditions: str = '<err Unable to access Inner Ring Fitting at O>'
+  maximum_operating_internal_clearance: InternalClearance = InternalClearance(wrapped=<SMT.MastaAPI.Bearings.BearingResults...
+  minimum_operating_internal_clearance: InternalClearance = InternalClearance(wrapped=<SMT.MastaAPI.Bearings.BearingResults...
+  operating_air_temperature: float = 20.0
+  outer_ring_fitting_at_operating_conditions: str = '<err Unable to access Outer Ring Fitting at O>'
+  ratio_of_operating_element_diameter_to_element_pcd: float = 0.03317722933058013
+  static_equivalent_load_capacity_ratio_limit: float = 1.5
+
+  -- detail.iso2812007 (X/Y/e/등가하중/정격) --
+  axial_to_radial_load_ratio: float = 0.3864047329275024
+  axial_to_radial_load_ratio_exceeds_iso2812007e_limiting_value_for_dynamic_equivalent_load: bool = False
+  basic_rating_life_safety_factor: float = 16.992263427333
+  contamination_factor: float = 0.9235990973398811
+  contamination_factor_from_calculated_viscosity_ratio: float = 0.9235990973398811
+  dynamic_axial_load_factor: float = 0.0
+  dynamic_equivalent_load: float = 3725529.7358067725
+  dynamic_radial_load_factor: float = 1.0
+  e_limiting_value_for_dynamic_equivalent_load: float = 0.5164914199344979
+  life_modification_factor_for_reliability: float = 1.0
+  life_modification_factor_for_systems_approach: float = 0.543896033373722
+  life_modification_factor_for_systems_approach_with_calculated_viscosity_ratio: str = '<err Unable to access Life Modification Facto>'
+  modified_rating_life_safety_factor: float = 14.154873734320363
+
+완료
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022CF39A93A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

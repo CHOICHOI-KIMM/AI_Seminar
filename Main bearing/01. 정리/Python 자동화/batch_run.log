@@ -1,0 +1,23 @@
+모델 로드: D:\AI\AI_Seminar\Main bearing\02. 자료\260720 검증용 자료_롤러 프로파일\26MW_메인베어링_기본설계_v1.2_샤프트 두께,형상 2안_강체,롤러프로파일만_260720.Masta
+베어링 2개: ['Main Bearing_UW', 'Main Bearing_DW']
+정적 로드케이스 16개: ['Mx_max', 'Mx_min', 'My_max', 'My_min', 'Mz_max', 'Mz_min', 'Myz_max', 'Myz_min', 'Fx_max', 'Fx_min', 'Fy_max', 'Fy_min', 'Fz_max', 'Fz_min', 'Fyz_max', 'Fyz_min']
+  [Mx_max] 완료 (2 베어링)
+  [Mx_min] 완료 (2 베어링)
+  [My_max] 완료 (2 베어링)
+  [My_min] 완료 (2 베어링)
+  [Mz_max] 완료 (2 베어링)
+  [Mz_min] 완료 (2 베어링)
+  [Myz_max] 완료 (2 베어링)
+  [Myz_min] 완료 (2 베어링)
+  [Fx_max] 완료 (2 베어링)
+  [Fx_min] 완료 (2 베어링)
+  [Fy_max] 완료 (2 베어링)
+  [Fy_min] 완료 (2 베어링)
+  [Fz_max] 완료 (2 베어링)
+  [Fz_min] 완료 (2 베어링)
+  [Fyz_max] 완료 (2 베어링)
+  [Fyz_min] 완료 (2 베어링)
+
+저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\batch_results.csv  (32 행)
+주의: 정적 극한하중 케이스는 속도=0 이라 *_time 이 inf 일 수 있음 (실사용 시간수명은 회전 듀티사이클 필요).
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

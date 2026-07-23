@@ -1,0 +1,83 @@
+======================================================================
+[A2] 시그니처
+======================================================================
+  duplicate(new_design_state_group: "'_5783.DesignState'", name: "'str'" = 'None') -> "'StaticLoadCase'"
+  add_static_load(static_load: "'_7491.StaticLoadCase'") -> 'None'
+  create_load_cases(number_of_load_cases: "'int'", token: "'_7718.TaskProgress'") -> "'List[_7490.LoadCase]'"
+  add_duty_cycle(name: "'str'" = 'New Duty Cycle') -> "'_5784.DutyCycle'"
+  remove_static_load(static_load: "'_7491.StaticLoadCase'") -> 'None'
+
+======================================================================
+[A2] 실동작 — 케이스 5개 생성 (시계열 index 0~4)
+======================================================================
+  실패: duplicate('probe_pt0') — 'str' object has no attribute 'wrapped'
+  실패: duty.add_static_load('probe_pt0') — 'str' object has no attribute 'wrapped'
+  생성·하중설정: 0개  (0.00s)
+  static_loads 총 개수: 17 (기존 17 + 0)
+
+======================================================================
+[C2] 전용 duty cycle 구성 시도
+======================================================================
+  add_duty_cycle('probe_dc') → DutyCycle
+  probe_dc 케이스 수: 0.0
+  일괄해석 대상: 'probe_dc' (0케이스)
+
+======================================================================
+[C2] 일괄 해석 시간 (2회 — 웜업 효과 분리)
+======================================================================
+Traceback (most recent call last):
+  File "D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록10\masta_batch_probe2.py", line 121, in <module>
+    print(f"  {it}회차: {el:.2f}s / {ncase:.0f}케이스 = {el/ncase*1000:.0f} ms/케이스")
+                                                         ~~^~~~~~
+ZeroDivisionError: float division by zero
+Exception ignored in: <function APIBase.__del__ at 0x0000019927E5D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019927E5D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019927E5D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019927E5D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019927E5D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019927E5D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019927E5D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019927E5D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019927E5D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019927E5D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

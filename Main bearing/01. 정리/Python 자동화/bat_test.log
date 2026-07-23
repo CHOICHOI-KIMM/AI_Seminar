@@ -1,0 +1,32 @@
+==============================================================
+  MASTA Bearing Fatigue Batch   (config: fatigue_config.xlsx)
+==============================================================
+[설정] fatigue_config.xlsx 로드 (8개 항목)
+[주의] 대상 .Masta 는 MASTA GUI에서, 출력 CSV/xlsx 는 엑셀에서 닫아주세요.
+[보정] OUT_CSV 확장자 없음 → 'Fatigue_DLC1.2-c-s1_dt_20.csv' 사용
+저장 폴더: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results
+[보정] MODEL_PATH 확장자(.Masta) 자동 추가
+모델 로드: D:\AI\AI_Seminar\Main bearing\02. 자료\MASTA\26MW_메인베어링_기본설계_v1.3_샤프트 두께,형상 2안_피로하중 반영_유연체_FE_260721.Masta
+드라이버 LC: Load Case 1 | 베어링: ['Main Bearing_UW', 'Main Bearing_DW']
+DLC=DLC1.2-c-s1 | ScaleFactor=45040.0 | 30yr Hours=7505.501011
+시계열 6001점(원본 Δt=0.1s) → 샘플 dt=60.0s, N=11점, Σw=600.0s
+  [    0] t=-0.00 rpm=5.092 rev=2.54583 | σin=375MPa s0=435.00 shaftSF=
+  [  600] t=60.00 rpm=4.580 rev=4.57950 | σin=375MPa s0=435.00 shaftSF=
+  [ 1200] t=120.00 rpm=4.382 rev=4.38215 | σin=375MPa s0=435.00 shaftSF=
+  [ 1800] t=180.00 rpm=4.289 rev=4.28927 | σin=375MPa s0=435.00 shaftSF=
+  [ 2400] t=240.00 rpm=5.036 rev=5.03569 | σin=375MPa s0=435.00 shaftSF=
+  [ 3000] t=300.00 rpm=5.245 rev=5.24514 | σin=375MPa s0=435.00 shaftSF=
+  [ 3600] t=360.00 rpm=5.470 rev=5.47014 | σin=375MPa s0=435.00 shaftSF=
+  [ 4200] t=420.00 rpm=4.854 rev=4.85368 | σin=375MPa s0=435.00 shaftSF=
+  [ 4800] t=480.00 rpm=4.282 rev=4.28177 | σin=375MPa s0=435.00 shaftSF=
+  [ 5400] t=540.00 rpm=4.169 rev=4.16866 | σin=375MPa s0=435.00 shaftSF=
+  [ 6000] t=600.00 rpm=5.145 rev=2.57230 | σin=375MPa s0=435.00 shaftSF=
+
+데이터 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_20.csv  (신규 11점 × 2베어링)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_20_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\Fatigue_DLC1.2-c-s1_dt_20.xlsx
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll
+--------------------------------------------------------------
+  DONE. Check the generated CSV / xlsx files.
+
+Press any key to continue . . . 

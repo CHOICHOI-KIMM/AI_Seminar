@@ -1,0 +1,135 @@
+
+==========================================================================
+[point 0] rpm=5.09
+
+  [Main Bearing_UW]  접촉요소=87  미스얼라인=7.708077652181517e-05
+    L10(281기본)   = 2.0443e+07
+    L10r(16281기본)= 3.1529e+07   → L10r/L10 = 1.5423  (>1: 16281이 유리=수명↑)
+    L10m(281수정)  = 6.5070e+06
+    L10mr(16281수정)=9.1297e+06   → L10mr/L10m = 1.4031
+    최대응력 내/외 = 1367 / 1325 MPa
+    -- 16281 detail: 미스얼라인/엣지/롤/응력/하중분포 관련 --
+      basic_dynamic_load_rating_of_a_bearing_lamina_of_the_inner_ring = 55789.85730283508
+      basic_dynamic_load_rating_of_a_bearing_lamina_of_the_outer_ring = 60650.960378432006
+      dynamic_equivalent_load_dynamic_capacity_ratio = 0.42786686438163485
+      dynamic_equivalent_reference_load = 9510615.640276471
+      equivalent_load_assuming_line_contacts = 11301710.353447994
+      load_for_the_basic_dynamic_load_rating_of_the_inner_ring_or_shaft_washer = 983109.5400849505
+      load_for_the_basic_dynamic_load_rating_of_the_outer_ring_or_housing_washer = 1068770.2146232375
+    -- detail rows/미스얼라인/틸트 --
+      number_of_elements_in_contact = 87
+      relative_misalignment = 7.708077652181517e-05
+      rows = [LoadedTaperRollerBearingRow(wrapped=<SMT.MastaAPI.Bearin...
+
+  [Main Bearing_DW]  접촉요소=34  미스얼라인=7.707520160617483e-05
+    L10(281기본)   = 3.8522e+08
+    L10r(16281기본)= 3.6085e+08   → L10r/L10 = 0.9367  (>1: 16281이 유리=수명↑)
+    L10m(281수정)  = 2.0969e+08
+    L10mr(16281수정)=1.4024e+08   → L10mr/L10m = 0.6688
+    최대응력 내/외 = 1096 / 1063 MPa
+    -- 16281 detail: 미스얼라인/엣지/롤/응력/하중분포 관련 --
+      basic_dynamic_load_rating_of_a_bearing_lamina_of_the_inner_ring = 55789.85730283508
+      basic_dynamic_load_rating_of_a_bearing_lamina_of_the_outer_ring = 60650.960378432006
+      dynamic_equivalent_load_dynamic_capacity_ratio = 0.20593277227988227
+      dynamic_equivalent_reference_load = 4577469.320324884
+      equivalent_load_assuming_line_contacts = 6144570.278067003
+      load_for_the_basic_dynamic_load_rating_of_the_inner_ring_or_shaft_washer = 983109.5400849505
+      load_for_the_basic_dynamic_load_rating_of_the_outer_ring_or_housing_washer = 1068770.2146232375
+    -- detail rows/미스얼라인/틸트 --
+      number_of_elements_in_contact = 34
+      relative_misalignment = 7.707520160617483e-05
+      rows = [LoadedTaperRollerBearingRow(wrapped=<SMT.MastaAPI.Bearin...
+
+==========================================================================
+[point 3000] rpm=5.25
+
+  [Main Bearing_UW]  접촉요소=87  미스얼라인=0.00011916680756186768
+    L10(281기본)   = 4.4872e+06
+    L10r(16281기본)= 6.7528e+06   → L10r/L10 = 1.5049  (>1: 16281이 유리=수명↑)
+    L10m(281수정)  = 1.2126e+06
+    L10mr(16281수정)=1.7482e+06   → L10mr/L10m = 1.4417
+    최대응력 내/외 = 1630 / 1580 MPa
+    -- 16281 detail: 미스얼라인/엣지/롤/응력/하중분포 관련 --
+      basic_dynamic_load_rating_of_a_bearing_lamina_of_the_inner_ring = 55789.85730283508
+      basic_dynamic_load_rating_of_a_bearing_lamina_of_the_outer_ring = 60650.960378432006
+      dynamic_equivalent_load_dynamic_capacity_ratio = 0.679324763350516
+      dynamic_equivalent_reference_load = 15100016.516786953
+      equivalent_load_assuming_line_contacts = 16613131.367484113
+      load_for_the_basic_dynamic_load_rating_of_the_inner_ring_or_shaft_washer = 983109.5400849505
+      load_for_the_basic_dynamic_load_rating_of_the_outer_ring_or_housing_washer = 1068770.2146232375
+    -- detail rows/미스얼라인/틸트 --
+      number_of_elements_in_contact = 87
+      relative_misalignment = 0.00011916680756186768
+      rows = [LoadedTaperRollerBearingRow(wrapped=<SMT.MastaAPI.Bearin...
+
+  [Main Bearing_DW]  접촉요소=35  미스얼라인=0.00011915334193493612
+    L10(281기본)   = 2.0248e+07
+    L10r(16281기본)= 2.1247e+07   → L10r/L10 = 1.0493  (>1: 16281이 유리=수명↑)
+    L10m(281수정)  = 6.7537e+06
+    L10mr(16281수정)=6.1804e+06   → L10mr/L10m = 0.9151
+    최대응력 내/외 = 1497 / 1451 MPa
+    -- 16281 detail: 미스얼라인/엣지/롤/응력/하중분포 관련 --
+      basic_dynamic_load_rating_of_a_bearing_lamina_of_the_inner_ring = 55789.85730283508
+      basic_dynamic_load_rating_of_a_bearing_lamina_of_the_outer_ring = 60650.960378432006
+      dynamic_equivalent_load_dynamic_capacity_ratio = 0.4816499053785692
+      dynamic_equivalent_reference_load = 10706103.941587962
+      equivalent_load_assuming_line_contacts = 12473735.387023896
+      load_for_the_basic_dynamic_load_rating_of_the_inner_ring_or_shaft_washer = 983109.5400849505
+      load_for_the_basic_dynamic_load_rating_of_the_outer_ring_or_housing_washer = 1068770.2146232375
+    -- detail rows/미스얼라인/틸트 --
+      number_of_elements_in_contact = 35
+      relative_misalignment = 0.00011915334193493612
+      rows = [LoadedTaperRollerBearingRow(wrapped=<SMT.MastaAPI.Bearin...
+
+완료
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26AB9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26AB9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26AB9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26AB9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26AB9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26AB9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26AB9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26AB9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26AB9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001DA26AB9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

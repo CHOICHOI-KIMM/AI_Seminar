@@ -1,0 +1,38 @@
+======================================================================
+[Main Shaft] rigid/material/stiffness 관련
+======================================================================
+    fe_substructure_replacing_this: NoneType = None
+    is_replaced_by_fe: bool = False
+
+[재질(material) 상세]
+  material 접근 불가: <err 'Shaft' object has no attribute 'mater>
+
+[샤프트 강체/모델링 옵션 후보 - 전체 attr 중 rigid/flex/fe]
+    cad_model = '<err Unable to access CAD Model because it >'
+    fe_substructure_replacing_this = None
+    two_d_drawing_full_model = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=450x435 at 0x24579714C20>
+
+[design/assembly 레벨 rigid 옵션]
+
+완료
+Exception ignored in: <function APIBase.__del__ at 0x00000241A4989440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000241A4989440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000241A4989440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000241A4989440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

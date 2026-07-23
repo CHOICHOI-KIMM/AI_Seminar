@@ -1,0 +1,160 @@
+load case: Mx_max | point_load: Point Load | shaft: Main Shaft
+
+======================================================================
+E. lc.inputs_for_point_load(point_load) 전체 덤프
+----------------------------------------------------------------------
+  type: PointLoadLoadCase
+  ForceSpecification: EnumType ()
+  TYPE: CLRMetatype ()
+  active_report_as_text: CustomReport = CustomReport(wrapped=<SMT.MastaAPI.Utility.Report.CustomReport object...
+  additional_modal_damping_ratio: Overridable_float = 0.0
+  all_design_entities: list = [PointLoadLoadCase(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndResul...
+  all_properties_are_invalid: bool = False
+  all_properties_are_read_only: bool = False
+  all_status_errors: list = []
+  angle_of_radial_force: float = -0.05536670042559967
+  axial_load: ForceInputComponent = ForceInputComponent(wrapped=<SMT.MastaAPI.NodalAnalysis.VaryingInputC...
+  cast: method ()
+  cast_or_none: method ()
+  cast_to: _Cast_PointLoadLoadCase = _Cast_PointLoadLoadCase(__parent__=PointLoadLoadCase(wrapped=<SMT.Mas...
+  clear_user_specified_excitation_data_for_this_load_case: method ()
+  comment: str = ''
+  component_design: PointLoad = PointLoad(wrapped=<SMT.MastaAPI.SystemModel.PartModel.PointLoad objec...
+  disconnect_from_masta: method ()
+  displacement_x: Overridable_float = 0.0
+  displacement_y: Overridable_float = 0.0
+  displacement_z: Overridable_float = 0.0
+  documentation_url: method ()
+  excitation_data_is_up_to_date: bool = True
+  force_specification_options: <err Unable to access Force Specification Options because it is i>
+  force_x: ForceInputComponent = ForceInputComponent(wrapped=<SMT.MastaAPI.NodalAnalysis.VaryingInputC...
+  force_y: ForceInputComponent = ForceInputComponent(wrapped=<SMT.MastaAPI.NodalAnalysis.VaryingInputC...
+  get_active_report_with_encoded_images: method ()
+  get_default_report_with_encoded_images: method ()
+  get_harmonic_load_data_for_import: method ()
+  get_named_report_with_encoded_images: method ()
+  get_property: method ()
+  harmonic_excitation_type: HarmonicExcitationType = <HarmonicExcitationType.NONE: 0>
+  has_results: bool = True
+  id: str = 'f0951dc6-596c-4630-8e5f-2990bd6cea28'
+  initialize_lifetime_service: method ()
+  invalid_properties: list = ['Planet Index', 'Planet Angle', 'Parametric Study Index 1', 'Paramet...
+  is_connected_to_ground: bool = False
+  is_instance_of_wrapped_type: method ()
+  is_of_type: method ()
+  is_read_only: method ()
+  is_torsionally_free: bool = True
+  is_valid: method ()
+  load_case_for_harmonic_excitation_type_advanced_system_deflection_current_load_case_set_up: <err Unable to access Load Case for Harmonic Excitation Type 'Adv>
+  local_coordinate_system: CoordinateSystem3D = CoordinateSystem3D(wrapped=<SMT.MastaAPI.MathUtility.CoordinateSystem...
+  magnitude_of_rotation: float = nan
+  magnitude_radial_force: float = 6986105.118018193
+  moment_x: MomentInputComponent = MomentInputComponent(wrapped=<SMT.MastaAPI.NodalAnalysis.VaryingInput...
+  moment_y: MomentInputComponent = MomentInputComponent(wrapped=<SMT.MastaAPI.NodalAnalysis.VaryingInput...
+  moment_z: <err Unable to access Moment Z because it is invalid ('Point Load>
+  name: str = 'Point Load'
+  name_with_container: str = 'New Design\\Point Load'
+  output_active_report_as_text_to: method ()
+  output_active_report_to: method ()
+  output_default_report_to: method ()
+  output_named_report_as_masta_report: method ()
+  output_named_report_as_text_to: method ()
+  output_named_report_to: method ()
+  parametric_study_index_1: <err Unable to access Parametric Study Index 1 because it is inva>
+  parametric_study_index_2: <err Unable to access Parametric Study Index 2 because it is inva>
+  planet_angle: <err Unable to access Planet Angle because it is invalid ('Point >
+  planet_index: <err Unable to access Planet Index because it is invalid ('Point >
+  planetary_original: PointLoadLoadCase = PointLoadLoadCase(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndResult...
+  radial_load: <err Unable to access Radial Load because it is invalid ('Point L>
+  rayleigh_damping_beta: <err Unable to access Rayleigh Damping Beta because it is invalid>
+  read_only_properties: list = ['Radial Load', 'Tangential Load']
+  report_names: list = ['All Properties Report', 'Default CAD Report']
+  rotation_angle: float = nan
+  safety_factors: SafetyFactorGroup = SafetyFactorGroup(wrapped=<SMT.MastaAPI.Materials.SafetyFactorGroup o...
+  set_property: method ()
+  static_load_case: StaticLoadCase = StaticLoadCase(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndResults.S...
+  status: Status = Status(wrapped=<SMT.MastaAPI.Utility.ModelValidation.Status object at...
+  tangential_load: <err Unable to access Tangential Load because it is invalid ('Poi>
+  time_series_load_case: <err Unable to access Time Series Load Case because it is invalid>
+  twist_theta_x: Overridable_float = 0.0
+  twist_theta_y: Overridable_float = 0.0
+  twist_theta_z: Overridable_float = 0.0
+  unique_name: str = "'New Design\\Point Load' in 'Mx_max in Extrem load case'"
+  use_this_load_case_for_advanced_system_deflection_current_load_case_set_up: <err Unable to access Use This Load Case for 'Advanced System Def>
+  wrapped: PointLoadLoadCase = <SMT.MastaAPI.SystemModel.AnalysesAndResults.StaticLoads.PointLoadLoa...
+
+======================================================================
+F. lc.inputs_for_shaft(shaft) — 속도/각속도 관련
+----------------------------------------------------------------------
+  type: ShaftLoadCase
+  magnitude_of_rotation: float = nan
+  rotation_angle: float = nan
+
+======================================================================
+G. lc.inputs_for_abstract_shaft_or_housing — 속도 관련
+----------------------------------------------------------------------
+  type: ShaftLoadCase
+  magnitude_of_rotation: float = nan
+  rotation_angle: float = nan
+
+======================================================================
+H. Point Load 파트 자체 — 속도/파워 관련
+----------------------------------------------------------------------
+  rotation_about_axis: float = 0.0
+  set_position_and_rotation_of_component_and_connected_components: method ()
+
+======================================================================
+I. create_time_series_load_case 시그니처 확인
+----------------------------------------------------------------------
+  존재: True
+  doc: Method does not return.
+
+======================================================================
+완료
+----------------------------------------------------------------------
+Exception ignored in: <function APIBase.__del__ at 0x000002DA26AE53A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002DA26AE53A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002DA26AE53A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002DA26AE53A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002DA26AE53A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002DA26AE53A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002DA26AE53A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002DA26AE53A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002DA26AE53A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

@@ -1,0 +1,128 @@
+======================================================================
+[Main Shaft 전체 non-callable attr]
+======================================================================
+    active_definition = SimpleShaftDefinition(wrapped=<SMT.MastaAPI.Shafts.SimpleS...
+    active_design = 'Design'
+    additional_modal_damping_ratio = 0.0
+    all_design_entities = [Shaft(wrapped=<SMT.MastaAPI.SystemModel.PartModel.ShaftMo...
+    all_properties_are_invalid = False
+    all_properties_are_read_only = False
+    all_status_errors = []
+    available_socket_offsets = ['Left', 'Centre', 'Right', 'Offset 0 mm (Outer)', 'Offset...
+    cad_model = '<ERR Unable to access CAD Model because>'
+    cast_to = _Cast_Shaft(__parent__=Shaft(wrapped=<SMT.MastaAPI.SystemM...
+    centre_offset = 1.75
+    comment = ''
+    component_connections = [CylindricalComponentConnection(wrapped=<SMT.MastaAPI.Syst...
+    connections = [CoaxialConnection(wrapped=<SMT.MastaAPI.SystemModel.Conne...
+    coordinate_system_euler_angles = Vector3D(0.0, 1.5707963267948966, 0.0)
+    design_properties = Design(wrapped=<SMT.MastaAPI.SystemModel.Design object at ...
+    drawing_number = ''
+    editable_name = 'Main Shaft'
+    fe_substructure_replacing_this = None
+    full_name_without_root_name = 'Main Shaft'
+    guide_image = None
+    has_guide_image = False
+    icon = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=48x4...
+    id = '467ee5f0-fc6d-4f4d-b7c0-b059a66208b7'
+    invalid_properties = ['Mass Properties from Design Including Planetary Duplicat...
+    is_replaced_by_fe = False
+    left_side_offset = 0.0
+    length = 3.5
+    local_connections = []
+    local_coordinate_system = CoordinateSystem3D(wrapped=<SMT.MastaAPI.MathUtility.Coord...
+    mass = 43225.801639272686
+    mass_of_shaft_body = 43225.801639272686
+    mass_properties_from_design = MassProperties(wrapped=<SMT.MastaAPI.MathUtility.MassPrope...
+    mass_properties_from_design_including_planetary_duplicates = '<ERR Unable to access Mass Properties f>'
+    polar_inertia = 89963.96982299656
+    polar_inertia_for_synchroniser_sizing_only = '<ERR "Polar Inertia for Synchroniser Si>'
+    polar_inertia_of_shaft_body = 89963.96982299656
+    position = Vector3D(0.0, 0.0, 0.0)
+    position_fixed = False
+    read_only_properties = ['Mass', 'Position', 'Coordinate System Euler Angles', 'Le...
+    reason_mass_properties_are_unknown = '<ERR Unable to access Reason Mass Prope>'
+    reason_mass_properties_are_zero = '<ERR Unable to access Reason Mass Prope>'
+    report_names = ['Inner Profile', 'Outer Profile', 'Sections', 'Radial Hol...
+    rotation_about_axis_for_all_mounted_components = 0.0
+    small_icon = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=24x2...
+    status = Status(wrapped=<SMT.MastaAPI.Utility.ModelValidation.Statu...
+    stress_to_yield_strength_factor = '<ERR Unable to access Stress To Yield S>'
+    three_d_isometric_view = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300x...
+    three_d_view = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300x...
+    three_d_view_orientated_in_xy_plane_with_z_axis_pointing_into_the_screen = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300x...
+    three_d_view_orientated_in_xy_plane_with_z_axis_pointing_out_of_the_screen = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300x...
+    three_d_view_orientated_in_xz_plane_with_y_axis_pointing_into_the_screen = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300x...
+    three_d_view_orientated_in_xz_plane_with_y_axis_pointing_out_of_the_screen = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300x...
+    three_d_view_orientated_in_yz_plane_with_x_axis_pointing_into_the_screen = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300x...
+    three_d_view_orientated_in_yz_plane_with_x_axis_pointing_out_of_the_screen = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=300x...
+    translation = '(0 mm, 0 mm, 0 mm)'
+    translation_vector = Vector3D(0.0, 0.0, 0.0)
+    transverse_inertia = 221487.34160519508
+    two_d_drawing = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=450x...
+    two_d_drawing_full_model = <PIL.PngImagePlugin.PngImageFile image mode=RGBA size=450x...
+    unique_name = 'New Design\\Main Shaft'
+    user_specified_data = UserSpecifiedData(wrapped=<SMT.MastaAPI.Utility.Scripting....
+    uses_cad_guide = False
+    wrapped = <SMT.MastaAPI.SystemModel.PartModel.ShaftModel.Shaft objec...
+    x_axis = '(0, 0, -1)'
+    x_axis_vector = Vector3D(6.123031769111886e-17, 0.0, -1.0)
+    y_axis = '(0, 1, 0)'
+    y_axis_vector = Vector3D(0.0, 1.0, 0.0)
+    z_axis = '(1, 0, 0)'
+    z_axis_vector = Vector3D(1.0, 0.0, 6.123031769111886e-17)
+
+[재질/단면 후보]
+  shaft.shaft_material = "<ERR 'Shaft' object has no attribute 's>"
+  shaft.material_database_selector = "<ERR 'Shaft' object has no attribute 'm>"
+  shaft.material_selector = "<ERR 'Shaft' object has no attribute 'm>"
+  shaft.detailed_shaft = "<ERR 'Shaft' object has no attribute 'd>"
+  shaft.shaft_detail = "<ERR 'Shaft' object has no attribute 's>"
+  shaft.sections = "<ERR 'Shaft' object has no attribute 's>"
+  shaft.outer_diameter = "<ERR 'Shaft' object has no attribute 'o>"
+  shaft.length = 3.5
+  shaft.inner_diameter = "<ERR 'Shaft' object has no attribute 'i>"
+
+[StaticLoadCase 의 rigid/shaft/stiffness 관련 옵션]
+    lc.include_inner_race_distortion_for_flexible_pin_spindle = '<ERR "Include Inner Race Distortion for>'
+    lc.include_tilt_stiffness_for_bevel_hypoid_gears = True
+    lc.input_shaft_cycles = 36000.0
+    lc.inputs_for_abstract_shaft = <bound method LoadCase.inputs_for_abstract_shaft of StaticLoadCase
+    lc.inputs_for_abstract_shaft_or_housing = <bound method LoadCase.inputs_for_abstract_shaft_or_housing of Sta
+    lc.inputs_for_abstract_shaft_to_mountable_component_connection = <bound method LoadCase.inputs_for_abstract_shaft_to_mountable_comp
+    lc.inputs_for_flexible_pin_assembly = <bound method LoadCase.inputs_for_flexible_pin_assembly of StaticL
+    lc.inputs_for_shaft = <bound method LoadCase.inputs_for_shaft of StaticLoadCase(wrapped=
+    lc.inputs_for_shaft_hub_connection = <bound method LoadCase.inputs_for_shaft_hub_connection of StaticLo
+    lc.inputs_for_shaft_to_mountable_component_connection = <bound method LoadCase.inputs_for_shaft_to_mountable_component_con
+    lc.maximum_shaft_section_cross_sectional_area_ratio = 10.0
+    lc.maximum_shaft_section_length_to_diameter_ratio = 1.0
+    lc.maximum_shaft_section_polar_area_moment_of_inertia_ratio = 10.0
+    lc.mesh_stiffness_model = <MeshStiffnessModel.ISO_SIMPLE_CONTINUOUS_MODEL: 2>
+    lc.micro_geometry_model_for_simple_mesh_stiffness = <MicroGeometryModel.ESTIMATED_FROM_MACRO_GEOMETRY: 1>
+    lc.peak_load_factor_for_shafts = '<ERR Unable to access Peak Load Factor >'
+    lc.percentage_of_shaft_torque_alternating = 0.0
+    lc.spline_rigid_bond_detailed_connection_nodes_per_unit_length_to_diameter_ratio = 1.0
+    lc.use_single_node_for_spline_rigid_bond_detailed_connection_connections = <mastapy._private._internal.implicit.overridable.bool.bool object 
+
+완료
+Exception ignored in: <function APIBase.__del__ at 0x0000020EDC939440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000020EDC939440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000020EDC939440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000020EDC939440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

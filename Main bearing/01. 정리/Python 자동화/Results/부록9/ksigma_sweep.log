@@ -1,0 +1,25 @@
+[설정] fatigue_config.xlsx 로드 (8개 항목)
+[참값] UW ISO16281m 표본손상 = 3.889347e-06
+[모델] 로드 완료 · 배치 N = 20
+[자체검증] 단일 vs 배치 L10 상대오차 = 0.00e+00  ✅
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\T50_ks0.25_DLC1.2-c-s1_dt_10_summary.csv  (min shaft SF=None)
+[k=0.25 dt=10] 60빈 해석 10.3s (171 ms/케이스) ε=+3.54% (예측 +3.56%)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\T50_ks0.2_DLC1.2-c-s1_dt_4_summary.csv  (min shaft SF=None)
+[k=0.2 dt=4] 150빈 해석 24.8s (165 ms/케이스) ε=+1.20% (예측 +0.97%)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\T50_ks0.25_DLC1.2-c-s1_dt_4_summary.csv  (min shaft SF=None)
+[k=0.25 dt=4] 150빈 해석 24.8s (165 ms/케이스) ε=+3.57% (예측 +3.58%)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\T50_ks0.2_DLC1.2-c-s1_dt_2_summary.csv  (min shaft SF=None)
+[k=0.2 dt=2] 300빈 해석 50.2s (167 ms/케이스) ε=+1.88% (예측 +1.84%)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\T50_ks0.25_DLC1.2-c-s1_dt_2_summary.csv  (min shaft SF=None)
+[k=0.25 dt=2] 300빈 해석 49.0s (163 ms/케이스) ε=+3.74% (예측 +3.89%)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\T50_ks0.2_DLC1.2-c-s1_dt_1_summary.csv  (min shaft SF=None)
+[k=0.2 dt=1] 600빈 해석 96.3s (161 ms/케이스) ε=+2.24% (예측 +2.35%)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\T50_ks0.25_DLC1.2-c-s1_dt_1_summary.csv  (min shaft SF=None)
+[k=0.25 dt=1] 600빈 해석 97.3s (162 ms/케이스) ε=+3.52% (예측 +3.75%)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\T50_ks0.2_DLC1.2-c-s1_dt_0.6_summary.csv  (min shaft SF=None)
+[k=0.2 dt=0.6] 1000빈 해석 160.8s (161 ms/케이스) ε=+2.06% (예측 +2.18%)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\T50_ks0.25_DLC1.2-c-s1_dt_0.6_summary.csv  (min shaft SF=None)
+[k=0.25 dt=0.6] 1000빈 해석 157.1s (157 ms/케이스) ε=+2.92% (예측 +3.13%)
+
+2단계 스윕 완료
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

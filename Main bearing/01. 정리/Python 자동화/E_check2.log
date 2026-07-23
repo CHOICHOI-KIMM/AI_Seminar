@@ -1,0 +1,74 @@
+material_details type: ShaftMaterial
+
+[material_details 전체]
+    all_properties_are_invalid = False
+    all_properties_are_read_only = False
+    bh_curve_specification = '<ERR "B-H Curve Specification" - Th>'
+    cast_to = _Cast_ShaftMaterial(__parent__=ShaftMaterial(wrapped=<SMT.MastaA...
+    coefficient_of_thermal_expansion = 1.2e-05
+    comment = ''
+    cost_per_unit_mass = '<ERR Unable to access Cost Per Unit>'
+    database_key = NamedKey(wrapped=<SMT.MastaAPI.Utility.Databases.NamedKey object...
+    density = 7800.0
+    hardening_type_for_agma60016101e08 = <AGMAHardeningType.DUCTILE_THROUGH_HARDENED_STEEL: 0>
+    hardness_type = '<ERR Unable to access Hardness Type>'
+    heat_conductivity = 45.0
+    history = FileHistory(wrapped=<SMT.MastaAPI.Utility.FileHistory object at ...
+    invalid_properties = ['No History', 'Surface Hardness', 'Surface Hardness Range', 'Ha...
+    material_name = 'Rigid Material 1'
+    maximum_allowable_temperature = 200.0
+    modulus_of_elasticity = 2070000000000000.0
+    name = 'Rigid Material 1'
+    no_history = '<ERR Unable to access No History be>'
+    plane_strain_modulus = 2260072060268588.5
+    poissons_ratio = 0.29000000000000004
+    read_only_properties = []
+    report_names = ['Item History Report', 'All Properties Report', 'Default Report...
+    shear_fatigue_strength = 255000000.0
+    shear_modulus = 802325581395348.9
+    shear_yield_stress = 425000000.0
+    specific_heat = 500.0
+    specified_endurance_limit = 500000000.0
+    standard = <MaterialStandards.CUSTOM: 0>
+    surface_hardness = '<ERR Unable to access Surface Hardn>'
+    surface_hardness_range_max_in_hb = '<ERR Unable to access Surface Hardn>'
+    surface_hardness_range_max_in_hrc = '<ERR Unable to access Surface Hardn>'
+    surface_hardness_range_max_in_hv = '<ERR Unable to access Surface Hardn>'
+    surface_hardness_range_min_in_hb = '<ERR Unable to access Surface Hardn>'
+    surface_hardness_range_min_in_hrc = '<ERR Unable to access Surface Hardn>'
+    surface_hardness_range_min_in_hv = '<ERR Unable to access Surface Hardn>'
+    tensile_yield_strength = 750000000.0
+    ultimate_tensile_strength = 1000000000.0
+    use_custom_sn_curve = False
+    wrapped = <SMT.MastaAPI.Shafts.ShaftMaterial object at 0x000002D32FD25E80>
+
+  → E(modulus_of_elasticity) = 2070000000000000.0
+
+=== 정량화 ===
+  E(Rigid Material 1) = 2.0700e+15 Pa = 2.07e+06 GPa
+  강재 E = 206 GPa
+  배율 = 10048.5x
+  density=7800.0, poisson=0.29000000000000004
+
+완료
+Exception ignored in: <function APIBase.__del__ at 0x000002D326A09300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002D326A09300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002D326A09300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000002D326A09300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

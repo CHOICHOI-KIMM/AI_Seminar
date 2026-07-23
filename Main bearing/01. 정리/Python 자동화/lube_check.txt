@@ -1,0 +1,247 @@
+모델 로드 OK | 드라이버: Load Case 1 | 베어링: ['Main Bearing_UW', 'Main Bearing_DW'] | 속도입력: Input Power Load
+
+======================================================================
+[Main Bearing_UW] 윤활/점도 관련 결과
+----------------------------------------------------------------------
+  dynamic_viscosity: float = 0.08585135456319018
+  element_temperature: float = 80.0
+  fluid_film_density: float = 870.0
+  fluid_film_temperature_source: FluidFilmTemperatureOptions = <FluidFilmTemperatureOptions.CALCULATE_FROM_SPECIFIED_ELEMENT_AND_R...
+  kinematic_viscosity: float = 9.867971788872435e-05
+  kinematic_viscosity_of_oil_for_efficiency_calculations: float = 9.867971788872433e-05
+  lambda_ratio_inner: float = 1.1713178652585619
+  lambda_ratio_outer: float = 1.203358359078588
+  lubricant_film_temperature: float = 80.0
+  lubricant_flow_rate: float = 0.0
+  lubricant_windage_and_churning_temperature: float = 80.0
+  lubrication: LubricationDetail = LubricationDetail(wrapped=<SMT.MastaAPI.Materials.LubricationDetail...
+  minimum_lubricating_film_thickness_inner: float = 3.53737995308085e-07
+  minimum_lubricating_film_thickness_outer: float = 3.634142244417329e-07
+  oil_dip_coefficient: float = 0.0
+  oil_sump_temperature: float = 68.0
+  operating_air_temperature: float = 20.0
+  surrounding_lubricant_density: float = 870.0
+  temperature_when_assembled: float = 20.0
+  -- 수명(윤활 영향) --
+    aISO = 0.3216680579397251
+    viscosity_ratio = 0.4886412471262618
+    contamination_factor = 0.9235990973398811
+    L10h_basic = 258584452.82947943
+    L10mh_mod = 83178358.7550651
+
+======================================================================
+[Main Bearing_DW] 윤활/점도 관련 결과
+----------------------------------------------------------------------
+  dynamic_viscosity: float = 0.08585135456319018
+  element_temperature: float = 80.0
+  fluid_film_density: float = 870.0
+  fluid_film_temperature_source: FluidFilmTemperatureOptions = <FluidFilmTemperatureOptions.CALCULATE_FROM_SPECIFIED_ELEMENT_AND_R...
+  kinematic_viscosity: float = 9.867971788872435e-05
+  kinematic_viscosity_of_oil_for_efficiency_calculations: float = 9.867971788872433e-05
+  lambda_ratio_inner: float = 1.267653905713193
+  lambda_ratio_outer: float = 1.3023295973729947
+  lubricant_film_temperature: float = 80.0
+  lubricant_flow_rate: float = 0.0
+  lubricant_windage_and_churning_temperature: float = 80.0
+  lubrication: LubricationDetail = LubricationDetail(wrapped=<SMT.MastaAPI.Materials.LubricationDetail...
+  minimum_lubricating_film_thickness_inner: float = 3.828314795253836e-07
+  minimum_lubricating_film_thickness_outer: float = 3.9330353840664366e-07
+  oil_dip_coefficient: float = 0.0
+  oil_sump_temperature: float = 68.0
+  operating_air_temperature: float = 20.0
+  surrounding_lubricant_density: float = 870.0
+  temperature_when_assembled: float = 20.0
+  -- 수명(윤활 영향) --
+    aISO = 0.5616916512511093
+    viscosity_ratio = 0.4886412471262618
+    contamination_factor = 0.9235990973398811
+    L10h_basic = 5217233265.655664
+    L10mh_mod = 2930476367.9483476
+
+======================================================================
+LubricationDetail (첫 베어링) 상세
+----------------------------------------------------------------------
+  TYPE: CLRMetatype ()
+  agma925a03_lubricant_type: <err Unable to access AGMA 925-A03 Lubricant Type >
+  density: float = 870.0
+  density_specification_method: DensitySpecificationMethod = <DensitySpecificationMethod.TEMPERATURE_INDEPENDENT_VALUE: 0>
+  density_vs_temperature: <err Unable to access Density vs. Temperature beca>
+  dynamic_viscosity_at: method ()
+  dynamic_viscosity_at_38c: float = 0.4400592995213868
+  dynamic_viscosity_of_the_lubricant_at_100_degrees_c: float = 0.04837199999999999
+  dynamic_viscosity_of_the_lubricant_at_40_degrees_c: float = 0.40019999999999994
+  ep_additives_proven_with_severe_contamination: <err Unable to access EP Additives Proven with Sev>
+  ep_and_aw_additives_present: bool = False
+  get_named_report_with_encoded_images: method ()
+  is_instance_of_wrapped_type: method ()
+  is_of_type: method ()
+  iso_lubricant_type: ISOLubricantType = <ISOLubricantType.POLYALPHAOLEFIN: 3>
+  kinematic_viscosity_at: method ()
+  kinematic_viscosity_at_38c: float = 0.0005058152868061917
+  kinematic_viscosity_of_the_lubricant_at_100_degrees_c: float = 5.5599999999999996e-05
+  kinematic_viscosity_of_the_lubricant_at_40_degrees_c: float = 0.00045999999999999996
+  lubricant_density_at: method ()
+  lubricant_grade_agma: <err Unable to access Lubricant Grade AGMA because>
+  lubricant_grade_iso: <err Unable to access Lubricant Grade ISO because >
+  lubricant_grade_sae: <err Unable to access Lubricant Grade SAE because >
+  lubricant_type_and_supply: BearingLubricationCondition = <BearingLubricationCondition.GREASE_RUNIN_BEARING: 5>
+  lubricant_viscosity_classification: LubricantViscosityClassification = <LubricantViscosityClassification.USERSPECIFIED: 3>
+  micropitting_failure_load_stage_test_temperature: float = 90.0
+  name: str = 'Mobilith SHC 460'
+  oil_filtration_and_contamination: <err Unable to access Oil Filtration and Contamina>
+  oil_to_air_heat_transfer_area: float = 0.1
+  output_named_report_as_masta_report: method ()
+  output_named_report_as_text_to: method ()
+  output_named_report_to: method ()
+  pressure_viscosity_coefficient: float = 1.8e-08
+  pressure_viscosity_coefficient_method: PressureViscosityCoefficientMethod = <PressureViscosityCoefficientMethod.TEMPERATURE_INDEPENDENT_VALUE: 0>
+  report_names: list = ['Item History Report', 'All Properties Report', 'Default CAD Report']
+  temperature_at_which_density_is_specified: <err Unable to access Temperature at Which Density>
+  temperature_at_which_pressure_viscosity_coefficient_is_specified: <err Unable to access Temperature at Which Pressur>
+완료
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x00000123A6BD9260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

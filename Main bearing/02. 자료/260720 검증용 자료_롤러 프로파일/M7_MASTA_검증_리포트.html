@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MASTA 교차검증 — K26MW-150 메인베어링</title>
+<style>
+*{box-sizing:border-box}
+.viz-root{color-scheme:light;--surface-1:#fcfcfb;--surface-2:#f2f1ec;--line:#dcdbd3;
+ --text-primary:#0b0b0b;--text-secondary:#52514e;--text-muted:#8a897f;
+ --masta:#2a78d6;--ours:#eb6834;--good:#008300;--warn:#eda100;--bad:#e34948;
+ --grid:#e8e7e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Malgun Gothic',sans-serif}
+:root[data-theme="dark"] .viz-root{color-scheme:dark;--surface-1:#1a1a19;--surface-2:#242423;--line:#3a3a37;
+ --text-primary:#fff;--text-secondary:#c3c2b7;--text-muted:#8f8e84;--masta:#3987e5;--ours:#d95926;--grid:#2c2c2a}
+@media(prefers-color-scheme:dark){:root:where(:not([data-theme="light"])) .viz-root{color-scheme:dark;
+ --surface-1:#1a1a19;--surface-2:#242423;--line:#3a3a37;--text-primary:#fff;--text-secondary:#c3c2b7;
+ --text-muted:#8f8e84;--masta:#3987e5;--ours:#d95926;--grid:#2c2c2a}}
+body{margin:0;background:var(--surface-2)}
+.viz-root{background:var(--surface-2);color:var(--text-primary);min-height:100vh;padding:24px 18px 60px}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px} h2{font-size:17px;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+h3{font-size:14px;margin:18px 0 8px;color:var(--text-secondary)}
+.sub{color:var(--text-secondary);font-size:13px;margin:0 0 16px;line-height:1.6}
+.card{background:var(--surface-1);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.badge{font-size:12px;padding:5px 11px;border-radius:20px;border:1px solid var(--line);background:var(--surface-1);display:flex;gap:6px;align-items:center}
+.dot{width:8px;height:8px;border-radius:50%} .g{background:var(--good)} .w{background:var(--warn)} .b{background:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
+th,td{text-align:right;padding:7px 10px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+thead th{color:var(--text-secondary);font-weight:600;border-bottom:2px solid var(--line)}
+tbody tr:hover{background:var(--surface-2)}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.pct-g{color:var(--good);font-weight:600} .pct-w{color:var(--warn);font-weight:600} .pct-b{color:var(--bad);font-weight:600}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--text-secondary);margin:2px 0 8px}
+.legend span{display:flex;gap:6px;align-items:center} .lk{width:14px;height:3px;border-radius:2px}
+.tabs{display:flex;gap:4px;margin:18px 0 0} .tab{padding:8px 18px;border:1px solid var(--line);border-bottom:none;
+ border-radius:8px 8px 0 0;background:var(--surface-2);cursor:pointer;font-size:14px;color:var(--text-secondary)}
+.tab.on{background:var(--surface-1);color:var(--text-primary);font-weight:600}
+.pane{display:none;border:1px solid var(--line);border-radius:0 10px 10px 10px;padding:16px 18px;background:var(--surface-1)}
+.pane.on{display:block}
+.chartbox{position:relative;width:100%;overflow:visible}
+svg{width:100%;height:auto;display:block} .grid line{stroke:var(--grid);stroke-width:1}
+.axis line,.axis path{stroke:var(--line);stroke-width:1} .axis text{fill:var(--text-muted);font-size:11px}
+.axttl{fill:var(--text-secondary);font-size:12px}
+.tip{position:absolute;pointer-events:none;background:var(--surface-1);border:1px solid var(--line);border-radius:7px;
+ padding:7px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.15);opacity:0;transition:opacity .08s;z-index:5;min-width:150px}
+.tip b{display:block;margin-bottom:3px;color:var(--text-secondary);font-weight:600}
+.tip .r{display:flex;justify-content:space-between;gap:12px} .note{font-size:12px;color:var(--text-muted);margin:6px 0}
+.toggle{float:right;font-size:12px;cursor:pointer;border:1px solid var(--line);border-radius:16px;padding:4px 12px;background:var(--surface-1);color:var(--text-secondary)}
+.warnbox{border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 8%,var(--surface-1));padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6}
+.kv{font-size:13px;line-height:1.9} .kv b{color:var(--text-secondary);font-weight:600}
+</style></head>
+<body><div class="viz-root"><div class="wrap">
+<span class="toggle" onclick="var r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'">◐ 라이트/다크</span>
+<h1>MASTA 교차검증 — K26MW-150 메인베어링 (BT1-8314_Test)</h1>
+<p class="sub">상용 드라이브트레인 해석 <b>MASTA 14.1.1</b> vs <b>trb_life</b>(iso5/M2 커널) 정량 비교 · 로드케이스 <b>Fz_min (DLC1.3-k-s4)</b> · 회전수 0(극한하중) · 2점지지 메인샤프트(MB1 상풍 / MB2 하풍, O배열)<br>
+<b>좌표계:</b> MASTA 월드 = 우리 글로벌(X=축, Y·Z=반경). MASTA 베어링로컬은 Z=축·X/Y=반경(순환치환). · <b>n_s=40</b> 정합 · 정격 비교엔 MASTA C_r=22,228 kN 사용</p>
+
+<div class="badges">
+<span class="badge"><span class="dot g"></span>Q_ci·Q_ce·q_ci·q_ce 완전일치</span>
+<span class="badge"><span class="dot g"></span>Q_max MB1 −0.04% · MB2 0.00%</span>
+<span class="badge"><span class="dot g"></span>a_ISO 0.0999 완전일치</span>
+<span class="badge"><span class="dot w"></span>롤러강성 −5%(변위)</span>
+<span class="badge"><span class="dot w"></span>L10r MB1 +17% · MB2 +7%(에지)</span>
+<span class="badge"><span class="dot b"></span>전체 시스템 solve: 드라이브트레인 모멘트경로 필요</span>
+</div>
+
+<div class="tabs">
+<div class="tab on" data-t="MB1" onclick="tab('MB1')">MB1 — 상풍(반경지배)</div>
+<div class="tab" data-t="MB2" onclick="tab('MB2')">MB2 — 하풍(축지배)</div>
+<div class="tab" data-t="SYS" onclick="tab('SYS')">시스템(2베어링)</div>
+</div>
+<div id="pane-MB1" class="pane on"></div>
+<div id="pane-MB2" class="pane"></div>
+<div id="pane-SYS" class="pane"></div>
+
+<p class="note" style="margin-top:30px">생성: trb_life · MASTA 리포트 대조 · 접촉응력(MPa)·5×5 강성행렬은 본 검증 범위 외(엔진 후속). 재현: <span class="mono">dlc_samples/masta_final.py</span></p>
+</div></div>
+<script>
+const D={"bearings": {"MB1": {"masta": {"dr": 0.20647, "da": -0.19324, "ps": -6.654e-05, "Fr": 7714.82, "Fa": 3043.08, "M": 4278.04, "Qmax": 455.67, "loaded": 36, "L10r": 33.4429, "L10mr": 3.3431, "aISO": 0.09996, "sig": 1404.59, "elem": null}, "modeD": {"Fr": 7339.654730381843, "Fa": 2895.31230708352, "M": -4113.854096831092, "Qmax": 433.56693072426003, "qci": 55.78985726299084, "qce": 60.650960335116054, "Qci": 983.1095393828292, "Qce": 1068.7702138599388, "L10r": 46.41555111810435, "L10mr": 4.639863738383291, "aISO": 0.0999635601994073}, "modeL": {"dr": 319.94567112451756, "da": -201.68320156885093, "ps": 0.1202920032096305, "Qmax": 455.48546933107286, "loaded": 35, "L10r": 39.061172946039434, "L10mr": 3.9047169308126226}, "curve_masta": {"angle": [3.1034, 7.2414, 11.3793, 15.5172, 19.6552, 23.7931, 27.931, 32.069, 36.2069, 40.3448, 44.4828, 48.6207, 52.7586, 56.8966, 61.0345, 65.1724, 69.3103, 73.4483, 77.5862, 81.7241, 85.8621, 90.0, 94.1379, 98.2759, 102.4138, 106.5517, 110.6897, 114.8276, 118.9655, 123.1034, 127.2414, 131.3793, 135.5172, 139.6552, 143.7931, 147.931, 152.069, 156.2069, 160.3448, 164.4828, 168.6207, 172.7586, 176.8966, 181.0345, 185.1724, 189.3103, 193.4483, 197.5862, 201.7241, 205.8621, 210.0, 214.1379, 218.2759, 222.4138, 226.5517, 230.6897, 234.8276, 238.9655, 243.1034, 247.2414, 251.3793, 255.5172, 259.6552, 263.7931, 267.931, 272.069, 276.2069, 280.3448, 284.4828, 288.6207, 292.7586, 296.8966, 301.0345, 305.1724, 309.3103, 313.4483, 317.5862, 321.7241, 325.8621, 330.0, 334.1379, 338.2759, 342.4138, 346.5517, 350.6897, 354.8276, 358.9655], "load": [453.9304, 447.5635, 436.648, 421.3198, 401.7735, 378.2648, 351.1133, 320.7069, 287.5072, 252.0578, 214.995, 177.0641, 139.1434, 102.2826, 67.7691, 37.2618, 13.1303, 0.0708, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 8.4953, 30.4791, 59.649, 93.3311, 129.7347, 167.4956, 205.5124, 242.8682, 278.7869, 312.6065, 343.7614, 371.7701, 396.227, 416.7956, 433.2045, 445.2439, 452.7635, 455.6709], "stress": [1402.5488, 1395.0388, 1382.0244, 1363.4386, 1339.18, 1309.1053, 1273.0191, 1230.6575, 1181.665, 1125.5593, 1061.6755, 989.0741, 906.3767, 811.449, 700.6104, 566.913, 393.3764, 64.5695, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 338.0308, 528.2111, 669.5491, 785.2978, 883.7806, 969.3101, 1044.2966, 1110.269, 1168.2579, 1218.9865, 1262.9767, 1300.6119, 1332.1764, 1357.8813, 1377.8815, 1392.2884, 1401.1769, 1404.5915]}, "curve_ours": {"angle": [0.0, 4.137931034482759, 8.275862068965518, 12.413793103448276, 16.551724137931036, 20.689655172413794, 24.82758620689655, 28.965517241379313, 33.10344827586207, 37.24137931034483, 41.37931034482759, 45.51724137931034, 49.6551724137931, 53.793103448275865, 57.931034482758626, 62.06896551724138, 66.20689655172414, 70.3448275862069, 74.48275862068967, 78.6206896551724, 82.75862068965517, 86.89655172413794, 91.03448275862068, 95.17241379310344, 99.3103448275862, 103.44827586206897, 107.58620689655173, 111.72413793103448, 115.86206896551725, 120.00000000000001, 124.13793103448276, 128.2758620689655, 132.41379310344828, 136.55172413793105, 140.6896551724138, 144.82758620689654, 148.96551724137933, 153.10344827586206, 157.2413793103448, 161.3793103448276, 165.51724137931035, 169.65517241379308, 173.79310344827587, 177.93103448275863, 182.06896551724137, 186.20689655172413, 190.3448275862069, 194.48275862068968, 198.6206896551724, 202.75862068965517, 206.89655172413794, 211.03448275862067, 215.17241379310346, 219.31034482758622, 223.44827586206895, 227.58620689655172, 231.7241379310345, 235.86206896551724, 240.00000000000003, 244.1379310344828, 248.27586206896552, 252.41379310344826, 256.551724137931, 260.6896551724138, 264.82758620689657, 268.9655172413793, 273.1034482758621, 277.2413793103448, 281.3793103448276, 285.51724137931035, 289.6551724137931, 293.7931034482759, 297.93103448275866, 302.0689655172414, 306.2068965517241, 310.34482758620686, 314.4827586206896, 318.6206896551724, 322.7586206896552, 326.89655172413796, 331.0344827586207, 335.17241379310343, 339.31034482758616, 343.44827586206895, 347.58620689655174, 351.7241379310345, 355.86206896551727], "load": [455.48546933107286, 453.1810875358112, 446.2888472977469, 434.8720877970586, 419.0392287618663, 398.95507458720914, 375.1151891143315, 347.60945492995774, 316.65320116532826, 283.2277086523918, 247.70694041293592, 210.31409240766678, 172.4277642975964, 134.542643956566, 97.81704797686933, 63.54880696673162, 33.650384226418495, 10.542946984797814, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.542946984797814, 33.65038422641831, 63.5488069667317, 97.81704797686933, 134.54264395656594, 172.42776429759607, 210.31409240766632, 247.70694041293575, 283.2277086523915, 316.6532011653283, 347.60945492995774, 375.11518911433143, 398.9550745872089, 419.0392287618663, 434.8720877970586, 446.2888472977467, 453.1810875358112]}}, "MB2": {"masta": {"dr": 0.040122, "da": -0.193241, "ps": -6.654e-05, "Fr": 341.52, "Fa": 3043.08, "M": 172.67, "Qmax": 115.9, "loaded": 87, "L10r": 646.7547, "L10mr": 64.6459, "aISO": 0.09995, "sig": 848.88, "elem": null}, "modeD": {"Fr": 283.42796138338764, "Fa": 2883.8022254498815, "M": -143.19862245972342, "Qmax": 108.83442689665478, "qci": 55.78985726299084, "qce": 60.650960335116054, "Qci": 983.1095393828292, "Qce": 1068.7702138599388, "L10r": 821.6439272842339, "L10mr": 82.12569553448128, "aISO": 0.09995290272019655}, "modeL": {"dr": 46.62417328558654, "da": 200.10169754686845, "ps": 0.07719921895288534, "Qmax": 115.90070949152889, "loaded": 87, "L10r": 690.4966192225138, "L10mr": 69.01765199041432}, "curve_masta": {"angle": [3.1034, 7.2414, 11.3793, 15.5172, 19.6552, 23.7931, 27.931, 32.069, 36.2069, 40.3448, 44.4828, 48.6207, 52.7586, 56.8966, 61.0345, 65.1724, 69.3103, 73.4483, 77.5862, 81.7241, 85.8621, 90.0, 94.1379, 98.2759, 102.4138, 106.5517, 110.6897, 114.8276, 118.9655, 123.1034, 127.2414, 131.3793, 135.5172, 139.6552, 143.7931, 147.931, 152.069, 156.2069, 160.3448, 164.4828, 168.6207, 172.7586, 176.8966, 181.0345, 185.1724, 189.3103, 193.4483, 197.5862, 201.7241, 205.8621, 210.0, 214.1379, 218.2759, 222.4138, 226.5517, 230.6897, 234.8276, 238.9655, 243.1034, 247.2414, 251.3793, 255.5172, 259.6552, 263.7931, 267.931, 272.069, 276.2069, 280.3448, 284.4828, 288.6207, 292.7586, 296.8966, 301.0345, 305.1724, 309.3103, 313.4483, 317.5862, 321.7241, 325.8621, 330.0, 334.1379, 338.2759, 342.4138, 346.5517, 350.6897, 354.8276, 358.9655], "load": [115.9038, 115.8785, 115.8067, 115.6889, 115.5259, 115.3187, 115.0687, 114.7773, 114.4466, 114.0784, 113.6752, 113.2393, 112.7734, 112.2803, 111.7629, 111.2243, 110.6675, 110.0958, 109.5123, 108.9203, 108.323, 107.7236, 107.1253, 106.5311, 105.9442, 105.3674, 104.8037, 104.2556, 103.7259, 103.2169, 102.731, 102.2704, 101.8372, 101.4332, 101.0601, 100.7195, 100.4129, 100.1415, 99.9064, 99.7086, 99.549, 99.428, 99.3463, 99.3043, 99.302, 99.3396, 99.4169, 99.5337, 99.6895, 99.8838, 100.1159, 100.3848, 100.6894, 101.0286, 101.401, 101.8049, 102.2386, 102.7003, 103.1878, 103.6991, 104.2316, 104.7828, 105.3501, 105.9307, 106.5217, 107.12, 107.7226, 108.3262, 108.9275, 109.5234, 110.1104, 110.6853, 111.2448, 111.7857, 112.3048, 112.7991, 113.2655, 113.7014, 114.104, 114.471, 114.8, 115.0891, 115.3365, 115.5406, 115.7003, 115.8144, 115.8824], "stress": [848.8757, 848.8024, 848.6022, 848.2761, 847.8263, 847.2555, 846.5671, 845.7651, 844.8543, 843.8401, 842.7283, 841.5254, 840.2382, 838.8741, 837.4409, 835.9466, 834.3994, 832.8081, 831.1812, 829.5276, 827.8901, 826.2853, 824.68, 823.0826, 821.5013, 819.944, 818.4186, 816.9327, 815.4935, 814.1079, 812.7827, 811.524, 810.3378, 809.2294, 808.2041, 807.2664, 806.4206, 805.6705, 805.0163, 804.4638, 804.0164, 803.6764, 803.4451, 803.3238, 803.313, 803.4131, 803.6236, 803.9439, 804.3727, 804.9057, 805.5407, 806.277, 807.1113, 808.0399, 809.0589, 810.1635, 811.3487, 812.609, 813.9383, 815.3303, 816.7781, 818.2746, 819.8122, 821.3831, 822.9792, 824.5921, 826.2378, 827.9335, 829.6194, 831.2861, 832.9247, 834.5259, 836.081, 837.5811, 839.0178, 840.3829, 841.6688, 842.868, 843.9737, 844.9796, 845.8798, 846.6694, 847.3436, 847.8987, 848.3315, 848.6396, 848.8213]}, "curve_ours": {"angle": [0.0, 4.137931034482759, 8.275862068965518, 12.413793103448276, 16.551724137931036, 20.689655172413794, 24.82758620689655, 28.965517241379313, 33.10344827586207, 37.24137931034483, 41.37931034482759, 45.51724137931034, 49.6551724137931, 53.793103448275865, 57.931034482758626, 62.06896551724138, 66.20689655172414, 70.3448275862069, 74.48275862068967, 78.6206896551724, 82.75862068965517, 86.89655172413794, 91.03448275862068, 95.17241379310344, 99.3103448275862, 103.44827586206897, 107.58620689655173, 111.72413793103448, 115.86206896551725, 120.00000000000001, 124.13793103448276, 128.2758620689655, 132.41379310344828, 136.55172413793105, 140.6896551724138, 144.82758620689654, 148.96551724137933, 153.10344827586206, 157.2413793103448, 161.3793103448276, 165.51724137931035, 169.65517241379308, 173.79310344827587, 177.93103448275863, 182.06896551724137, 186.20689655172413, 190.3448275862069, 194.48275862068968, 198.6206896551724, 202.75862068965517, 206.89655172413794, 211.03448275862067, 215.17241379310346, 219.31034482758622, 223.44827586206895, 227.58620689655172, 231.7241379310345, 235.86206896551724, 240.00000000000003, 244.1379310344828, 248.27586206896552, 252.41379310344826, 256.551724137931, 260.6896551724138, 264.82758620689657, 268.9655172413793, 273.1034482758621, 277.2413793103448, 281.3793103448276, 285.51724137931035, 289.6551724137931, 293.7931034482759, 297.93103448275866, 302.0689655172414, 306.2068965517241, 310.34482758620686, 314.4827586206896, 318.6206896551724, 322.7586206896552, 326.89655172413796, 331.0344827586207, 335.17241379310343, 339.31034482758616, 343.44827586206895, 347.58620689655174, 351.7241379310345, 355.86206896551727], "load": [115.90070949152889, 115.87648307388434, 115.80396861939951, 115.68366691839145, 115.51644136953719, 115.30360803821657, 115.04747942980121, 114.76261082899343, 114.44010169867155, 114.08014073870814, 113.68473265851593, 113.25607474337716, 112.79654352149696, 112.30868049797054, 111.79517706021025, 111.2588586673597, 110.70266844693309, 110.12965033633279, 109.54293192715554, 108.9457072006357, 108.34121939192138, 107.73274430715371, 107.1235745798095, 106.51700568369208, 105.91632525750855, 105.32480913727387, 104.7457328566007, 104.18242705837866, 103.6385142895767, 103.12445676573279, 102.6565471839856, 102.21176252236938, 101.79231948160314, 101.40029476292231, 101.03761642151825, 100.70605627410306, 100.40722336878464, 100.14255850433605, 99.91332976167733, 99.72062898385053, 99.56536911397332, 99.44828227692473, 99.36991847423644, 99.33064475753223, 99.33064475753223, 99.36991847423644, 99.44828227692473, 99.56536911397332, 99.72062898385053, 99.91332976167736, 100.14255850433605, 100.40722336878464, 100.70605627410308, 101.03761642151825, 101.40029476292231, 101.79231948160314, 102.21176252236938, 102.65654718398558, 103.12445676573279, 103.6385142895767, 104.18242705837866, 104.74573285660067, 105.32480913727387, 105.91632525750855, 106.51700568369206, 107.1235745798095, 107.73274430715371, 108.34121939192138, 108.94570720063568, 109.54293192715555, 110.12965033633279, 110.70266844693307, 111.2588586673597, 111.79517706021025, 112.30868049797054, 112.79654352149696, 113.25607474337716, 113.68473265851593, 114.08014073870814, 114.44010169867155, 114.76261082899343, 115.04747942980121, 115.30360803821657, 115.51644136953719, 115.68366691839145, 115.8039686193995, 115.87648307388434]}}}, "system_weibull": {"L10r_ours": 37.738806540242365, "L10mr_ours": 3.772512626278256, "L10r_masta": 32.41602877727204, "L10mr_masta": 3.240438086130602}, "system_aux": {"MB1_Fr": 36357.91270651364, "MB2_Fr": 31892.200776420363, "note": "external moment ~79000 kNm not reacted by 2 bearings; drivetrain path missing"}};
+const MASTA={MB1:{Fr:7714.8,Fa:3043.1,M:4278,dr:206.5,da:-193.2,ps:-0.0665,Qmax:455.67,loaded:36,Qci:983.11,Qce:1068.77,qci:55.79,qce:60.65,L10r:33.44,L10mr:3.343,aISO:0.09996,sig:1404.6,P281:7714.8,L10:34.03,e:0.5165,S0:11.95},
+ MB2:{Fr:341.5,Fa:3043.1,M:172.67,dr:40.1,da:-193.2,ps:-0.0665,Qmax:115.90,loaded:87,Qci:983.11,Qce:1068.77,qci:55.79,qce:60.65,L10r:646.75,L10mr:64.65,aISO:0.09995,sig:848.9,P281:3671.7,L10:404.36,e:0.5165,S0:43.6}};
+function pct(o,m){if(!m)return'';let p=100*(o-m)/m;let c=Math.abs(p)<1?'pct-g':Math.abs(p)<10?'pct-w':'pct-b';
+ return '<span class="'+c+'">'+(p>=0?'+':'')+p.toFixed(p===0?0:(Math.abs(p)<1?2:1))+'%</span>'}
+function row(lbl,m,o,diff,unit){return '<tr><td>'+lbl+'</td><td class="mono">'+m+'</td><td class="mono">'+o+'</td><td class="mono">'+(diff||'')+'</td></tr>'}
+
+function ratingTable(bn){const m=MASTA[bn],b=D.bearings[bn],L=b.modeL,Dd=b.modeD;
+ const f=(x,n)=>x==null?'—':(+x).toFixed(n==null?2:n);
+ return '<table><thead><tr><th>항목</th><th>MASTA</th><th>trb_life</th><th>차이</th></tr></thead><tbody>'+
+ '<tr><td colspan=4 style="color:var(--text-muted);font-size:12px;padding-top:10px">라미나·정격 (ISO/TS 16281)</td></tr>'+
+ row('Q_ci [kN]',f(m.Qci),f(Dd.Qci),pct(Dd.Qci,m.Qci))+
+ row('Q_ce [kN]',f(m.Qce),f(Dd.Qce),pct(Dd.Qce,m.Qce))+
+ row('q_ci [kN]',f(m.qci),f(Dd.qci),pct(Dd.qci,m.qci))+
+ row('q_ce [kN]',f(m.qce),f(Dd.qce),pct(Dd.qce,m.qce))+
+ '<tr><td colspan=4 style="color:var(--text-muted);font-size:12px;padding-top:10px">하중분포 (모드 L 하중처방)</td></tr>'+
+ row('Q_max [kN]',f(m.Qmax),f(L.Qmax),pct(L.Qmax,m.Qmax))+
+ row('부하 롤러 수',m.loaded,L.loaded,'')+
+ '<tr><td colspan=4 style="color:var(--text-muted);font-size:12px;padding-top:10px">정격수명</td></tr>'+
+ row('L10r [Mr]',f(m.L10r,1),f(L.L10r,1),pct(L.L10r,m.L10r))+
+ row('a_ISO',f(m.aISO,5),f(L.aISO!=null?L.aISO:Dd.aISO,5),pct(Dd.aISO,m.aISO))+
+ row('L10mr [Mr]',f(m.L10mr,2),f(L.L10mr,2),pct(L.L10mr,m.L10mr))+
+ row('σ_max [MPa] (참고·범위외)',f(m.sig,1),'미구현','')+
+ '</tbody></table>'}
+
+function dispTable(bn){const m=MASTA[bn],b=D.bearings[bn],L=b.modeL,Dd=b.modeD;const f=(x,n)=>(+x).toFixed(n==null?1:n);
+ return '<table><thead><tr><th>항목</th><th>MASTA</th><th>모드 D<br><span style="font-weight:400;color:var(--text-muted)">변위처방→반력</span></th><th>모드 L<br><span style="font-weight:400;color:var(--text-muted)">하중처방→변위</span></th></tr></thead><tbody>'+
+ '<tr><td>F_r 반경 [kN]</td><td class="mono">'+f(m.Fr)+'</td><td class="mono">'+f(Dd.Fr)+' '+pct(Dd.Fr,m.Fr)+'</td><td class="mono">입력</td></tr>'+
+ '<tr><td>F_a 축 [kN]</td><td class="mono">'+f(m.Fa)+'</td><td class="mono">'+f(Math.abs(Dd.Fa))+' '+pct(Math.abs(Dd.Fa),m.Fa)+'</td><td class="mono">입력</td></tr>'+
+ '<tr><td>δ_r [µm]</td><td class="mono">'+f(m.dr)+'</td><td class="mono">입력</td><td class="mono">'+f(L.dr)+'</td></tr>'+
+ '<tr><td>δ_a [µm]</td><td class="mono">'+f(m.da)+'</td><td class="mono">입력</td><td class="mono">'+f(Math.abs(L.da)*Math.sign(m.da))+'</td></tr>'+
+ '<tr><td>ψ 미스얼라인 [mrad]</td><td class="mono">'+f(m.ps,4)+'</td><td class="mono">입력</td><td class="mono">'+f(L.ps,4)+'</td></tr>'+
+ '</tbody></table>'}
+
+// ── SVG line chart: 롤러하중 vs 각도 (MASTA vs ours) ──
+function chart(el,bn){const b=D.bearings[bn];const W=1000,H=380,P={l:64,r:20,t:16,b:46};
+ const cm=b.curve_masta,co=b.curve_ours;
+ const xs=cm.angle.concat(co.angle),ys=cm.load.concat(co.load);
+ const xmin=0,xmax=360,ymax=Math.ceil(Math.max(...ys)/50)*50||50;
+ const X=a=>P.l+(a-xmin)/(xmax-xmin)*(W-P.l-P.r), Y=v=>H-P.b-(v/ymax)*(H-P.t-P.b);
+ function path(ang,load){return ang.map((a,i)=>(i?'L':'M')+X(a).toFixed(1)+' '+Y(load[i]).toFixed(1)).join(' ')}
+ let g='';for(let a=0;a<=360;a+=60)g+='<line x1="'+X(a)+'" y1="'+P.t+'" x2="'+X(a)+'" y2="'+(H-P.b)+'"/>';
+ for(let v=0;v<=ymax;v+=ymax/5)g+='<line x1="'+P.l+'" y1="'+Y(v)+'" x2="'+(W-P.r)+'" y2="'+Y(v)+'"/>';
+ let xt='';for(let a=0;a<=360;a+=60)xt+='<text x="'+X(a)+'" y="'+(H-P.b+18)+'" text-anchor="middle">'+a+'°</text>';
+ let yt='';for(let v=0;v<=ymax;v+=ymax/5)yt+='<text x="'+(P.l-8)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+v.toFixed(0)+'</text>';
+ const svg='<svg viewBox="0 0 '+W+' '+H+'" role="img"><g class="grid">'+g+'</g>'+
+  '<g class="axis"><line x1="'+P.l+'" y1="'+(H-P.b)+'" x2="'+(W-P.r)+'" y2="'+(H-P.b)+'"/><line x1="'+P.l+'" y1="'+P.t+'" x2="'+P.l+'" y2="'+(H-P.b)+'"/></g>'+
+  xt+yt+
+  '<text class="axttl" x="'+((P.l+W-P.r)/2)+'" y="'+(H-6)+'" text-anchor="middle">롤러 각위치 (°)</text>'+
+  '<text class="axttl" transform="translate(16,'+((P.t+H-P.b)/2)+') rotate(-90)" text-anchor="middle">롤러 하중 (kN)</text>'+
+  '<path d="'+path(cm.angle,cm.load)+'" fill="none" stroke="var(--masta)" stroke-width="2.5"/>'+
+  '<path d="'+path(co.angle,co.load)+'" fill="none" stroke="var(--ours)" stroke-width="2" stroke-dasharray="5 3"/>'+
+  '<rect class="hit" x="'+P.l+'" y="'+P.t+'" width="'+(W-P.l-P.r)+'" height="'+(H-P.t-P.b)+'" fill="transparent"/>'+
+  '<line class="cross" x1="0" y1="'+P.t+'" x2="0" y2="'+(H-P.b)+'" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="3 3" opacity="0"/></svg>';
+ el.innerHTML='<div class="legend"><span><span class="lk" style="background:var(--masta)"></span>MASTA</span>'+
+  '<span><span class="lk" style="background:var(--ours);height:2px;border-top:2px dashed var(--ours);background:none"></span>trb_life (iso5)</span></div>'+
+  '<div class="chartbox">'+svg+'<div class="tip"></div></div>';
+ const box=el.querySelector('.chartbox'),tip=el.querySelector('.tip'),cr=el.querySelector('.cross');
+ el.querySelector('.hit').addEventListener('mousemove',e=>{
+   const sv=el.querySelector('svg'),rc=sv.getBoundingClientRect();
+   const px=(e.clientX-rc.left)/rc.width*W;const a=xmin+(px-P.l)/(W-P.l-P.r)*(xmax-xmin);
+   const idx=cm.angle.reduce((bi,v,i)=>Math.abs(v-a)<Math.abs(cm.angle[bi]-a)?i:bi,0);
+   cr.setAttribute('x1',X(cm.angle[idx]));cr.setAttribute('x2',X(cm.angle[idx]));cr.setAttribute('opacity','1');
+   tip.style.opacity=1;tip.innerHTML='<b>'+cm.angle[idx].toFixed(1)+'°</b>'+
+     '<div class="r"><span style="color:var(--masta)">MASTA</span><span class="mono">'+cm.load[idx].toFixed(1)+' kN</span></div>'+
+     '<div class="r"><span style="color:var(--ours)">trb_life</span><span class="mono">'+co.load[idx].toFixed(1)+' kN</span></div>';
+   const lx=X(cm.angle[idx])/W*box.clientWidth;
+   tip.style.left=Math.min(lx+12,box.clientWidth-160)+'px';tip.style.top='12px';
+ });
+ el.querySelector('.hit').addEventListener('mouseleave',()=>{tip.style.opacity=0;cr.setAttribute('opacity','0')});
+}
+
+function fillBearing(bn){const p=document.getElementById('pane-'+bn);const desc=bn=='MB1'?
+  '반경하중 7,715 kN·축 3,043 kN 지배. 부하존 ±73°, 약 36롤러 부하.':
+  '축하중 3,043 kN 지배(반경 341 kN). 축하중이 <b>전 롤러(87개)</b>를 접촉시켜 하중 균일.';
+ p.innerHTML='<p class="sub">'+desc+'</p><h3>① 롤러 하중분포 vs 각위치 (peak 0° 정렬)</h3><div class="ch"></div>'+
+  '<h3>② 정격·수명 대조</h3>'+ratingTable(bn)+'<h3>③ 하중·변위 (모드 D / 모드 L)</h3>'+dispTable(bn)+
+  (bn=='MB1'?'<p class="note">모드 D(동일 변위)의 반력 −4.9%는 롤러 스프링상수 계통차. 모드 L(동일 하중)의 δ_r 차이·ψ 부호는 모멘트 기준점 규약차(A.18 롤러중심 vs MASTA 노드).</p>'
+   :'<p class="note">모드 D 축반력 −5.2%는 MB1과 동일한 롤러강성 계통차. L10r +7%는 축지배(에지영향 작음)라 MB1(+17%)보다 작음.</p>');
+ chart(p.querySelector('.ch'),bn);}
+
+function fillSys(){const s=D.system_weibull,a=D.system_aux;const f=(x,n)=>(+x).toFixed(n==null?1:n);
+ document.getElementById('pane-SYS').innerHTML=
+ '<p class="sub">두 베어링을 각각 MASTA 반력으로 검증(반력처방, 주 검증)한 뒤 시스템 수명을 Weibull(e=9/8)로 결합. 전체 시스템 solve는 보조.</p>'+
+ '<h3>① 시스템 수명 — Weibull 결합 (e=9/8)</h3>'+
+ '<table><thead><tr><th>[Mr]</th><th>MB1</th><th>MB2</th><th>시스템</th></tr></thead><tbody>'+
+ '<tr><td>L10r · trb_life</td><td class="mono">'+f(D.bearings.MB1.modeL.L10r,1)+'</td><td class="mono">'+f(D.bearings.MB2.modeL.L10r,1)+'</td><td class="mono"><b>'+f(s.L10r_ours,1)+'</b></td></tr>'+
+ '<tr><td>L10r · MASTA(개별)</td><td class="mono">33.4</td><td class="mono">646.8</td><td class="mono"><b>'+f(s.L10r_masta,1)+'</b></td></tr>'+
+ '<tr><td>L10mr · trb_life</td><td class="mono">'+f(D.bearings.MB1.modeL.L10mr,2)+'</td><td class="mono">'+f(D.bearings.MB2.modeL.L10mr,1)+'</td><td class="mono"><b>'+f(s.L10mr_ours,2)+'</b></td></tr>'+
+ '<tr><td>L10mr · MASTA(개별)</td><td class="mono">3.34</td><td class="mono">64.6</td><td class="mono"><b>'+f(s.L10mr_masta,2)+'</b></td></tr>'+
+ '</tbody></table><p class="note">저수명 MB1이 시스템 지배. 시스템 L10r +16%(MB1 편차 반영). MASTA는 결합수명 미제공 → 개별값을 동일식으로 결합해 대조.</p>'+
+ '<h3>② 전체 시스템 solve (보조) — 한계</h3>'+
+ '<table><thead><tr><th>반경 반력</th><th>MASTA</th><th>trb_life 전체 solve</th></tr></thead><tbody>'+
+ '<tr><td>MB1 [kN]</td><td class="mono">7,714.8</td><td class="mono pct-b">'+f(a.MB1_Fr,0)+'</td></tr>'+
+ '<tr><td>MB2 [kN]</td><td class="mono">341.5</td><td class="mono pct-b">'+f(a.MB2_Fr,0)+'</td></tr></tbody></table>'+
+ '<div class="warnbox">⚠ <b>큰 불일치(구조적).</b> 외부 모멘트 Myz≈79,300 kN·m는 2베어링이 간격 2.5 m로 만들 수 있는 커플(≈R·2.5m, 최대 ~19,000 kN·m)을 크게 초과한다. 실제 MASTA 전체 모델에서 이 모멘트 대부분은 <b>드라이브트레인의 다른 반력경로</b>(기어박스 토크암·하우징 구속)로 흐르므로, 두 베어링만으로는 하중분배를 재현할 수 없다. ⇒ <b>반력처방(주 검증)</b>이 유효, 본 solve는 한계 문서화.</div>';
+}
+function tab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
+ document.querySelectorAll('.pane').forEach(x=>x.classList.remove('on'));
+ document.getElementById('pane-'+t).classList.add('on');}
+fillBearing('MB1');fillBearing('MB2');fillSys();
+</script></body></html>

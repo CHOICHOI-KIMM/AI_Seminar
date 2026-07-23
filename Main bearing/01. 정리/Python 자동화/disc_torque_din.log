@@ -1,0 +1,161 @@
+========================================================================
+(1) Input Power Load 로드케이스 — torque/speed 관련
+========================================================================
+    constant_torque: str = '<ERR Unable to access Constant Torque>'
+    drag_torque_specification_method: str = '<ERR Unable to access Drag Torque Spe>'
+    drag_torque_vs_speed_and_time: str = '<ERR Unable to access Drag Torque vs.>'
+    engine_idle_speed_control_pid_settings: str = '<ERR Unable to access Engine Idle Spe>'
+    power: Overridable_float = 6.283185307179586
+    power_load_for_pid_control: str = '<ERR Unable to access Power Load For >'
+    specified_angle_for_input_torque: str = '<ERR Unable to access Specified Angle>'
+    specified_time_for_input_torque: str = '<ERR Unable to access Specified Time >'
+    speed: Overridable_float = 0.6283185307179586
+    speed_vs_time: str = '<ERR Unable to access Speed Vs Time b>'
+    system_deflection_torque_also_applies_to_advanced_system_deflection: str = '<ERR Unable to access System Deflecti>'
+    system_deflection_torque_method: str = '<ERR Unable to access System Deflecti>'
+    target_engine_idle_speed: str = '<ERR Unable to access Target Engine I>'
+    target_speed: str = '<ERR Unable to access Target Speed be>'
+    target_speed_input_type: str = '<ERR Unable to access Target Speed In>'
+    target_speed_vs_time: str = '<ERR Unable to access Target Speed Vs>'
+    torque: Overridable_float = 10.0
+    torque_input_method: PowerLoadInputTorqueSpecificationMethod = <PowerLoadInputTorqueSpecificationMethod.CONSTANT_TORQU...
+    torque_time_profile_repeats: str = '<ERR Unable to access Torque Time Pro>'
+    torque_vs_angle: str = '<ERR Unable to access Torque vs. Angl>'
+    torque_vs_angle_and_speed: str = '<ERR Unable to access Torque vs. Angl>'
+    torque_vs_time: str = '<ERR Unable to access Torque vs. Time>'
+    use_engine_idle_speed_control: str = '<ERR Unable to access Use Engine Idle>'
+    vehicle_speed_to_start_idle_control: str = '<ERR Unable to access Vehicle Speed t>'
+    vehicle_speed_to_stop_idle_control: str = '<ERR Unable to access Vehicle Speed t>'
+
+[torque+speed 동시 설정 시험] 파일 Mx(토크)=25408 kNm
+  ipl.torque 설정 OK → 25408300.0
+  ipl.speed = 0.5492697763683322  torque_input_method = PowerLoadInputTorqueSpecificationMethod.CONSTANT_TORQUE
+  → 해석 OK (torque+speed 공존 가능)
+
+========================================================================
+(2) 샤프트 결과 — DIN743 / 안전율 / 무한수명
+========================================================================
+  results_for(shaft) type: ShaftSystemDeflection
+    calculate_outer_diameter_to_achieve_fatigue_safety_factor_requirement: method ()
+    local_coordinate_system: CoordinateSystem3D = CoordinateSystem3D(wrapped=<SMT.MastaAPI.MathUtility.Co...
+    mass_including_connected_components: float = 47311.165600706954
+    mass_properties_in_local_coordinate_system_from_node_model: MassProperties = MassProperties(wrapped=<SMT.MastaAPI.MathUtility.MassPr...
+    number_of_cycles_for_fatigue: float = 31470.839999999997
+    polar_inertia_including_connected_components: float = 100063.76219216058
+    safety_factors: SafetyFactorGroup = SafetyFactorGroup(wrapped=<SMT.MastaAPI.Materials.Safet...
+    shaft_rating_method: ShaftRatingMethod = <ShaftRatingMethod.DIN_743201212: 0>
+    shaft_section_end_results_by_offset_with_worst_safety_factor: list = [ShaftSectionEndResultsSystemDeflection(wrapped=<SMT.Ma...
+    shaft_section_end_with_worst_fatigue_safety_factor: NoneType = None
+    shaft_section_end_with_worst_fatigue_safety_factor_for_infinite_life: ShaftSectionEndResultsSystemDeflection = ShaftSectionEndResultsSystemDeflection(wrapped=<SMT.Mas...
+    shaft_section_end_with_worst_static_safety_factor: ShaftSectionEndResultsSystemDeflection = ShaftSectionEndResultsSystemDeflection(wrapped=<SMT.Mas...
+    shaft_section_results: list = [ShaftSectionSystemDeflection(wrapped=<SMT.MastaAPI.Sys...
+  sres.shaft_section_results = [ShaftSectionSystemDeflection(wrapped=<SMT.MastaAPI.SystemMo
+     → 7개, 예시 dump:
+  sres.section_results = "<ERR 'ShaftSystemDeflection' object h>"
+  sres.rating = "<ERR 'ShaftSystemDeflection' object h>"
+  sres.shaft_rating = "<ERR 'ShaftSystemDeflection' object h>"
+  sres.din743 = "<ERR 'ShaftSystemDeflection' object h>"
+  sres.fatigue_safety_factor = "<ERR 'ShaftSystemDeflection' object h>"
+
+완료
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000022EA86F9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

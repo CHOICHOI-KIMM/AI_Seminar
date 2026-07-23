@@ -4,3 +4,12 @@
 # MinerU 중간 산출물(전체 논문명이 반복되는 깊은 경로 + 대용량 origin.pdf 사본) — 커밋 제외
 .mineru_out/
 **/.mineru_out/
+
+# P3 micropitting-wasm 빌드 출력 (target/·pkg-node/) — P3 워크스트림에서 재생성 가능, 커밋 제외
+논문 취합/03. 정리/논문구현_P3/micropitting-wasm/
+
+# MASTA 세션 잠금 파일 — 데이터 아님
+Main bearing/02. 자료/MASTA/*.lock
+
+# MS Office 임시 잠금 파일
+**/~$*

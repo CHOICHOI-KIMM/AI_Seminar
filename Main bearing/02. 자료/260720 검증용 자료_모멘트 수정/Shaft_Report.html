@@ -1,0 +1,1290 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=unicode" />
+   <meta http-equiv="X-UA-Compatible" content="IE=7.5" />
+   <style type="text/css">:root {
+	--report-even-row-gray: rgb(221,222,223);
+	--masta-tab-gray: rgb(238, 238, 238);
+	--masta-border-gray: rgb(172, 172, 172);
+	--smt-red: rgb(153,0,0);
+	--double-line-gray: rgb(204,204,204);
+	--selectioncolour: white;
+	--selectionbackground: #6495ED;
+	--spinner-colour: #888;
+	--command-image-size: 20px;
+	--thead-offset: 19px;
+
+	/* INSERT MASTA VARIABLES HERE */
+}
+
+* {
+	clear: both;
+}
+
+span {
+    margin-block: unset;
+}
+
+span.sectionHeader {
+    float: left;
+    width: 100%;
+}
+
+.padding-readonly-combo {
+    padding: 2.5px;
+}
+
+td, th, body {
+   font-family: var(--font-families, "Arial Unicode MS");
+   font-size: var(--font-size, 8px);
+}
+
+thead tr {
+    border: 1px solid black;
+	background: white;
+}
+
+thead td:has(.sortsAndFilters) {
+    min-width: 60px;
+}
+
+a{
+    display: inline-block;
+    clear: both;
+}
+
+a:empty {
+    display: block;
+}
+
+div{
+	clear: both;
+}
+
+.inputForm{
+    position: relative;
+	flex-grow: 1;
+	margin-right: 8px;
+}
+
+.inputForm > input{
+	width: 100% !important;
+}
+
+.range-half {
+    width: calc(50% - 17px);
+}
+
+.spin{
+    position: absolute;
+    width: 10px;
+    height: 6px;
+    background: #eee;
+    right: -6px;
+    border-style: outset;
+    border-width: thin;
+    display: none;
+}
+
+.spin:active{
+    border-style: inset;
+}
+
+.spin.spinUp{
+    top: 2px;
+}
+
+.spin.spinDown{
+    bottom: 2px;
+}
+
+.spinArrow{
+    display: block;
+    margin: 1px auto;
+    content: " ";
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+}
+
+.spinArrow.spinUpArrow{
+    border-bottom: 3px solid var(--spinner-colour);
+}
+
+.spinArrow.spinDownArrow{
+    border-top: 3px solid var(--spinner-colour);
+}
+
+.propertyHeading {
+    position: relative;
+}
+
+.sortsAndFilters {
+    position: absolute;
+    width: 72px;
+    height: 24px;
+    left: calc(50% - 36px);
+    top: calc(50% - 12px);
+}
+
+.sortsAndFilters a {
+    height: 16px;
+    width: 16px;
+    background-color: white;
+    border-radius: 2px;
+    border: 1px solid black;
+    padding: 3px;
+    opacity: 0;
+}
+
+.sortsAndFilters a:first-child {
+    position: relative;
+    margin: auto;
+}
+
+.filterLink img {
+    float: left;
+    margin-top: 0px;
+}
+
+.propertyHeading:hover a {
+    opacity: 1 !important;
+}
+
+.propertyHeading a:hover {
+    background-color: lightblue;
+}
+
+.tinyFilterImage {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    display: inline;
+    padding: 0;
+}
+
+.tinyFilterImage.visibleImage {
+    width: calc(var(--font-size, 8px) - 2px);
+    height: calc(var(--font-size, 8px) - 2px);
+    padding-right: 2px;
+    margin-bottom: 0px;
+}
+
+.visibleImage {
+    opacity: 1 !important;
+}
+
+thead a {
+	color: black;
+}
+
+thead a:hover {
+	text-decoration: none;
+}
+
+.chevron {
+    display: inline-block;
+    font-size: var(--font-size, 8px);
+}
+
+thead, div.tabHeader, select.subReport {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+body:has(div.tabHeader):has(thead) thead {
+    top: calc(var(--thead-offset) - 1px);
+}
+
+body:has(.tabHeader:nth-child(1)):has(thead) thead {
+    top: calc(var(--thead-offset) + 17px);
+}
+
+.tabHeader:nth-child(1){
+	top: var(--thead-offset);
+}
+
+.bold, .propertyHeading {
+    font-weight: bold;
+}
+
+.propertyHeading .toolTip{
+    font-weight: 450;
+}
+
+.toolTip {
+    text-align: left;
+    padding: 5px !important;
+}
+
+form {
+   margin: 0;
+   padding: 0;
+}
+
+/*Tables*/
+th.mainTableHeading {
+    color: var(--main-table-heading-color, black);
+	background: var(--main-table-heading-background-color, --smt-red);
+    font-size: var(--main-table-heading-font-size, 11px);
+}
+
+th.rowHeading {
+    color: black;
+}
+
+th.columnHeading
+{
+    background-color: #999;
+    color: white;
+}
+
+/*Tables*/
+
+span.sectionHeader
+{
+    font-weight: bold;
+    font-size: 1.2em;
+    color: black;
+    border-top: 5px double var(--double-line-gray);
+}
+
+.bannertable
+{
+    margin-bottom: 0.1em;
+    border-collapse: collapse; 
+
+}
+
+table
+{
+    margin-top: 0px;
+    margin-bottom: 10px;
+    border-collapse: collapse; 
+    border: 1px solid #333;
+	border-spacing: 0;
+    position: relative;
+}
+
+.outerTable, .tabHeader {
+    margin-top: 0px;
+    margin-bottom: 0;
+    border-collapse: collapse;
+    border: 0em solid white;
+	background: white;
+}
+
+.outerTable{
+    display: flex;
+    flex-direction: row;
+}
+
+.columnTable {
+    margin-top: 0;
+    margin-bottom: 0px;
+    border-collapse: collapse;
+    border: 0em solid white;
+	display: inline-block;
+	vertical-align: top;
+	padding: 5px;
+}
+
+.columnTableCell:has(.tabHeader)  {
+	display: block;
+	padding-top: 5px;
+}
+
+br
+{
+    clear: both;
+}
+caption
+{
+    text-align: left;
+    font-weight: bold;
+    font-size: 0.7em;
+}
+td,th
+{
+    text-align: left;
+    padding: 5px 12px;
+}
+
+td:has(details) {
+    padding: 1px 4px;
+}
+
+td
+{ 
+    min-height: 1em;
+}
+img
+{
+    border: none;
+    padding-bottom: 0.2em;
+}
+td:has(img) {
+    text-align: center;
+}
+ul {
+    list-style-type: none;
+    padding-left: 25px;
+    margin: 0;
+}
+
+ul ul {
+    font-size: 0.8em;
+    padding-left: 40px;
+}
+
+li
+{
+    margin-bottom: 0;
+    margin-top: 0;
+    border-bottom: 1px dotted var(--double-line-gray);
+    padding-bottom: 4px;
+    padding-top: 4px;
+    font-weight: bold;
+}
+
+ul ul li {
+    border: none;
+    font-weight: normal;
+    padding: 2px 0;
+}
+
+FIGURE, FIGCAPTION {
+
+display: block;
+font-style: italic;
+font-variant: small-caps;
+
+}
+
+/* Styling for floating tooltips in table cells */
+
+.toolTipContainer {
+}
+
+.toolTipContainer div.toolTip {
+    display: none;
+}
+
+.toolTipContainer:hover {
+    position: relative;
+    top: 0px;
+    left: 0px;
+    color: black;
+    margin-left: 0px;
+    z-index: 1000;
+}
+
+.toolTipContainer:hover div.toolTip {
+    display: block;
+    color: black;
+    position: absolute;
+    top: 1.5em;
+    left: 1em;
+    width: auto;
+    min-width: 2em;
+    white-space: nowrap;
+    padding: 0.75em 1.5em;
+    background: #FFFACD;
+    border: 2px solid gold;
+    z-index: 1000;
+}
+
+div.info 
+{
+    font-size: 1.1em;
+    font-weight:bold;
+    font-family: 'Webdings','Arial';
+    text-align: center;
+    color: #042271;
+}
+td.info
+{
+    text-align: left;
+    padding-left: 0.1em;
+    padding-right: 0.1em;
+    padding-bottom: 0.1em;
+    padding-top: 0.1em;
+    /*white-space: nowrap;*/
+}
+/* End of styling for floating tooltips in table cells */
+
+/* Styling for headings */
+
+.heading_very_small {
+    margin-left: 5px;
+    display: block;
+    font-size: 0.75em;
+    font-weight: bold;
+    color: var(--report-heading-color, var(--smt-red));
+}
+.heading_regular {
+    margin-left: 5px;
+    display: block;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--report-heading-color, var(--smt-red));
+}
+.heading_medium {
+    margin-left: 5px;
+    display: block;
+    font-size: 1.4em;
+    font-weight: bold;
+    color: var(--report-heading-color, var(--smt-red));
+}
+.heading_large {
+    margin-left: 5px;
+    display: block;
+    font-size: 1.6em;
+    font-weight: bold;
+    color: var(--report-heading-color, var(--smt-red));
+}
+
+details.heading_regular {
+    width: max-content;
+}
+
+details.heading_regular > summary::after {
+    font-size: 12px;
+    padding-top: 2px;
+    padding-left: 5px;
+}
+
+/* End of styling for headings */
+
+/* Styling for links */
+
+a {
+    text-decoration: none;
+    color: var(--smt-red);
+}
+
+table a {
+    color: #042271;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* End of styling for links */
+
+/* Styling for printing */
+
+@media print {
+    div.info, .noprint {
+		display: none;
+    }
+
+    thead, div.tabHeader, select.subReport {
+    position: relative !important;
+}
+}
+
+/* End of styling for printing */
+
+/* Styling for section headings */
+
+ .sectionHeaderRule {
+     margin-bottom: 20px;
+ }
+
+/* End of Styling for section headings */
+
+/* Styling for command buttons */
+
+.commandsContainer {
+    display: flex;
+    margin-bottom: 4px;
+}
+
+.commandsContainer a {
+    float: left;
+    padding: 3px;
+}
+
+.commandsContainer a img {
+    padding: 0;
+    margin: 0;
+}
+
+/* End of Styling for command buttons */
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.nullable-checkbox {
+    display: none;
+}
+
+.nullable-checkbox:checked {
+    display: block;
+}
+
+label:has(.nullable-checkbox) {
+    height: auto;
+    min-height: 13px;
+}
+
+.checkmark {
+    position: absolute;
+    top: 1px;
+    left: 6px;
+    height: 13px;
+    width: 13px;
+    background-color: darkgrey;
+    border: none;
+    border-radius: 2px;
+}
+
+.checkmark:after {
+    content: ' ';
+    position: absolute;
+    background-color: white;
+    width: 11px;
+    height: 3px;
+    left: 1px;
+    top: 5px;
+    rotate: -45deg;
+    display: block;
+}
+
+.nullable-checkbox:checked ~ .checkmark {
+    display: none;
+}
+
+input[type="checkbox"] {
+    accent-color: #042271;
+    position: relative;
+    margin: 0px 3px 0px 3px;
+    width: 14px;
+    vertical-align: middle;
+}
+
+input[type="checkbox"]:disabled{
+    appearance: none;
+    margin: 0;
+}
+
+input[type="checkbox"]:disabled::after {
+    margin: -4px;
+    content: "No";
+}
+
+input[type="checkbox"]:checked:disabled::after{
+    content: "Yes";
+}
+
+.selection-area {
+    background: rgba(46, 115, 252, 0.11);
+    border: 2px solid rgba(98, 155, 255, 0.81);
+    border-radius: 0.1em;
+}
+.selectable-table td.cell-selected {
+  background-color: #6495ED;
+  color: white;
+}
+.selectable-table td.cell-selected select[type="text"] {
+  background-color: #6495ED;
+  color: white;
+}
+
+.selectable-table input {
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: 1px 3px;
+}
+
+.selectable-table:hover input:not([type="checkbox"]:disabled) {
+    background-color: white;
+    border: 1px solid #999;
+    padding: 1px 3px;
+}
+
+.selectable-table select {
+    border: 1px solid transparent;
+    background-color: transparent;
+}
+
+.selectable-table:hover select {
+    border: 1px solid black;
+    background-color: white;
+}
+
+.tablinks {
+  font-size: var(--font-size, 8px);
+  background-color: var(--masta-tab-gray);
+  border: 1px solid var(--masta-border-gray);
+  outline: none;
+  cursor: pointer;
+  padding: 3px 8px 0px 8px;
+  transition: 0.3s;
+}
+
+/* Change background color of buttons on hover */
+.tablinks:hover {
+  background-color: var(--masta-border-gray);
+}
+
+/* Create an active/current tablink class */
+.tabHeader .active {
+  background-color: white;
+  border-bottom: 1px solid white;
+}
+
+.tabContent {
+	position: relative;
+    z-index: 0;
+}
+
+.noPad {
+	padding: 0;
+}
+
+select.subReport {
+    color: var(--smt-red);
+    border: 1px solid transparent;
+}
+
+select.subReport:hover {
+    border: 1px solid var(--smt-red);
+}
+
+.tableWithCommandsWrapper{
+    display: table;
+    margin: 0px 2px 2px 2px;
+}
+
+.tableWithCommandsWrapper div.commandsContainer {
+    opacity: 0;
+}
+
+.tableWithCommandsWrapper:hover div.commandsContainer {
+    opacity: 1;
+}
+
+.imageWithCommandsWrapper div.commandsContainer {
+    opacity: 0;
+}
+
+.imageWithCommandsWrapper:hover div.commandsContainer {
+    opacity: 1;
+}
+
+.imageWithCommandsWrapper {
+    text-align: center;
+}
+
+details>summary {
+  color: black;
+  outline: none;
+  border: 1px solid transparent;
+  list-style: none;
+  padding: 1px 3px;
+  white-space: break-spaces;
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+
+details > summary:hover, details > summary:focus {
+    border: 1px solid black;
+}
+
+summary::marker {
+  content: none;
+}
+
+details div{
+  display: inline;
+  color: black;
+  border: none;
+}
+
+summary::after {
+  content: ' ▼';
+  font-size: 10px;
+  margin: auto 0;
+}
+details {
+  display: inline-block;
+  max-width: 300px;
+  cursor: default;
+}
+details:not(:only-child){
+  vertical-align: middle;
+  padding: 2px 1px;
+}
+details:only-child{
+  width: 100% !important;
+}
+
+.dropdownItemsContainer {
+    height: max-content;
+    max-height: 200px;
+    max-width: 500px;
+    position: absolute;
+    z-index: 1000;
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+.fitWindowHeight {
+    height: calc(100% - 10px);
+}
+
+details ul {
+  background: white;
+  border: 1px solid black;
+  padding: 0;
+  padding-inline-start: 0;
+}
+details span{
+  color: black;
+}
+details li{
+  position: relative;
+  z-index: 1001;
+  background: white;
+  border-bottom: 0;
+  padding: 3px 6px;
+  font-weight: normal;
+  min-height: calc(var(--font-size)*1.34);
+}
+details li:hover, details li:focus {
+    background-color: rgb(200, 200, 200);
+}
+details img {
+  height: 20px;
+  width: 20px;
+  margin-top: 0;
+  margin-right: 2px;
+  padding-bottom: 0.25em;
+}
+details div img{
+	vertical-align: middle;
+}
+
+::selection {
+    color: var(--selectioncolour);
+    background: var(--selectionbackground);
+}
+pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5px}.hljs{background:#eee;color:#000}.hljs-comment,.hljs-quote,.hljs-variable{color:green}.hljs-built_in,.hljs-keyword,.hljs-name,.hljs-selector-tag,.hljs-tag{color:#00f}.hljs-addition,.hljs-attribute,.hljs-literal,.hljs-section,.hljs-string,.hljs-template-tag,.hljs-template-variable,.hljs-title,.hljs-type{color:#a31515}.hljs-deletion,.hljs-meta,.hljs-selector-attr,.hljs-selector-pseudo{color:#2b91af}.hljs-doctag{color:grey}.hljs-attr{color:red}.hljs-bullet,.hljs-link,.hljs-symbol{color:#00b0e8}.hljs-emphasis{font-style:italic}.hljs-strong{font-weight:700}
+:root {
+	--font-families: 'Segoe UI','Verdana','Arial','Arial Unicode MS','Microsoft Sans Serif','Microsoft YaHei','Harrington';
+	--font-size: 12px;
+	--main-table-heading-font-size: 17px;
+	--main-table-heading-color: #FFFFFF;
+	--main-table-heading-background-color: #990000;
+	--report-heading-color: #990000;
+	--smt-red: #990000;
+}
+</style>
+   <title>MASTA Report</title>
+</head>
+<body scroll="auto">
+<img width="322" height="43" src="Shaft_Report.html_Images\6d0ba1b7-8ab0-49ef-a078-c407f836ec12.Png" align="right"><a href="https://masta.smartmt.com/ICommand7355"><img width="174" height="50" src="Shaft_Report.html_Images\300a6eed-7cfb-408a-aac4-bf94967dbe30.Png" align="left" title="Change Company Logo"></a><br><span class="heading_medium"><div class="bold">System Deflection results for 'New Design\Main Shaft' in 'Fz_min'</div></span><br><a name="Shaft_System_Deflection"></a><span class="sectionHeader">Shaft System Deflection</span><ul><li><a href="#Shaft_System_Deflection__Safety_Factor_Report">Safety Factor Report</a></li><li><a href="#Shaft_System_Deflection____Shaft_Details">Shaft Details</a></li><li><a href="#Shaft_System_Deflection____Loading_Summary">Loading Summary</a></li><li><a href="#Shaft_System_Deflection____2D_Drawing">2D Drawing</a></li><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:_">Component Detailed Analysis: </a><ul><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:___Shaft_Analysis">Shaft Analysis</a></li><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Displacement_-_Linear">Shaft Damage Results\Displacement - Linear</a></li><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Stress_-_Torsional">Shaft Damage Results\Stress - Torsional</a></li><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Displacement_-_Angular">Shaft Damage Results\Displacement - Angular</a></li><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Stress_-_Bending">Shaft Damage Results\Stress - Bending</a></li></ul></li><li><a href="#Shaft_System_Deflection__Connection_Forces_in_Local_Coordinate_System">Connection Forces in Local Coordinate System</a></li><li><a href="#Shaft_System_Deflection__Node_Forces_in_Local_Coordinate_System">Node Forces in Local Coordinate System</a></li><li><a href="#Shaft_System_Deflection__Node_Deflections_in_Local_Coordinate_System">Node Deflections in Local Coordinate System</a></li><li><a href="#Shaft_System_Deflection__Node_Locations">Node Locations</a></li></ul><hr class="sectionHeaderRule" width="50%" height="1px"><a name="Shaft_System_Deflection__Safety_Factor_Report"></a><table border="1"><tr><th class="columnHeading"><div class="cellContent">Component</div></th><th class="columnHeading"><div class="cellContent"></div></th><th class="columnHeading"><div class="cellContent">Description</div></th><th class="columnHeading"><div class="cellContent">Safety Factor</div></th><th class="columnHeading"><div class="cellContent">Required</div></th><th class="columnHeading"><div class="cellContent">Normalised</div></th><th class="columnHeading"><div class="cellContent">Reliability (%)</div></th><th class="columnHeading"><div class="cellContent">Damage (%)</div></th><th class="columnHeading"><div class="cellContent">Time to Failure (hr)</div></th><th class="columnHeading"><div class="cellContent"></div></th></tr><tr style="background-color:#dddedf;"><td rowspan="2"><div class="cellContent"><a href="https://masta.smartmt.com/ICommand7336">New Design\Main Shaft</a></div></td><td rowspan="2"><div class="cellContent"><img width="16" height="16" src="Shaft_Report.html_Images\658e7c42-4767-48ec-ace9-713bdbaf8644.Png"></div></td><td><div class="cellContent">DIN 743:2012-12, Fatigue Safety Factor for Infinite Life</div></td><td><div class="cellContent">4.6253</div></td><td><div class="cellContent">1</div></td><td><div class="cellContent">4.6253</div></td><td><div class="cellContent">N/A</div></td><td><div class="cellContent">N/A</div></td><td><div class="cellContent">N/A</div></td><td rowspan="2"><div class="cellContent" title="Safety Factor is above the required Safety Factor."><img width="22" height="22" src="Shaft_Report.html_Images\df5ce537-2580-4701-b13b-3d4d12cba13d.Png"></div></td></tr><tr><td><div class="cellContent">DIN 743:2012-12, Safety Factor for Avoidance of Permanent Deformation</div></td><td><div class="cellContent">10.965</div></td><td><div class="cellContent">1</div></td><td><div class="cellContent">10.965</div></td><td><div class="cellContent">N/A</div></td><td><div class="cellContent">N/A</div></td><td><div class="cellContent">N/A</div></td></tr></table><div class="outerTable"><div class="columnTable"><div class="columnTableCell"><a name="Shaft_System_Deflection____Shaft_Details"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9649"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand9650"></a></div><div class="editTable"><a href="https://masta.smartmt.com/ICommand9651"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Shaft Details</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="38edd1fa-6e0f-44ac-8570-c4666f229d86"><div class="cellContent propertyHeading" title="Includes mounted cylindrical gears, bearings (mounted race only), pulleys, synchroniser sleeves, mass discs, power loads and point loads.
+
+Shaft System Deflection
+►Mass Including Connected Components (kg)">Mass Including Connected Components (kg)</div></td><td style="text-align:stretch" class="info" column="1" id="8b9b83c8-bfae-416d-ac66-501fe9c3502f"><div class="cellContent" title="Includes mounted cylindrical gears, bearings (mounted race only), pulleys, synchroniser sleeves, mass discs, power loads and point loads.
+
+Shaft System Deflection
+►Mass Including Connected Components (kg) (Mass)"><div class="info">i</div></div></td><td column="2" id="14120c98-3d63-4cd3-9ada-21c42b56fd93"><div class="cellContent" title="Mass Including Connected Components
+47311.1656007069
+Includes mounted cylindrical gears, bearings (mounted race only), pulleys, synchroniser sleeves, mass discs, power loads and point loads."><span style="white-space: nowrap">47311.1656</span></div></td></tr><tr><td column="0" id="0fe0a691-2379-4fdb-b467-a05627d6d6b3"><div class="cellContent"><div class="toolTipContainer propertyHeading" title="Includes mounted cylindrical gears, bearings (mounted race only), pulleys, synchroniser sleeves, mass discs, power loads and point loads.
+
+Shaft System Deflection
+►Polar Inertia Including Connected Components (kg&sdot;m&#xB2;)">Polar Inertia Including Connected Components (kg&sdot;m<sup>2</sup>)</div></div></td><td style="text-align:stretch" class="info" column="1" id="ce86b6fc-7a45-4cf5-8dc6-640dbc2c1335"><div class="cellContent"><div class="toolTipContainer" title="Includes mounted cylindrical gears, bearings (mounted race only), pulleys, synchroniser sleeves, mass discs, power loads and point loads.
+
+Shaft System Deflection
+►Polar Inertia Including Connected Components (kg&sdot;m&#xB2;) (Moment of Inertia)"><div class="info">i</div></div></div></td><td column="2" id="334adac1-b5df-4d3d-a3ab-cbdef3205061"><div class="cellContent" title="Polar Inertia Including Connected Components
+100063.762192161
+Includes mounted cylindrical gears, bearings (mounted race only), pulleys, synchroniser sleeves, mass discs, power loads and point loads."><span style="white-space: nowrap">100063.7622</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="b0974d53-519b-4eb4-928f-86acbe2ee659"><div class="cellContent propertyHeading" title="Press to calculate the Outer Diameter to Achieve Fatigue Safety Factor Requirement. Once calculated the result will be available in the reports and via the 'Shaft Results' Tab.
+
+Shaft System Deflection
+►Calculate Outer Diameter to Achieve Fatigue Safety Factor Requirement">Calculate Outer Diameter to Achieve Fatigue Safety Factor Requirement</div></td><td style="text-align:stretch" class="info" column="1" id="93c856a2-11a1-487b-ad49-561bcdfa63ca"><div class="cellContent" title="Press to calculate the Outer Diameter to Achieve Fatigue Safety Factor Requirement. Once calculated the result will be available in the reports and via the 'Shaft Results' Tab.
+
+Shaft System Deflection
+►Calculate Outer Diameter to Achieve Fatigue Safety Factor Requirement"><div class="info">i</div></div></td><td column="2" id="c1a4c0e0-ee53-4d01-842b-5fd7fede6fa1"><div class="cellContent" title="Calculate Outer Diameter to Achieve Fatigue Safety Factor Requirement
+Run
+Press to calculate the Outer Diameter to Achieve Fatigue Safety Factor Requirement. Once calculated the result will be available in the reports and via the 'Shaft Results' Tab."><a class="buttonCommand" href="https://masta.smartmt.com/ICommand7337">Run</a></div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Shaft_System_Deflection____Loading_Summary"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9652"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand9653"></a></div><div class="editTable"><a href="https://masta.smartmt.com/ICommand9654"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="2" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Loading Summary</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="02f5268e-b0f3-4762-a590-7abd140e106e"><div class="cellContent propertyHeading" title="Speed (rev/min)
+
+Shaft System Deflection
+►Speed (rev/min)">Speed (rev/min)</div></td><td column="1" id="0916d010-b212-4171-a7c3-2c7c5cfbee3c"><div class="cellContent" title="Speed
+0"><span style="white-space: nowrap">0</span></div></td></tr></tbody></table></div></div></div><div class="columnTable"><div class="columnTableCell"><a name="Shaft_System_Deflection____2D_Drawing"></a><div class="imageWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9655"></a></div></div><a href="https://masta.smartmt.com/ICommand7338"><img width="500" height="436" src="Shaft_Report.html_Images\2fd515a8-9d64-4daa-a730-a115d15cb941.Png"></a></div></div></div></div><a name="Shaft_System_Deflection__Component_Detailed_Analysis:_"></a><span class="sectionHeader">Component Detailed Analysis: </span><ul><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:___Shaft_Analysis">Shaft Analysis</a></li><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Displacement_-_Linear">Shaft Damage Results\Displacement - Linear</a></li><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Stress_-_Torsional">Shaft Damage Results\Stress - Torsional</a></li><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Displacement_-_Angular">Shaft Damage Results\Displacement - Angular</a></li><li><a href="#Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Stress_-_Bending">Shaft Damage Results\Stress - Bending</a></li></ul><hr class="sectionHeaderRule" width="50%" height="1px"><a name="Shaft_System_Deflection__Component_Detailed_Analysis:___Shaft_Analysis"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9656"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand9657"></a></div><div class="editTable"><a href="https://masta.smartmt.com/ICommand9658"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Shaft Analysis</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="e3e4ec10-1786-49a9-9a0c-cb18d4eb7212"><div class="cellContent propertyHeading" title="Shaft Rating Method
+
+Shaft Damage Results
+►Shaft Settings
+►Shaft Rating Method">Shaft Rating Method</div></td><td column="1" id="5a45cd55-600b-425c-b6eb-c4e5a7a59001"><div class="cellContent"></div></td><td column="2" id="9a6ec602-15a6-477f-b51c-0cf2bc8871c5"><div class="cellContent" title="Shaft Rating Method
+DIN 743:2012-12">DIN 743:2012-12</div></td></tr><tr><td column="0" id="e4b68b26-3725-495c-bed8-fa89abd81585"><div class="cellContent propertyHeading" title="Worst Static Safety Factor
+
+Shaft Damage Results
+►Worst Static Safety Factor">Worst Static Safety Factor</div></td><td column="1" id="945e006a-b7c3-49fb-aea1-728dbea64669"><div class="cellContent"></div></td><td column="2" id="fdbb946c-f8f2-42e3-9415-f45065f888b7"><div class="cellContent" title="Worst Static Safety Factor
+10.9650315650181"><span style="white-space: nowrap">10.965</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="74e7b0f5-c51c-4099-9e5d-d1879d69c03a"><div class="cellContent propertyHeading" title="Worst Fatigue Safety Factor For Infinite Life
+
+Shaft Damage Results
+►Worst Fatigue Safety Factor For Infinite Life">Worst Fatigue Safety Factor For Infinite Life</div></td><td column="1" id="b7d9b9a9-1e77-4392-a1b5-2390d6d1799f"><div class="cellContent"></div></td><td column="2" id="1ec831b7-5f4b-4d66-8aaa-d003289cd372"><div class="cellContent" title="Worst Fatigue Safety Factor For Infinite Life
+4.6253194026835"><span style="white-space: nowrap">4.6253</span></div></td></tr></tbody></table></div><div class="outerTable"><div class="columnTable"><div class="columnTableCell"><a name="Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Displacement_-_Linear"></a><div class="imageWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9659"></a></div><div class="copyDataToClipboard"><a href="https://masta.smartmt.com/ICommand9660"></a></div></div><a href="https://masta.smartmt.com/ICommand7339"><img width="500" height="500" src="Shaft_Report.html_Images\a7ddc855-b730-4b29-ada1-4153ad21825a.Png"></a></div><br></div><div class="columnTableCell"><a name="Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Stress_-_Torsional"></a><div class="imageWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9661"></a></div><div class="copyDataToClipboard"><a href="https://masta.smartmt.com/ICommand9662"></a></div></div><a href="https://masta.smartmt.com/ICommand7340"><img width="500" height="500" src="Shaft_Report.html_Images\a881e469-9b8b-4467-9054-398d2d8ddd86.Png"></a></div><br></div></div><div class="columnTable"><div class="columnTableCell"><a name="Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Displacement_-_Angular"></a><div class="imageWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9663"></a></div><div class="copyDataToClipboard"><a href="https://masta.smartmt.com/ICommand9664"></a></div></div><a href="https://masta.smartmt.com/ICommand7341"><img width="500" height="500" src="Shaft_Report.html_Images\9d3e0950-f623-43a8-b283-41bf0164217f.Png"></a></div><br></div><div class="columnTableCell"><a name="Shaft_System_Deflection__Component_Detailed_Analysis:_____Shaft_Damage_Results_Stress_-_Bending"></a><div class="imageWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9665"></a></div><div class="copyDataToClipboard"><a href="https://masta.smartmt.com/ICommand9666"></a></div></div><a href="https://masta.smartmt.com/ICommand7342"><img width="500" height="500" src="Shaft_Report.html_Images\4e6c68f8-004d-4035-8d8e-fe7c36001a6d.Png"></a></div><br></div></div></div><hr class="sectionHeaderRule" width="50%" height="1px"><a name="Shaft_System_Deflection__Connection_Forces_in_Local_Coordinate_System"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9667"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand9668"></a></div><div class="editTable"><a href="https://masta.smartmt.com/ICommand9669"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="8" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Connection Forces in Local Coordinate System</div></th></tr><tr style="background-color:#DDDEDF;"><td rowspan="2" column="0" id="7a9ed15f-9593-4d58-9753-2433e0605d73"><div class="cellContent"></div></td><td style="text-align:center" rowspan="2" column="1" id="a48ae6bf-d0db-4708-9300-3be314c85c20"><div class="cellContent propertyHeading" title="Description
+
+Shaft System Deflection
+►Connected Components' Forces in LCS
+►Details
+►Description">Description</div></td><td style="text-align:center" colspan="3" column="2" id="694ed4c2-44e0-4c79-897a-15ef46f4e35f"><div class="cellContent propertyHeading" title="Linear
+
+Shaft System Deflection
+►Connected Components' Forces in LCS
+►Force
+►Linear
+►X (kN)">Linear</div></td><td style="text-align:center" colspan="3" column="5" id="97373790-dd6f-4090-a172-919a9464ed49"><div class="cellContent propertyHeading" title="Angular
+
+Shaft System Deflection
+►Connected Components' Forces in LCS
+►Force
+►Angular
+►θX (N&sdot;m)">Angular</div></td></tr><tr><td style="text-align:center" column="2" id="4271b74b-090a-425b-8b7d-592c0b0e32aa"><div class="cellContent propertyHeading" title="X (kN)
+
+Shaft System Deflection
+►Connected Components' Forces in LCS
+►Force
+►Linear
+►X (kN)">X (kN)</div></td><td style="text-align:center" column="3" id="f13d1448-5fbc-47ce-9631-c900d814c963"><div class="cellContent propertyHeading" title="Y (kN)
+
+Shaft System Deflection
+►Connected Components' Forces in LCS
+►Force
+►Linear
+►Y (kN)">Y (kN)</div></td><td style="text-align:center" column="4" id="6411aaf9-200c-4011-bbf2-cc270cea9452"><div class="cellContent propertyHeading" title="Z (kN)
+
+Shaft System Deflection
+►Connected Components' Forces in LCS
+►Force
+►Linear
+►Z (kN)">Z (kN)</div></td><td style="text-align:center" column="5" id="37d935df-882f-4abc-bbca-77826310d4a3"><div class="cellContent propertyHeading" title="θX (N&sdot;m)
+
+Shaft System Deflection
+►Connected Components' Forces in LCS
+►Force
+►Angular
+►θX (N&sdot;m)">θX (N&sdot;m)</div></td><td style="text-align:center" column="6" id="a755c9df-50c5-432d-baa6-4decafab9db7"><div class="cellContent propertyHeading" title="θY (N&sdot;m)
+
+Shaft System Deflection
+►Connected Components' Forces in LCS
+►Force
+►Angular
+►θY (N&sdot;m)">θY (N&sdot;m)</div></td><td style="text-align:center" column="7" id="2d84edb9-c9c0-496d-bc50-6f6d0d328309"><div class="cellContent propertyHeading" title="θZ (N&sdot;m)
+
+Shaft System Deflection
+►Connected Components' Forces in LCS
+►Force
+►Angular
+►θZ (N&sdot;m)">θZ (N&sdot;m)</div></td></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td rowspan="3" column="0" id="22b11980-9f76-4ee7-a437-72915a89624e"><div class="cellContent"></div></td><td class=" topBorder" column="1" id="307a3310-c34f-4cab-a90e-4d36f5367a8b"><div class="cellContent" title="Description
+New Design\Main Bearing_DW"><a href="https://masta.smartmt.com/ICommand7343">New Design\Main Bearing_DW</a></div></td><td class=" topBorder" column="2" id="d3823f93-a19f-431d-9c42-6ea8793353ee"><div class="cellContent" title="X
+9972.65103381314"><span style="white-space: nowrap">9972.651</span></div></td><td class=" topBorder" column="3" id="59d8e932-b094-4a10-b237-5013a787e151"><div class="cellContent" title="Y
+-19369.4777764902"><span style="white-space: nowrap">-19369.4778</span></div></td><td class=" topBorder" column="4" id="3fac11b3-9dfd-493a-9d55-2a64771fca7e"><div class="cellContent" title="Z
+10664.2695533324"><span style="white-space: nowrap">10664.2696</span></div></td><td class=" topBorder" column="5" id="c42c5cdd-d7f0-4cd6-9ca0-c07d2a88f443"><div class="cellContent" title="θX
+10765067.8894671"><span style="white-space: nowrap">10765067.8895</span></div></td><td class=" topBorder" column="6" id="b0b96f39-04e2-487c-b1fe-3298f48ad7d3"><div class="cellContent" title="θY
+5560077.97647059"><span style="white-space: nowrap">5560077.9765</span></div></td><td class=" topBorder" column="7" id="e9093b95-92ca-4572-8285-82e130bdd91d"><div class="cellContent" title="θZ
+-3.10192729707385E-25"><span style="white-space: nowrap">0</span></div></td></tr><tr><td column="1" id="91408531-920e-4513-9a4a-515c9d15ee15"><div class="cellContent" title="Description
+New Design\Main Bearing_UW"><a href="https://masta.smartmt.com/ICommand7344">New Design\Main Bearing_UW</a></div></td><td column="2" id="16355102-2bea-4723-9e2e-531fd6b3a878"><div class="cellContent" title="X
+-18028.1735684524"><span style="white-space: nowrap">-18028.1736</span></div></td><td column="3" id="f2118124-294e-4fd3-a179-b9d47f5fe00e"><div class="cellContent" title="Y
+19420.6777766628"><span style="white-space: nowrap">19420.6778</span></div></td><td column="4" id="501ee734-2c5b-4d4d-8bb6-6f201e647db7"><div class="cellContent" title="Z
+-10664.2695515625"><span style="white-space: nowrap">-10664.2696</span></div></td><td column="5" id="c501c48c-7718-447e-ab56-10254a25e634"><div class="cellContent" title="θX
+10792837.6691703"><span style="white-space: nowrap">10792837.6692</span></div></td><td column="6" id="e4842b07-8ded-4a8e-9cb8-bfac0f278372"><div class="cellContent" title="θY
+10014841.2707671"><span style="white-space: nowrap">10014841.2708</span></div></td><td column="7" id="71e8a787-50d9-420b-8091-6b63df0b0b17"><div class="cellContent" title="θZ
+-1.65436122510606E-24"><span style="white-space: nowrap">0</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="1" id="b58813be-dec8-4ad6-859a-9af6bde4b0dc"><div class="cellContent" title="Description
+New Design\Point Load"><a href="https://masta.smartmt.com/ICommand7345">New Design\Point Load</a></div></td><td column="2" id="11f2f90c-ad35-4c28-98ca-be91214899e4"><div class="cellContent" title="X
+7591.4"><span style="white-space: nowrap">7591.4</span></div></td><td column="3" id="7990c8da-1a58-4de5-ace1-73736187015c"><div class="cellContent" title="Y
+-51.2"><span style="white-space: nowrap">-51.2</span></div></td><td column="4" id="db3a6e1f-5789-4e52-9a6e-b2d59c8dc4e9"><div class="cellContent" title="Z
+0"><span style="white-space: nowrap">0</span></div></td><td column="5" id="5b5b170d-c3e9-400d-95b2-165be3921778"><div class="cellContent" title="θX
+-69956000"><span style="white-space: nowrap">-69956000</span></div></td><td column="6" id="186467d6-50ba-4326-9598-e7e002bee62d"><div class="cellContent" title="θY
+-37291000"><span style="white-space: nowrap">-37291000</span></div></td><td column="7" id="cb9c1e4a-aec5-431a-ad19-b5824a4c65a9"><div class="cellContent" title="θZ
+0"><span style="white-space: nowrap">0</span></div></td></tr><tr><td column="0" id="42e7aae5-ed51-4044-ab74-f41f8e9e4eb0"><div class="cellContent"><div class="bold">Sum</div></div></td><td column="1" id="aa00febe-5fe7-44fc-a8d3-aad30b831ff4"><div class="cellContent"><div class="bold"><span style="white-space: nowrap">-</span></div></div></td><td column="2" id="ebb89554-1eec-4902-a55f-7d039cb859e1"><div class="cellContent"><div class="bold"><span style="white-space: nowrap">-464.1225</span></div></div></td><td column="3" id="7a481eb8-b022-4605-b997-ffe7848b7ef8"><div class="cellContent"><div class="bold"><span style="white-space: nowrap">1.726E-07</span></div></div></td><td column="4" id="37e3de6e-996d-4dc4-972d-2eccc7ebbe0c"><div class="cellContent"><div class="bold"><span style="white-space: nowrap">1.77E-06</span></div></div></td><td column="5" id="99369be6-ae5e-4ed9-8254-48bf39dd6630"><div class="cellContent"><div class="bold"><span style="white-space: nowrap">-</span></div></div></td><td column="6" id="f241dbee-e56e-4cb9-b1a0-413b61517fb5"><div class="cellContent"><div class="bold"><span style="white-space: nowrap">-</span></div></div></td><td column="7" id="ef65a4f2-36f0-4cfd-aa44-31191b1da9c9"><div class="cellContent"><div class="bold"><span style="white-space: nowrap">0</span></div></div></td></tr></tbody></table></div><a name="Shaft_System_Deflection__Node_Forces_in_Local_Coordinate_System"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9670"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand9671"></a></div><div class="editTable"><a href="https://masta.smartmt.com/ICommand9672"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="8" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Node Forces in Local Coordinate System</div></th></tr><tr style="background-color:#DDDEDF;"><td style="text-align:center" rowspan="2" column="0" id="4d731c63-6af6-49e0-a819-6e805a37887f"><div class="cellContent propertyHeading" title="Node
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Node">Node</div></td><td style="text-align:center" rowspan="2" column="1" id="66b74237-52e1-4eaf-a3c5-a0c9e6f0ac32"><div class="cellContent propertyHeading" title="Description
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Details
+►Description">Description</div></td><td style="text-align:center" colspan="3" column="2" id="bbe549c4-3132-4fc7-87c9-a3a74c2788fb"><div class="cellContent propertyHeading" title="Linear
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Force
+►Linear
+►X (kN)">Linear</div></td><td style="text-align:center" colspan="3" column="5" id="31e7a33b-a32a-4987-aea9-40d4cc292d2c"><div class="cellContent propertyHeading" title="Angular
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Force
+►Angular
+►θX (N&sdot;m)">Angular</div></td></tr><tr><td style="text-align:center" column="2" id="6110fc38-0283-4390-8832-33379b78d93f"><div class="cellContent propertyHeading" title="X (kN)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Force
+►Linear
+►X (kN)">X (kN)</div></td><td style="text-align:center" column="3" id="a6d889d9-e699-4d1a-bac2-c7999acb0608"><div class="cellContent propertyHeading" title="Y (kN)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Force
+►Linear
+►Y (kN)">Y (kN)</div></td><td style="text-align:center" column="4" id="56729ffa-0ae9-4787-ba4a-bc8f9b44dfa6"><div class="cellContent propertyHeading" title="Z (kN)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Force
+►Linear
+►Z (kN)">Z (kN)</div></td><td style="text-align:center" column="5" id="efeb6b3f-be37-462a-a0fa-188e5250de48"><div class="cellContent propertyHeading" title="θX (N&sdot;m)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Force
+►Angular
+►θX (N&sdot;m)">θX (N&sdot;m)</div></td><td style="text-align:center" column="6" id="4fea5378-e7c2-4290-9c12-dde5469c8c8b"><div class="cellContent propertyHeading" title="θY (N&sdot;m)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Force
+►Angular
+►θY (N&sdot;m)">θY (N&sdot;m)</div></td><td style="text-align:center" column="7" id="000da3ee-4a91-4896-a7a7-5d86992319b1"><div class="cellContent propertyHeading" title="θZ (N&sdot;m)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Force
+►Angular
+►θZ (N&sdot;m)">θZ (N&sdot;m)</div></td></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td class=" topBorder bottomBorder" column="0" id="7aa736d0-2373-4877-8277-2122da0b8777"><div class="cellContent" title="Node
+0 mm">0 mm</div></td><td class=" topBorder bottomBorder" column="1" id="5da4b737-3957-41c3-9691-ede6b03cc969"><div class="cellContent" title="Description
+New Design\Point Load"><a href="https://masta.smartmt.com/ICommand7346">New Design\Point Load</a></div></td><td class=" topBorder bottomBorder" column="2" id="2609778e-278b-4cb4-b04c-aa2933f75deb"><div class="cellContent" title="X
+7591.39999994932"><span style="white-space: nowrap">7591.4</span></div></td><td class=" topBorder bottomBorder" column="3" id="7f053aae-444c-4731-875f-56cd3d27ade8"><div class="cellContent" title="Y
+-51.2000001220703"><span style="white-space: nowrap">-51.2</span></div></td><td class=" topBorder bottomBorder" column="4" id="7deeae55-89e9-43fc-a68e-5398cf3c000d"><div class="cellContent" title="Z
+1.29822085252813E-15"><span style="white-space: nowrap">0</span></div></td><td class=" topBorder bottomBorder" column="5" id="a4151b42-7ade-4e50-829e-73682cce2522"><div class="cellContent" title="θX
+-69956000.000351"><span style="white-space: nowrap">-69956000.0004</span></div></td><td class=" topBorder bottomBorder" column="6" id="a87a36ea-9095-46d0-a3b4-122d2975eed1"><div class="cellContent" title="θY
+-37291000.0003978"><span style="white-space: nowrap">-37291000.0004</span></div></td><td class=" topBorder bottomBorder" column="7" id="46be7f41-eeaa-402b-93b2-2661c475962a"><div class="cellContent" title="θZ
+1.13662887970912E-20"><span style="white-space: nowrap">0</span></div></td></tr><tr><td column="0" id="8eec6e87-7440-4ee1-bcd1-43a3bfc29d0a"><div class="cellContent" title="Node
+350 mm">350 mm</div></td><td column="1" id="d4d2e008-fa75-4789-bc8c-30efe703d056"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="f38a60cb-0feb-4d3d-8e1c-38398b683d0d"><div class="cellContent" title="X
+2.12710350751877E-07"><span style="white-space: nowrap">2.127E-07</span></div></td><td column="3" id="675cb112-f819-463f-9354-767b386f40c5"><div class="cellContent" title="Y
+-2.44140625E-07"><span style="white-space: nowrap">-2.441E-07</span></div></td><td column="4" id="4adc64ad-69ce-4093-82d6-429ef246eea2"><div class="cellContent" title="Z
+2.16134536628593E-15"><span style="white-space: nowrap">0</span></div></td><td column="5" id="3457dd0b-85a4-479c-946e-55b8b519c2be"><div class="cellContent" title="θX
+5.340576171875E-05"><span style="white-space: nowrap">5.341E-05</span></div></td><td column="6" id="8b839f00-bf55-4ff2-9dca-c5094a3d2569"><div class="cellContent" title="θY
+-0.000363379716873169"><span style="white-space: nowrap">-0.0003634</span></div></td><td column="7" id="f40841ed-4e1a-4641-a273-472a3caf898f"><div class="cellContent" title="θZ
+-2.43141469253837E-20"><span style="white-space: nowrap">0</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="8da9deb5-63f7-4371-8a7c-8cfa4b78215e"><div class="cellContent" title="Node
+500 mm">500 mm</div></td><td column="1" id="98ddd7a5-1de5-44fe-b2db-637b71591073"><div class="cellContent" title="Description
+New Design\Main Bearing_UW"><a href="https://masta.smartmt.com/ICommand7347">New Design\Main Bearing_UW</a></div></td><td column="2" id="5341e51b-ed14-4536-a550-3fdff8b1e73d"><div class="cellContent" title="X
+-18028.1735685803"><span style="white-space: nowrap">-18028.1736</span></div></td><td column="3" id="a3362347-ba80-4d19-ac7d-46473efde667"><div class="cellContent" title="Y
+19420.6777769775"><span style="white-space: nowrap">19420.6778</span></div></td><td column="4" id="9fd424a7-ef6d-409c-8516-3f61b73c2c47"><div class="cellContent" title="Z
+-10664.2695522461"><span style="white-space: nowrap">-10664.2696</span></div></td><td column="5" id="97b1e669-39ba-4ae9-9b8a-f7572dd3e7ca"><div class="cellContent" title="θX
+10792837.6695786"><span style="white-space: nowrap">10792837.6696</span></div></td><td column="6" id="2f88bc06-7a4b-43b2-af8d-39ab06777fee"><div class="cellContent" title="θY
+10014841.2719727"><span style="white-space: nowrap">10014841.272</span></div></td><td column="7" id="6895c592-4334-427f-b079-de2bbc5fa88d"><div class="cellContent" title="θZ
+-5.48147776520515E-20"><span style="white-space: nowrap">0</span></div></td></tr><tr><td column="0" id="9dea5528-7f40-4a44-904e-cd7611a98ef4"><div class="cellContent" title="Node
+650 mm">650 mm</div></td><td column="1" id="1d26b7a2-e7a9-4686-921c-f9e0e616f726"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="7e0c2571-f00c-409f-963f-61b53371cba3"><div class="cellContent" title="X
+5.2720308303833E-08"><span style="white-space: nowrap">5.272E-08</span></div></td><td column="3" id="d8b04a34-5af7-4407-a24c-790047d86460"><div class="cellContent" title="Y
+-7.62939453125E-08"><span style="white-space: nowrap">-7.629E-08</span></div></td><td column="4" id="13e16e07-bc64-4eb1-93f1-70de1b175d06"><div class="cellContent" title="Z
+1.220703125E-06"><span style="white-space: nowrap">1.221E-06</span></div></td><td column="5" id="3d841219-d20f-420f-8771-f819627aa4b4"><div class="cellContent" title="θX
+0.0001220703125"><span style="white-space: nowrap">0.0001221</span></div></td><td column="6" id="29319704-186b-4c9a-88c1-1c4dbf514b9a"><div class="cellContent" title="θY
+-0.000181455165147781"><span style="white-space: nowrap">-0.0001815</span></div></td><td column="7" id="69d9d5c1-2c5f-4df8-a6d8-29b537d9943b"><div class="cellContent" title="θZ
+1.80821681904092E-21"><span style="white-space: nowrap">0</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="cdfa56b2-92a8-421e-8df2-4ac72bb190b2"><div class="cellContent" title="Node
+2850 mm">2850 mm</div></td><td column="1" id="d3d86a39-1a05-49a1-a7ab-c102eefaa03a"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="79be3208-75bd-4cc9-b939-61e00e130338"><div class="cellContent" title="X
+-6.85453414916992E-10"><span style="white-space: nowrap">0</span></div></td><td column="3" id="18b6bfb8-4f2a-4d83-a35e-40c3c93d4b49"><div class="cellContent" title="Y
+4.57763671875E-08"><span style="white-space: nowrap">4.578E-08</span></div></td><td column="4" id="935d1d55-eaac-46e9-b251-944183b7e013"><div class="cellContent" title="Z
+-2.44140625E-07"><span style="white-space: nowrap">-2.441E-07</span></div></td><td column="5" id="6f4b9815-8feb-4280-a1f9-ad3a2c06d2b4"><div class="cellContent" title="θX
+0.00042724609375"><span style="white-space: nowrap">0.0004272</span></div></td><td column="6" id="0e47230b-3d2a-44bf-8906-27b18241c7d2"><div class="cellContent" title="θY
+0.000273007899522781"><span style="white-space: nowrap">0.000273</span></div></td><td column="7" id="f91b449a-88f9-4a50-8987-20dfd53e5143"><div class="cellContent" title="θZ
+-4.06521013966483E-20"><span style="white-space: nowrap">0</span></div></td></tr><tr><td column="0" id="83eee508-937d-4056-b6a7-b4c26a5b142b"><div class="cellContent" title="Node
+3000 mm">3000 mm</div></td><td column="1" id="cbce993a-a8d6-43ac-9495-5052429eae4d"><div class="cellContent" title="Description
+New Design\Main Bearing_DW"><a href="https://masta.smartmt.com/ICommand7348">New Design\Main Bearing_DW</a></div></td><td column="2" id="342326d4-4ffc-4eb6-a0c2-9786a9d77966"><div class="cellContent" title="X
+9972.65103382146"><span style="white-space: nowrap">9972.651</span></div></td><td column="3" id="a259d621-f2f7-49dd-96a5-fac5f9d8588a"><div class="cellContent" title="Y
+-19369.4777765808"><span style="white-space: nowrap">-19369.4778</span></div></td><td column="4" id="c76bbeec-bce9-483c-9ba6-d20e6c3713e0"><div class="cellContent" title="Z
+10664.2695522461"><span style="white-space: nowrap">10664.2696</span></div></td><td column="5" id="e9bc8cfa-7d41-4c96-b20b-1eaa9463d4c4"><div class="cellContent" title="θX
+10765067.8887844"><span style="white-space: nowrap">10765067.8888</span></div></td><td column="6" id="1187aafc-8e12-4392-8ef6-78a676d328af"><div class="cellContent" title="θY
+5560077.97607422"><span style="white-space: nowrap">5560077.9761</span></div></td><td column="7" id="f8a6145a-4079-4133-891c-c203eac0eb5d"><div class="cellContent" title="θZ
+4.19925403193999E-20"><span style="white-space: nowrap">0</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="5e521c60-75ca-40dd-a30a-afbb0fa0b236"><div class="cellContent" title="Node
+3150 mm">3150 mm</div></td><td column="1" id="06a93e5b-8f2b-41fd-970e-f571d4878c17"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="b29113b0-cd0c-4a09-a676-7262ff83292a"><div class="cellContent" title="X
+-3.14306962536648E-08"><span style="white-space: nowrap">-3.143E-08</span></div></td><td column="3" id="c50cfbaa-dfdf-47f4-8e87-2179ff19875a"><div class="cellContent" title="Y
+6.103515625E-08"><span style="white-space: nowrap">6.104E-08</span></div></td><td column="4" id="1889cf60-a5aa-42ea-8036-6f530101368e"><div class="cellContent" title="Z
+-4.88281247838655E-07"><span style="white-space: nowrap">-4.883E-07</span></div></td><td column="5" id="b9eeb031-5a24-4d4d-adf6-3539ecf3c804"><div class="cellContent" title="θX
+0.000272750854492188"><span style="white-space: nowrap">0.0002728</span></div></td><td column="6" id="dd19d8aa-dae2-4f39-87e6-31ebeeca0f1a"><div class="cellContent" title="θY
+0.000119236579848803"><span style="white-space: nowrap">0.0001192</span></div></td><td column="7" id="c398323f-5f08-41a1-be08-b55622095e27"><div class="cellContent" title="θZ
+-8.90539574707089E-20"><span style="white-space: nowrap">0</span></div></td></tr><tr><td column="0" id="d2b025d6-29a7-4a36-8710-2d4e6e907ae7"><div class="cellContent" title="Node
+3500 mm">3500 mm</div></td><td column="1" id="bc9dcf9e-811b-4613-b37f-2b03e1ce19b2"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="2a5fb404-25d8-4f61-8236-438dc9d151fd"><div class="cellContent" title="X
+3.32414201693609E-08"><span style="white-space: nowrap">3.324E-08</span></div></td><td column="3" id="8d6a32d0-ba22-46a1-8761-fac9f193d566"><div class="cellContent" title="Y
+-6.103515625E-08"><span style="white-space: nowrap">-6.104E-08</span></div></td><td column="4" id="db951420-5f30-4cf7-838d-2f85d72008b9"><div class="cellContent" title="Z
+-4.88281248701779E-07"><span style="white-space: nowrap">-4.883E-07</span></div></td><td column="5" id="605d0632-80ec-4693-924b-ce5ae3489079"><div class="cellContent" title="θX
+-7.62939453125E-06"><span style="white-space: nowrap">-7.629E-06</span></div></td><td column="6" id="70a6ee26-0be4-46f9-b6da-9cb9fdd02768"><div class="cellContent" title="θY
+-0.000334580683784225"><span style="white-space: nowrap">-0.0003346</span></div></td><td column="7" id="bedce60f-8923-47fe-b331-ea3a95cfec80"><div class="cellContent" title="θZ
+1.13662989729614E-20"><span style="white-space: nowrap">0</span></div></td></tr></tbody></table></div><a name="Shaft_System_Deflection__Node_Deflections_in_Local_Coordinate_System"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9673"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand9674"></a></div><div class="editTable"><a href="https://masta.smartmt.com/ICommand9675"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="8" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Node Deflections in Local Coordinate System</div></th></tr><tr style="background-color:#DDDEDF;"><td style="text-align:center" rowspan="2" column="0" id="e2a51f4b-7228-4a42-bfb5-9061c0f57242"><div class="cellContent propertyHeading" title="Node
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Node">Node</div></td><td style="text-align:center" rowspan="2" column="1" id="52215145-4a58-4c64-a834-552b631cb4c0"><div class="cellContent propertyHeading" title="Description
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Details
+►Description">Description</div></td><td style="text-align:center" colspan="3" column="2" id="c9b442a5-d9d7-417e-827c-bd6f9312c6ea"><div class="cellContent propertyHeading" title="Linear
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Displacement
+►Linear
+►X (&micro;m)">Linear</div></td><td style="text-align:center" colspan="3" column="5" id="c416c842-7bd0-4ff2-8b54-c1f4f28eaec6"><div class="cellContent propertyHeading" title="Angular
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Displacement
+►Angular
+►θX (mrad)">Angular</div></td></tr><tr><td style="text-align:center" column="2" id="63a9dd66-085b-4bac-a4ca-bfd5de71dbd8"><div class="cellContent propertyHeading" title="X (&micro;m)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Displacement
+►Linear
+►X (&micro;m)">X (&micro;m)</div></td><td style="text-align:center" column="3" id="d6ca2285-85ee-4be2-bc9d-fe0007095093"><div class="cellContent propertyHeading" title="Y (&micro;m)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Displacement
+►Linear
+►Y (&micro;m)">Y (&micro;m)</div></td><td style="text-align:center" column="4" id="2a29f1b1-3ba3-4031-804c-31087d1c481b"><div class="cellContent propertyHeading" title="Z (&micro;m)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Displacement
+►Linear
+►Z (&micro;m)">Z (&micro;m)</div></td><td style="text-align:center" column="5" id="93b290c8-6e86-4f82-b715-505ea4d6548a"><div class="cellContent propertyHeading" title="θX (mrad)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Displacement
+►Angular
+►θX (mrad)">θX (mrad)</div></td><td style="text-align:center" column="6" id="f9488f2f-9f7a-4c93-adb8-70bedfb3a1b7"><div class="cellContent propertyHeading" title="θY (mrad)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Displacement
+►Angular
+►θY (mrad)">θY (mrad)</div></td><td style="text-align:center" column="7" id="b3820482-9bac-4bf1-aea6-9682f7dcd675"><div class="cellContent propertyHeading" title="θZ (mrad)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Displacement
+►Angular
+►θZ (mrad)">θZ (mrad)</div></td></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td class=" topBorder bottomBorder" column="0" id="33504fef-0bd4-4c55-9520-bce0f7a6af47"><div class="cellContent" title="Node
+0 mm">0 mm</div></td><td class=" topBorder bottomBorder" column="1" id="a0a6a16b-b260-4dda-9ab1-77bf291a0280"><div class="cellContent" title="Description
+New Design\Point Load"><a href="https://masta.smartmt.com/ICommand7349">New Design\Point Load</a></div></td><td class=" topBorder bottomBorder" column="2" id="199ad724-e59f-4118-9aa3-dcb572437951"><div class="cellContent" title="X
+356.187400239047"><span style="white-space: nowrap">356.1874</span></div></td><td class=" topBorder bottomBorder" column="3" id="0b950298-3c8d-4e9f-a941-f8ab26aee843"><div class="cellContent" title="Y
+-382.509446102487"><span style="white-space: nowrap">-382.5094</span></div></td><td class=" topBorder bottomBorder" column="4" id="a8813494-4dc9-4ff0-9b1d-8b25bdc025ca"><div class="cellContent" title="Z
+-324.286709303671"><span style="white-space: nowrap">-324.2867</span></div></td><td class=" topBorder bottomBorder" column="5" id="f6beeddd-e811-49ba-9daf-276c2d16570c"><div class="cellContent" title="θX
+-0.159254407739042"><span style="white-space: nowrap">-0.1593</span></div></td><td class=" topBorder bottomBorder" column="6" id="f1511d8a-e072-48ef-9708-96f3443887f8"><div class="cellContent" title="θY
+-0.126818954362361"><span style="white-space: nowrap">-0.1268</span></div></td><td class=" topBorder bottomBorder" column="7" id="b8519be4-e42f-44d0-bd33-c6c171f116f5"><div class="cellContent" title="θZ
+0"><span style="white-space: nowrap">0</span></div></td></tr><tr><td column="0" id="e88553af-3bec-4b95-b1cd-003056be384d"><div class="cellContent" title="Node
+350 mm">350 mm</div></td><td column="1" id="67f6b1fb-880e-4fde-b6aa-ce3bf19df8c0"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="46745cac-b8e5-42f5-96fc-f29fef1df587"><div class="cellContent" title="X
+311.797282485834"><span style="white-space: nowrap">311.7973</span></div></td><td column="3" id="0f44cb13-8c24-46e4-be23-62e301d5c2a8"><div class="cellContent" title="Y
+-326.771631734575"><span style="white-space: nowrap">-326.7716</span></div></td><td column="4" id="686e82b0-0eec-45c1-a3a7-247bfc50138a"><div class="cellContent" title="Z
+-324.286709303671"><span style="white-space: nowrap">-324.2867</span></div></td><td column="5" id="9241af68-a64a-4aa6-8674-1eb81ce87c76"><div class="cellContent" title="θX
+-0.159247228104794"><span style="white-space: nowrap">-0.1592</span></div></td><td column="6" id="f3922f09-c3a6-437c-b77b-1d8b8c605995"><div class="cellContent" title="θY
+-0.126814991069757"><span style="white-space: nowrap">-0.1268</span></div></td><td column="7" id="20913da3-14ee-4f51-b152-60ca01b49249"><div class="cellContent" title="θZ
+-1.50463276905253E-33"><span style="white-space: nowrap">0</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="a66f7d9b-a30c-4fdb-89a8-fd598ea9cacc"><div class="cellContent" title="Node
+500 mm">500 mm</div></td><td column="1" id="d65a9118-01d8-4594-b221-de75c6969c5d"><div class="cellContent" title="Description
+New Design\Main Bearing_UW"><a href="https://masta.smartmt.com/ICommand7350">New Design\Main Bearing_UW</a></div></td><td column="2" id="b8faa10f-e89d-4eaf-a1b6-f1df33f9ffe2"><div class="cellContent" title="X
+292.771410501"><span style="white-space: nowrap">292.7714</span></div></td><td column="3" id="6cda195e-3589-44c5-8c6c-e2d25ad87ec8"><div class="cellContent" title="Y
+-302.884994211281"><span style="white-space: nowrap">-302.885</span></div></td><td column="4" id="77931a5b-1ecd-4707-8f0b-104e3642ad7a"><div class="cellContent" title="Z
+-324.286709303671"><span style="white-space: nowrap">-324.2867</span></div></td><td column="5" id="90647d2c-a25b-4298-9cf4-b0946e2733fd"><div class="cellContent" title="θX
+-0.159240924339126"><span style="white-space: nowrap">-0.1592</span></div></td><td column="6" id="5623f817-72a4-42b0-85b2-03369cbf7c55"><div class="cellContent" title="θY
+-0.126811340150974"><span style="white-space: nowrap">-0.1268</span></div></td><td column="7" id="75fe4bd2-042b-493f-a135-7d05b01cb48d"><div class="cellContent" title="θZ
+0"><span style="white-space: nowrap">0</span></div></td></tr><tr><td column="0" id="a19c0655-48df-4a20-b14a-d0037b308106"><div class="cellContent" title="Node
+650 mm">650 mm</div></td><td column="1" id="8c242e3d-f00b-43d5-bcc4-f3cd081f58ca"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="6af13c95-f9e8-42fc-865b-ed048727d649"><div class="cellContent" title="X
+273.755189377625"><span style="white-space: nowrap">273.7552</span></div></td><td column="3" id="1a5cc729-242f-403f-8b5c-9b3bed0a096d"><div class="cellContent" title="Y
+-279.009115746587"><span style="white-space: nowrap">-279.0091</span></div></td><td column="4" id="dd728dfd-dfc5-4125-b7d0-4012c71d1d16"><div class="cellContent" title="Z
+-324.285642876716"><span style="white-space: nowrap">-324.2856</span></div></td><td column="5" id="be2fc78a-afe5-42e7-b084-df009d210a30"><div class="cellContent" title="θX
+-0.159235723336133"><span style="white-space: nowrap">-0.1592</span></div></td><td column="6" id="e36e504d-b2c8-4ca3-b9b9-92fc53f4b10c"><div class="cellContent" title="θY
+-0.12680860966321"><span style="white-space: nowrap">-0.1268</span></div></td><td column="7" id="867ac68d-870b-4f46-850a-853592534330"><div class="cellContent" title="θZ
+0"><span style="white-space: nowrap">0</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="78c15541-d56c-4771-ba2d-73dcfede1494"><div class="cellContent" title="Node
+2850 mm">2850 mm</div></td><td column="1" id="9765d616-ed3e-4b2f-a442-1d0b5757a85f"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="66c89ecd-3271-42f5-a393-e761bdf63b47"><div class="cellContent" title="X
+-5.17300960051098"><span style="white-space: nowrap">-5.173</span></div></td><td column="3" id="f67875fb-02fa-4ea5-a4ed-887f1e11b8e7"><div class="cellContent" title="Y
+71.2129378406033"><span style="white-space: nowrap">71.2129</span></div></td><td column="4" id="046251c1-ebd2-4487-a676-91cbc7235521"><div class="cellContent" title="Z
+-324.27848468971"><span style="white-space: nowrap">-324.2785</span></div></td><td column="5" id="45da5581-462b-4c18-b02f-ddda6d2b6ad4"><div class="cellContent" title="θX
+-0.159213162360845"><span style="white-space: nowrap">-0.1592</span></div></td><td column="6" id="26f69a51-643e-4523-bbe2-dee75c981e4b"><div class="cellContent" title="θY
+-0.126796830935619"><span style="white-space: nowrap">-0.1268</span></div></td><td column="7" id="75d78586-6a63-4870-85cc-cc7c684a570e"><div class="cellContent" title="θZ
+-1.50463276905253E-33"><span style="white-space: nowrap">0</span></div></td></tr><tr><td column="0" id="66b2b9ef-6c39-46eb-bdff-c2f08c3b8548"><div class="cellContent" title="Node
+3000 mm">3000 mm</div></td><td column="1" id="c82f9949-11ef-4149-94fc-769a78092e55"><div class="cellContent" title="Description
+New Design\Main Bearing_DW"><a href="https://masta.smartmt.com/ICommand7351">New Design\Main Bearing_DW</a></div></td><td column="2" id="72359f26-4e67-4630-b2d8-b05453e0f7b8"><div class="cellContent" title="X
+-24.1873665504548"><span style="white-space: nowrap">-24.1874</span></div></td><td column="3" id="ee4a28ef-6b54-49db-9fb8-f0e51fef6ec5"><div class="cellContent" title="Y
+95.0849595382529"><span style="white-space: nowrap">95.085</span></div></td><td column="4" id="35925038-6e81-4743-aecb-0478586fe079"><div class="cellContent" title="Z
+-324.277418262755"><span style="white-space: nowrap">-324.2774</span></div></td><td column="5" id="395449f6-db48-469b-a5f1-6919082932ad"><div class="cellContent" title="θX
+-0.159212061753823"><span style="white-space: nowrap">-0.1592</span></div></td><td column="6" id="e98170db-a373-4549-8347-632ff4244673"><div class="cellContent" title="θY
+-0.126796260720924"><span style="white-space: nowrap">-0.1268</span></div></td><td column="7" id="a375ed78-7e0a-4162-b21c-0085cb4756cb"><div class="cellContent" title="θZ
+3.00926553810506E-33"><span style="white-space: nowrap">0</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="7dbb3f2e-3401-46e6-84ca-7d1d74bd3c8f"><div class="cellContent" title="Node
+3150 mm">3150 mm</div></td><td column="1" id="cdf486f6-55d2-47ee-b805-4b64f1517068"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="378e226c-8ebc-4746-b827-6b41e7656ee9"><div class="cellContent" title="X
+-43.2067767910421"><span style="white-space: nowrap">-43.2068</span></div></td><td column="3" id="94bae58d-e3cc-4055-a2e9-d26595b97631"><div class="cellContent" title="Y
+118.966768801326"><span style="white-space: nowrap">118.9668</span></div></td><td column="4" id="59ac5a94-c75d-45ff-8c8c-1619abd25ed9"><div class="cellContent" title="Z
+-324.277418262755"><span style="white-space: nowrap">-324.2774</span></div></td><td column="5" id="75680c7d-a747-4429-a06e-089509af6dcf"><div class="cellContent" title="θX
+-0.159212061753823"><span style="white-space: nowrap">-0.1592</span></div></td><td column="6" id="5c8e6574-8ef7-4e6d-97b3-78c49a13a70d"><div class="cellContent" title="θY
+-0.126796259702457"><span style="white-space: nowrap">-0.1268</span></div></td><td column="7" id="7bc238a7-f86f-4afe-9870-d9b0f7b96e55"><div class="cellContent" title="θZ
+-6.01853107621011E-33"><span style="white-space: nowrap">0</span></div></td></tr><tr><td column="0" id="cc945108-2b33-4183-8eee-38f6bba8d206"><div class="cellContent" title="Node
+3500 mm">3500 mm</div></td><td column="1" id="5a41b6b9-fce1-4faa-97a1-ce354d864357"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="c512d8c1-ffee-4947-80b7-e0491e942024"><div class="cellContent" title="X
+-87.5854560080577"><span style="white-space: nowrap">-87.5855</span></div></td><td column="3" id="da6529df-9ecb-4b7d-9fc6-7b9591e08f1f"><div class="cellContent" title="Y
+174.690990415164"><span style="white-space: nowrap">174.691</span></div></td><td column="4" id="f92fad79-5138-48b0-8ea4-3ef8bcf48697"><div class="cellContent" title="Z
+-324.277418262755"><span style="white-space: nowrap">-324.2774</span></div></td><td column="5" id="44b4fe93-43b2-4314-b8d0-351ad6fbbc84"><div class="cellContent" title="θX
+-0.159212061753823"><span style="white-space: nowrap">-0.1592</span></div></td><td column="6" id="a84029fe-2741-4522-828b-90481d125dbb"><div class="cellContent" title="θY
+-0.126796259448623"><span style="white-space: nowrap">-0.1268</span></div></td><td column="7" id="75c5a456-cc89-4219-87a8-7b0014673fc9"><div class="cellContent" title="θZ
+-4.51389830715758E-33"><span style="white-space: nowrap">0</span></div></td></tr></tbody></table></div><a name="Shaft_System_Deflection__Node_Locations"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand9676"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand9677"></a></div><div class="editTable"><a href="https://masta.smartmt.com/ICommand9678"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="8" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Node Locations</div></th></tr><tr style="background-color:#DDDEDF;"><td style="text-align:center" rowspan="3" column="0" id="2bab5857-1680-44c5-9c6d-420b11338dd5"><div class="cellContent propertyHeading" title="Node
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Node">Node</div></td><td style="text-align:center" rowspan="3" column="1" id="70908bac-31b1-4221-b004-579bd213b2d8"><div class="cellContent propertyHeading" title="Description
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Details
+►Description">Description</div></td><td style="text-align:center" colspan="6" column="2" id="99e1e57e-f109-49d0-97a8-1d7f146035a7"><div class="cellContent propertyHeading" title="Location
+
+Shaft System Deflection
+►Node Results
+►Node Results in World Coordinate System
+►Location
+►X (mm)">Location</div></td></tr><tr><td style="text-align:center" colspan="3" column="2" id="b4d851dd-e3a6-4d67-84a2-c14bda174338"><div class="cellContent propertyHeading" title="Node Results in World Coordinate System
+
+Shaft System Deflection
+►Node Results
+►Node Results in World Coordinate System
+►Location
+►X (mm)">Node Results in World Coordinate System</div></td><td style="text-align:center" colspan="3" column="5" id="0fc23953-1e8f-4559-8e60-ab39bd750e10"><div class="cellContent propertyHeading" title="Node Results in Local Coordinate System
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Location
+►X (mm)">Node Results in Local Coordinate System</div></td></tr><tr style="background-color:#DDDEDF;"><td style="text-align:center" column="2" id="f3cf9e14-ca9a-456a-b273-dbe180723498"><div class="cellContent propertyHeading" title="X (mm)
+
+Shaft System Deflection
+►Node Results
+►Node Results in World Coordinate System
+►Location
+►X (mm)">X (mm)</div></td><td style="text-align:center" column="3" id="a56f61e8-496f-4bff-b76f-0440d9055374"><div class="cellContent propertyHeading" title="Y (mm)
+
+Shaft System Deflection
+►Node Results
+►Node Results in World Coordinate System
+►Location
+►Y (mm)">Y (mm)</div></td><td style="text-align:center" column="4" id="4fcf558f-0feb-4766-ba51-e5dbfaf9803a"><div class="cellContent propertyHeading" title="Z (mm)
+
+Shaft System Deflection
+►Node Results
+►Node Results in World Coordinate System
+►Location
+►Z (mm)">Z (mm)</div></td><td style="text-align:center" column="5" id="55624f16-bf29-42cd-ac17-af9e8c73b0d6"><div class="cellContent propertyHeading" title="X (mm)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Location
+►X (mm)">X (mm)</div></td><td style="text-align:center" column="6" id="c1a412c2-b0f6-4ae3-891a-9f43d2d7d6ca"><div class="cellContent propertyHeading" title="Y (mm)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Location
+►Y (mm)">Y (mm)</div></td><td style="text-align:center" column="7" id="111ca27d-e6f9-4904-aab4-94102d59d03c"><div class="cellContent propertyHeading" title="Z (mm)
+
+Shaft System Deflection
+►Node Results
+►Node Results in Local Coordinate System
+►Location
+►Z (mm)">Z (mm)</div></td></tr></thead><tbody><tr><td column="0" id="32c54c0c-2044-4b00-9667-d929e9e9c61c"><div class="cellContent" title="Node
+0 mm">0 mm</div></td><td column="1" id="fd5db1fe-1945-484d-9b4a-20fd7d4cf3eb"><div class="cellContent" title="Description
+New Design\Point Load"><a href="https://masta.smartmt.com/ICommand7352">New Design\Point Load</a></div></td><td column="2" id="5f3f764e-26dd-4124-828f-497c76bd7152"><div class="cellContent" title="X
+0"><span style="white-space: nowrap">0</span></div></td><td column="3" id="18821820-7a9f-448e-9f2e-780250621326"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="4" id="d694dd2b-6e7b-4092-8851-a9bde7467e76"><div class="cellContent" title="Z
+0"><span style="white-space: nowrap">0</span></div></td><td column="5" id="2474a7a1-b94c-4c19-997d-b2deb90d0dc2"><div class="cellContent" title="X
+0"><span style="white-space: nowrap">0</span></div></td><td column="6" id="9999293e-1c76-4108-96e9-8b747da2ed55"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="7" id="c122a4bb-2901-4cfe-8891-2c1b83a88c3e"><div class="cellContent" title="Z
+0"><span style="white-space: nowrap">0</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="bb09333f-fec1-48fe-8cfb-fb5d41d495bf"><div class="cellContent" title="Node
+350 mm">350 mm</div></td><td column="1" id="5eddcfcf-c056-4006-99b6-73d73cb61ddf"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="5dc54e7d-e709-498d-8f41-570ddc40f473"><div class="cellContent" title="X
+350"><span style="white-space: nowrap">350</span></div></td><td column="3" id="67b1e77f-ee32-4e8a-b883-8fbda546c709"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="4" id="fc7e80b8-dec0-4616-b1d7-7aeb880a144f"><div class="cellContent" title="Z
+2.14306111918916E-14"><span style="white-space: nowrap">0</span></div></td><td column="5" id="03623b95-1276-4a7d-bffc-fd9c86be8d79"><div class="cellContent" title="X
+0"><span style="white-space: nowrap">0</span></div></td><td column="6" id="919e755a-fa05-4bd8-bb40-26fcff261de6"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="7" id="aae31458-a930-4594-8fa9-a00c9fecbda1"><div class="cellContent" title="Z
+350"><span style="white-space: nowrap">350</span></div></td></tr><tr><td column="0" id="3e894394-1bb9-4a0f-9675-b76e294ece5a"><div class="cellContent" title="Node
+500 mm">500 mm</div></td><td column="1" id="97787c9d-5830-499c-a272-b8e32c4adcdc"><div class="cellContent" title="Description
+New Design\Main Bearing_UW"><a href="https://masta.smartmt.com/ICommand7353">New Design\Main Bearing_UW</a></div></td><td column="2" id="fb6b08ac-374b-4770-a2aa-297c439901de"><div class="cellContent" title="X
+500"><span style="white-space: nowrap">500</span></div></td><td column="3" id="863b5497-3f79-4d11-873c-585c9085ae60"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="4" id="bf72a2f8-8712-4526-9406-e617b0223414"><div class="cellContent" title="Z
+3.06151588455594E-14"><span style="white-space: nowrap">0</span></div></td><td column="5" id="6a4120c0-dcd3-4199-9b51-16ade6dc136d"><div class="cellContent" title="X
+0"><span style="white-space: nowrap">0</span></div></td><td column="6" id="b2df65c3-7415-4ff1-98f9-07e0bb1e6e16"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="7" id="0b3d4dcb-f541-4475-bce3-eee4695da23a"><div class="cellContent" title="Z
+500"><span style="white-space: nowrap">500</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="ea13eea6-f4dc-4492-be8d-8efd4c9059a2"><div class="cellContent" title="Node
+650 mm">650 mm</div></td><td column="1" id="62031d60-f0cc-42ce-b5b6-022316424ae2"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="880914b6-48ef-442f-8d0f-09844cbe1775"><div class="cellContent" title="X
+650"><span style="white-space: nowrap">650</span></div></td><td column="3" id="1707840f-a0cf-4d61-9690-b84fbb722048"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="4" id="7e016181-0050-4532-968a-5a1461bc381f"><div class="cellContent" title="Z
+3.97997064992273E-14"><span style="white-space: nowrap">0</span></div></td><td column="5" id="d3d8ea16-d933-4958-9a35-b509ba7d7e63"><div class="cellContent" title="X
+0"><span style="white-space: nowrap">0</span></div></td><td column="6" id="1b6f2de0-950f-4499-88a9-b20c58a8841a"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="7" id="2fc6d52f-009a-4eca-be38-2dbbb8b9d83b"><div class="cellContent" title="Z
+650"><span style="white-space: nowrap">650</span></div></td></tr><tr><td column="0" id="93b9b1de-ab0e-4d33-b04e-f1ac3273951b"><div class="cellContent" title="Node
+2850 mm">2850 mm</div></td><td column="1" id="d19f0b18-a801-48fb-ab76-ce9f60c7c9f8"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="9da9e4f0-6969-4d57-bb90-2b359d84a8c6"><div class="cellContent" title="X
+2850"><span style="white-space: nowrap">2850</span></div></td><td column="3" id="7735b359-9445-4519-b272-ee8a7e696464"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="4" id="d71b31a6-1b8e-4e0e-a645-ca3b167a3d44"><div class="cellContent" title="Z
+1.74506405419689E-13"><span style="white-space: nowrap">0</span></div></td><td column="5" id="dc73b813-2457-4b85-82ed-1a7d0eeaf713"><div class="cellContent" title="X
+0"><span style="white-space: nowrap">0</span></div></td><td column="6" id="c9cfbd6f-7fc1-445e-82ea-ae724e3b7d1b"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="7" id="04d3f05b-55d0-40c2-9be8-7dcff4af7dfd"><div class="cellContent" title="Z
+2850"><span style="white-space: nowrap">2850</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="b14539a0-f548-42bc-8b51-23ba0f971e42"><div class="cellContent" title="Node
+3000 mm">3000 mm</div></td><td column="1" id="840eb5e0-15d9-4ff7-b75c-9b1865de321c"><div class="cellContent" title="Description
+New Design\Main Bearing_DW"><a href="https://masta.smartmt.com/ICommand7354">New Design\Main Bearing_DW</a></div></td><td column="2" id="6d825530-d9ab-4b9e-a489-952de7f21da2"><div class="cellContent" title="X
+3000"><span style="white-space: nowrap">3000</span></div></td><td column="3" id="109d09c4-db4a-40b4-a6b5-882ab13751a9"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="4" id="de90018c-3e1b-4eb2-a915-fd37c5a09e94"><div class="cellContent" title="Z
+1.83690953073357E-13"><span style="white-space: nowrap">0</span></div></td><td column="5" id="b5443491-c85c-4545-95ff-394c7db273ac"><div class="cellContent" title="X
+0"><span style="white-space: nowrap">0</span></div></td><td column="6" id="37692ca4-d082-49a9-bc1b-97e94a9d6b21"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="7" id="561309e1-658f-471d-9610-7b1c7eeabcd4"><div class="cellContent" title="Z
+3000"><span style="white-space: nowrap">3000</span></div></td></tr><tr><td column="0" id="fc18405b-44bc-434b-8132-0ba1f1c54a94"><div class="cellContent" title="Node
+3150 mm">3150 mm</div></td><td column="1" id="538afa76-760a-44ee-9377-011db8178f11"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="d7cb7c00-07f6-495f-87e0-783a034f23e4"><div class="cellContent" title="X
+3150"><span style="white-space: nowrap">3150</span></div></td><td column="3" id="1de45218-a4be-4531-b0c0-6cb3cf395d55"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="4" id="01f0f654-948e-4be1-9785-54eacfb3adbe"><div class="cellContent" title="Z
+1.92875500727024E-13"><span style="white-space: nowrap">0</span></div></td><td column="5" id="7aecbd4b-24e4-4077-af68-cbfa516e4ae5"><div class="cellContent" title="X
+0"><span style="white-space: nowrap">0</span></div></td><td column="6" id="d68b2f20-1156-4ea9-b6ea-c8590f66aec5"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="7" id="ad9c327f-1d0b-4dba-b3cd-545a5c974c93"><div class="cellContent" title="Z
+3150"><span style="white-space: nowrap">3150</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="1967d032-02c9-4993-9e03-ba491b7f185c"><div class="cellContent" title="Node
+3500 mm">3500 mm</div></td><td column="1" id="bfff2958-1ea2-49c0-9a97-5c5d28ce256d"><div class="cellContent" title="Details"><center>-</center></div></td><td column="2" id="46f212fc-59b8-4dae-abea-4f33b349b5b6"><div class="cellContent" title="X
+3500"><span style="white-space: nowrap">3500</span></div></td><td column="3" id="0c237c0b-6c9b-4043-a9c3-1b110ef8aeae"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="4" id="9f7eede1-8c39-4c8e-80d6-1425ae7bcffb"><div class="cellContent" title="Z
+2.14306111918916E-13"><span style="white-space: nowrap">0</span></div></td><td column="5" id="789ef8c0-f995-4648-9dae-c1074cf8ace9"><div class="cellContent" title="X
+0"><span style="white-space: nowrap">0</span></div></td><td column="6" id="2508c864-d398-4bdf-a3d3-17aa09d6ac5b"><div class="cellContent" title="Y
+0"><span style="white-space: nowrap">0</span></div></td><td column="7" id="4ab6d4a4-e62d-4618-bcce-354808afb5a3"><div class="cellContent" title="Z
+3500"><span style="white-space: nowrap">3500</span></div></td></tr></tbody></table></div><span class="heading_very_small"><div class="bold"><center>C:\Users\JHCHOI\Desktop\풍력발전기 메인베어링\01. Docs\06. 기본설계\MASTA\26MW_메인베어링_기본설계_v1.2_샤프트 두께,형상 2안_강체,롤러프로파일만_260720.Masta</center></div></span><span class="heading_very_small"><div class="bold"><center>Save file to generate Hash Code</center></div></span><hr width="20%" height="1px"><span class="heading_very_small"><div class="bold"><center>EDUCATIONAL LICENCE - Not for commercial use</center></div></span><hr width="20%" height="1px"><span class="heading_very_small"><div class="bold"><center>MASTA 14.1.1 Build 174622+b91e5d5aeea6 (HASP) 2026-07-20 오후 12:43:27</center></div></span>
+</body>
+</html>

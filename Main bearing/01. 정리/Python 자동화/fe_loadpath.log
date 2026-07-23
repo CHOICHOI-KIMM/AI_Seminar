@@ -1,0 +1,41 @@
+
+==================================================================
+[강체(비-FE)]
+==================================================================
+  파트: ['New Design\\Design Datum', 'Main Shaft', 'Main Bearing_UW', 'Main Bearing_DW', 'Point Load', 'Input Power Load', 'Output Power Load']
+  shaft.is_replaced_by_fe = False
+  FE 파트: []
+
+  인가 하중: Fx(반경X)=   4965.6 kN  Fy=   126.5 kN  축=  3017.1 kN
+  Main Bearing_UW    반력 Fr=   8989.5 kN  Fa=  4456.6 kN | σin= 1366.7 MPa  s0=   10.26
+  Main Bearing_DW    반력 Fr=   3725.5 kN  Fa= -1439.6 kN | σin= 1095.6 MPa  s0=   24.76
+  베어링 반력 합계: X=   5429.7 kN  Y=   126.4 kN  Z(축)=  3017.1 kN
+  → 반경 X 전달률 = 109.3%   축 전달률 = 100.0%
+
+==================================================================
+[FE]
+==================================================================
+  파트: ['New Design\\Design Datum', 'Main Shaft', 'Main Bearing_UW', 'Main Bearing_DW', 'Point Load', 'Input Power Load', 'Output Power Load', 'FE Part']
+  shaft.is_replaced_by_fe = True
+  FE 파트: ['FE Part']
+
+  인가 하중: Fx(반경X)=   4965.6 kN  Fy=   126.5 kN  축=  3017.1 kN
+  Main Bearing_UW    반력 Fr=    212.0 kN  Fa=    88.0 kN | σin=  375.0 MPa  s0=  435.00
+  Main Bearing_DW    반력 Fr=    212.0 kN  Fa=   -88.0 kN | σin=  375.0 MPa  s0=  434.99
+  베어링 반력 합계: X=    424.0 kN  Y=    -0.0 kN  Z(축)=    -0.0 kN
+  → 반경 X 전달률 =   8.5%   축 전달률 =   0.0%
+
+완료
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):

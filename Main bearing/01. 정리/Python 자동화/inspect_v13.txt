@@ -1,0 +1,190 @@
+
+======================================================================
+1. 로드케이스 컨테이너 개수/이름
+----------------------------------------------------------------------
+  static_loads: 17개 -> ['Mx_max', 'Mx_min', 'My_max', 'My_min', 'Mz_max', 'Mz_min', 'Myz_max', 'Myz_min'] ...
+  duty_cycles: 1개 -> ['All']
+  design_states: 2개 -> ['Extrem load case', 'Fatigue load case']
+  time_series_load_cases: 51개 -> ['<', 'e', 'r', 'r', ' ', "'", 'D', 'e'] ...
+  load_cases: 51개 -> ['<', 'e', 'r', 'r', ' ', "'", 'D', 'e'] ...
+  analysis_cases: 51개 -> ['<', 'e', 'r', 'r', ' ', "'", 'D', 'e'] ...
+
+======================================================================
+1b. dp 의 load/time/duty/case 관련 멤버 훑기
+----------------------------------------------------------------------
+  add_design_state: method
+  add_duty_cycle: method
+  design_state_load_case_group_named: method
+  design_state_named: method
+  design_states: list (len=2)
+  duty_cycle_named: method
+  duty_cycles: list (len=1)
+  save_load_case_results: method
+  static_loads: list (len=17)
+  time_series_load_case_group_named: method
+  time_series_load_case_groups: list (len=1)
+
+======================================================================
+2. static_loads 17개 — Point Load 입력 타입 점검
+----------------------------------------------------------------------
+  [Mx_max          ] force_x.input_type=ValueInputOption.CONSTANT force=6975400.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Mx_min          ] force_x.input_type=ValueInputOption.CONSTANT force=6651800.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [My_max          ] force_x.input_type=ValueInputOption.CONSTANT force=5414600.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [My_min          ] force_x.input_type=ValueInputOption.CONSTANT force=5190000.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Mz_max          ] force_x.input_type=ValueInputOption.CONSTANT force=6062300.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Mz_min          ] force_x.input_type=ValueInputOption.CONSTANT force=5286700.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Myz_max         ] force_x.input_type=ValueInputOption.CONSTANT force=5268100.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Myz_min         ] force_x.input_type=ValueInputOption.CONSTANT force=6652300.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Fx_max          ] force_x.input_type=ValueInputOption.CONSTANT force=6734500.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Fx_min          ] force_x.input_type=ValueInputOption.CONSTANT force=5429500.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Fy_max          ] force_x.input_type=ValueInputOption.CONSTANT force=5058400.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Fy_min          ] force_x.input_type=ValueInputOption.CONSTANT force=5320300.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Fz_max          ] force_x.input_type=ValueInputOption.CONSTANT force=2299100.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Fz_min          ] force_x.input_type=ValueInputOption.CONSTANT force=7591400.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Fyz_max         ] force_x.input_type=ValueInputOption.CONSTANT force=7573100.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Fyz_min         ] force_x.input_type=ValueInputOption.CONSTANT force=2299100.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+  [Load Case 1     ] force_x.input_type=ValueInputOption.CONSTANT force=100000.0 time_series_lc=<err Unable to access Time Series Load Case becaus>
+
+======================================================================
+3. Time Series Load Case 탐색
+----------------------------------------------------------------------
+  dp.time_series_load_cases 접근 불가: <err 'Design' object has no attribute 'time_series>
+
+======================================================================
+4. Point Load 에 시계열(value_vs_time) 입력 여부 — 첫 static case
+----------------------------------------------------------------------
+  force_x: input_type=ValueInputOption.CONSTANT value(force/moment)=6975400.0
+  force_y: input_type=ValueInputOption.CONSTANT value(force/moment)=-386600.0
+  axial_load: input_type=ValueInputOption.CONSTANT value(force/moment)=3274400.0
+  moment_x: input_type=ValueInputOption.CONSTANT value(force/moment)=-51424000.0
+  moment_y: input_type=ValueInputOption.CONSTANT value(force/moment)=37757000.0
+
+======================================================================
+완료
+----------------------------------------------------------------------
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001D124B793A0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

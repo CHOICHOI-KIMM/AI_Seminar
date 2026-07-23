@@ -1,0 +1,14 @@
+﻿[설정] fatigue_config.xlsx 로드 (8개 항목)
+[준비] DLC1.2-d-s1 dt=20 k=0.26 → 30빈  SF=38,180
+[모델] 로드 완료 (50°C)
+  [MASTA] 빈 1/30
+  [MASTA] 빈 11/30
+  [MASTA] 빈 21/30
+[MASTA] 30빈 완료 12.7s
+[자중] W=424.0 kN  z_W=18.7823 m  (전 빈 W: 424.0~424.0 kN)
+[저장] appendix1_reactions.csv / appendix1_life.csv
+[문서] 부록 1 기록 완료
+  [pin  ] D30 UW=0.7157 DW=0.1503  수명 UW=41.9 DW=199.5 Sys=36.4
+  [masta] D30 UW=0.2410 DW=0.0642  수명 UW=124.5 DW=467.2 Sys=103.9
+  [ref  ] D30 UW=0.2347 DW=0.0675  수명 UW=127.8 DW=444.2 Sys=105.1
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

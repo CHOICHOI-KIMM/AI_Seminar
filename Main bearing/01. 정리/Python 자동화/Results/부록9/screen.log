@@ -1,0 +1,21 @@
+[시계열] 6001점  | k 그리드 31개 (0~1.5, 0.05)  | dt 11종
+[참값] D_UW=1.695766e-05  D_DW=4.093405e-06 (표본, 핀지지 경로)
+[저장] D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\ksigma_screen_eps_map.csv  (341행)
+
+[dt별 ε_UW(k=0) → 최소 k]
+  dt=60    ε(k=0)= -17.45%   k_min=None
+  dt=20    ε(k=0)= -11.12%   k_min=0.2
+  dt=10    ε(k=0)=  -9.69%   k_min=0.2
+  dt=6     ε(k=0)=  -9.02%   k_min=0.2
+  dt=4     ε(k=0)=  -8.88%   k_min=0.2
+  dt=2     ε(k=0)=  -5.96%   k_min=0.2
+  dt=1     ε(k=0)=  -3.05%   k_min=0.15
+  dt=0.6   ε(k=0)=  -1.50%   k_min=0.1
+  dt=0.4   ε(k=0)=  -0.79%   k_min=0.1
+  dt=0.3   ε(k=0)=  -0.48%   k_min=0.05
+  dt=0.2   ε(k=0)=  -0.21%   k_min=0.05
+
+[전역 최적 k (dt≤10 전부 0≤ε≤3%)] k* = 0.2
+  검증: {10: np.float64(0.78), 6: np.float64(0.99), 4: np.float64(0.97), 2: np.float64(1.84), 1: np.float64(2.35), 0.6: np.float64(2.18), 0.4: np.float64(1.8), 0.3: np.float64(1.47), 0.2: np.float64(1.0)}
+[저장] D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\부록9\ksigma_screen_map.png
+[갱신] §9-6

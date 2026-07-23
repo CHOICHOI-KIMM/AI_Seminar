@@ -1,0 +1,204 @@
+==========================================================================
+[이론] rpm=5.09167  D_pw=3330.0 mm  ν=98.7 mm²/s
+  식(28) ν₁ = 201.9744 mm²/s
+  식(27) κ = ν/ν₁ = 0.48868
+==========================================================================
+
+==========================================================================
+[Main Bearing_UW]
+==========================================================================
+  [BearingSystemDeflection] BearingSystemDeflection
+    percentage_of_iterations_converged                   = 0.09090909090909091
+    speed                                                = 0.0
+  [DetailedAnalysis] LoadedTaperRollerBearingResults
+    axial_to_radial_load_ratio                           = 0.49733166974787896
+    change_in_element_diameter_due_to_thermal_expansion  = <ERR Unable to access Change in Element Diame>
+    duration                                             = 360000.0
+    dynamic_viscosity                                    = 0.08585135456319018
+    element_temperature                                  = 80.0
+    fluid_film_density                                   = 870.0
+    fluid_film_temperature_source                        = FluidFilmTemperatureOptions.CALCULATE_FROM_SPECIFIED_ELEMENT_AND_RING_TEMPERATURES
+    kinematic_viscosity                                  = 9.867971788872435e-05
+    kinematic_viscosity_of_oil_for_efficiency_calculations = 9.867971788872433e-05
+    lambda_ratio_inner                                   = 1.1683891254159249
+    lambda_ratio_outer                                   = 1.2003495058237552
+    lubricant_film_temperature                           = 80.0
+    lubricant_flow_rate                                  = 0.0
+    lubricant_windage_and_churning_temperature           = 80.0
+    lubrication                                          = Mobilith SHC 460
+    minimum_lubricating_film_thickness_inner             = 3.528535158756087e-07
+    minimum_lubricating_film_thickness_outer             = 3.625055507587734e-07
+    oil_dip_coefficient                                  = 0.0
+    oil_sump_temperature                                 = 68.0
+    operating_air_temperature                            = 20.0
+    ratio_of_operating_element_diameter_to_element_pcd   = 0.03317722933058013
+    speed_factor_dmn                                     = 0.28266397518883335
+    speed_factor_dn                                      = 0.2592508641666667
+    static_equivalent_load_capacity_ratio_limit          = 1.5
+    surrounding_lubricant_density                        = 870.0
+    temperature_when_assembled                           = 20.0
+    [DetailedAnalysis.iso2812007] RollerISO2812007Results
+      axial_to_radial_load_ratio                           = 0.49733166974787896
+      axial_to_radial_load_ratio_exceeds_iso2812007e_limiting_value_for_dynamic_equivalent_load = False
+      calculated_viscosity_ratio                           = 0.4886412471262618
+      contamination_factor_from_calculated_viscosity_ratio = 0.9235990973398811
+      life_modification_factor_for_systems_approach_with_calculated_viscosity_ratio = <ERR Unable to access Life Modification Facto>
+      reference_kinematic_viscosity                        = 0.00020194717181381611
+      viscosity_ratio                                      = 0.4886412471262618
+    [DetailedAnalysis.isots162812008] RollerISOTS162812008Results
+      dynamic_equivalent_load_dynamic_capacity_ratio       = 0.42756587229118675
+    [DetailedAnalysis.lubrication] LubricationDetail
+      agma925a03_lubricant_type                            = <ERR Unable to access AGMA 925-A03 Lubricant >
+      density_vs_temperature                               = <ERR Unable to access Density vs. Temperature>
+      dynamic_viscosity_at_38c                             = 0.4400592995213868
+      dynamic_viscosity_of_the_lubricant_at_100_degrees_c  = 0.04837199999999999
+      dynamic_viscosity_of_the_lubricant_at_40_degrees_c   = 0.40019999999999994
+      iso_lubricant_type                                   = ISOLubricantType.POLYALPHAOLEFIN
+      kinematic_viscosity_at_38c                           = 0.0005058152868061917
+      kinematic_viscosity_of_the_lubricant_at_100_degrees_c = 5.5599999999999996e-05
+      kinematic_viscosity_of_the_lubricant_at_40_degrees_c = 0.00045999999999999996
+      lubricant_definition                                 = LubricantDefinition.STANDARD
+      lubricant_grade_agma                                 = <ERR Unable to access Lubricant Grade AGMA be>
+      lubricant_grade_iso                                  = <ERR Unable to access Lubricant Grade ISO bec>
+      lubricant_grade_sae                                  = <ERR Unable to access Lubricant Grade SAE bec>
+      lubricant_shear_modulus                              = 100000000.0
+      lubricant_type_and_supply                            = BearingLubricationCondition.GREASE_RUNIN_BEARING
+      lubricant_viscosity_classification                   = LubricantViscosityClassification.USERSPECIFIED
+      micropitting_failure_load_stage_test_temperature     = 90.0
+      oil_filtration_and_contamination                     = <ERR Unable to access Oil Filtration and Cont>
+      oil_to_air_heat_transfer_area                        = 0.1
+      pressure_viscosity_coefficient                       = 1.8e-08
+      pressure_viscosity_coefficient_method                = PressureViscosityCoefficientMethod.TEMPERATURE_INDEPENDENT_VALUE
+      temperature_at_which_density_is_specified            = <ERR Unable to access Temperature at Which De>
+      temperature_at_which_pressure_viscosity_coefficient_is_specified = <ERR Unable to access Temperature at Which Pr>
+
+==========================================================================
+[Main Bearing_DW]
+==========================================================================
+  [BearingSystemDeflection] BearingSystemDeflection
+    percentage_of_iterations_converged                   = 0.09090909090909091
+    speed                                                = 0.0
+  [DetailedAnalysis] LoadedTaperRollerBearingResults
+    axial_to_radial_load_ratio                           = 0.38544855979630727
+    change_in_element_diameter_due_to_thermal_expansion  = <ERR Unable to access Change in Element Diame>
+    duration                                             = 360000.0
+    dynamic_viscosity                                    = 0.08585135456319018
+    element_temperature                                  = 80.0
+    fluid_film_density                                   = 870.0
+    fluid_film_temperature_source                        = FluidFilmTemperatureOptions.CALCULATE_FROM_SPECIFIED_ELEMENT_AND_RING_TEMPERATURES
+    kinematic_viscosity                                  = 9.867971788872435e-05
+    kinematic_viscosity_of_oil_for_efficiency_calculations = 9.867971788872433e-05
+    lambda_ratio_inner                                   = 1.2597093338513563
+    lambda_ratio_outer                                   = 1.2941677078961773
+    lubricant_film_temperature                           = 80.0
+    lubricant_flow_rate                                  = 0.0
+    lubricant_windage_and_churning_temperature           = 80.0
+    lubrication                                          = Mobilith SHC 460
+    minimum_lubricating_film_thickness_inner             = 3.804322188231089e-07
+    minimum_lubricating_film_thickness_outer             = 3.9083864778464483e-07
+    oil_dip_coefficient                                  = 0.0
+    oil_sump_temperature                                 = 68.0
+    operating_air_temperature                            = 20.0
+    ratio_of_operating_element_diameter_to_element_pcd   = 0.03317722933058013
+    speed_factor_dmn                                     = 0.28266397518883335
+    speed_factor_dn                                      = 0.2592508641666667
+    static_equivalent_load_capacity_ratio_limit          = 1.5
+    surrounding_lubricant_density                        = 870.0
+    temperature_when_assembled                           = 20.0
+    [DetailedAnalysis.iso2812007] RollerISO2812007Results
+      axial_to_radial_load_ratio                           = 0.38544855979630727
+      axial_to_radial_load_ratio_exceeds_iso2812007e_limiting_value_for_dynamic_equivalent_load = False
+      calculated_viscosity_ratio                           = 0.4886412471262618
+      contamination_factor_from_calculated_viscosity_ratio = 0.9235990973398811
+      life_modification_factor_for_systems_approach_with_calculated_viscosity_ratio = <ERR Unable to access Life Modification Facto>
+      reference_kinematic_viscosity                        = 0.00020194717181381611
+      viscosity_ratio                                      = 0.4886412471262618
+    [DetailedAnalysis.isots162812008] RollerISOTS162812008Results
+      dynamic_equivalent_load_dynamic_capacity_ratio       = 0.20777232691664788
+    [DetailedAnalysis.lubrication] LubricationDetail
+      agma925a03_lubricant_type                            = <ERR Unable to access AGMA 925-A03 Lubricant >
+      density_vs_temperature                               = <ERR Unable to access Density vs. Temperature>
+      dynamic_viscosity_at_38c                             = 0.4400592995213868
+      dynamic_viscosity_of_the_lubricant_at_100_degrees_c  = 0.04837199999999999
+      dynamic_viscosity_of_the_lubricant_at_40_degrees_c   = 0.40019999999999994
+      iso_lubricant_type                                   = ISOLubricantType.POLYALPHAOLEFIN
+      kinematic_viscosity_at_38c                           = 0.0005058152868061917
+      kinematic_viscosity_of_the_lubricant_at_100_degrees_c = 5.5599999999999996e-05
+      kinematic_viscosity_of_the_lubricant_at_40_degrees_c = 0.00045999999999999996
+      lubricant_definition                                 = LubricantDefinition.STANDARD
+      lubricant_grade_agma                                 = <ERR Unable to access Lubricant Grade AGMA be>
+      lubricant_grade_iso                                  = <ERR Unable to access Lubricant Grade ISO bec>
+      lubricant_grade_sae                                  = <ERR Unable to access Lubricant Grade SAE bec>
+      lubricant_shear_modulus                              = 100000000.0
+      lubricant_type_and_supply                            = BearingLubricationCondition.GREASE_RUNIN_BEARING
+      lubricant_viscosity_classification                   = LubricantViscosityClassification.USERSPECIFIED
+      micropitting_failure_load_stage_test_temperature     = 90.0
+      oil_filtration_and_contamination                     = <ERR Unable to access Oil Filtration and Cont>
+      oil_to_air_heat_transfer_area                        = 0.1
+      pressure_viscosity_coefficient                       = 1.8e-08
+      pressure_viscosity_coefficient_method                = PressureViscosityCoefficientMethod.TEMPERATURE_INDEPENDENT_VALUE
+      temperature_at_which_density_is_specified            = <ERR Unable to access Temperature at Which De>
+      temperature_at_which_pressure_viscosity_coefficient_is_specified = <ERR Unable to access Temperature at Which Pr>
+
+완료
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001E626A39260>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

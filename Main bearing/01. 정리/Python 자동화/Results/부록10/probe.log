@@ -1,0 +1,398 @@
+======================================================================
+모델 로드: 26MW_메인베어링_기본설계_v1.3_샤프트 두께,형상 2안_피로하중 반영_유연체_FE_온도_50도_260721.Masta
+
+======================================================================
+[0] 기존 하중 구조
+======================================================================
+  static_loads: 17개
+    - name='Load Case 1'  type=StaticLoadCase
+    - name='Mx_max'  type=StaticLoadCase
+    - name='Mx_min'  type=StaticLoadCase
+    - name='My_max'  type=StaticLoadCase
+    - name='My_min'  type=StaticLoadCase
+    - name='Mz_max'  type=StaticLoadCase
+    - name='Mz_min'  type=StaticLoadCase
+    - name='Myz_max'  type=StaticLoadCase
+    - name='Myz_min'  type=StaticLoadCase
+    - name='Fx_max'  type=StaticLoadCase
+    - name='Fx_min'  type=StaticLoadCase
+    - name='Fy_max'  type=StaticLoadCase
+    - name='Fy_min'  type=StaticLoadCase
+    - name='Fz_max'  type=StaticLoadCase
+    - name='Fz_min'  type=StaticLoadCase
+    - name='Fyz_max'  type=StaticLoadCase
+    - name='Fyz_min'  type=StaticLoadCase
+
+--- [design_properties (하중 관련)] type=Design ---
+    add_duty_cycle                               (메서드)
+    all_parts_of_type_point_load                 (메서드)
+    all_parts_of_type_power_load                 (메서드)
+    design_state_load_case_group_named           (메서드)
+    duty_cycle_named                             (메서드)
+    duty_cycles                                  = [DutyCycle(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndResu
+    input_power_load                             = Input Power Load
+    load                                         (메서드)
+    load_example                                 (메서드)
+    load_new_design                              (메서드)
+    load_results                                 (메서드)
+    output_power_load                            = Output Power Load
+    save_load_case_results                       (메서드)
+    static_loads                                 = [StaticLoadCase(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAn
+    time_series_load_case_group_named            (메서드)
+    time_series_load_case_groups                 = [TimeSeriesLoadCaseGroup(wrapped=<SMT.MastaAPI.SystemModel.A
+
+  dp.duty_cycles: ['All']
+  dp.load_case_groups: <없음: 'Design' object has no attribute 'load_case_groups>
+  dp.duty_cycle: <없음: 'Design' object has no attribute 'duty_cycle'>
+
+--- [duty cycle 객체] type=DutyCycle ---
+    add_static_load                              (메서드)
+    analysis_of                                  (메서드)
+    clear_user_specified_excitation_data_for_all_load_cases (메서드)
+    compound_advanced_time_stepping_analysis_for_modulation = CompoundAdvancedTimeSteppingAnalysisForModulation(wrapped=<S
+    compound_critical_speed_analysis             = CompoundCriticalSpeedAnalysis(wrapped=<SMT.MastaAPI.SystemMo
+    compound_harmonic_analysis                   = CompoundHarmonicAnalysis(wrapped=<SMT.MastaAPI.SystemModel.A
+    compound_modal_analysis                      = CompoundModalAnalysis(wrapped=<SMT.MastaAPI.SystemModel.Anal
+    compound_stability_analysis                  = CompoundStabilityAnalysis(wrapped=<SMT.MastaAPI.SystemModel.
+    convert_to_condensed_parametric_study_tool_duty_cycle (메서드)
+    create_load_cases                            (메서드)
+    delete                                       (메서드)
+    duty_cycle_design_states                     = [SubGroupInSingleDesignState(wrapped=<SMT.MastaAPI.SystemMod
+    get_named_report_with_encoded_images         (메서드)
+    load_case_root_assemblies                    = [RootAssemblyLoadCase(wrapped=<SMT.MastaAPI.SystemModel.Anal
+    max_number_of_load_cases_to_display          = 20
+    name                                         = All
+    number_of_load_cases                         = 17.0
+    output_named_report_as_masta_report          (메서드)
+    output_named_report_as_text_to               (메서드)
+    output_named_report_to                       (메서드)
+    parametric_analysis_options                  = Parametric Study Tool Options
+    remove_design_state_sub_group                (메서드)
+    remove_static_load                           (메서드)
+    report_names                                 = ['Power Load Details', 'Load Case And Clutch Summary', 'Harm
+    static_loads                                 = [StaticLoadCase(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAn
+    static_loads_limited_by_max_number_of_load_cases_to_display = [StaticLoadCase(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAn
+    time_series_importer                         = Data importer
+
+======================================================================
+[A] Load Case 복제/생성/삭제
+======================================================================
+
+--- [LoadCase 객체 (복제·삭제 후보)] type=StaticLoadCase ---
+    additional_acceleration                      = SMT.KPA
+    delete                                       (메서드)
+    duplicate                                    (메서드)
+    get_named_report_with_encoded_images         (메서드)
+    name                                         = Load Case 1
+    output_named_report_as_masta_report          (메서드)
+    output_named_report_as_text_to               (메서드)
+    output_named_report_to                       (메서드)
+    report_names                                 = ['All Properties Report', 'Default CAD Report']
+  lc0.duplicate()                          → 실패: StaticLoadCase.duplicate() missing 1 required positional argument: 'ne
+  duty.add_static_load_case('t1')          → 실패: 'DutyCycle' object has no attribute 'add_static_load_case'
+  dp.add_static_load('t2')                 → 실패: 'Design' object has no attribute 'add_static_load'
+  (소요 0.01s)
+  생성 후 static_loads 개수: 17
+
+======================================================================
+[B] 케이스별 하중 개별 설정
+======================================================================
+  케이스[0] 'Load Case 1': 하중 설정 성공 (force_x=4,965,600)
+
+======================================================================
+[C] 일괄 해석 트리거 (duty cycle / compound)
+======================================================================
+
+--- [duty cycle 해석 메서드] type=DutyCycle ---
+    analysis_of                                  (메서드)
+    compound_advanced_time_stepping_analysis_for_modulation = CompoundAdvancedTimeSteppingAnalysisForModulation(wrapped=<S
+    compound_critical_speed_analysis             = CompoundCriticalSpeedAnalysis(wrapped=<SMT.MastaAPI.SystemMo
+    compound_harmonic_analysis                   = CompoundHarmonicAnalysis(wrapped=<SMT.MastaAPI.SystemModel.A
+    compound_modal_analysis                      = CompoundModalAnalysis(wrapped=<SMT.MastaAPI.SystemModel.Anal
+    compound_stability_analysis                  = CompoundStabilityAnalysis(wrapped=<SMT.MastaAPI.SystemModel.
+    parametric_analysis_options                  = Parametric Study Tool Options
+    perform_pst                                  (메서드)
+    perform_pst_with_progress                    (메서드)
+    run_power_flow                               (메서드)
+  duty.analysis_of(SYSTEM_DEFLECTION)          → 객체: CompoundSystemDeflection
+     perform_analysis() 성공  (5.11s)
+
+======================================================================
+[D] 일괄 해석 결과에서 케이스별 추출
+======================================================================
+
+--- [일괄 해석 결과 객체] type=CompoundSystemDeflection ---
+    perform_analysis                             (메서드)
+    perform_analysis_with_progress               (메서드)
+    results_for                                  (메서드)
+    results_for_abstract_assembly                (메서드)
+    results_for_abstract_shaft                   (메서드)
+    results_for_abstract_shaft_or_housing        (메서드)
+    results_for_abstract_shaft_to_mountable_component_connection (메서드)
+    results_for_agma_gleason_conical_gear        (메서드)
+    results_for_agma_gleason_conical_gear_mesh   (메서드)
+    results_for_agma_gleason_conical_gear_set    (메서드)
+    results_for_assembly                         (메서드)
+    results_for_bearing                          (메서드)
+    results_for_belt_connection                  (메서드)
+    results_for_belt_drive                       (메서드)
+    results_for_bevel_differential_gear          (메서드)
+    results_for_bevel_differential_gear_mesh     (메서드)
+    results_for_bevel_differential_gear_set      (메서드)
+    results_for_bevel_differential_planet_gear   (메서드)
+    results_for_bevel_differential_sun_gear      (메서드)
+    results_for_bevel_gear                       (메서드)
+    results_for_bevel_gear_mesh                  (메서드)
+    results_for_bevel_gear_set                   (메서드)
+    results_for_bolt                             (메서드)
+    results_for_bolted_joint                     (메서드)
+    results_for_clutch                           (메서드)
+    results_for_clutch_connection                (메서드)
+    results_for_clutch_half                      (메서드)
+    results_for_coaxial_connection               (메서드)
+    results_for_component                        (메서드)
+    results_for_concept_coupling                 (메서드)
+    results_for_concept_coupling_connection      (메서드)
+    results_for_concept_coupling_half            (메서드)
+    results_for_concept_gear                     (메서드)
+    results_for_concept_gear_mesh                (메서드)
+    results_for_concept_gear_set                 (메서드)
+    results_for_conical_gear                     (메서드)
+    results_for_conical_gear_mesh                (메서드)
+    results_for_conical_gear_set                 (메서드)
+    results_for_connection                       (메서드)
+    results_for_connector                        (메서드)
+    results_for_coupling                         (메서드)
+    results_for_coupling_connection              (메서드)
+    results_for_coupling_half                    (메서드)
+    results_for_cvt                              (메서드)
+    results_for_cvt_belt_connection              (메서드)
+    results_for_cvt_pulley                       (메서드)
+    results_for_cycloidal_assembly               (메서드)
+    results_for_cycloidal_disc                   (메서드)
+    results_for_cycloidal_disc_central_bearing_connection (메서드)
+    results_for_cycloidal_disc_planetary_bearing_connection (메서드)
+    results_for_cylindrical_gear                 (메서드)
+    results_for_cylindrical_gear_mesh            (메서드)
+    results_for_cylindrical_gear_set             (메서드)
+    results_for_cylindrical_planet_gear          (메서드)
+    results_for_datum                            (메서드)
+    results_for_external_cad_model               (메서드)
+    results_for_face_gear                        (메서드)
+    results_for_face_gear_mesh                   (메서드)
+    results_for_face_gear_set                    (메서드)
+    results_for_fe_part                          (메서드)
+    results_for_flexible_pin_assembly            (메서드)
+    results_for_gear                             (메서드)
+    results_for_gear_mesh                        (메서드)
+    results_for_gear_set                         (메서드)
+    results_for_guide_dxf_model                  (메서드)
+    results_for_hypoid_gear                      (메서드)
+    results_for_hypoid_gear_mesh                 (메서드)
+    results_for_hypoid_gear_set                  (메서드)
+    results_for_inter_mountable_component_connection (메서드)
+    results_for_klingelnberg_cyclo_palloid_conical_gear (메서드)
+    results_for_klingelnberg_cyclo_palloid_conical_gear_mesh (메서드)
+    results_for_klingelnberg_cyclo_palloid_conical_gear_set (메서드)
+    results_for_klingelnberg_cyclo_palloid_hypoid_gear (메서드)
+    results_for_klingelnberg_cyclo_palloid_hypoid_gear_mesh (메서드)
+    results_for_klingelnberg_cyclo_palloid_hypoid_gear_set (메서드)
+    results_for_klingelnberg_cyclo_palloid_spiral_bevel_gear (메서드)
+    results_for_klingelnberg_cyclo_palloid_spiral_bevel_gear_mesh (메서드)
+    results_for_klingelnberg_cyclo_palloid_spiral_bevel_gear_set (메서드)
+    results_for_mass_disc                        (메서드)
+    results_for_measurement_component            (메서드)
+    results_for_microphone                       (메서드)
+    results_for_microphone_array                 (메서드)
+    results_for_mountable_component              (메서드)
+    results_for_oil_seal                         (메서드)
+    results_for_part                             (메서드)
+    results_for_part_to_part_shear_coupling      (메서드)
+    results_for_part_to_part_shear_coupling_connection (메서드)
+    results_for_part_to_part_shear_coupling_half (메서드)
+    results_for_planet_carrier                   (메서드)
+    results_for_planetary_connection             (메서드)
+    results_for_planetary_gear_set               (메서드)
+    results_for_point_load                       (메서드)
+    results_for_power_load                       (메서드)
+    results_for_pulley                           (메서드)
+    results_for_ring_pins                        (메서드)
+    results_for_ring_pins_to_disc_connection     (메서드)
+    results_for_rolling_ring                     (메서드)
+    results_for_rolling_ring_assembly            (메서드)
+    results_for_rolling_ring_connection          (메서드)
+    results_for_root_assembly                    (메서드)
+    results_for_shaft                            (메서드)
+    results_for_shaft_hub_connection             (메서드)
+    results_for_shaft_to_mountable_component_connection (메서드)
+    results_for_specialised_assembly             (메서드)
+    results_for_spiral_bevel_gear                (메서드)
+    results_for_spiral_bevel_gear_mesh           (메서드)
+    results_for_spiral_bevel_gear_set            (메서드)
+    results_for_spring_damper                    (메서드)
+    results_for_spring_damper_connection         (메서드)
+    results_for_spring_damper_half               (메서드)
+    results_for_straight_bevel_diff_gear         (메서드)
+    results_for_straight_bevel_diff_gear_mesh    (메서드)
+    results_for_straight_bevel_diff_gear_set     (메서드)
+    results_for_straight_bevel_gear              (메서드)
+    results_for_straight_bevel_gear_mesh         (메서드)
+    results_for_straight_bevel_gear_set          (메서드)
+    results_for_straight_bevel_planet_gear       (메서드)
+    results_for_straight_bevel_sun_gear          (메서드)
+    results_for_synchroniser                     (메서드)
+    results_for_synchroniser_half                (메서드)
+    results_for_synchroniser_part                (메서드)
+    results_for_synchroniser_sleeve              (메서드)
+    results_for_torque_converter                 (메서드)
+    results_for_torque_converter_connection      (메서드)
+    results_for_torque_converter_pump            (메서드)
+    results_for_torque_converter_turbine         (메서드)
+    results_for_unbalanced_mass                  (메서드)
+    results_for_virtual_component                (메서드)
+    results_for_worm_gear                        (메서드)
+    results_for_worm_gear_mesh                   (메서드)
+    results_for_worm_gear_set                    (메서드)
+    results_for_zerol_bevel_gear                 (메서드)
+    results_for_zerol_bevel_gear_mesh            (메서드)
+    results_for_zerol_bevel_gear_set             (메서드)
+    results_ready                                = True
+  results_for(UW) → generator
+
+완료 (모델 저장 안 함)
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001BC27E8D6C0>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

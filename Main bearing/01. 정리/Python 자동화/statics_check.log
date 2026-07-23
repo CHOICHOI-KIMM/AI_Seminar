@@ -1,0 +1,85 @@
+[기하 추출 시도] 컴포넌트 local_coordinate_system origin
+  Point Load: origin=(0.0, 0.0, 0.0)
+  Main Bearing_UW: origin=(0.5, 0.0, 3.061515884555943e-17)
+  Main Bearing_DW: origin=(3.0, 0.0, 1.836909530733566e-16)
+
+==========================================================================
+강체/선형 정역학 검정 (반력 = 선형(hub 5-DOF)?)  N=100점
+==========================================================================
+
+[Main Bearing_UW]
+  RX: R²=1.000000  잔차RMS=0.001%   계수[F_X:+0.9849  F_Y:+0.0001432  F_Z:+0.0001094  M_X:-1.46e-05  M_Y:-0.2768]  절편=+2.34e+05
+  RY: R²=1.000000  잔차RMS=0.002%   계수[F_X:-0.0003002  F_Y:+0.9855  F_Z:+0.0007842  M_X:+0.2769  M_Y:+8.735e-06]  절편=-618
+  RZ: R²=0.971142  잔차RMS=2.244%   계수[F_X:+0.2304  F_Y:-0.0772  F_Z:+0.7391  M_X:-0.05518  M_Y:-0.08999]  절편=-3.34e+05
+  Fr: 7072~13100 kN, Fa: 3611~6227 kN
+  MASTA Fr vs P(dyn_equiv) 최대편차: 5.853%  (P=Fr 확인)
+
+[Main Bearing_DW]
+  RX: R²=1.000000  잔차RMS=0.001%   계수[F_X:+0.01509  F_Y:-0.0001432  F_Z:-0.0001094  M_X:+1.46e-05  M_Y:+0.2768]  절편=+2.3e+05
+  RY: R²=1.000000  잔차RMS=0.002%   계수[F_X:+0.0003002  F_Y:+0.01453  F_Z:-0.0007842  M_X:-0.2769  M_Y:-8.735e-06]  절편=+618
+  RZ: R²=0.969505  잔차RMS=5.183%   계수[F_X:-0.2304  F_Y:+0.0772  F_Z:+0.2609  M_X:+0.05518  M_Y:+0.08999]  절편=+3.34e+05
+  Fr: 2207~8165 kN, Fa: 846~3217 kN
+  MASTA Fr vs P(dyn_equiv) 최대편차: 0.000%  (P=Fr 확인)
+
+완료
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x000001F9EF35D620>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

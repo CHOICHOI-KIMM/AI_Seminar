@@ -1,0 +1,136 @@
+
+======================================================================
+A. time_series_load_case_groups[0] 전체 덤프
+----------------------------------------------------------------------
+  type: TimeSeriesLoadCaseGroup | name: Mx_max
+  TYPE: CLRMetatype ()
+  all_properties_are_invalid: bool = False
+  all_properties_are_read_only: bool = False
+  analysis_of: method ()
+  cast: method ()
+  cast_or_none: method ()
+  cast_to: _Cast_TimeSeriesLoadCaseGroup = _Cast_TimeSeriesLoadCaseGroup(__parent__=TimeSeriesLoadCaseGrou...
+  compound_multibody_dynamics_analysis: CompoundMultibodyDynamicsAnalysis = CompoundMultibodyDynamicsAnalysis(wrapped=<SMT.MastaAPI.SystemM...
+  create_load_cases: method ()
+  delete: method ()
+  disconnect_from_masta: method ()
+  documentation_url: method ()
+  get_active_report_with_encoded_images: method ()
+  get_default_report_with_encoded_images: method ()
+  get_named_report_with_encoded_images: method ()
+  get_property: method ()
+  initialize_lifetime_service: method ()
+  invalid_properties: list (len=0) = []
+  is_instance_of_wrapped_type: method ()
+  is_of_type: method ()
+  is_read_only: method ()
+  is_valid: method ()
+  load_case_root_assemblies: list (len=1) = [RootAssemblyLoadCase(wrapped=<SMT.MastaAPI.SystemModel.Analyse...
+  load_cases: list (len=1) = [TimeSeriesLoadCase(wrapped=<SMT.MastaAPI.SystemModel.AnalysesA...
+  model: Design = Design(wrapped=<SMT.MastaAPI.SystemModel.Design object at 0x000...
+  name: str = 'Mx_max'
+  number_of_load_cases: float = 1.0
+  output_active_report_as_text_to: method ()
+  output_active_report_to: method ()
+  output_default_report_to: method ()
+  output_named_report_as_masta_report: method ()
+  output_named_report_as_text_to: method ()
+  output_named_report_to: method ()
+  parametric_analysis_options: ParametricStudyToolOptions = ParametricStudyToolOptions(wrapped=<SMT.MastaAPI.SystemModel.An...
+  perform_pst: method ()
+  perform_pst_with_progress: method ()
+  read_only_properties: list (len=0) = []
+  report_names: list (len=3) = ['All Properties Report', 'Load Case Group Properties', 'Defaul...
+  set_property: method ()
+  total_duration: float = 360000.0
+  wrapped: TimeSeriesLoadCaseGroup = <SMT.MastaAPI.SystemModel.AnalysesAndResults.LoadCaseGroups.Tim...
+
+======================================================================
+B. tsg 의 load case / time / point 관련
+----------------------------------------------------------------------
+  create_load_cases: method ()
+  initialize_lifetime_service: method ()
+  load_case_root_assemblies: list (len=1) = [RootAssemblyLoadCase(wrapped=<SMT.MastaAPI.SystemModel.Analyse...
+  load_cases: list (len=1) = [TimeSeriesLoadCase(wrapped=<SMT.MastaAPI.SystemModel.AnalysesA...
+  number_of_load_cases: float = 1.0
+  total_duration: float = 360000.0
+
+======================================================================
+C. tsg 안의 로드케이스 컬렉션 찾기
+----------------------------------------------------------------------
+  tsg.load_cases: 1개; 예: ['Mx_max']
+
+======================================================================
+D. Fatigue load case design_state 조사
+----------------------------------------------------------------------
+  fatigue design state: Fatigue load case
+  clear_user_specified_excitation_data_for_all_load_cases: method ()
+  compound_advanced_time_stepping_analysis_for_modulation: CompoundAdvancedTimeSteppingAnalysisForModulation = CompoundAdvancedTimeSteppingAnalysisForModulation(wrapped=<SMT....
+  create_load_case: method ()
+  create_load_cases: method ()
+  initialize_lifetime_service: method ()
+  load_case_root_assemblies: list (len=1) = [RootAssemblyLoadCase(wrapped=<SMT.MastaAPI.SystemModel.Analyse...
+  max_number_of_load_cases_to_display: int = 20
+  number_of_load_cases: float = 1.0
+  static_loads: list (len=1) = [StaticLoadCase(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndRe...
+  static_loads_limited_by_max_number_of_load_cases_to_display: list (len=1) = [StaticLoadCase(wrapped=<SMT.MastaAPI.SystemModel.AnalysesAndRe...
+  static_loads: 1개; 예: ['Load Case 1']
+  load_cases: 56개; 예: ['<', 'e', 'r', 'r', ' ', "'"]
+
+======================================================================
+E. 시계열 point load 입력 — value_vs_time 이 설정됐나?
+----------------------------------------------------------------------
+  first_case: Mx_max TimeSeriesLoadCase
+    force_x.input_type = ValueInputOption.CONSTANT
+    axial_load.input_type = ValueInputOption.CONSTANT
+    moment_x.input_type = ValueInputOption.CONSTANT
+
+======================================================================
+완료
+----------------------------------------------------------------------
+Exception ignored in: <function APIBase.__del__ at 0x0000019C26AF9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019C26AF9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019C26AF9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019C26AF9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019C26AF9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019C26AF9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019C26AF9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019C26AF9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000019C26AF9440>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

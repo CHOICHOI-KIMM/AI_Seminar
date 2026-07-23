@@ -1,0 +1,1805 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=unicode" />
+   <meta http-equiv="X-UA-Compatible" content="IE=7.5" />
+   <style type="text/css">:root {
+	--report-even-row-gray: rgb(221,222,223);
+	--masta-tab-gray: rgb(238, 238, 238);
+	--masta-border-gray: rgb(172, 172, 172);
+	--smt-red: rgb(153,0,0);
+	--double-line-gray: rgb(204,204,204);
+	--selectioncolour: white;
+	--selectionbackground: #6495ED;
+	--spinner-colour: #888;
+	--command-image-size: 20px;
+	--thead-offset: 19px;
+
+	/* INSERT MASTA VARIABLES HERE */
+}
+
+* {
+	clear: both;
+}
+
+span {
+    margin-block: unset;
+}
+
+span.sectionHeader {
+    float: left;
+    width: 100%;
+}
+
+.padding-readonly-combo {
+    padding: 2.5px;
+}
+
+td, th, body {
+   font-family: var(--font-families, "Arial Unicode MS");
+   font-size: var(--font-size, 8px);
+}
+
+thead tr {
+    border: 1px solid black;
+	background: white;
+}
+
+thead td:has(.sortsAndFilters) {
+    min-width: 60px;
+}
+
+a{
+    display: inline-block;
+    clear: both;
+}
+
+a:empty {
+    display: block;
+}
+
+div{
+	clear: both;
+}
+
+.inputForm{
+    position: relative;
+	flex-grow: 1;
+	margin-right: 8px;
+}
+
+.inputForm > input{
+	width: 100% !important;
+}
+
+.range-half {
+    width: calc(50% - 17px);
+}
+
+.spin{
+    position: absolute;
+    width: 10px;
+    height: 6px;
+    background: #eee;
+    right: -6px;
+    border-style: outset;
+    border-width: thin;
+    display: none;
+}
+
+.spin:active{
+    border-style: inset;
+}
+
+.spin.spinUp{
+    top: 2px;
+}
+
+.spin.spinDown{
+    bottom: 2px;
+}
+
+.spinArrow{
+    display: block;
+    margin: 1px auto;
+    content: " ";
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+}
+
+.spinArrow.spinUpArrow{
+    border-bottom: 3px solid var(--spinner-colour);
+}
+
+.spinArrow.spinDownArrow{
+    border-top: 3px solid var(--spinner-colour);
+}
+
+.propertyHeading {
+    position: relative;
+}
+
+.sortsAndFilters {
+    position: absolute;
+    width: 72px;
+    height: 24px;
+    left: calc(50% - 36px);
+    top: calc(50% - 12px);
+}
+
+.sortsAndFilters a {
+    height: 16px;
+    width: 16px;
+    background-color: white;
+    border-radius: 2px;
+    border: 1px solid black;
+    padding: 3px;
+    opacity: 0;
+}
+
+.sortsAndFilters a:first-child {
+    position: relative;
+    margin: auto;
+}
+
+.filterLink img {
+    float: left;
+    margin-top: 0px;
+}
+
+.propertyHeading:hover a {
+    opacity: 1 !important;
+}
+
+.propertyHeading a:hover {
+    background-color: lightblue;
+}
+
+.tinyFilterImage {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    display: inline;
+    padding: 0;
+}
+
+.tinyFilterImage.visibleImage {
+    width: calc(var(--font-size, 8px) - 2px);
+    height: calc(var(--font-size, 8px) - 2px);
+    padding-right: 2px;
+    margin-bottom: 0px;
+}
+
+.visibleImage {
+    opacity: 1 !important;
+}
+
+thead a {
+	color: black;
+}
+
+thead a:hover {
+	text-decoration: none;
+}
+
+.chevron {
+    display: inline-block;
+    font-size: var(--font-size, 8px);
+}
+
+thead, div.tabHeader, select.subReport {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+body:has(div.tabHeader):has(thead) thead {
+    top: calc(var(--thead-offset) - 1px);
+}
+
+body:has(.tabHeader:nth-child(1)):has(thead) thead {
+    top: calc(var(--thead-offset) + 17px);
+}
+
+.tabHeader:nth-child(1){
+	top: var(--thead-offset);
+}
+
+.bold, .propertyHeading {
+    font-weight: bold;
+}
+
+.propertyHeading .toolTip{
+    font-weight: 450;
+}
+
+.toolTip {
+    text-align: left;
+    padding: 5px !important;
+}
+
+form {
+   margin: 0;
+   padding: 0;
+}
+
+/*Tables*/
+th.mainTableHeading {
+    color: var(--main-table-heading-color, black);
+	background: var(--main-table-heading-background-color, --smt-red);
+    font-size: var(--main-table-heading-font-size, 11px);
+}
+
+th.rowHeading {
+    color: black;
+}
+
+th.columnHeading
+{
+    background-color: #999;
+    color: white;
+}
+
+/*Tables*/
+
+span.sectionHeader
+{
+    font-weight: bold;
+    font-size: 1.2em;
+    color: black;
+    border-top: 5px double var(--double-line-gray);
+}
+
+.bannertable
+{
+    margin-bottom: 0.1em;
+    border-collapse: collapse; 
+
+}
+
+table
+{
+    margin-top: 0px;
+    margin-bottom: 10px;
+    border-collapse: collapse; 
+    border: 1px solid #333;
+	border-spacing: 0;
+    position: relative;
+}
+
+.outerTable, .tabHeader {
+    margin-top: 0px;
+    margin-bottom: 0;
+    border-collapse: collapse;
+    border: 0em solid white;
+	background: white;
+}
+
+.outerTable{
+    display: flex;
+    flex-direction: row;
+}
+
+.columnTable {
+    margin-top: 0;
+    margin-bottom: 0px;
+    border-collapse: collapse;
+    border: 0em solid white;
+	display: inline-block;
+	vertical-align: top;
+	padding: 5px;
+}
+
+.columnTableCell:has(.tabHeader)  {
+	display: block;
+	padding-top: 5px;
+}
+
+br
+{
+    clear: both;
+}
+caption
+{
+    text-align: left;
+    font-weight: bold;
+    font-size: 0.7em;
+}
+td,th
+{
+    text-align: left;
+    padding: 5px 12px;
+}
+
+td:has(details) {
+    padding: 1px 4px;
+}
+
+td
+{ 
+    min-height: 1em;
+}
+img
+{
+    border: none;
+    padding-bottom: 0.2em;
+}
+td:has(img) {
+    text-align: center;
+}
+ul {
+    list-style-type: none;
+    padding-left: 25px;
+    margin: 0;
+}
+
+ul ul {
+    font-size: 0.8em;
+    padding-left: 40px;
+}
+
+li
+{
+    margin-bottom: 0;
+    margin-top: 0;
+    border-bottom: 1px dotted var(--double-line-gray);
+    padding-bottom: 4px;
+    padding-top: 4px;
+    font-weight: bold;
+}
+
+ul ul li {
+    border: none;
+    font-weight: normal;
+    padding: 2px 0;
+}
+
+FIGURE, FIGCAPTION {
+
+display: block;
+font-style: italic;
+font-variant: small-caps;
+
+}
+
+/* Styling for floating tooltips in table cells */
+
+.toolTipContainer {
+}
+
+.toolTipContainer div.toolTip {
+    display: none;
+}
+
+.toolTipContainer:hover {
+    position: relative;
+    top: 0px;
+    left: 0px;
+    color: black;
+    margin-left: 0px;
+    z-index: 1000;
+}
+
+.toolTipContainer:hover div.toolTip {
+    display: block;
+    color: black;
+    position: absolute;
+    top: 1.5em;
+    left: 1em;
+    width: auto;
+    min-width: 2em;
+    white-space: nowrap;
+    padding: 0.75em 1.5em;
+    background: #FFFACD;
+    border: 2px solid gold;
+    z-index: 1000;
+}
+
+div.info 
+{
+    font-size: 1.1em;
+    font-weight:bold;
+    font-family: 'Webdings','Arial';
+    text-align: center;
+    color: #042271;
+}
+td.info
+{
+    text-align: left;
+    padding-left: 0.1em;
+    padding-right: 0.1em;
+    padding-bottom: 0.1em;
+    padding-top: 0.1em;
+    /*white-space: nowrap;*/
+}
+/* End of styling for floating tooltips in table cells */
+
+/* Styling for headings */
+
+.heading_very_small {
+    margin-left: 5px;
+    display: block;
+    font-size: 0.75em;
+    font-weight: bold;
+    color: var(--report-heading-color, var(--smt-red));
+}
+.heading_regular {
+    margin-left: 5px;
+    display: block;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--report-heading-color, var(--smt-red));
+}
+.heading_medium {
+    margin-left: 5px;
+    display: block;
+    font-size: 1.4em;
+    font-weight: bold;
+    color: var(--report-heading-color, var(--smt-red));
+}
+.heading_large {
+    margin-left: 5px;
+    display: block;
+    font-size: 1.6em;
+    font-weight: bold;
+    color: var(--report-heading-color, var(--smt-red));
+}
+
+details.heading_regular {
+    width: max-content;
+}
+
+details.heading_regular > summary::after {
+    font-size: 12px;
+    padding-top: 2px;
+    padding-left: 5px;
+}
+
+/* End of styling for headings */
+
+/* Styling for links */
+
+a {
+    text-decoration: none;
+    color: var(--smt-red);
+}
+
+table a {
+    color: #042271;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* End of styling for links */
+
+/* Styling for printing */
+
+@media print {
+    div.info, .noprint {
+		display: none;
+    }
+
+    thead, div.tabHeader, select.subReport {
+    position: relative !important;
+}
+}
+
+/* End of styling for printing */
+
+/* Styling for section headings */
+
+ .sectionHeaderRule {
+     margin-bottom: 20px;
+ }
+
+/* End of Styling for section headings */
+
+/* Styling for command buttons */
+
+.commandsContainer {
+    display: flex;
+    margin-bottom: 4px;
+}
+
+.commandsContainer a {
+    float: left;
+    padding: 3px;
+}
+
+.commandsContainer a img {
+    padding: 0;
+    margin: 0;
+}
+
+/* End of Styling for command buttons */
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.nullable-checkbox {
+    display: none;
+}
+
+.nullable-checkbox:checked {
+    display: block;
+}
+
+label:has(.nullable-checkbox) {
+    height: auto;
+    min-height: 13px;
+}
+
+.checkmark {
+    position: absolute;
+    top: 1px;
+    left: 6px;
+    height: 13px;
+    width: 13px;
+    background-color: darkgrey;
+    border: none;
+    border-radius: 2px;
+}
+
+.checkmark:after {
+    content: ' ';
+    position: absolute;
+    background-color: white;
+    width: 11px;
+    height: 3px;
+    left: 1px;
+    top: 5px;
+    rotate: -45deg;
+    display: block;
+}
+
+.nullable-checkbox:checked ~ .checkmark {
+    display: none;
+}
+
+input[type="checkbox"] {
+    accent-color: #042271;
+    position: relative;
+    margin: 0px 3px 0px 3px;
+    width: 14px;
+    vertical-align: middle;
+}
+
+input[type="checkbox"]:disabled{
+    appearance: none;
+    margin: 0;
+}
+
+input[type="checkbox"]:disabled::after {
+    margin: -4px;
+    content: "No";
+}
+
+input[type="checkbox"]:checked:disabled::after{
+    content: "Yes";
+}
+
+.selection-area {
+    background: rgba(46, 115, 252, 0.11);
+    border: 2px solid rgba(98, 155, 255, 0.81);
+    border-radius: 0.1em;
+}
+.selectable-table td.cell-selected {
+  background-color: #6495ED;
+  color: white;
+}
+.selectable-table td.cell-selected select[type="text"] {
+  background-color: #6495ED;
+  color: white;
+}
+
+.selectable-table input {
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: 1px 3px;
+}
+
+.selectable-table:hover input:not([type="checkbox"]:disabled) {
+    background-color: white;
+    border: 1px solid #999;
+    padding: 1px 3px;
+}
+
+.selectable-table select {
+    border: 1px solid transparent;
+    background-color: transparent;
+}
+
+.selectable-table:hover select {
+    border: 1px solid black;
+    background-color: white;
+}
+
+.tablinks {
+  font-size: var(--font-size, 8px);
+  background-color: var(--masta-tab-gray);
+  border: 1px solid var(--masta-border-gray);
+  outline: none;
+  cursor: pointer;
+  padding: 3px 8px 0px 8px;
+  transition: 0.3s;
+}
+
+/* Change background color of buttons on hover */
+.tablinks:hover {
+  background-color: var(--masta-border-gray);
+}
+
+/* Create an active/current tablink class */
+.tabHeader .active {
+  background-color: white;
+  border-bottom: 1px solid white;
+}
+
+.tabContent {
+	position: relative;
+    z-index: 0;
+}
+
+.noPad {
+	padding: 0;
+}
+
+select.subReport {
+    color: var(--smt-red);
+    border: 1px solid transparent;
+}
+
+select.subReport:hover {
+    border: 1px solid var(--smt-red);
+}
+
+.tableWithCommandsWrapper{
+    display: table;
+    margin: 0px 2px 2px 2px;
+}
+
+.tableWithCommandsWrapper div.commandsContainer {
+    opacity: 0;
+}
+
+.tableWithCommandsWrapper:hover div.commandsContainer {
+    opacity: 1;
+}
+
+.imageWithCommandsWrapper div.commandsContainer {
+    opacity: 0;
+}
+
+.imageWithCommandsWrapper:hover div.commandsContainer {
+    opacity: 1;
+}
+
+.imageWithCommandsWrapper {
+    text-align: center;
+}
+
+details>summary {
+  color: black;
+  outline: none;
+  border: 1px solid transparent;
+  list-style: none;
+  padding: 1px 3px;
+  white-space: break-spaces;
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+
+details > summary:hover, details > summary:focus {
+    border: 1px solid black;
+}
+
+summary::marker {
+  content: none;
+}
+
+details div{
+  display: inline;
+  color: black;
+  border: none;
+}
+
+summary::after {
+  content: ' ▼';
+  font-size: 10px;
+  margin: auto 0;
+}
+details {
+  display: inline-block;
+  max-width: 300px;
+  cursor: default;
+}
+details:not(:only-child){
+  vertical-align: middle;
+  padding: 2px 1px;
+}
+details:only-child{
+  width: 100% !important;
+}
+
+.dropdownItemsContainer {
+    height: max-content;
+    max-height: 200px;
+    max-width: 500px;
+    position: absolute;
+    z-index: 1000;
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+.fitWindowHeight {
+    height: calc(100% - 10px);
+}
+
+details ul {
+  background: white;
+  border: 1px solid black;
+  padding: 0;
+  padding-inline-start: 0;
+}
+details span{
+  color: black;
+}
+details li{
+  position: relative;
+  z-index: 1001;
+  background: white;
+  border-bottom: 0;
+  padding: 3px 6px;
+  font-weight: normal;
+  min-height: calc(var(--font-size)*1.34);
+}
+details li:hover, details li:focus {
+    background-color: rgb(200, 200, 200);
+}
+details img {
+  height: 20px;
+  width: 20px;
+  margin-top: 0;
+  margin-right: 2px;
+  padding-bottom: 0.25em;
+}
+details div img{
+	vertical-align: middle;
+}
+
+::selection {
+    color: var(--selectioncolour);
+    background: var(--selectionbackground);
+}
+pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5px}.hljs{background:#eee;color:#000}.hljs-comment,.hljs-quote,.hljs-variable{color:green}.hljs-built_in,.hljs-keyword,.hljs-name,.hljs-selector-tag,.hljs-tag{color:#00f}.hljs-addition,.hljs-attribute,.hljs-literal,.hljs-section,.hljs-string,.hljs-template-tag,.hljs-template-variable,.hljs-title,.hljs-type{color:#a31515}.hljs-deletion,.hljs-meta,.hljs-selector-attr,.hljs-selector-pseudo{color:#2b91af}.hljs-doctag{color:grey}.hljs-attr{color:red}.hljs-bullet,.hljs-link,.hljs-symbol{color:#00b0e8}.hljs-emphasis{font-style:italic}.hljs-strong{font-weight:700}
+:root {
+	--font-families: 'Segoe UI','Verdana','Arial','Arial Unicode MS','Microsoft Sans Serif','Microsoft YaHei','Harrington';
+	--font-size: 12px;
+	--main-table-heading-font-size: 17px;
+	--main-table-heading-color: #FFFFFF;
+	--main-table-heading-background-color: #990000;
+	--report-heading-color: #990000;
+	--smt-red: #990000;
+}
+</style>
+   <title>MASTA Report</title>
+</head>
+<body scroll="auto">
+<a name="Rolling_Bearing_Edit_Window_Reporter"></a><span class="sectionHeader">Rolling Bearing Edit Window Reporter</span><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Type_and_Designation">Type and Designation</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_">Rolling Bearing (Bearing Editor): </a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties">Basic Properties</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details">Race Details</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details">Element Details</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles">Profiles</a></li></ul></li></ul><hr class="sectionHeaderRule" width="50%" height="1px"><a name="Rolling_Bearing_Edit_Window_Reporter__Type_and_Designation"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10394"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10395"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="2" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Type and Designation</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="f31b165e-bdc0-4c6f-a1b1-c28da42f09cd"><div class="cellContent propertyHeading" title="Bearing Type
+
+Rolling Bearing Edit Window Reporter
+►Bearing Type">Bearing Type</div></td><td column="1" id="34dfefa9-c022-4715-89d1-6600b38ec57c"><div class="cellContent" title="Bearing Type
+Taper Roller Bearing">Taper Roller Bearing</div></td></tr><tr><td column="0" id="f79c0ea9-1408-4555-b105-744de3ad24f6"><div class="cellContent propertyHeading" title="Designation
+
+Rolling Bearing Edit Window Reporter
+►Designation">Designation</div></td><td column="1" id="237a67ee-0419-4690-b361-0a2d3c7bad69"><div class="cellContent" title="Designation
+BT1-8314_Test">BT1-8314_Test</div></td></tr></tbody></table></div><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_"></a><span class="sectionHeader">Rolling Bearing (Bearing Editor): </span><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties">Basic Properties</a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Envelope">Envelope</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Contact_Angle">Contact Angle</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____ISO_281:2007_Dynamic_Equivalent_Load_Factors">ISO 281:2007 Dynamic Equivalent Load Factors</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____ISO_15312:2018">ISO 15312:2018</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Limiting_Speeds">Limiting Speeds</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Bearing_Capacities">Bearing Capacities</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Misc">Misc</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Protection">Protection</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____SKF_Loss_Model_Constants">SKF Loss Model Constants</a></li></ul></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details">Race Details</a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details____Races">Races</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details____Race_Materials">Race Materials</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details____Raceway_Surface">Raceway Surface</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details__Ribs">Ribs</a></li></ul></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details">Element Details</a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Element_Geometry">Element Geometry</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Element_Surface">Element Surface</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Per_Element_Geometry">Per Element Geometry</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Misc">Misc</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Cage">Cage</a></li></ul></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles">Profiles</a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles____Inner_Profile">Inner Profile</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles____Outer_Profile">Outer Profile</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Roller">Roller</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Inner_Race">Inner Race</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Outer_Race">Outer Race</a></li></ul></li></ul><hr class="sectionHeaderRule" width="50%" height="1px"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties"></a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Envelope">Envelope</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Contact_Angle">Contact Angle</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____ISO_281:2007_Dynamic_Equivalent_Load_Factors">ISO 281:2007 Dynamic Equivalent Load Factors</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____ISO_15312:2018">ISO 15312:2018</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Limiting_Speeds">Limiting Speeds</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Bearing_Capacities">Bearing Capacities</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Misc">Misc</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Protection">Protection</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____SKF_Loss_Model_Constants">SKF Loss Model Constants</a></li></ul><hr class="sectionHeaderRule" width="50%" height="1px"><div class="outerTable"><div class="columnTable"><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Envelope"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10396"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10397"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="4" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Envelope</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="05700ee5-784c-464e-8df8-7cfaea0ccb03"><div class="cellContent propertyHeading" title="Bore (mm)
+
+Bearing Design
+►Bore (mm)">Bore (mm)</div></td><td column="1" id="591c72a8-1055-4f64-9226-04dbfdf14f38"><div class="cellContent"></div></td><td style="text-align:stretch" column="2" id="cfeffcbb-a3a2-4f9c-aff6-19bc21c8767a"><div class="cellContent">d</div></td><td column="3" id="a78e4574-e713-4c10-af55-8063526d175e"><div class="cellContent" title="Bore
+3055"><span style="white-space: nowrap">3055</span></div></td></tr><tr><td column="0" id="65105b8c-c26d-4471-8f6a-51a414f769f3"><div class="cellContent propertyHeading" title="Outer Diameter (mm)
+
+Bearing Design
+►Outer Diameter (mm)">Outer Diameter (mm)</div></td><td column="1" id="fe36ecc9-e5bf-48a4-b197-f85dd5b8a6cd"><div class="cellContent"></div></td><td style="text-align:stretch" column="2" id="d08c28b5-574a-4dd8-a2b8-af887fc92a93"><div class="cellContent">D</div></td><td column="3" id="2fb277d2-08c4-4d50-86ac-1d55f14062ea"><div class="cellContent" title="Outer Diameter
+3600"><span style="white-space: nowrap">3600</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="e147a335-2a92-463e-a679-e9f6b13b88b9"><div class="cellContent propertyHeading" title="Outer Ring Width (mm)
+
+Bearing Design
+►Outer Ring Width (mm)">Outer Ring Width (mm)</div></td><td column="1" id="6a6deb2a-9c78-4e43-baac-5b031cbb3e7b"><div class="cellContent"></div></td><td style="text-align:stretch" column="2" id="54694483-43e3-4340-bd5b-51f440b62afb"><div class="cellContent">C</div></td><td column="3" id="5743a60f-9b29-4f65-aa01-b901396be2d6"><div class="cellContent" title="Outer Ring Width
+253 (Specified)"><span style="white-space: nowrap">253 (Specified)</span></div></td></tr><tr><td column="0" id="1c3cd0bb-3324-45d9-a907-a054b20b2976"><div class="cellContent propertyHeading" title="Inner Ring Width (mm)
+
+Bearing Design
+►Inner Ring Width (mm)">Inner Ring Width (mm)</div></td><td column="1" id="e6d7b327-74f7-413e-8d3f-d6ed96bb9dfa"><div class="cellContent"></div></td><td style="text-align:stretch" column="2" id="5fb9041d-9c38-47c5-831f-a763c4435fe7"><div class="cellContent">B</div></td><td column="3" id="de558033-a71b-4590-b4bd-b650c4a345cd"><div class="cellContent" title="Inner Ring Width
+300 (Specified)"><span style="white-space: nowrap">300 (Specified)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="f3962454-dbc5-4e08-825d-40fd142722e2"><div class="cellContent propertyHeading" title="Width (mm)
+
+Bearing Design
+►Width (mm)">Width (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="2bde44af-a076-4e2c-acd6-a30458ce9f4c"><div class="cellContent" title="Total width of the bearing, so the smallest this can be is the width of the inner race. If the outer race extends further than the edge of the inner race then the width will be equivalent to the Assembled Width (T).
+
+Bearing Design
+►Width (mm) (Length - Short)"><div class="info">i</div></div></td><td column="2" id="ea930b4b-79c4-4a56-8d73-8ff66bf0c976"><div class="cellContent"></div></td><td column="3" id="7a098036-865f-4675-90bf-5d4dcc8dc422"><div class="cellContent" title="Width
+310
+Total width of the bearing, so the smallest this can be is the width of the inner race. If the outer race extends further than the edge of the inner race then the width will be equivalent to the Assembled Width (T)."><span style="white-space: nowrap">310</span></div></td></tr><tr><td column="0" id="e52ecb65-e72b-43dd-a1a8-50a4c2dadd71"><div class="cellContent propertyHeading" title="Distance from the outer ring back face to the inner ring back face.
+
+Bearing Design
+►Assembled Width (mm)">Assembled Width (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="2414f14e-32d9-4fd5-a10b-bd745d426214"><div class="cellContent" title="Distance from the outer ring back face to the inner ring back face.
+
+Bearing Design
+►Assembled Width (mm) (Length - Short)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="1838c694-6e95-43ea-8aa7-2a22854fb511"><div class="cellContent">T</div></td><td column="3" id="4f0c694e-1394-442c-ad15-e85b88139dfb"><div class="cellContent" title="Assembled Width
+310
+Distance from the outer ring back face to the inner ring back face."><span style="white-space: nowrap">310</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="cc7abb35-b985-4a78-be84-e0e02a22ea0c"><div class="cellContent propertyHeading" title="Estimated from ISO 15:1998 when not specified. Used in DIN 732:2010 calculations. Also used to obtain some geometric constants for the SKF power loss calculation.
+
+Bearing Design
+►Width Series">Width Series</div></td><td style="text-align:stretch" class="info" column="1" id="d0996cd9-ba4a-410d-9933-7b0dfba666bf"><div class="cellContent" title="Estimated from ISO 15:1998 when not specified. Used in DIN 732:2010 calculations. Also used to obtain some geometric constants for the SKF power loss calculation.
+
+Bearing Design
+►Width Series"><div class="info">i</div></div></td><td column="2" id="cbcc757c-2220-4f2b-a760-c8b3bb439bd2"><div class="cellContent"></div></td><td column="3" id="dd9440fe-7fda-48e6-96d9-784aac32fe00"><div class="cellContent" title="Width Series
+2">2</div></td></tr><tr><td column="0" id="0f821cba-beda-4ac9-9f2f-e8fbf1472575"><div class="cellContent propertyHeading" title="Estimated from ISO 15:1998 or ISO 104:2002 when not specified. Used in DIN 732:2010 calculations. Also used to obtain some geometric constants for the SKF power loss calculation.
+
+Bearing Design
+►Diameter Series">Diameter Series</div></td><td style="text-align:stretch" class="info" column="1" id="8dbfaeba-ed97-4233-ad11-c392a16b4804"><div class="cellContent" title="Estimated from ISO 15:1998 or ISO 104:2002 when not specified. Used in DIN 732:2010 calculations. Also used to obtain some geometric constants for the SKF power loss calculation.
+
+Bearing Design
+►Diameter Series"><div class="info">i</div></div></td><td column="2" id="d5677df7-b118-47b0-8045-c94d1817d999"><div class="cellContent"></div></td><td column="3" id="7a587f0c-ee43-4620-b9a3-0bdc79c70022"><div class="cellContent" title="Diameter Series
+0">0</div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="7a0484eb-831a-40bc-923d-2e20d88e4bdf"><div class="cellContent propertyHeading" title="The distance from the front face of the bearing to the effective load centre, which is defined as the intersection of the bearing centre line with a line perpendicular to the outer race drawn through the mid-point of the element edge which touches the outer race. Setting this value 'a' here will change the outer ring offset.
+
+Bearing Design
+►Effective Centre from Front Face (mm)">Effective Centre from Front Face (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="88cc28e4-3c65-41a2-8ae9-382d0a00863d"><div class="cellContent" title="The distance from the front face of the bearing to the effective load centre, which is defined as the intersection of the bearing centre line with a line perpendicular to the outer race drawn through the mid-point of the element edge which touches the outer race. Setting this value 'a' here will change the outer ring offset.
+
+Bearing Design
+►Effective Centre from Front Face (mm) (Length - Short)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="ee127285-8048-4bf1-a2f0-b220d490966d"><div class="cellContent">a</div></td><td column="3" id="0602e6ee-4d7b-4834-83ae-2794e4a73710"><div class="cellContent" title="Effective Centre from Front Face
+713.3306
+The distance from the front face of the bearing to the effective load centre, which is defined as the intersection of the bearing centre line with a line perpendicular to the outer race drawn through the mid-point of the element edge which touches the outer race. Setting this value 'a' here will change the outer ring offset."><span style="white-space: nowrap">713.331</span></div></td></tr><tr><td column="0" id="b0f8a300-3905-44c0-ba8b-480c90dd3002"><div class="cellContent propertyHeading" title="Offset of the outer ring relative to the inner ring
+
+Bearing Design
+►Outer Ring Offset (mm)">Outer Ring Offset (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="4825a1f2-2d32-4c64-898d-3efad3a8b1dd"><div class="cellContent" title="Offset of the outer ring relative to the inner ring
+
+Bearing Design
+►Outer Ring Offset (mm) (Length - Short)"><div class="info">i</div></div></td><td column="2" id="034696cf-6f12-4e9f-8157-c8beb089f5d3"><div class="cellContent"></div></td><td column="3" id="1a9238f8-13f3-4572-a29d-fd583e31c7bf"><div class="cellContent" title="Outer Ring Offset
+33.5 (Specified)
+Offset of the outer ring relative to the inner ring"><span style="white-space: nowrap">33.5 (Specified)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="af8a54eb-c93a-400d-b27c-c6d4e5894675"><div class="cellContent propertyHeading" title="Inner Ring Front Face Corner Radius (mm)
+
+Bearing Design
+►Inner Ring Front Face Corner Radius (mm)">Inner Ring Front Face Corner Radius (mm)</div></td><td column="1" id="f5c54377-1992-4ddc-af7b-e6e1d41cf92a"><div class="cellContent"></div></td><td column="2" id="ed120789-ff2a-4596-a574-b9a43ac6fcbb"><div class="cellContent"></div></td><td column="3" id="d94a9796-6c47-4a50-af40-7d14def6e94b"><div class="cellContent" title="Inner Ring Front Face Corner Radius
+7.390116106 (Estimated)"><span style="white-space: nowrap">7.39 (Estimated)</span></div></td></tr><tr><td column="0" id="8bf7ddaa-3cea-48cc-ace2-c08f190f2fe0"><div class="cellContent propertyHeading" title="Inner Ring Back Face Corner Radius (mm)
+
+Bearing Design
+►Inner Ring Back Face Corner Radius (mm)">Inner Ring Back Face Corner Radius (mm)</div></td><td column="1" id="68dff81c-8134-4e9d-bcce-805f8b869c28"><div class="cellContent"></div></td><td column="2" id="5ed42d71-a249-4f7c-a606-77a40b38604b"><div class="cellContent"></div></td><td column="3" id="41b74b4f-9745-4ef2-acaf-14995f20b257"><div class="cellContent" title="Inner Ring Back Face Corner Radius
+7.390116106 (Estimated)"><span style="white-space: nowrap">7.39 (Estimated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="4888b68f-250c-4b29-a040-6b74acd6c79d"><div class="cellContent propertyHeading" title="Outer Ring Front Face Corner Radius (mm)
+
+Bearing Design
+►Outer Ring Front Face Corner Radius (mm)">Outer Ring Front Face Corner Radius (mm)</div></td><td column="1" id="2e4995d8-ca5a-4f6f-bf21-6003b1113b10"><div class="cellContent"></div></td><td column="2" id="ebba3ec5-9451-4c3b-9876-59be21715d6c"><div class="cellContent"></div></td><td column="3" id="77a23aa7-03f0-41ce-9036-fbf937a118a8"><div class="cellContent" title="Outer Ring Front Face Corner Radius
+7.390116106 (Estimated)"><span style="white-space: nowrap">7.39 (Estimated)</span></div></td></tr><tr><td column="0" id="c544b094-3bd7-4368-a871-653740f3c84a"><div class="cellContent propertyHeading" title="Outer Ring Back Face Corner Radius (mm)
+
+Bearing Design
+►Outer Ring Back Face Corner Radius (mm)">Outer Ring Back Face Corner Radius (mm)</div></td><td column="1" id="573231b9-683a-4869-96e0-85144772ae59"><div class="cellContent"></div></td><td column="2" id="b0d2d717-88f8-4dfe-998d-c362936256b7"><div class="cellContent"></div></td><td column="3" id="9b3b9193-d18d-42cb-a630-9d738ce6db8c"><div class="cellContent" title="Outer Ring Back Face Corner Radius
+7.390116106 (Estimated)"><span style="white-space: nowrap">7.39 (Estimated)</span></div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Contact_Angle"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10398"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10399"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Contact Angle</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="0dd4a25f-a029-42d2-9e0d-68a924f69e0a"><div class="cellContent propertyHeading" title="Contact Angle (&deg;)
+
+Bearing Design
+►Contact Angle (&deg;)">Contact Angle (&deg;)</div></td><td style="text-align:stretch" column="1" id="232ad0ca-be82-4c1f-ad8d-43b85952689e"><div class="cellContent">α</div></td><td column="2" id="9da45b9f-9700-47e6-937c-3f2e9e5ae9d3"><div class="cellContent" title="Contact Angle
+19 (Specified)"><span style="white-space: nowrap">19 (Specified)</span></div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____ISO_281:2007_Dynamic_Equivalent_Load_Factors"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10400"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10401"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="4" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">ISO 281:2007 Dynamic Equivalent Load Factors</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="beda450c-c2a6-4f21-bec4-4c053ca79d37"><div class="cellContent propertyHeading" title="The axial and radial load factors for the dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 can only be specified when the bearing can take axial load (i.e. has opposing ribs).
+
+Bearing Design
+►Dynamic Equivalent Load Factors Can Be Specified?">Factors can be specified?</div></td><td style="text-align:stretch" class="info" column="1" id="7750d5e5-6f68-403d-b196-d7d0565b0297"><div class="cellContent" title="The axial and radial load factors for the dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 can only be specified when the bearing can take axial load (i.e. has opposing ribs).
+
+Bearing Design
+►Dynamic Equivalent Load Factors Can Be Specified?"><div class="info">i</div></div></td><td column="2" id="d0926480-eaa9-4dce-8933-fc59190f9c3e"><div class="cellContent"></div></td><td column="3" id="3a9b06f3-bb3b-4b95-a49b-50069785f831"><div class="cellContent" title="Dynamic Equivalent Load Factors Can Be Specified?
+Yes
+The axial and radial load factors for the dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 can only be specified when the bearing can take axial load (i.e. has opposing ribs).">Yes</div></td></tr><tr><td column="0" id="6a0ec924-2ea2-4468-a32e-34728d2f075d"><div class="cellContent propertyHeading" title="The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e').
+
+Bearing Design
+►Dynamic Radial Load Factor For Low Axial/Radial Load Ratios">Low Axial Loads: Radial Factor</div></td><td style="text-align:stretch" class="info" column="1" id="fc3acf8a-86e6-4689-95e7-2f91494024a0"><div class="cellContent" title="The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e').
+
+Bearing Design
+►Dynamic Radial Load Factor For Low Axial/Radial Load Ratios (Number)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="4f790958-2ca1-44e8-9ac1-9bc3f9d8af5b"><div class="cellContent">X</div></td><td column="3" id="c3fd60c5-52a9-4086-9393-257760c57728"><div class="cellContent" title="Dynamic Radial Load Factor For Low Axial/Radial Load Ratios
+1 (From ISO 281:2007 (and ANSI/ABMA))
+The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e')."><span style="white-space: nowrap">1 (From ISO 281:2007 (and ANSI/ABMA))</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="3ddd6fac-1011-4b55-960b-bbcba7cf7520"><div class="cellContent propertyHeading" title="The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e').
+
+Bearing Design
+►Dynamic Axial Load Factor For Low Axial/Radial Load Ratios">Low Axial Loads: Axial Factor</div></td><td style="text-align:stretch" class="info" column="1" id="3ef374e9-3838-4df9-a168-60d3fcb15652"><div class="cellContent" title="The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e').
+
+Bearing Design
+►Dynamic Axial Load Factor For Low Axial/Radial Load Ratios (Number)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="ba459756-cf09-4579-a83f-7283ee5656c0"><div class="cellContent">Y</div></td><td column="3" id="727a266a-f6ca-4222-b92e-b77d21dc6f66"><div class="cellContent" title="Dynamic Axial Load Factor For Low Axial/Radial Load Ratios
+0 (From ISO 281:2007 (and ANSI/ABMA))
+The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e')."><span style="white-space: nowrap">0 (From ISO 281:2007 (and ANSI/ABMA))</span></div></td></tr><tr><td column="0" id="fe16ff58-d718-48ab-96a1-556631cefa8d"><div class="cellContent"></div></td><td column="1" id="48cd7262-ee18-497d-90ea-ee37274b52d2"><div class="cellContent"></div></td><td column="2" id="0eac80a6-97c4-4716-ac54-19464175a557"><div class="cellContent"></div></td><td column="3" id="eac4f0c3-7801-4d65-b6d0-bb61017ef681"><div class="cellContent"></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="c7bd8593-f769-45b8-9036-8ebe391fa0b1"><div class="cellContent propertyHeading" title="The limiting value of the axial over the radial load for the applicability of different values of the dynamic radial and axial load factors. See ISO 281:2007. For many bearing types the limiting value is a function of contact angle. Where a bearing takes only radial or axial load, the limiting value is set to a default value of zero.
+
+Bearing Design
+►Limiting Value for Axial Load Ratio">Limiting Value for Axial Load Ratio</div></td><td style="text-align:stretch" class="info" column="1" id="1117ed9a-da8b-4c74-b499-5db464b8292d"><div class="cellContent" title="The limiting value of the axial over the radial load for the applicability of different values of the dynamic radial and axial load factors. See ISO 281:2007. For many bearing types the limiting value is a function of contact angle. Where a bearing takes only radial or axial load, the limiting value is set to a default value of zero.
+
+Bearing Design
+►Limiting Value for Axial Load Ratio (Number)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="3b40b0b4-04e2-4d07-8250-2fb516998b31"><div class="cellContent">e</div></td><td column="3" id="78d54821-d68f-4893-a9ac-74ab0514135f"><div class="cellContent" title="Limiting Value for Axial Load Ratio
+0.51649142 (From Contact Angle)
+The limiting value of the axial over the radial load for the applicability of different values of the dynamic radial and axial load factors. See ISO 281:2007. For many bearing types the limiting value is a function of contact angle. Where a bearing takes only radial or axial load, the limiting value is set to a default value of zero."><span style="white-space: nowrap">0.5165 (From Contact Angle)</span></div></td></tr><tr><td column="0" id="0a83b12b-3e02-4596-8da5-094969dd718c"><div class="cellContent propertyHeading" title="The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e').
+
+Bearing Design
+►Dynamic Radial Load Factor For High Axial/Radial Load Ratios">High Axial Loads: Radial Factor</div></td><td style="text-align:stretch" class="info" column="1" id="8fd01940-d936-4259-aa70-615d71fb42c2"><div class="cellContent" title="The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e').
+
+Bearing Design
+►Dynamic Radial Load Factor For High Axial/Radial Load Ratios (Number)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="03d83c11-15f8-4b2c-9b64-e6795632fa04"><div class="cellContent">X</div></td><td column="3" id="1e52c008-f8ee-4903-a664-04a8e70e95a3"><div class="cellContent" title="Dynamic Radial Load Factor For High Axial/Radial Load Ratios
+0.4 (From ISO 281:2007 (and ANSI/ABMA))
+The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e')."><span style="white-space: nowrap">0.4 (From ISO 281:2007 (and ANSI/ABMA))</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="20d324a3-1643-490c-a073-b0f35824328b"><div class="cellContent propertyHeading" title="The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e').
+
+Bearing Design
+►Dynamic Axial Load Factor For High Axial/Radial Load Ratios">High Axial Loads: Axial Factor</div></td><td style="text-align:stretch" class="info" column="1" id="95432027-d970-4909-8848-c061687fb1b3"><div class="cellContent" title="The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e').
+
+Bearing Design
+►Dynamic Axial Load Factor For High Axial/Radial Load Ratios (Number)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="fbe64e1f-6869-449b-8f78-a7eb19f4bce9"><div class="cellContent">Y</div></td><td column="3" id="3ba5e4c8-e4c2-4bde-9c02-34ee73bb5a96"><div class="cellContent" title="Dynamic Axial Load Factor For High Axial/Radial Load Ratios
+1.161684351 (From ISO 281:2007 (and ANSI/ABMA))
+The dynamic equivalent load in ISO 281:2007, ANSI/ABMA 9:2015, and ANSI/ABMA 11:2014 is given by the dynamic radial load factor (X) times the radial load plus the dynamic axial load factor (Y) times the axial load. The dynamic radial load factor and the dynamic axial load factors are defined in two regimes: high axial loads (for which the ratio of the axial to radial loads exceeds a limiting value 'e'), and low axial loads (for which the ratio of the axial to radial loads is less than or equal to a limiting value 'e')."><span style="white-space: nowrap">1.1617 (From ISO 281:2007 (and ANSI/ABMA))</span></div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____ISO_15312:2018"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10402"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10403"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">ISO 15312:2018</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="a9eb63f3-7d9e-4ebf-a74b-21fad4ee1026"><div class="cellContent propertyHeading" title="Reason for Invalidity
+
+Bearing Design
+►ISO 15312:2018
+►Reason for Invalidity">Reason for Invalidity</div></td><td column="1" id="faf92f6b-8ddb-4db5-a230-188bd157266c"><div class="cellContent"></div></td><td column="2" id="f14f3e1b-cc46-4e78-87e2-5581cd94655f"><div class="cellContent" title="Reason for Invalidity
+Not a bearing design specified in section 5.2.2.1 or 5.2.2.2 of ISO 15312:2018.">Not a bearing design specified in section 5.2.2.1 or 5.2.2.2 of ISO 15312:2018.</div></td></tr></tbody></table></div></div></div><div class="columnTable"><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Limiting_Speeds"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10404"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10405"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Limiting Speeds</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="98aaeb6f-0dfd-4db5-b5b4-89780ec52136"><div class="cellContent propertyHeading" title="Maximum Grease Speed (rev/min)
+
+Bearing Design
+►Maximum Grease Speed (rev/min)">Maximum Grease Speed (rev/min)</div></td><td style="text-align:stretch" column="1" id="53775582-440f-440f-8efa-af3db2d820d9"><div class="cellContent">N<sub>g</sub></div></td><td column="2" id="baf74967-83ad-49d9-990d-18ad8c70d127"><div class="cellContent" title="Maximum Grease Speed
+240"><span style="white-space: nowrap">240</span></div></td></tr><tr><td column="0" id="3c11cb60-ec19-4892-a68e-14379a495c87"><div class="cellContent propertyHeading" title="Maximum Oil Speed (rev/min)
+
+Bearing Design
+►Maximum Oil Speed (rev/min)">Maximum Oil Speed (rev/min)</div></td><td style="text-align:stretch" column="1" id="d787747d-32ce-42c1-b408-b1835f34b965"><div class="cellContent">N<sub>o</sub></div></td><td column="2" id="cdb2ee62-7544-488b-a1cf-36fa326d387b"><div class="cellContent" title="Maximum Oil Speed
+240"><span style="white-space: nowrap">240</span></div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Bearing_Capacities"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10406"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10407"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="4" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Bearing Capacities</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="b4df79eb-5e7a-4357-a1a8-1425154120aa"><div class="cellContent propertyHeading" title="The method for estimating the basic dynamic load rating in ISO/TR 1281-1:2008(E) may be different than that in ISO 281:2007 for ball bearings, since the ISO/TR 1281-1:2008(E) method uses the groove diameters of the races. Roller bearings have the same estimated basic dynamic load rating whether you use the method in ISO 281:2007 or ISO/TR 1281-1:2008(E).
+
+Bearing Design
+►Basic Dynamic Load Rating Calculation">Basic Dynamic Load Rating Calculation</div></td><td style="text-align:stretch" class="info" column="1" id="afcb8458-538d-4200-a534-f5c502388331"><div class="cellContent" title="The method for estimating the basic dynamic load rating in ISO/TR 1281-1:2008(E) may be different than that in ISO 281:2007 for ball bearings, since the ISO/TR 1281-1:2008(E) method uses the groove diameters of the races. Roller bearings have the same estimated basic dynamic load rating whether you use the method in ISO 281:2007 or ISO/TR 1281-1:2008(E).
+
+Bearing Design
+►Basic Dynamic Load Rating Calculation"><div class="info">i</div></div></td><td column="2" id="f3e1dc3a-64e2-4b37-9733-54e55bea5159"><div class="cellContent"></div></td><td column="3" id="43f87498-f2de-4e90-be05-acbcd49fcf59"><div class="cellContent" title="Basic Dynamic Load Rating Calculation
+ISO 281:2007 (Standard)">ISO 281:2007 (Standard)</div></td></tr><tr><td column="0" id="c63ce5c8-48dd-49a7-a3d8-71498590408f"><div class="cellContent propertyHeading" title="Constant load (either a stationary radial load or a centric axial load) that a rolling bearing can theoretically endure for a basic rating life of one million revolutions.
+
+Bearing Design
+►Basic Dynamic Load Rating (kN)">Basic Dynamic Load Rating (kN)</div></td><td style="text-align:stretch" class="info" column="1" id="ee0e8c1b-be2b-432b-b8a3-862bd03edd32"><div class="cellContent" title="Constant load (either a stationary radial load or a centric axial load) that a rolling bearing can theoretically endure for a basic rating life of one million revolutions.
+
+Bearing Design
+►Basic Dynamic Load Rating (kN) (Force)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="4414ad55-6896-4b04-88e0-4e111b9485ac"><div class="cellContent">C<sub>r</sub></div></td><td column="3" id="7154fe2c-4c03-4e95-9920-172e459ef720"><div class="cellContent" title="Basic Dynamic Load Rating
+22227.9789158749
+Constant load (either a stationary radial load or a centric axial load) that a rolling bearing can theoretically endure for a basic rating life of one million revolutions."><span style="white-space: nowrap">22227.9789</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="92850b82-0dbf-4f01-84eb-5e89b20f95bc"><div class="cellContent propertyHeading" title="Bm is (according to ISO 281 p9) 'rating factor for contemporary, commonly used, high quality hardened bearing steel'. If the Dynamic Capacity Calculation is set to use ISO 281 Supplement 5 for hybrid bearings, then that will also be used for this.
+
+Bearing Design
+►ISO Material Factor">ISO Material Factor</div></td><td style="text-align:stretch" class="info" column="1" id="d2b26438-2238-49c5-9932-51718148d5b3"><div class="cellContent" title="Bm is (according to ISO 281 p9) 'rating factor for contemporary, commonly used, high quality hardened bearing steel'. If the Dynamic Capacity Calculation is set to use ISO 281 Supplement 5 for hybrid bearings, then that will also be used for this.
+
+Bearing Design
+►ISO Material Factor (Number)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="280fa5f3-eee1-45b2-b694-3c14272a6811"><div class="cellContent">b<sub>m</sub></div></td><td column="3" id="4defce13-26ba-4e19-8990-84c389e73f24"><div class="cellContent" title="ISO Material Factor
+1.1 (From ISO 281:2007)
+Bm is (according to ISO 281 p9) 'rating factor for contemporary, commonly used, high quality hardened bearing steel'. If the Dynamic Capacity Calculation is set to use ISO 281 Supplement 5 for hybrid bearings, then that will also be used for this."><span style="white-space: nowrap">1.1 (From ISO 281:2007)</span></div></td></tr><tr><td column="0" id="8dd09ddd-640d-4871-a8c1-1842c4093750"><div class="cellContent propertyHeading" title="Basic Static Load Rating Calculation
+
+Bearing Design
+►Basic Static Load Rating Calculation">Basic Static Load Rating Calculation</div></td><td column="1" id="d6899d7d-d4b6-41a9-a5c4-1ac51a7c47e5"><div class="cellContent"></div></td><td column="2" id="6f65ec35-1de1-43aa-a62f-7287ce40d7c0"><div class="cellContent"></div></td><td column="3" id="bd68b5c3-7504-46e4-a107-ad66d71fd59a"><div class="cellContent" title="Basic Static Load Rating Calculation
+ISO 76 (Standard)">ISO 76 (Standard)</div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="70f698fa-2312-4f80-8201-4c1dfd01244f"><div class="cellContent propertyHeading" title="Load (either radial or static centric axial load) that corresponds to a calculated contact stress at the centre of the most heavily loaded rolling element/raceway contact that gives a total permanent deformation of rolling element and raceway which is approximately 0.0001 of the rolling element diameter.
+
+Bearing Design
+►Basic Static Load Rating (kN)">Basic Static Load Rating (kN)</div></td><td style="text-align:stretch" class="info" column="1" id="4b406f24-7559-4d96-b2f0-48fb8db82e75"><div class="cellContent" title="Load (either radial or static centric axial load) that corresponds to a calculated contact stress at the centre of the most heavily loaded rolling element/raceway contact that gives a total permanent deformation of rolling element and raceway which is approximately 0.0001 of the rolling element diameter.
+
+Bearing Design
+►Basic Static Load Rating (kN) (Force)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="c26ff4ef-0c2a-4189-b942-6bc9a28a0182"><div class="cellContent">C<sub>0</sub></div></td><td column="3" id="4eb29236-182b-4cfc-a762-b79ba8c008d5"><div class="cellContent" title="Basic Static Load Rating
+92228.7168860803
+Load (either radial or static centric axial load) that corresponds to a calculated contact stress at the centre of the most heavily loaded rolling element/raceway contact that gives a total permanent deformation of rolling element and raceway which is approximately 0.0001 of the rolling element diameter."><span style="white-space: nowrap">92228.7169</span></div></td></tr><tr><td column="0" id="5bb966b0-a820-4a19-af65-2c60fe3b53d2"><div class="cellContent propertyHeading" title="Defined in ISO 76:2006 as the contact stress that gives a total permanent deformation of the raceway of approximately 0.0001 of the rolling element diameter.
+
+Bearing Design
+►Maximum Permissible Contact Stress for Static Failure (Inner) (MPa)">Maximum Permissible Contact Stress for Static Failure (Inner) (MPa)</div></td><td style="text-align:stretch" class="info" column="1" id="30a933bc-361e-430f-a283-cb957f0abc72"><div class="cellContent" title="Defined in ISO 76:2006 as the contact stress that gives a total permanent deformation of the raceway of approximately 0.0001 of the rolling element diameter.
+
+Bearing Design
+►Maximum Permissible Contact Stress for Static Failure (Inner) (MPa) (Stress)"><div class="info">i</div></div></td><td column="2" id="0541efaa-373d-497f-b87d-d62bc0e7f9d3"><div class="cellContent"></div></td><td column="3" id="7669a91c-fb56-4f09-94b6-4aa676a29bf8"><div class="cellContent" title="Maximum Permissible Contact Stress for Static Failure (Inner)
+4000 (From ISO 76:2006)
+Defined in ISO 76:2006 as the contact stress that gives a total permanent deformation of the raceway of approximately 0.0001 of the rolling element diameter."><span style="white-space: nowrap">4000 (From ISO 76:2006)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="21c84e4c-dc6e-4cdc-9ab3-221b839a8b98"><div class="cellContent propertyHeading" title="Defined in ISO 76:2006 as the contact stress that gives a total permanent deformation of the raceway of approximately 0.0001 of the rolling element diameter.
+
+Bearing Design
+►Maximum Permissible Contact Stress for Static Failure (Outer) (MPa)">Maximum Permissible Contact Stress for Static Failure (Outer) (MPa)</div></td><td style="text-align:stretch" class="info" column="1" id="8f732c35-21ae-4508-9514-238d763c15c9"><div class="cellContent" title="Defined in ISO 76:2006 as the contact stress that gives a total permanent deformation of the raceway of approximately 0.0001 of the rolling element diameter.
+
+Bearing Design
+►Maximum Permissible Contact Stress for Static Failure (Outer) (MPa) (Stress)"><div class="info">i</div></div></td><td column="2" id="5e9ea563-d72b-42c5-bb97-b20231f81899"><div class="cellContent"></div></td><td column="3" id="7e9b587f-0f30-4bc5-a7c4-937c5681a254"><div class="cellContent" title="Maximum Permissible Contact Stress for Static Failure (Outer)
+4000 (From ISO 76:2006)
+Defined in ISO 76:2006 as the contact stress that gives a total permanent deformation of the raceway of approximately 0.0001 of the rolling element diameter."><span style="white-space: nowrap">4000 (From ISO 76:2006)</span></div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Misc"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10408"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10409"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="4" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Misc</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="8689e737-5017-4ee9-bf67-2e082f96965b"><div class="cellContent propertyHeading" title="Manufacturer
+
+Bearing Design
+►Manufacturer">Manufacturer</div></td><td column="1" id="0b83a8f7-2362-4fed-b6e1-367ff8a4ff98"><div class="cellContent"></div></td><td column="2" id="da1886ff-2101-4cec-81b5-5fcf5d4204ca"><div class="cellContent"></div></td><td column="3" id="badb4688-d27b-4570-b6d6-e97c26a47008"><div class="cellContent" title="Manufacturer
+Custom">Custom</div></td></tr><tr><td column="0" id="351469a5-75a2-4cbc-b104-9990cc274393"><div class="cellContent propertyHeading" title="Arrangement
+
+Bearing Design
+►Arrangement">Arrangement</div></td><td column="1" id="d793e111-eee1-4e8f-bffe-ab463aa09e69"><div class="cellContent"></div></td><td column="2" id="364426b3-4416-48b4-9719-1c151e7c40a9"><div class="cellContent"></div></td><td column="3" id="8bb08dc4-2327-4599-b297-2673ce1e84a9"><div class="cellContent" title="Arrangement
+Single">Single</div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="9d094589-0081-44d8-868f-b3d66e42dbb0"><div class="cellContent propertyHeading" title="Mass (kg)
+
+Bearing Design
+►Mass (kg)">Mass (kg)</div></td><td column="1" id="6ffa8a07-763a-4b73-a065-82b18e82f9f6"><div class="cellContent"></div></td><td column="2" id="fd7509d1-dbf5-427e-93c7-415ba0c91f38"><div class="cellContent"></div></td><td column="3" id="02d3a045-6154-4496-86e1-e462e494d4b9"><div class="cellContent" title="Mass
+5600.483 (Estimated)"><span style="white-space: nowrap">5600.483 (Estimated)</span></div></td></tr><tr><td column="0" id="09d07ba8-a1b9-47c5-9411-e84bd1b095fe"><div class="cellContent propertyHeading" title="Used in the calculation of the bearing life modification factor. By default it is estimated using equations (B.18) - (B.21) in section B.3.3 of ISO 281:2007.
+
+Bearing Design
+►Fatigue Load Limit (kN)">Fatigue Load Limit (kN)</div></td><td style="text-align:stretch" class="info" column="1" id="ee30bf55-84ad-4484-b4f2-e9c4bb51457b"><div class="cellContent" title="Used in the calculation of the bearing life modification factor. By default it is estimated using equations (B.18) - (B.21) in section B.3.3 of ISO 281:2007.
+
+Bearing Design
+►Fatigue Load Limit (kN) (Force)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="31075fb6-5ffa-4673-9f68-5b13d5933d00"><div class="cellContent">C<sub>u</sub></div></td><td column="3" id="db17fcb1-dc0f-4ac7-8607-deb64ea5f2c4"><div class="cellContent" title="Fatigue Load Limit
+3929.016702363 (Estimated)
+Used in the calculation of the bearing life modification factor. By default it is estimated using equations (B.18) - (B.21) in section B.3.3 of ISO 281:2007."><span style="white-space: nowrap">3929.0167 (Estimated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="d68f6f50-fc66-4c6f-9094-92dcfa50269f"><div class="cellContent propertyHeading" title="Methods are from ISO 281:2007
+
+Bearing Design
+►Fatigue Load Limit Calculation Method">Fatigue Load Limit Calculation Method</div></td><td style="text-align:stretch" class="info" column="1" id="ddfd8f43-dee5-4203-98b5-0a96fd4996ea"><div class="cellContent" title="Methods are from ISO 281:2007
+
+Bearing Design
+►Fatigue Load Limit Calculation Method"><div class="info">i</div></div></td><td column="2" id="c255d887-15f4-45d0-af0a-d7545b91e87e"><div class="cellContent"></div></td><td column="3" id="8f87e7fc-3d39-4595-8a5f-a969084453fd"><div class="cellContent" title="Fatigue Load Limit Calculation Method
+Basic">Basic</div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____Protection"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10410"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10411"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="2" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Protection</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="2c1ac6f3-a7df-4ac7-8156-26552a29859f"><div class="cellContent propertyHeading" title="Bearing is Protected?
+
+Bearing Design
+►Protection
+►Bearing is Protected?">Bearing is Protected?</div></td><td column="1" id="f745c6d2-4b02-49c5-b8a3-759ff8b69742"><div class="cellContent" title="Bearing is Protected?
+No">No</div></td></tr><tr><td column="0" id="4a3cd2b8-b6fa-4959-b89d-927a26fbaf15"><div class="cellContent propertyHeading" title="Protection Level
+
+Bearing Design
+►Protection
+►Protection Level">Protection Level</div></td><td column="1" id="1f36c753-71fa-420d-b872-5e0d5459f2c4"><div class="cellContent" title="Protection Level
+None">None</div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="e1209367-77d9-46d0-98f7-250a385fe848"><div class="cellContent propertyHeading" title="Change Bearing Protection
+
+Bearing Design
+►Protection
+►Change Bearing Protection">Change Bearing Protection</div></td><td column="1" id="3bc5beb8-4e34-4880-945e-1682ef370d27"><div class="cellContent" title="Change Bearing Protection"><a class="buttonCommand" href="https://masta.smartmt.com/ICommand10389">Change Bearing Protection</a></div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Basic_Properties____SKF_Loss_Model_Constants"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10412"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10413"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="5" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">SKF Loss Model Constants</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td rowspan="2" column="0" id="31ecf883-47c6-4763-a4e3-88ff396409ff"><div class="cellContent propertyHeading" title="Geometric Constants For Rolling Frictional Moments
+
+Bearing Design
+►Geometric Constants
+►Geometric Constants For Rolling Frictional Moments
+►R1">Geometric Constants For Rolling Frictional Moments</div></td><td column="1" id="1c269f2f-eec0-4212-b4f5-33c5506515c2"><div class="cellContent propertyHeading" title="R1
+
+Bearing Design
+►Geometric Constants
+►Geometric Constants For Rolling Frictional Moments
+►R1">R1</div></td><td column="2" id="dc3aaefe-7ccf-428f-bcdb-58ebf6445dfa"><div class="cellContent"></div></td><td column="3" id="edeb5564-bb5f-43b4-8483-cff83b83fd46"><div class="cellContent"></div></td><td class=" topBorder" column="4" id="4e7ef117-0a1b-48ce-971c-14eb2a73aad4"><div class="cellContent" title="R1
+2.31E-06 (Specified)"><span style="white-space: nowrap">2.31E-06 (Specified)</span></div></td></tr><tr><td column="1" id="387424a2-4d41-4c97-a350-6642227f3be4"><div class="cellContent propertyHeading" title="R2
+
+Bearing Design
+►Geometric Constants
+►Geometric Constants For Rolling Frictional Moments
+►R2">R2</div></td><td column="2" id="44848e61-6a65-450c-87a4-13a3815cdfd5"><div class="cellContent"></div></td><td column="3" id="3afc42bb-e6f5-4c9b-be83-cbdd15205e64"><div class="cellContent"></div></td><td column="4" id="48b9459a-3b83-4d88-a5bd-f1c24d575aad"><div class="cellContent" title="R2
+10.9 (Specified)"><span style="white-space: nowrap">10.9 (Specified)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td rowspan="2" column="0" id="256e3c4d-9498-47b7-8a62-5b763b9bcd98"><div class="cellContent propertyHeading" title="Geometric Constants For Sliding Frictional Moments
+
+Bearing Design
+►Geometric Constants
+►Geometric Constants For Sliding Frictional Moments
+►S1">Geometric Constants For Sliding Frictional Moments</div></td><td column="1" id="06e9b7f6-f860-41a1-86c8-8bf34ca4c9e8"><div class="cellContent propertyHeading" title="S1
+
+Bearing Design
+►Geometric Constants
+►Geometric Constants For Sliding Frictional Moments
+►S1">S1</div></td><td column="2" id="7c095cf2-d9d2-4ee4-8f62-ae435d1d20d2"><div class="cellContent"></div></td><td column="3" id="962ff2bb-c9c0-4286-87ee-c7b0e68ff74c"><div class="cellContent"></div></td><td class=" topBorder" column="4" id="5c203b75-937b-497e-9663-43891cfcde51"><div class="cellContent" title="S1
+0.019 (Specified)"><span style="white-space: nowrap">0.019 (Specified)</span></div></td></tr><tr><td column="1" id="b10f2341-3499-4a74-970c-6585efcadd0d"><div class="cellContent propertyHeading" title="S2
+
+Bearing Design
+►Geometric Constants
+►Geometric Constants For Sliding Frictional Moments
+►S2">S2</div></td><td column="2" id="a311ec8a-d1c2-422a-9a8f-87222839e448"><div class="cellContent"></div></td><td column="3" id="b664135e-18b9-4cff-8fb0-eb51c440e5d5"><div class="cellContent"></div></td><td column="4" id="55da71a0-e898-44f7-b5f7-e6039ddef50f"><div class="cellContent" title="S2
+2 (Specified)"><span style="white-space: nowrap">2 (Specified)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="ece56bc8-7000-4194-9172-c661b5f3bf3a"><div class="cellContent"></div></td><td column="1" id="8813a353-06d8-4552-849d-0da6f6e6c4c3"><div class="cellContent"></div></td><td column="2" id="3f84f0ba-485c-4805-b9d3-d3600f1ae2df"><div class="cellContent"></div></td><td column="3" id="52244e82-6109-4f1f-8b03-b77d03a98c62"><div class="cellContent"></div></td><td column="4" id="f767029d-859b-4a73-a466-98c6ed14ece5"><div class="cellContent"></div></td></tr><tr><td colspan="2" column="0" id="ab6ee837-a3cd-4dc7-bc5d-8bb84398ded6"><div class="cellContent"><div class="toolTipContainer propertyHeading" title="Geometric constant from Table 4 in 'The SKF model for calculating the frictional moment'.
+
+Bearing Design
+►K_Z">K<sub>Z</sub></div></div></td><td style="text-align:stretch" class="info" column="2" id="87e07a7f-6459-4a74-99ad-5dd9761391d9"><div class="cellContent"><div class="toolTipContainer" title="Geometric constant from Table 4 in 'The SKF model for calculating the frictional moment'.
+
+Bearing Design
+►K_Z (Number)"><div class="info">i</div></div></div></td><td column="3" id="15d5c404-8f77-4558-b410-a4049a4baf33"><div class="cellContent"></div></td><td column="4" id="483f7bde-3f12-4613-8eb1-43ecac49c2de"><div class="cellContent"><div class="toolTipContainer" title="K_Z
+6 (Calculated)
+Geometric constant from Table 4 in 'The SKF model for calculating the frictional moment'."><span style="white-space: nowrap">6 (Calculated)</span></div></div></td></tr><tr style="background-color:#DDDEDF;"><td colspan="2" column="0" id="f27b3eb4-8711-4032-858c-7f681bc23675"><div class="cellContent"><div class="toolTipContainer propertyHeading" title="Geometric constant from Table 4 in 'The SKF model for calculating the frictional moment'.
+
+Bearing Design
+►K_L">K<sub>L</sub></div></div></td><td style="text-align:stretch" class="info" column="2" id="155b175d-5b9e-435f-b219-a2988e8f474c"><div class="cellContent"><div class="toolTipContainer" title="Geometric constant from Table 4 in 'The SKF model for calculating the frictional moment'.
+
+Bearing Design
+►K_L (Number)"><div class="info">i</div></div></div></td><td column="3" id="26f23d98-9944-45e7-b16e-309d3a1f78e1"><div class="cellContent"></div></td><td column="4" id="8a375c9c-f58f-42aa-ae9d-2ee1cc1b3cfe"><div class="cellContent"><div class="toolTipContainer" title="K_L
+0.7 (Calculated)
+Geometric constant from Table 4 in 'The SKF model for calculating the frictional moment'."><span style="white-space: nowrap">0.7 (Calculated)</span></div></div></td></tr><tr><td column="0" id="05e4b54d-ebb8-48b6-94f2-0f2a4afa703f"><div class="cellContent"></div></td><td column="1" id="131a0e25-e517-43da-b7f7-11a2ccef5152"><div class="cellContent"></div></td><td column="2" id="797a5de6-c930-4917-a98a-2f7975a43f50"><div class="cellContent"></div></td><td column="3" id="f05cffcc-b245-4b26-ae3b-6c21888ee5f1"><div class="cellContent"></div></td><td column="4" id="c5e7b033-df96-471b-8356-ed1650098a7a"><div class="cellContent"></div></td></tr><tr style="background-color:#DDDEDF;"><td rowspan="4" column="0" id="b925c79b-563d-4582-a052-8520c56f5bff"><div class="cellContent propertyHeading" title="SKF Seal Frictional Moment Constants
+
+Bearing Design
+►SKF Seal Frictional Moment Constants
+►β">SKF Seal Frictional Moment Constants</div></td><td column="1" id="9a3b985c-ee73-4e92-adb6-d885843f020a"><div class="cellContent propertyHeading" title="Exponent dependent on seal and bearing type.
+
+Bearing Design
+►SKF Seal Frictional Moment Constants
+►β">β</div></td><td style="text-align:stretch" class="info" column="2" id="86057002-5b03-44f1-a1d2-988ab860c2a0"><div class="cellContent" title="Exponent dependent on seal and bearing type.
+
+Bearing Design
+►SKF Seal Frictional Moment Constants
+►β (Number)"><div class="info">i</div></div></td><td column="3" id="f147cc35-a067-4f4f-95e9-8bda011effbc"><div class="cellContent"></div></td><td class=" topBorder" column="4" id="2f123485-f771-42e1-b4c8-7c180104e029"><div class="cellContent" title="β
+? (Specified)
+Exponent dependent on seal and bearing type."><span style="white-space: nowrap">? (Specified)</span></div></td></tr><tr><td column="1" id="da641eee-a5af-41e8-93b4-259ea90d15fd"><div class="cellContent"><div class="toolTipContainer propertyHeading" title="Constant dependent on seal and bearing type, and bearing size.
+
+Bearing Design
+►SKF Seal Frictional Moment Constants
+►K_S1">K<sub>S1</sub></div></div></td><td style="text-align:stretch" class="info" column="2" id="e6a285b7-cbc8-46d0-aa81-50fc991ddf06"><div class="cellContent"><div class="toolTipContainer" title="Constant dependent on seal and bearing type, and bearing size.
+
+Bearing Design
+►SKF Seal Frictional Moment Constants
+►K_S1 (Number)"><div class="info">i</div></div></div></td><td column="3" id="eb4d919c-f1b1-4003-8872-4680dfba2ae4"><div class="cellContent"></div></td><td column="4" id="8874c57f-3498-4416-8299-4041f2726547"><div class="cellContent"><div class="toolTipContainer" title="K_S1
+? (Specified)
+Constant dependent on seal and bearing type, and bearing size."><span style="white-space: nowrap">? (Specified)</span></div></div></td></tr><tr style="background-color:#DDDEDF;"><td column="1" id="917f9635-fcc4-4b20-8964-75154efaf4ff"><div class="cellContent"><div class="toolTipContainer propertyHeading" title="Constant dependent on seal and bearing type, and bearing size.
+
+Bearing Design
+►SKF Seal Frictional Moment Constants
+►K_S2">K<sub>S2</sub></div></div></td><td style="text-align:stretch" class="info" column="2" id="51d5a950-b95d-4387-a11a-89db991e14dc"><div class="cellContent"><div class="toolTipContainer" title="Constant dependent on seal and bearing type, and bearing size.
+
+Bearing Design
+►SKF Seal Frictional Moment Constants
+►K_S2 (Number)"><div class="info">i</div></div></div></td><td column="3" id="1defd0da-d7d5-4369-94dc-f5a35341a69c"><div class="cellContent"></div></td><td column="4" id="b8f11636-3756-4329-8fcb-7a7baa08e3a3"><div class="cellContent"><div class="toolTipContainer" title="K_S2
+? (Specified)
+Constant dependent on seal and bearing type, and bearing size."><span style="white-space: nowrap">? (Specified)</span></div></div></td></tr><tr><td column="1" id="b9b27330-4e1f-4bfc-b6d2-2c26bfb73144"><div class="cellContent propertyHeading" title="Seal Counterface Diameter (mm)
+
+Bearing Design
+►SKF Seal Frictional Moment Constants
+►Seal Counterface Diameter (mm)">Seal Counterface Diameter (mm)</div></td><td column="2" id="0370bb08-c281-4c3e-8226-1720e62b33a3"><div class="cellContent"></div></td><td style="text-align:stretch" column="3" id="382138b6-8f57-42cd-8dd8-606298020bf5"><div class="cellContent">d<sub>s</sub></div></td><td column="4" id="38c50e3f-8b5f-46a5-9b83-54f2e57f4083"><div class="cellContent" title="Seal Counterface Diameter
+0 (Specified)"><span style="white-space: nowrap">0 (Specified)</span></div></td></tr></tbody></table></div></div></div></div><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details"></a><span class="sectionHeader">Race Details</span><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details____Races">Races</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details____Race_Materials">Race Materials</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details____Raceway_Surface">Raceway Surface</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details__Ribs">Ribs</a></li></ul><hr class="sectionHeaderRule" width="50%" height="1px"><div class="outerTable"><div class="columnTable"><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details____Races"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10414"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10415"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Races</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="a581cdde-9976-4a3f-a098-595b206208d9"><div class="cellContent propertyHeading" title="Inner Ring Type
+
+Bearing Design
+►Inner Ring Type">Inner Ring Type</div></td><td column="1" id="6c65abcf-8253-45b4-9751-eeb0d18cebf3"><div class="cellContent"></div></td><td column="2" id="d05c3b8f-6b9f-4d84-af28-ec39f9fb9278"><div class="cellContent" title="Inner Ring Type
+Machined">Machined</div></td></tr><tr><td column="0" id="e9fcbcc5-9ced-487a-ba38-2364477d08c2"><div class="cellContent propertyHeading" title="Remove Inner Ring While Keeping Other Geometry Constant
+
+Bearing Design
+►Remove Inner Ring While Keeping Other Geometry Constant">Remove Inner Ring While Keeping Other Geometry Constant</div></td><td column="1" id="559f3943-b96f-4015-a24a-23714bf71836"><div class="cellContent"></div></td><td column="2" id="5d42ca41-1bd9-4dd3-a495-701b20c9cea4"><div class="cellContent" title="Remove Inner Ring While Keeping Other Geometry Constant
+Remove Inner"><a class="buttonCommand" href="https://masta.smartmt.com/ICommand10390">Remove Inner</a></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="074b8c74-4547-440d-adc9-42d524e43616"><div class="cellContent propertyHeading" title="Outer Ring Type
+
+Bearing Design
+►Outer Ring Type">Outer Ring Type</div></td><td column="1" id="09151e8f-db55-407d-8625-ec2982402eaf"><div class="cellContent"></div></td><td column="2" id="2bf90fb7-e12f-4a18-86e2-d8fe8ca09ef3"><div class="cellContent" title="Outer Ring Type
+Machined">Machined</div></td></tr><tr><td column="0" id="40c1ac49-00f8-4578-9a04-9d83b612c9ea"><div class="cellContent propertyHeading" title="Remove Outer Ring While Keeping Other Geometry Constant
+
+Bearing Design
+►Remove Outer Ring While Keeping Other Geometry Constant">Remove Outer Ring While Keeping Other Geometry Constant</div></td><td column="1" id="8b812b92-ee9a-40b1-a68c-eb08f6840549"><div class="cellContent"></div></td><td column="2" id="5c6d87ce-d810-4471-8d2e-db66dd9a73f5"><div class="cellContent" title="Remove Outer Ring While Keeping Other Geometry Constant
+Remove Outer"><a class="buttonCommand" href="https://masta.smartmt.com/ICommand10391">Remove Outer</a></div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details____Race_Materials"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10416"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10417"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Race Materials</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="5443ece9-6ff8-480e-9982-d0f5040a9e58"><div class="cellContent propertyHeading" title="Outer Ring Material
+
+Bearing Design
+►Outer Ring Material">Outer Ring Material</div></td><td column="1" id="42bbd1de-d0a4-4660-b567-1c0d72d5174b"><div class="cellContent"></div></td><td column="2" id="130f2de4-1d11-432f-b0ff-a1e4051ce94b"><div class="cellContent" title="Outer Ring Material Reportable
+Steel">Steel</div></td></tr><tr><td column="0" id="ba8c90a9-23d6-4e10-b459-131d867dc446"><div class="cellContent propertyHeading" title="Inner Ring Material
+
+Bearing Design
+►Inner Ring Material">Inner Ring Material</div></td><td column="1" id="0f44e081-3696-49d2-a02e-e8f1c3b22fc8"><div class="cellContent"></div></td><td column="2" id="9c896b1c-4aef-4842-b12f-1a9b6b745602"><div class="cellContent" title="Inner Ring Material Reportable
+Steel">Steel</div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="4fd71f06-7bb6-4c8c-8e45-04b10a51ea2e"><div class="cellContent propertyHeading" title="Used in the display of the subsurface shear stress distribution.
+
+Bearing Design
+►Outer Race Hardness Depth (&micro;m)">Outer Race Hardness Depth (&micro;m)</div></td><td style="text-align:stretch" class="info" column="1" id="119ea5af-ba19-4249-a20a-70919dee8b0b"><div class="cellContent" title="Used in the display of the subsurface shear stress distribution.
+
+Bearing Design
+►Outer Race Hardness Depth (&micro;m) (Length - Very Short)"><div class="info">i</div></div></td><td column="2" id="c8ec00c9-d67a-43d2-8997-2a1f91d67b14"><div class="cellContent" title="Outer Race Hardness Depth
+300
+Used in the display of the subsurface shear stress distribution."><span style="white-space: nowrap">300</span></div></td></tr><tr><td column="0" id="4ce982de-8b7d-478f-9000-f4c5f54dce9e"><div class="cellContent propertyHeading" title="Used in the display of the subsurface shear stress distribution.
+
+Bearing Design
+►Inner Race Hardness Depth (&micro;m)">Inner Race Hardness Depth (&micro;m)</div></td><td style="text-align:stretch" class="info" column="1" id="8005d8e2-c241-4e37-8ced-902c44436662"><div class="cellContent" title="Used in the display of the subsurface shear stress distribution.
+
+Bearing Design
+►Inner Race Hardness Depth (&micro;m) (Length - Very Short)"><div class="info">i</div></div></td><td column="2" id="761fe64c-1c24-45a6-b821-6304f892272c"><div class="cellContent" title="Inner Race Hardness Depth
+300
+Used in the display of the subsurface shear stress distribution."><span style="white-space: nowrap">300</span></div></td></tr></tbody></table></div></div></div><div class="columnTable"><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details____Raceway_Surface"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10418"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10419"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="4" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Raceway Surface</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="9010ada0-7fa8-42d9-9b32-7d8cc4728e2d"><div class="cellContent propertyHeading" title="This is the roughness based on arithmetic average of absolute values of deviation from the mean.
+
+Bearing Design
+►Raceway Surface Roughness Ra (Inner) (&micro;m)">Raceway Surface Roughness Ra (Inner) (&micro;m)</div></td><td style="text-align:stretch" class="info" column="1" id="07636549-3443-4088-809b-0e30f77ec098"><div class="cellContent" title="This is the roughness based on arithmetic average of absolute values of deviation from the mean.
+
+Bearing Design
+►Raceway Surface Roughness Ra (Inner) (&micro;m) (Length - Very Short)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="247c9f63-25c0-4e0b-91bf-b8f717580ad9"><div class="cellContent">R<sub>a</sub></div></td><td column="3" id="3813abfc-0e8a-4985-a550-6b28fd6d7b85"><div class="cellContent" title="Raceway Surface Roughness Ra (Inner)
+0.225225225 (Estimated)
+This is the roughness based on arithmetic average of absolute values of deviation from the mean."><span style="white-space: nowrap">0.2252 (Estimated)</span></div></td></tr><tr><td column="0" id="8d62f443-ca1e-492b-8e6e-74166df972ee"><div class="cellContent propertyHeading" title="This is the roughness based on root mean squared values of deviation from the mean.
+
+Bearing Design
+►Raceway Surface Roughness RMS (Inner) (&micro;m)">Raceway Surface Roughness RMS (Inner) (&micro;m)</div></td><td style="text-align:stretch" class="info" column="1" id="d47c468c-142f-4960-a1b2-944ad52ca849"><div class="cellContent" title="This is the roughness based on root mean squared values of deviation from the mean.
+
+Bearing Design
+►Raceway Surface Roughness RMS (Inner) (&micro;m) (Length - Very Short)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="867764a6-825c-4fa2-899a-83299abb0888"><div class="cellContent">R<sub>RMS</sub></div></td><td column="3" id="06b04e8b-f655-4854-9436-20d41df5c7ab"><div class="cellContent" title="Raceway Surface Roughness RMS (Inner)
+0.25 (Estimated)
+This is the roughness based on root mean squared values of deviation from the mean."><span style="white-space: nowrap">0.25 (Estimated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="2f7a8ac7-d2d6-4189-81cc-1a66be1d6432"><div class="cellContent propertyHeading" title="This is the roughness based on arithmetic average of absolute values of deviation from the mean.
+
+Bearing Design
+►Raceway Surface Roughness Ra (Outer) (&micro;m)">Raceway Surface Roughness Ra (Outer) (&micro;m)</div></td><td style="text-align:stretch" class="info" column="1" id="f52fc6ef-4017-4232-9a2b-aad412bec9fe"><div class="cellContent" title="This is the roughness based on arithmetic average of absolute values of deviation from the mean.
+
+Bearing Design
+►Raceway Surface Roughness Ra (Outer) (&micro;m) (Length - Very Short)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="e7970faf-df58-47e8-80e0-c9ebcca48746"><div class="cellContent">R<sub>a</sub></div></td><td column="3" id="98ef137a-8b0f-48d7-9310-2d43c5e3140a"><div class="cellContent" title="Raceway Surface Roughness Ra (Outer)
+0.225225225 (Estimated)
+This is the roughness based on arithmetic average of absolute values of deviation from the mean."><span style="white-space: nowrap">0.2252 (Estimated)</span></div></td></tr><tr><td column="0" id="482d0dc1-721f-407e-88c0-4024761f2a3d"><div class="cellContent propertyHeading" title="This is the roughness based on root mean squared values of deviation from the mean.
+
+Bearing Design
+►Raceway Surface Roughness RMS (Outer) (&micro;m)">Raceway Surface Roughness RMS (Outer) (&micro;m)</div></td><td style="text-align:stretch" class="info" column="1" id="7d0a9d72-e1b4-4608-9f83-63ccda9d9518"><div class="cellContent" title="This is the roughness based on root mean squared values of deviation from the mean.
+
+Bearing Design
+►Raceway Surface Roughness RMS (Outer) (&micro;m) (Length - Very Short)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="61f7c4e8-f649-4557-a4cb-cdd534704735"><div class="cellContent">R<sub>RMS</sub></div></td><td column="3" id="ad1fde0e-3569-4a39-91b9-4025f6e98838"><div class="cellContent" title="Raceway Surface Roughness RMS (Outer)
+0.25 (Estimated)
+This is the roughness based on root mean squared values of deviation from the mean."><span style="white-space: nowrap">0.25 (Estimated)</span></div></td></tr></tbody></table></div></div></div></div><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Race_Details__Ribs"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10420"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10421"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="6" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Ribs</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="e89e53a5-f874-4421-8ae7-d34e8eeaf474"><div class="cellContent propertyHeading" title="Name
+
+Bearing Design
+►Ribs
+►Name">Name</div></td><td column="1" id="3f44b365-e2f5-48b3-86c2-060eeb0b4a38"><div class="cellContent"></div></td><td column="2" id="0128bdba-b353-41e2-afb1-739aa2d0f97d"><div class="cellContent" title="Name
+Left Inner">Left Inner</div></td><td column="3" id="e97fae4e-296d-4a6c-b847-708fc0741417"><div class="cellContent" title="Name
+Right Inner">Right Inner</div></td><td column="4" id="19ca9f72-3a8e-40dc-b297-4eb66cee7996"><div class="cellContent" title="Name
+Left Outer">Left Outer</div></td><td column="5" id="5a3c451c-ee46-4955-b949-6de12a22bc70"><div class="cellContent" title="Name
+Right Outer">Right Outer</div></td></tr><tr><td column="0" id="3372e4f6-7022-4c1d-bd21-9bf51a8a3229"><div class="cellContent propertyHeading" title="Present?
+
+Bearing Design
+►Ribs
+►Present?">Present?</div></td><td column="1" id="cf56745c-b79a-4910-b247-d3f836cd9b7f"><div class="cellContent"></div></td><td column="2" id="3c2d0ecb-28cb-4d0d-8f74-1fbe0f88bcbc"><div class="cellContent" title="Present?
+Yes">Yes</div></td><td column="3" id="a38718b7-b8e2-4619-a5f9-4489d3bcbeb0"><div class="cellContent" title="Present?
+No">No</div></td><td column="4" id="6d29ccf4-66cf-43ab-b6cd-c77142f3dbec"><div class="cellContent" title="Present?
+No">No</div></td><td column="5" id="375c5163-4204-4e2c-89d4-2698fca63771"><div class="cellContent" title="Present?
+No">No</div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="bb13bfe7-1abb-4508-bb3e-d584803cb35e"><div class="cellContent propertyHeading" title="Diameter (mm)
+
+Bearing Design
+►Ribs
+►Diameter (mm)">Diameter (mm)</div></td><td column="1" id="87db66cf-bfdc-4549-8ec3-ce10360e55e8"><div class="cellContent"></div></td><td column="2" id="09fc6e75-0fa1-4fd0-94c0-69df63ae309d"><div class="cellContent" title="Diameter
+3354.067986838 (Estimated)"><span style="white-space: nowrap">3354.068 (Estimated)</span></div></td><td column="3" id="9a485f90-155b-4cbd-b0cf-8230509d5cbd"><div class="cellContent" title="Diameter"><center>-</center></div></td><td column="4" id="330a6644-add4-41db-afce-836f48dba0d4"><div class="cellContent" title="Diameter"><center>-</center></div></td><td column="5" id="fa15214d-baa6-42f1-b76b-81757ea16d04"><div class="cellContent" title="Diameter"><center>-</center></div></td></tr><tr><td column="0" id="5d88ea98-8230-4021-8c28-5a8112f991b2"><div class="cellContent propertyHeading" title="Chamfer (mm)
+
+Bearing Design
+►Ribs
+►Chamfer (mm)">Chamfer (mm)</div></td><td column="1" id="518c7c6b-481c-4a2a-9ba2-4b3bda73251c"><div class="cellContent"></div></td><td column="2" id="b32c2022-449e-48b4-b3f4-b4d3f98ee1c1"><div class="cellContent" title="Chamfer
+2.76275 (Estimated)"><span style="white-space: nowrap">2.763 (Estimated)</span></div></td><td column="3" id="bdaaf319-02eb-4a9f-b298-2804c9bc99aa"><div class="cellContent" title="Chamfer"><center>-</center></div></td><td column="4" id="a1212788-aff8-4e6e-9613-1f10223c3cea"><div class="cellContent" title="Chamfer"><center>-</center></div></td><td column="5" id="2b20f1f9-8215-4eb6-8381-7b20330a6596"><div class="cellContent" title="Chamfer"><center>-</center></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="3f79357f-e71f-471a-b81e-30096b057605"><div class="cellContent propertyHeading" title="Layback Angle (mrad)
+
+Bearing Design
+►Ribs
+►Layback Angle (mrad)">Layback Angle (mrad)</div></td><td column="1" id="543d5465-1c93-4d2d-9bc8-273a26b41d34"><div class="cellContent"></div></td><td column="2" id="5b694cb6-fcfe-4681-8ef7-30433fffc44e"><div class="cellContent" title="Layback Angle
+39.877856196 (Estimated)"><span style="white-space: nowrap">39.8779 (Estimated)</span></div></td><td column="3" id="3d23b2bd-c5b8-412f-af60-fa447eb6153c"><div class="cellContent" title="Layback Angle"><center>-</center></div></td><td column="4" id="2a1104ae-568f-4eea-b078-6396a1db9903"><div class="cellContent" title="Layback Angle"><center>-</center></div></td><td column="5" id="bd3a3f00-36e6-4f01-9c84-0ec47be4a1cc"><div class="cellContent" title="Layback Angle"><center>-</center></div></td></tr><tr><td column="0" id="4be6de46-9033-4453-889c-e451b279ba09"><div class="cellContent propertyHeading" title="Nominal Contact Height Above Race (mm)
+
+Bearing Design
+►Ribs
+►Nominal Contact Height Above Race (mm)">Nominal Contact Height Above Race (mm)</div></td><td column="1" id="dc27a480-f899-4d67-9811-3a21cdaea2d7"><div class="cellContent"></div></td><td column="2" id="e6114a01-c29f-4c8e-a5fb-7f842c0cb8d3"><div class="cellContent" title="Nominal Contact Height Above Race
+12.432375"><span style="white-space: nowrap">12.432</span></div></td><td column="3" id="b9390a75-1190-4ad0-97bf-898ab52b0084"><div class="cellContent" title="Nominal Contact Height Above Race"><center>-</center></div></td><td column="4" id="f731183b-32e0-4707-ab7a-f63d0af52f97"><div class="cellContent" title="Nominal Contact Height Above Race"><center>-</center></div></td><td column="5" id="b8e24b67-7c26-478f-9cd5-4661d8909918"><div class="cellContent" title="Nominal Contact Height Above Race"><center>-</center></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="89972d15-b93e-4520-a67f-6617247e37b4"><div class="cellContent propertyHeading" title="Height Above Race (mm)
+
+Bearing Design
+►Ribs
+►Height Above Race (mm)">Height Above Race (mm)</div></td><td column="1" id="43c7df70-fc2c-45c3-81b1-ffaf9ff1efd3"><div class="cellContent"></div></td><td column="2" id="41601fcc-3b31-497d-b37b-a04d9fabb656"><div class="cellContent" title="Height Above Race
+27.6274999999999"><span style="white-space: nowrap">27.627</span></div></td><td column="3" id="69545031-9c5f-4c6a-a4ab-ab8e25800c6f"><div class="cellContent" title="Height Above Race"><center>-</center></div></td><td column="4" id="d1977410-b4d8-4166-99e2-78f2541bbffc"><div class="cellContent" title="Height Above Race"><center>-</center></div></td><td column="5" id="1fabaf59-9f5a-4009-9690-988c727f294a"><div class="cellContent" title="Height Above Race"><center>-</center></div></td></tr><tr><td column="0" id="b4d05561-8d70-47a8-bf36-c1971ac4bd59"><div class="cellContent propertyHeading" title="Undercut Radius (mm)
+
+Bearing Design
+►Ribs
+►Undercut Radius (mm)">Undercut Radius (mm)</div></td><td column="1" id="e0a3d8bf-e901-4337-9d0c-c26594564418"><div class="cellContent"></div></td><td column="2" id="88062e01-88a9-43ed-8911-1c4bb6ca930c"><div class="cellContent" title="Undercut Radius
+0 (Calculated)"><span style="white-space: nowrap">0 (Calculated)</span></div></td><td column="3" id="2d165398-2076-427a-b610-ef5998b78868"><div class="cellContent" title="Undercut Radius"><center>-</center></div></td><td column="4" id="ad62fa45-59ab-425e-9617-7ac5b83cdbe2"><div class="cellContent" title="Undercut Radius"><center>-</center></div></td><td column="5" id="446086b9-37fe-42ab-8060-70e307742c85"><div class="cellContent" title="Undercut Radius"><center>-</center></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="69a27b22-d5a3-4515-bc57-e9d3e3afa0af"><div class="cellContent propertyHeading" title="The offset up the rib (away from the race) away from where the nominal undercut circle would intersect the rib, from which the radial angle is measured.
+
+Bearing Design
+►Ribs
+►Undercut Radial Start Offset (mm)">Undercut Radial Start Offset (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="4daa3599-2f7b-41cc-8952-a8a205a62ac1"><div class="cellContent" title="The offset up the rib (away from the race) away from where the nominal undercut circle would intersect the rib, from which the radial angle is measured.
+
+Bearing Design
+►Ribs
+►Undercut Radial Start Offset (mm) (Length - Short)"><div class="info">i</div></div></td><td column="2" id="1eebfd70-55f6-44a1-b83c-a2b67e3f161d"><div class="cellContent" title="Undercut Radial Start Offset
+0 (Calculated)
+The offset up the rib (away from the race) away from where the nominal undercut circle would intersect the rib, from which the radial angle is measured."><span style="white-space: nowrap">0 (Calculated)</span></div></td><td column="3" id="8aea288c-d80d-463b-9f38-23f23fe08f3f"><div class="cellContent" title="Undercut Radial Start Offset"><center>-</center></div></td><td column="4" id="cebee9e8-d7c5-4286-9038-7729ad82bf59"><div class="cellContent" title="Undercut Radial Start Offset"><center>-</center></div></td><td column="5" id="c21befa3-fd59-4406-a612-1066d8f20f9d"><div class="cellContent" title="Undercut Radial Start Offset"><center>-</center></div></td></tr><tr><td column="0" id="7b9aa87a-dea9-47a9-a17c-8643004c37bc"><div class="cellContent propertyHeading" title="The angle of the line connecting the radial start offset to the undercut circle. A positive angle gives a deeper cut into the rib.
+
+Bearing Design
+►Ribs
+►Undercut Radial Angle (&deg;)">Undercut Radial Angle (&deg;)</div></td><td style="text-align:stretch" class="info" column="1" id="0e4c7f8a-3ee1-4e8d-809d-3dfefd728970"><div class="cellContent" title="The angle of the line connecting the radial start offset to the undercut circle. A positive angle gives a deeper cut into the rib.
+
+Bearing Design
+►Ribs
+►Undercut Radial Angle (&deg;) (Angle)"><div class="info">i</div></div></td><td column="2" id="f83fe098-7d05-474b-9c39-8f616cf9753b"><div class="cellContent" title="Undercut Radial Angle
+0 (Calculated)
+The angle of the line connecting the radial start offset to the undercut circle. A positive angle gives a deeper cut into the rib."><span style="white-space: nowrap">0 (Calculated)</span></div></td><td column="3" id="1a04f7bc-a61f-4640-a4bf-b67c0b34e339"><div class="cellContent" title="Undercut Radial Angle"><center>-</center></div></td><td column="4" id="53371f46-8995-4c02-9f18-880f64d8ffdc"><div class="cellContent" title="Undercut Radial Angle"><center>-</center></div></td><td column="5" id="276fd279-061a-450e-9828-93232e943e9e"><div class="cellContent" title="Undercut Radial Angle"><center>-</center></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="3d5d4916-5d5b-4628-99e7-0a1142a2c630"><div class="cellContent propertyHeading" title="The offset along the race (away from the rib) away from where the nominal undercut circle would intersect the rib, from which the axial angle is measured.
+
+Bearing Design
+►Ribs
+►Undercut Axial Start Offset (mm)">Undercut Axial Start Offset (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="a4d29756-c9a0-45d1-b5d0-c5f8b6b92fd3"><div class="cellContent" title="The offset along the race (away from the rib) away from where the nominal undercut circle would intersect the rib, from which the axial angle is measured.
+
+Bearing Design
+►Ribs
+►Undercut Axial Start Offset (mm) (Length - Short)"><div class="info">i</div></div></td><td column="2" id="b6f4e818-4ab0-4090-ac11-e1fc4ae3312c"><div class="cellContent" title="Undercut Axial Start Offset
+0 (Calculated)
+The offset along the race (away from the rib) away from where the nominal undercut circle would intersect the rib, from which the axial angle is measured."><span style="white-space: nowrap">0 (Calculated)</span></div></td><td column="3" id="fdc83bd8-2252-435b-92c8-61336b307d03"><div class="cellContent" title="Undercut Axial Start Offset"><center>-</center></div></td><td column="4" id="a4e7e0bf-5ae5-4951-8670-fad4b3325f32"><div class="cellContent" title="Undercut Axial Start Offset"><center>-</center></div></td><td column="5" id="e304dd03-8a8b-4a08-b389-9c4eef8d03d2"><div class="cellContent" title="Undercut Axial Start Offset"><center>-</center></div></td></tr><tr><td column="0" id="9c31fb78-0054-47f0-8f1e-003bb1fb8f73"><div class="cellContent propertyHeading" title="The angle of the line connecting the axial start offset to the undercut circle. A positive angle gives a deeper cut into the raceway.
+
+Bearing Design
+►Ribs
+►Undercut Axial Angle (&deg;)">Undercut Axial Angle (&deg;)</div></td><td style="text-align:stretch" class="info" column="1" id="810dfa02-70d1-41ca-8d45-673c41cd202b"><div class="cellContent" title="The angle of the line connecting the axial start offset to the undercut circle. A positive angle gives a deeper cut into the raceway.
+
+Bearing Design
+►Ribs
+►Undercut Axial Angle (&deg;) (Angle)"><div class="info">i</div></div></td><td column="2" id="6bdba26d-308d-4c48-b229-30b87383c8ab"><div class="cellContent" title="Undercut Axial Angle
+0 (Calculated)
+The angle of the line connecting the axial start offset to the undercut circle. A positive angle gives a deeper cut into the raceway."><span style="white-space: nowrap">0 (Calculated)</span></div></td><td column="3" id="e2fba94b-70c4-4929-803f-64531f2137d1"><div class="cellContent" title="Undercut Axial Angle"><center>-</center></div></td><td column="4" id="accf1315-7332-4541-8389-617779e2fb7a"><div class="cellContent" title="Undercut Axial Angle"><center>-</center></div></td><td column="5" id="d57eab72-5b40-4fa1-a758-f4ab8923a6de"><div class="cellContent" title="Undercut Axial Angle"><center>-</center></div></td></tr></tbody></table></div><hr class="sectionHeaderRule" width="50%" height="1px"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details"></a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Element_Geometry">Element Geometry</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Element_Surface">Element Surface</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Per_Element_Geometry">Per Element Geometry</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Misc">Misc</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Cage">Cage</a></li></ul><hr class="sectionHeaderRule" width="50%" height="1px"><div class="outerTable"><div class="columnTable"><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Element_Geometry"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10422"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10423"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="4" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Element Geometry</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="40a8622e-b77c-4572-84e9-698232bbf5c6"><div class="cellContent propertyHeading" title="Pitch Circle Diameter (mm)
+
+Bearing Design
+►Pitch Circle Diameter (mm)">Pitch Circle Diameter (mm)</div></td><td column="1" id="7b4193e8-e0ce-463b-a083-76396078cdfe"><div class="cellContent"></div></td><td style="text-align:stretch" column="2" id="93336243-4487-4d2c-86ac-7ac337859e71"><div class="cellContent">D<sub>pw</sub></div></td><td column="3" id="0d03a744-bfb7-41c5-8331-8e5e508a6146"><div class="cellContent" title="Pitch Circle Diameter
+3330.899 (Specified)"><span style="white-space: nowrap">3330.899 (Specified)</span></div></td></tr><tr><td column="0" id="8b806885-7bb8-4817-a4f9-b464b0328f95"><div class="cellContent propertyHeading" title="The axial distance from the centre of an element and the centre of the row in which it sits
+
+Bearing Design
+►Element Offset (mm)">Element Offset (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="bfbb4557-f8ad-49c6-ad10-142a70173189"><div class="cellContent" title="The axial distance from the centre of an element and the centre of the row in which it sits
+
+Bearing Design
+►Element Offset (mm) (Length - Short)"><div class="info">i</div></div></td><td column="2" id="2abdc408-3b6f-4b60-bc35-319f84cc8936"><div class="cellContent"></div></td><td column="3" id="154301ff-0623-433f-9a9e-9e748e7fd0d9"><div class="cellContent" title="Element Offset
+20.741610332 (Specified)
+The axial distance from the centre of an element and the centre of the row in which it sits"><span style="white-space: nowrap">20.742 (Specified)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="26b7b4e7-2002-466e-8911-ad527e5ee268"><div class="cellContent propertyHeading" title="Element Diameter (mm)
+
+Bearing Design
+►Element Diameter (mm)">Element Diameter (mm)</div></td><td column="1" id="00c58614-d6f0-4638-8441-960981448411"><div class="cellContent"></div></td><td style="text-align:stretch" column="2" id="f2c94b62-0d16-41ce-8456-e92d8a59f5b0"><div class="cellContent">D<sub>we</sub></div></td><td column="3" id="865d199a-3345-4810-878e-995ce3733ae9"><div class="cellContent" title="Element Diameter
+110.51 (Specified)"><span style="white-space: nowrap">110.51 (Specified)</span></div></td></tr><tr><td column="0" id="568d5f6e-48b8-4478-b5a0-4e0419f0bb29"><div class="cellContent propertyHeading" title="Roller Length (mm)
+
+Bearing Design
+►Roller Length (mm)">Roller Length (mm)</div></td><td column="1" id="e9e06237-6385-43a5-af48-fd93f52455b3"><div class="cellContent"></div></td><td column="2" id="3482be7f-1f81-49e8-b1c5-191f00fb7498"><div class="cellContent"></div></td><td column="3" id="780fd294-19a0-4447-bfc5-d8ebf0a06556"><div class="cellContent" title="Roller Length
+238.048 (Specified)"><span style="white-space: nowrap">238.048 (Specified)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="2f2b7a1a-7b2d-4537-ad1d-deae90780fa9"><div class="cellContent propertyHeading" title="Left Element Corner Radius (mm)
+
+Bearing Design
+►Left Element Corner Radius (mm)">Left Element Corner Radius (mm)</div></td><td column="1" id="a13bd9ed-19c0-4c0d-84e8-b4675f59cc48"><div class="cellContent"></div></td><td column="2" id="904a478d-7e06-4e42-a17c-2adf2dfbf77f"><div class="cellContent"></div></td><td column="3" id="d91cc3ff-e872-4a1a-a678-ad6f42dc417f"><div class="cellContent" title="Left Element Corner Radius
+0 (Specified)"><span style="white-space: nowrap">0 (Specified)</span></div></td></tr><tr><td column="0" id="ce4d80de-057d-4d35-a292-d5bea06ed822"><div class="cellContent propertyHeading" title="Right Element Corner Radius (mm)
+
+Bearing Design
+►Right Element Corner Radius (mm)">Right Element Corner Radius (mm)</div></td><td column="1" id="599dbc81-632c-4f30-949e-cb4af531fd1d"><div class="cellContent"></div></td><td column="2" id="840940e1-03e9-463e-8481-652fce16e5ce"><div class="cellContent"></div></td><td column="3" id="0b70da87-f4c0-4367-8695-6b73690d937f"><div class="cellContent" title="Right Element Corner Radius
+0 (Specified)"><span style="white-space: nowrap">0 (Specified)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="fed5ced7-c344-4a8c-b8a1-5bfde32811d1"><div class="cellContent propertyHeading" title="Twice the angle between the contact surface of the race and the element centre line
+
+Bearing Design
+►Roller Taper Angle (&deg;)">Roller Taper Angle (&deg;)</div></td><td style="text-align:stretch" class="info" column="1" id="28dd55de-5830-491c-9e71-2f9d620f402b"><div class="cellContent" title="Twice the angle between the contact surface of the race and the element centre line
+
+Bearing Design
+►Roller Taper Angle (&deg;) (Angle)"><div class="info">i</div></div></td><td column="2" id="0d8e0b39-223d-4b77-b94d-5a5766799f9f"><div class="cellContent"></div></td><td column="3" id="f58c52ab-71f7-48b9-9721-c5798e3c341a"><div class="cellContent" title="Element Taper Angle
+1.200000241 (Estimated)
+Twice the angle between the contact surface of the race and the element centre line"><span style="white-space: nowrap">1.2 (Estimated)</span></div></td></tr><tr><td column="0" id="cc423158-42c1-4b8e-848c-680aa7ba332d"><div class="cellContent propertyHeading" title="Specifies whether the roller ends are flat or domed, which will affect rib loading.
+
+Bearing Design
+►Roller End Shape">Roller End Shape</div></td><td style="text-align:stretch" class="info" column="1" id="4f1ac35a-e39f-4718-972c-9832014b86ce"><div class="cellContent" title="Specifies whether the roller ends are flat or domed, which will affect rib loading.
+
+Bearing Design
+►Roller End Shape"><div class="info">i</div></div></td><td column="2" id="94304796-bb23-43bd-85a8-b59ef2f5fc65"><div class="cellContent"></div></td><td column="3" id="9fa3d451-e902-4da4-91c1-fe91b2ac9a83"><div class="cellContent" title="Roller End Shape
+Domed">Domed</div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="06caafbd-f284-4aca-ab74-c947fd9fb440"><div class="cellContent propertyHeading" title="The radius of the surface of the roller end, used for calculating rib stress (if ribs are present).
+
+Bearing Design
+►Roller End Radius (mm)">Roller End Radius (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="0d2d2c40-13f5-45d8-8667-313218b4e614"><div class="cellContent" title="The radius of the surface of the roller end, used for calculating rib stress (if ribs are present).
+
+Bearing Design
+►Roller End Radius (mm) (Length - Short)"><div class="info">i</div></div></td><td column="2" id="b861f673-8370-41a2-94aa-9240ff6f3f97"><div class="cellContent"></div></td><td column="3" id="b37bf742-8b56-42f2-87fd-5356fad70c67"><div class="cellContent" title="Roller End Radius
+1105.1 (Estimated)
+The radius of the surface of the roller end, used for calculating rib stress (if ribs are present)."><span style="white-space: nowrap">1105.1 (Estimated)</span></div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Element_Surface"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10424"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10425"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="4" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Element Surface</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="fa54457f-5aa6-44e7-89ea-d78a24dee0c0"><div class="cellContent propertyHeading" title="This is the roughness based on arithmetic average of absolute values of deviation from the mean.
+
+Bearing Design
+►Element Surface Roughness Ra (&micro;m)">Element Surface Roughness Ra (&micro;m)</div></td><td style="text-align:stretch" class="info" column="1" id="f1db60cc-9589-41d2-9783-d7148a04ce3c"><div class="cellContent" title="This is the roughness based on arithmetic average of absolute values of deviation from the mean.
+
+Bearing Design
+►Element Surface Roughness Ra (&micro;m) (Length - Very Short)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="21fa00b7-5b8f-40a2-856b-4a5080352b4f"><div class="cellContent">R<sub>a</sub></div></td><td column="3" id="82a4b700-abb2-4882-b804-57a0ead1c385"><div class="cellContent" title="Element Surface Roughness Ra
+0.152632927 (Estimated)
+This is the roughness based on arithmetic average of absolute values of deviation from the mean."><span style="white-space: nowrap">0.1526 (Estimated)</span></div></td></tr><tr><td column="0" id="cb95670a-d953-487e-9309-e8724173c664"><div class="cellContent propertyHeading" title="This is the roughness based on root mean squared values of deviation from the mean.
+
+Bearing Design
+►Element Surface Roughness RMS (&micro;m)">Element Surface Roughness RMS (&micro;m)</div></td><td style="text-align:stretch" class="info" column="1" id="e057e776-b646-4254-bfd2-7e28de331c73"><div class="cellContent" title="This is the roughness based on root mean squared values of deviation from the mean.
+
+Bearing Design
+►Element Surface Roughness RMS (&micro;m) (Length - Very Short)"><div class="info">i</div></div></td><td style="text-align:stretch" column="2" id="30a774db-7729-4583-9e91-3b0ccae5bafc"><div class="cellContent">R<sub>RMS</sub></div></td><td column="3" id="c08bf14e-d4e6-4a1d-9c99-31d2718dc5f2"><div class="cellContent" title="Element Surface Roughness RMS
+0.169422549 (Estimated)
+This is the roughness based on root mean squared values of deviation from the mean."><span style="white-space: nowrap">0.1694 (Estimated)</span></div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Per_Element_Geometry"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10426"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10427"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Per Element Geometry</div></th></tr><tr style="background-color:#DDDEDF;"><td style="text-align:center" column="0" id="9183d11a-ea5e-4ed3-9dbb-8b20e0d1e356"><div class="cellContent propertyHeading" title="Element Details
+
+Bearing Design
+►Elements
+►Element Details">Element Details</div></td><td style="text-align:center" column="1" id="ced5e8fb-6cef-43d1-8e91-cd21f07f6373"><div class="cellContent propertyHeading" title="Element Diameter (mm)
+
+Bearing Design
+►Elements
+►Element Diameter (mm)">Element Diameter (mm)</div></td><td style="text-align:center" column="2" id="d6a92483-6e8d-4d8f-8e53-6fd6696fdf2a"><div class="cellContent propertyHeading" title="Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter.
+
+Bearing Design
+►Elements
+►Element Diameter Error (&micro;m)">Element Diameter Error (&micro;m)</div></td></tr></thead><tbody><tr><td column="0" id="ccdcfd7c-5473-4e66-a36d-85f668efd95c"><div class="cellContent"></div></td><td column="1" id="add9987c-5822-4d90-ad2a-bba6f6ff4012"><div class="cellContent"></div></td><td style="text-align:stretch" class="info" column="2" id="59619615-b2a7-4327-866b-a45beb6276b3"><div class="cellContent" title="Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter.
+
+Bearing Design
+►Elements
+►Element Diameter Error (&micro;m) (Length - Very Short)"><div class="info">i</div></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="992e86b3-a34f-4012-9e44-0ff027fe6716"><div class="cellContent" title="Element Details
+Row: 1, Id: 1">Row: 1, Id: 1</div></td><td column="1" id="e1a4ffc6-bef5-475a-b104-2065acd3f792"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="7d9f49fd-ce5b-46af-8bc3-bbe353b9a488"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="b2f5b0d7-01cb-462a-ada6-0665062e1d52"><div class="cellContent" title="Element Details
+Row: 1, Id: 2">Row: 1, Id: 2</div></td><td column="1" id="40115ac3-5a24-49c9-88de-e22233dabe2d"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="c9fc0a86-b9b4-445c-955e-5df6a4b8b6c5"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="b94435d9-b780-4a7b-aa41-c72b4a0f5036"><div class="cellContent" title="Element Details
+Row: 1, Id: 3">Row: 1, Id: 3</div></td><td column="1" id="bd47d2de-9673-4077-843f-db07a8b4326a"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="2120243d-d7a5-4cbf-b949-33f9c4eb2366"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="26af2c13-2bc2-4ec5-b6e7-a88ac87d30dd"><div class="cellContent" title="Element Details
+Row: 1, Id: 4">Row: 1, Id: 4</div></td><td column="1" id="6aeed245-34a3-4783-8b64-fadb89f44937"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="abbcfab2-165b-48a6-a192-e04571bde554"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="4bf81650-37c6-41c9-a533-9548cf4ffcbe"><div class="cellContent" title="Element Details
+Row: 1, Id: 5">Row: 1, Id: 5</div></td><td column="1" id="69f6ebe0-1771-4a50-aa07-fe8a13c9b56d"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="14619ae9-28ee-4bf6-86ca-9e9ecc04ceb4"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="f376de1d-afee-4dfb-b7b4-34458249af2c"><div class="cellContent" title="Element Details
+Row: 1, Id: 6">Row: 1, Id: 6</div></td><td column="1" id="531babfc-e084-4dcf-8e97-b916640b7259"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="ab6c9124-26dd-4eac-9b00-08e5a6d1942e"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="26b31622-492c-4181-b638-9e9c3edaa00b"><div class="cellContent" title="Element Details
+Row: 1, Id: 7">Row: 1, Id: 7</div></td><td column="1" id="b90d1273-2aac-4ab6-b454-d12f34764d06"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="a9aa9e66-229b-4f12-8d92-0dad637fe3c2"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="cfb810a2-18cf-41ed-a42f-420652d350eb"><div class="cellContent" title="Element Details
+Row: 1, Id: 8">Row: 1, Id: 8</div></td><td column="1" id="c8160c66-7625-4e15-9e77-ac621131b0fb"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="6fdfedbc-566a-48a4-a5df-6f8625ee2226"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="2501b254-73ac-4623-8dfc-cecbeceaf175"><div class="cellContent" title="Element Details
+Row: 1, Id: 9">Row: 1, Id: 9</div></td><td column="1" id="7be5675c-aeb8-443d-8e12-9dfdc279b219"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="f64961ef-c37f-4a14-8575-44f8a6edefe6"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="854c4d1a-f15d-47f9-9082-aa339b555d71"><div class="cellContent" title="Element Details
+Row: 1, Id: 10">Row: 1, Id: 10</div></td><td column="1" id="a2b7ca52-70a7-48e3-995a-09edb61da318"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="1860797d-b4ad-474b-84e7-840a2166ab44"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="d4db76a6-0b2f-43a3-8d98-83cb9c06f743"><div class="cellContent" title="Element Details
+Row: 1, Id: 11">Row: 1, Id: 11</div></td><td column="1" id="1521ad21-37f5-436b-97b4-39b77e1ac4ad"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="7a86e61a-1495-4dfa-b623-012905666ac4"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="a4502f41-5c7f-4d2a-8147-08e99a6aba82"><div class="cellContent" title="Element Details
+Row: 1, Id: 12">Row: 1, Id: 12</div></td><td column="1" id="cb19052e-b135-4c10-9171-4e2c1e6c4bf4"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="d55c9fd1-328c-4177-a7a6-740989cb438a"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="360ead67-d70d-4df5-a9f7-cfbece32ae40"><div class="cellContent" title="Element Details
+Row: 1, Id: 13">Row: 1, Id: 13</div></td><td column="1" id="b31bdadf-d77b-49ac-be37-a3c5195d2ca4"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="d5301693-f85e-45a3-b96f-67b7ad55a866"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="61fe6fa5-d27f-4058-aef2-e82aff90bdb6"><div class="cellContent" title="Element Details
+Row: 1, Id: 14">Row: 1, Id: 14</div></td><td column="1" id="ff155e2d-7b4b-4950-83e3-4bd764c9cef3"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="a9812cf7-03e1-43d2-9677-010579abee85"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="416d7e65-f312-40e1-a7a6-0f59212f019c"><div class="cellContent" title="Element Details
+Row: 1, Id: 15">Row: 1, Id: 15</div></td><td column="1" id="ddddc1c2-c863-4425-9df9-f9839c8fa6f9"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="49199211-0b7a-4b0b-bcc4-ff1e5d022411"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="2b0d6099-72fb-493b-93cc-ce7a63e90621"><div class="cellContent" title="Element Details
+Row: 1, Id: 16">Row: 1, Id: 16</div></td><td column="1" id="9652fac6-39c1-4d1a-b923-46e0b3f03c0c"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="1c3d3d65-c2f9-413a-bb94-cb4190f1fc87"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="bd06793a-3716-4b27-8394-c95e00e66884"><div class="cellContent" title="Element Details
+Row: 1, Id: 17">Row: 1, Id: 17</div></td><td column="1" id="e4bfa76d-8d16-4264-99a2-fd7e518dfa7c"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="11cad66f-e741-47db-8f11-91f82711e23f"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="f680aac0-f9c8-4d73-b940-cb554483fbc0"><div class="cellContent" title="Element Details
+Row: 1, Id: 18">Row: 1, Id: 18</div></td><td column="1" id="4b42d45b-4f80-4371-a4b1-f53f603adf4e"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="4d9ffb94-4b0c-48d1-b1ce-082a1558d8a1"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="40323195-ff89-45d4-8547-4081160a2259"><div class="cellContent" title="Element Details
+Row: 1, Id: 19">Row: 1, Id: 19</div></td><td column="1" id="a11e8bff-0d39-4b2e-a8bd-b7e5b619c69e"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="d8d8071f-8859-442e-949d-fe7ee2b6d338"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="4c80e576-027d-48e4-ba0c-258120d0d5a8"><div class="cellContent" title="Element Details
+Row: 1, Id: 20">Row: 1, Id: 20</div></td><td column="1" id="9ebce6fe-1a1b-4366-8f35-cf9a36f78e87"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="e9629bd0-b9a3-4d98-b82e-70c0aa5dfc58"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="e6f3164e-e7f8-42d0-9160-8c8f4ee45ba4"><div class="cellContent" title="Element Details
+Row: 1, Id: 21">Row: 1, Id: 21</div></td><td column="1" id="52a5f968-9a5d-4efd-b037-bdc1b14ed6c0"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="c15bdf47-ee12-4af4-8827-1ac39967b12d"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="6df63072-e221-450c-bb88-0cd2ecf5e311"><div class="cellContent" title="Element Details
+Row: 1, Id: 22">Row: 1, Id: 22</div></td><td column="1" id="a90b3aac-e27b-4bf8-a71e-5852731ef47b"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="21e98646-59ea-4c38-be40-6bc2fda4e588"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="bb9c4796-9a9d-4e9d-a1b1-d9a1e62e737d"><div class="cellContent" title="Element Details
+Row: 1, Id: 23">Row: 1, Id: 23</div></td><td column="1" id="3336525d-c349-418f-9aef-538a39c19ffc"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="8900e535-da25-4e08-929e-8750b8cab3aa"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="dc04e2bf-9341-4159-9f5f-9ab0abdc31f0"><div class="cellContent" title="Element Details
+Row: 1, Id: 24">Row: 1, Id: 24</div></td><td column="1" id="4e94b20e-037c-48ae-bf87-529f8a6d3e6a"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="bfd6a8fe-5a4b-4183-865d-3c542b2b3074"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="77756bfc-a11e-420a-b77f-05f33641d5ff"><div class="cellContent" title="Element Details
+Row: 1, Id: 25">Row: 1, Id: 25</div></td><td column="1" id="b4d2ff78-9564-4938-9fb5-1948e6a59c5b"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="b8c29be0-b218-4be1-adf4-322deb22dfe5"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="df5cf3df-3768-4462-9a87-3ef5d0c41310"><div class="cellContent" title="Element Details
+Row: 1, Id: 26">Row: 1, Id: 26</div></td><td column="1" id="e602ce18-73a3-4b07-881e-ab62e3901878"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="6b5a96d4-4335-4950-ad21-3784d19cda65"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="7a5ce533-eb32-44ac-b0a5-0eaee4d874e6"><div class="cellContent" title="Element Details
+Row: 1, Id: 27">Row: 1, Id: 27</div></td><td column="1" id="2103d215-1d2e-4e51-8de8-bb2b767ad025"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="01ceccbe-69cc-4b7e-a074-c1670c8c1ee7"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="780afaad-7c7b-417c-9382-e570d086d2d5"><div class="cellContent" title="Element Details
+Row: 1, Id: 28">Row: 1, Id: 28</div></td><td column="1" id="b091e240-989c-461e-af79-32232b955476"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="72041393-1533-48a0-94e4-7cdfe9c8b64d"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="bf06714a-94c2-4018-989c-e27d48908926"><div class="cellContent" title="Element Details
+Row: 1, Id: 29">Row: 1, Id: 29</div></td><td column="1" id="194391a5-04af-4da8-984c-3e9671235535"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="86720291-375c-459e-add8-5f1f79334980"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="64773cb9-f2d1-4c2a-b02e-bb9ca790f0be"><div class="cellContent" title="Element Details
+Row: 1, Id: 30">Row: 1, Id: 30</div></td><td column="1" id="6f4bde07-2f0e-408d-92ef-9d172b69bea3"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="39df6e0e-7572-415b-bd88-f3e597f46304"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="dd3550d2-4c6e-448c-89e4-2678a2eb34af"><div class="cellContent" title="Element Details
+Row: 1, Id: 31">Row: 1, Id: 31</div></td><td column="1" id="2b2e33d6-dfbb-4d66-bfa9-be3d1cc3a767"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="24c39f6e-821e-463f-8647-ea89bde2fba2"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="3bd46550-8551-42bd-a2e8-e271680d056d"><div class="cellContent" title="Element Details
+Row: 1, Id: 32">Row: 1, Id: 32</div></td><td column="1" id="14f57040-8f84-44a0-98e5-8a19186c8409"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="4e3e48f5-b83d-4aea-a03d-f19441bfe40c"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="d0de0f20-abc2-44d2-9763-5e37878466eb"><div class="cellContent" title="Element Details
+Row: 1, Id: 33">Row: 1, Id: 33</div></td><td column="1" id="a9e81bc6-c5c8-4e22-b743-dced93c630ab"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="54662891-4603-4095-982d-57237cca251c"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="38c73e1e-3600-4c65-9446-de4000a61b93"><div class="cellContent" title="Element Details
+Row: 1, Id: 34">Row: 1, Id: 34</div></td><td column="1" id="d3a017d7-6cf0-40ce-9697-0a123a221565"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="32d6447e-ecd2-4606-ada9-b184f97219f3"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="a1b755c5-461f-47be-96af-c5f0068c1689"><div class="cellContent" title="Element Details
+Row: 1, Id: 35">Row: 1, Id: 35</div></td><td column="1" id="8066f811-944c-4a89-bf63-e21a870c7823"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="f0b869f8-16bb-427f-98d0-5b88647d272d"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="8e2d7b66-bde9-4360-8b1b-7b9169476f7d"><div class="cellContent" title="Element Details
+Row: 1, Id: 36">Row: 1, Id: 36</div></td><td column="1" id="b720368f-c1b8-44c2-8a0f-bffdf1e540b4"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="bf8f3256-e8fa-4b84-9234-0b8ec7e7ec99"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="6fca95a9-9011-4817-b526-24754320fd06"><div class="cellContent" title="Element Details
+Row: 1, Id: 37">Row: 1, Id: 37</div></td><td column="1" id="ad670cde-f1f1-4083-9572-6c0a01db779c"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="6267c811-6d22-4a08-b8ba-3c8fea4c5b72"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="93eb63fc-77d8-4e58-a0d6-cfa3f892ce12"><div class="cellContent" title="Element Details
+Row: 1, Id: 38">Row: 1, Id: 38</div></td><td column="1" id="09db3c9b-6751-41f0-ab93-cb86e9c6591a"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="2a417ad9-754e-4343-a6f1-3657b94bb734"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="66e9115e-020a-4d9c-8ae0-673a29dc74b7"><div class="cellContent" title="Element Details
+Row: 1, Id: 39">Row: 1, Id: 39</div></td><td column="1" id="283d5203-1164-403a-8553-30f555717ec0"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="671010bb-9def-4c60-b498-b811aa5ac2f4"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="4e4170e1-8e21-46f9-8e1c-f1365529228d"><div class="cellContent" title="Element Details
+Row: 1, Id: 40">Row: 1, Id: 40</div></td><td column="1" id="cbf051b5-fe9c-4118-9b2f-1492046dfcfc"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="80be11a0-5682-4055-95fd-d4f400a73089"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="6e50ded0-bbc6-4d49-8497-fe34ffe48b5d"><div class="cellContent" title="Element Details
+Row: 1, Id: 41">Row: 1, Id: 41</div></td><td column="1" id="2248c77c-d8a6-4f43-8ee3-766a7475386d"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="cea26955-eb50-4bca-b46c-034371b6dc44"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="e28fd597-08c2-4c68-b211-cbe73b493491"><div class="cellContent" title="Element Details
+Row: 1, Id: 42">Row: 1, Id: 42</div></td><td column="1" id="6d72edbb-f9bf-4bcc-948e-372c3bf4a046"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="8150491c-085c-4169-b498-78e36e3a319b"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="77f1167d-a4d3-4bd1-880a-3ea3badd1375"><div class="cellContent" title="Element Details
+Row: 1, Id: 43">Row: 1, Id: 43</div></td><td column="1" id="899bb103-f1b6-4955-87d8-e2248d09e15b"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="52871462-b8ee-496b-b66b-111d8ee07b94"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="c7ddd697-dbbc-440d-b5aa-1064524e4004"><div class="cellContent" title="Element Details
+Row: 1, Id: 44">Row: 1, Id: 44</div></td><td column="1" id="65320f86-9bd7-4516-baf6-6f65d1940695"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="94eaec52-08b4-4faa-bc21-2b156397bd01"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="d9333294-6d51-4cde-a62f-f1d030d2fb5e"><div class="cellContent" title="Element Details
+Row: 1, Id: 45">Row: 1, Id: 45</div></td><td column="1" id="77785e3f-b630-4fe3-9285-c168f3096264"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="c873bc1a-4b4b-4562-962b-3c0a3024596f"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="1e40df69-08e3-47ca-b126-f290af9cb363"><div class="cellContent" title="Element Details
+Row: 1, Id: 46">Row: 1, Id: 46</div></td><td column="1" id="4c7d90b8-2146-43a5-8e7c-bf241900bfe5"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="e3412667-332b-404a-8a98-099b3842f4d3"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="1a171f6b-e5c3-48a8-9c88-6035b34c8f73"><div class="cellContent" title="Element Details
+Row: 1, Id: 47">Row: 1, Id: 47</div></td><td column="1" id="e22266f5-706b-429a-ab6d-c5c18038abd7"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="e1a9d316-7ce3-48db-9d1e-dae72ecfe122"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="1223531f-0ec5-42d8-b8e6-86da90c75049"><div class="cellContent" title="Element Details
+Row: 1, Id: 48">Row: 1, Id: 48</div></td><td column="1" id="79969cc6-79ef-47e9-96a4-12d60fee1857"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="c9b15661-d0d2-4738-9ac4-7ed35d41e445"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="f52fc98d-eb6a-4942-a280-764a65ac9b82"><div class="cellContent" title="Element Details
+Row: 1, Id: 49">Row: 1, Id: 49</div></td><td column="1" id="c5faec4a-b69b-4528-ba3d-1fda3c4da545"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="7341e1bf-7093-4c7a-9739-51dadd524a99"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="75507847-4fb0-47ac-a78d-5403a0065acc"><div class="cellContent" title="Element Details
+Row: 1, Id: 50">Row: 1, Id: 50</div></td><td column="1" id="1df700d9-472b-4f2d-9823-d2d56e5c0286"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="fdc1ccf3-0997-4944-8bdd-e85458b36129"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="25e0d972-9749-417d-adfc-bd1d4157274b"><div class="cellContent" title="Element Details
+Row: 1, Id: 51">Row: 1, Id: 51</div></td><td column="1" id="5a8405e7-b098-440d-bad4-c82d49f47d1b"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="55d58080-6968-48ed-9824-dd581b639c95"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="d47428c8-07de-47fe-a378-f7ee6cd0e81c"><div class="cellContent" title="Element Details
+Row: 1, Id: 52">Row: 1, Id: 52</div></td><td column="1" id="4d1238d0-858b-497b-b0d3-b5218d61e235"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="0b174620-1640-403e-bbd7-0705557ecbc4"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="5103df3e-7bdf-4c73-8dd2-dce154407481"><div class="cellContent" title="Element Details
+Row: 1, Id: 53">Row: 1, Id: 53</div></td><td column="1" id="6e646bad-9fee-47a5-adb2-e3bddcc4eada"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="7120545f-994b-43cf-bdc2-60afd16f3a27"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="6e5ef154-3f71-4cd2-becf-e72b80c58ec0"><div class="cellContent" title="Element Details
+Row: 1, Id: 54">Row: 1, Id: 54</div></td><td column="1" id="f6c3ec18-8b17-41be-adf1-69514e2ab93a"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="9aa941d4-4dc0-43b2-9872-0ed56c4d2c35"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="56197576-d584-4f20-a72a-a4da0004be3c"><div class="cellContent" title="Element Details
+Row: 1, Id: 55">Row: 1, Id: 55</div></td><td column="1" id="433252cb-1c28-4aec-b947-cc3b7b4c44df"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="0cf61d4e-148e-4947-b9b5-c869eb81e3a7"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="9398c356-6832-4df4-83eb-9e6e0e7f2f52"><div class="cellContent" title="Element Details
+Row: 1, Id: 56">Row: 1, Id: 56</div></td><td column="1" id="fd82bec9-2ad2-428c-bd4b-a97c8016b91e"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="293d3207-61d5-475f-98eb-acc7ffaccb15"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="9575e7fe-7a09-43b0-b360-e9ba02179906"><div class="cellContent" title="Element Details
+Row: 1, Id: 57">Row: 1, Id: 57</div></td><td column="1" id="bf70a9c8-823e-45d6-8eb0-3bf804298c98"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="c167bce3-8801-4f73-a8a5-a4e2ea146284"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="509795d5-3df4-4876-9a25-31f374dce094"><div class="cellContent" title="Element Details
+Row: 1, Id: 58">Row: 1, Id: 58</div></td><td column="1" id="731fbba2-6daa-4bb0-be9e-7a5aa675086a"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="5c8b656e-50de-4baa-ac8f-63ec0f19fdeb"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="9730cb42-4b8e-4ef6-acc3-7e152c4aec44"><div class="cellContent" title="Element Details
+Row: 1, Id: 59">Row: 1, Id: 59</div></td><td column="1" id="868ddeb9-4992-4a66-93ee-f41b923796f7"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="6d8ca81f-0b68-4c99-9c9e-41698750b3a5"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="80e49165-bde1-46de-b206-a29a0b393405"><div class="cellContent" title="Element Details
+Row: 1, Id: 60">Row: 1, Id: 60</div></td><td column="1" id="34d6db07-7891-41da-a34a-0b2f2bdfe195"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="185b7963-1ded-4497-a52b-fdac8ab103bb"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="60676622-aba6-4e70-b2f2-ec91f0ba3832"><div class="cellContent" title="Element Details
+Row: 1, Id: 61">Row: 1, Id: 61</div></td><td column="1" id="15d517c5-07ff-45d5-a2c0-2be136d5d369"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="b494448e-7f75-4ef5-90e6-31c09610d97a"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="20381faa-4aab-43f6-b4ed-c5d8eb58ecc6"><div class="cellContent" title="Element Details
+Row: 1, Id: 62">Row: 1, Id: 62</div></td><td column="1" id="a21452f2-535e-46a3-a38f-35b9e0746e0d"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="fadad0f8-85e2-434e-b486-5deb3d01bd48"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="f12a3b11-6558-445e-a508-9f95d69a0999"><div class="cellContent" title="Element Details
+Row: 1, Id: 63">Row: 1, Id: 63</div></td><td column="1" id="f83ea7b2-7cc0-436c-8cb9-2f5591a8dae8"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="ff5c3a0b-e056-43c6-b932-57b54300297f"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="1b676e06-6fb0-47df-9e6b-9629d993ddfc"><div class="cellContent" title="Element Details
+Row: 1, Id: 64">Row: 1, Id: 64</div></td><td column="1" id="1c3372c7-a5cc-4084-812d-d8e72e6b8af7"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="d92f560a-8ea4-46f1-a420-9048e518c5d3"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="14b22ae0-e9d7-4379-b8f3-f5966e8a316e"><div class="cellContent" title="Element Details
+Row: 1, Id: 65">Row: 1, Id: 65</div></td><td column="1" id="19ebac8c-5999-4ea0-a5c1-192bc77dc5a8"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="b4594921-c22a-4994-9056-467b2e6d8d3c"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="1d81f395-646f-4c4f-9b75-cd76dfc5421c"><div class="cellContent" title="Element Details
+Row: 1, Id: 66">Row: 1, Id: 66</div></td><td column="1" id="4397ac25-ed3e-4cfa-bc99-5e535339b855"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="8cff402f-5715-4f04-a062-11197746a5d5"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="2fd772d2-0385-44db-9932-8e1912b64a87"><div class="cellContent" title="Element Details
+Row: 1, Id: 67">Row: 1, Id: 67</div></td><td column="1" id="8656d2e3-8ac1-4725-9e22-f5a917d7bb12"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="d738c7de-9e26-4053-8e5c-81dfdd99963d"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="60997c94-8ea2-4e29-92f7-dddff5b709bb"><div class="cellContent" title="Element Details
+Row: 1, Id: 68">Row: 1, Id: 68</div></td><td column="1" id="2d432011-c649-4189-ae21-8011e1c05646"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="e45f5b48-946a-4315-a680-d3c4091be5e1"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="89509544-ec8f-4205-ad10-2254c8a9de39"><div class="cellContent" title="Element Details
+Row: 1, Id: 69">Row: 1, Id: 69</div></td><td column="1" id="f47a374d-5576-4f0f-80b8-fafcc61e2936"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="0fc81cff-ef68-468e-b3d6-5ef25ffa9a3b"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="24ba47cb-7651-4d49-879f-d6ab20b8ade1"><div class="cellContent" title="Element Details
+Row: 1, Id: 70">Row: 1, Id: 70</div></td><td column="1" id="645863f7-1ac6-4835-88ff-2773610d3e81"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="6ff015a6-86b5-418b-8c15-04add104861b"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="0be6154f-ac1a-46a1-aac6-7d31ef62651c"><div class="cellContent" title="Element Details
+Row: 1, Id: 71">Row: 1, Id: 71</div></td><td column="1" id="f39196e7-b120-4da7-abf7-62ccfda0a084"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="b4609596-bb59-407a-99b4-d9fbe03cfa9d"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="4825b769-8857-4cad-9503-768324304dc5"><div class="cellContent" title="Element Details
+Row: 1, Id: 72">Row: 1, Id: 72</div></td><td column="1" id="5c366998-aba6-4700-bf02-c173355c08c2"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="20f57296-24ea-455b-99f6-4a4eaf3ce93f"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="a4d98464-dba5-428b-880a-ffce64e014c7"><div class="cellContent" title="Element Details
+Row: 1, Id: 73">Row: 1, Id: 73</div></td><td column="1" id="3b89885a-3f34-4cd1-a0f7-dbfc212fa977"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="f4e5b200-3b96-4665-98a1-051032214e36"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="5c8b5cfc-aa72-4587-a93b-0421ea99dac3"><div class="cellContent" title="Element Details
+Row: 1, Id: 74">Row: 1, Id: 74</div></td><td column="1" id="3f1add58-6be1-4881-b0e1-2ce6b3c40f4f"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="810a6660-c73f-4c2c-a85a-a32ef29f45d9"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="2007d745-97dd-4a10-a23c-4f69954c33f0"><div class="cellContent" title="Element Details
+Row: 1, Id: 75">Row: 1, Id: 75</div></td><td column="1" id="3da80f7d-d5bf-4bf9-8113-83da4d771f70"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="1bdedd40-6ce7-4264-a937-c896ef9bf184"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="9820ca35-b38a-4805-8ac5-7fbe7242db33"><div class="cellContent" title="Element Details
+Row: 1, Id: 76">Row: 1, Id: 76</div></td><td column="1" id="a9ab4558-964d-4545-98bf-f75e1c027449"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="9e365bdd-393b-4dc1-9804-40e49421abed"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="9ed9ba8b-4ba1-47a0-a754-3d0b97b3b710"><div class="cellContent" title="Element Details
+Row: 1, Id: 77">Row: 1, Id: 77</div></td><td column="1" id="4671351b-2597-4764-8cfb-8160386f2c9c"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="fc4c6833-9037-436b-8646-5d2d8e476c8f"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="d6f140bb-bf5c-4bdc-ade4-202ba4ad9c7e"><div class="cellContent" title="Element Details
+Row: 1, Id: 78">Row: 1, Id: 78</div></td><td column="1" id="81f024b0-3d09-4591-b57b-d84f3cd4b92f"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="e3dd43ee-a1ac-4326-affa-84e1b3bb10e7"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="72ed77e7-c511-4541-96d5-f1c9b15486b4"><div class="cellContent" title="Element Details
+Row: 1, Id: 79">Row: 1, Id: 79</div></td><td column="1" id="b0820b6b-4255-41e4-96a1-a42c9ea9b594"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="f8397bc4-064c-47d9-9de1-386e6546f194"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="70c14ee6-9431-45d2-881d-526d8ae153d5"><div class="cellContent" title="Element Details
+Row: 1, Id: 80">Row: 1, Id: 80</div></td><td column="1" id="14faaa98-7f46-4fc0-9ec5-f7a57bffe3cc"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="2b89f2f8-d908-4de5-8e5f-89f1cba4ec5e"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="58c47ed2-be31-4fd8-959f-f03a7e500e62"><div class="cellContent" title="Element Details
+Row: 1, Id: 81">Row: 1, Id: 81</div></td><td column="1" id="eddece9c-95f0-49cf-8f57-c4b7378d61a1"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="603be880-05da-450a-8536-fdd063f18b37"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="2ed50d9c-6547-4135-afe4-48d75756426d"><div class="cellContent" title="Element Details
+Row: 1, Id: 82">Row: 1, Id: 82</div></td><td column="1" id="1242385c-e145-4be5-9feb-82ebf2d44c4f"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="7e46ff40-4e85-48b1-8936-c859309b2c30"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="adb672cb-6e93-4e6a-95e6-283cc511517e"><div class="cellContent" title="Element Details
+Row: 1, Id: 83">Row: 1, Id: 83</div></td><td column="1" id="342a9d4e-68e6-4ba3-8c8f-c29bd4aef403"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="6c7f9b31-1845-42d4-bc0c-2ca3bd5e2604"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="703300e6-0539-44fd-a23c-af255c546450"><div class="cellContent" title="Element Details
+Row: 1, Id: 84">Row: 1, Id: 84</div></td><td column="1" id="19ac9ab9-b245-4c8a-9c9d-1b94e3e9d1fc"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="c0dd7c48-da6a-4179-9f8d-69dc7e4cc264"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="f69d660a-e712-4329-81b2-0f8cb811ff3b"><div class="cellContent" title="Element Details
+Row: 1, Id: 85">Row: 1, Id: 85</div></td><td column="1" id="4b3bfe3b-4939-4aff-8216-891512aae23b"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="8ee9aed2-78b2-46c9-892b-bb1469f6a6a6"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr><td column="0" id="ad427395-ad3a-41ca-8225-ebc21fa1bba1"><div class="cellContent" title="Element Details
+Row: 1, Id: 86">Row: 1, Id: 86</div></td><td column="1" id="a4d30e54-a337-4d1b-9863-786d654f7b52"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="a1f1c377-3e32-4671-9595-10b2cd4b0cbb"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="da16ba28-66f7-43d8-92f7-a7e1baa4a1af"><div class="cellContent" title="Element Details
+Row: 1, Id: 87">Row: 1, Id: 87</div></td><td column="1" id="fd53a7c9-5f77-42b7-af65-a79d11a07a03"><div class="cellContent" title="Element Diameter
+110.51 (Calculated)"><span style="white-space: nowrap">110.51 (Calculated)</span></div></td><td column="2" id="042bf88f-370a-4d53-8ee9-2e42c2afce0d"><div class="cellContent" title="Element Diameter Error
+0 (Calculated)
+Radial error in the diameter of the element. A positive value increases the element diameter whilst a negative value decreases the element diameter."><span style="white-space: nowrap">0 (Calculated)</span></div></td></tr></tbody></table></div></div></div><div class="columnTable"><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Misc"></a><div class="tableWithCommandsWrapper" style="width: -webkit-fill-available;"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10428"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10429"></a></div></div><table class="selectable-table" border="1" style="width: -webkit-fill-available;"><thead><tr><th colspan="4" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Misc</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="39a28ed7-acee-4821-9b87-277a8e1193d0"><div class="cellContent propertyHeading" title="Number of Elements
+
+Bearing Design
+►Number of Elements">Number of Elements</div></td><td column="1" id="2f95bee8-8034-4241-bb1e-8011ff0a1abe"><div class="cellContent"></div></td><td style="text-align:stretch" column="2" id="bd283f8a-1656-4d4e-bc65-a6b6940081ba"><div class="cellContent">Z</div></td><td column="3" id="41eb3c66-1a46-4b23-a08c-b38338db3069"><div class="cellContent" title="Number of Elements
+87 (Specified)"><span style="white-space: nowrap">87 (Specified)</span></div></td></tr><tr><td column="0" id="22eeb54c-cfe3-4975-9a23-8e4156d3c9b1"><div class="cellContent propertyHeading" title="Is Full Complement?
+
+Bearing Design
+►Is Full Complement?">Is Full Complement?</div></td><td column="1" id="a0d3db14-70a2-43e0-a208-739d6521647c"><div class="cellContent"></div></td><td column="2" id="e0f04d67-4233-4cc7-858a-0c4f4e7d0a17"><div class="cellContent"></div></td><td column="3" id="0c4bb457-51eb-4fa5-a7da-fd1e4426a0d6"><div class="cellContent" title="Is Full Complement?
+No (Estimated)">No (Estimated)</div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="b6974ab8-27e2-42d0-8fe4-a7d378b5c95c"><div class="cellContent propertyHeading" title="The maximum number of elements is calculated using theoretical geometry, and doesn't take any manufacturing limitations into account.
+
+Bearing Design
+►Theoretical Maximum Number of Elements">Theoretical Maximum Number of Elements</div></td><td style="text-align:stretch" class="info" column="1" id="17cdb4a0-24fc-42ef-a524-1a16c94bf30d"><div class="cellContent" title="The maximum number of elements is calculated using theoretical geometry, and doesn't take any manufacturing limitations into account.
+
+Bearing Design
+►Theoretical Maximum Number of Elements (Number)"><div class="info">i</div></div></td><td column="2" id="06e5d4f8-93ff-459e-9f41-ec5abe51a987"><div class="cellContent"></div></td><td column="3" id="67310524-867b-43fb-b110-3f1869614e18"><div class="cellContent" title="Theoretical Maximum Number of Elements
+94.6050462129002
+The maximum number of elements is calculated using theoretical geometry, and doesn't take any manufacturing limitations into account."><span style="white-space: nowrap">94.605</span></div></td></tr><tr><td column="0" id="95ba293b-c4f5-4b1d-a18b-1e1c5662ee1c"><div class="cellContent propertyHeading" title="Element Material
+
+Bearing Design
+►Element Material">Element Material</div></td><td column="1" id="59d22003-e3df-42fc-84a0-850d56b7738d"><div class="cellContent"></div></td><td column="2" id="0605a161-0116-4ccb-af47-17b12dfcdf5e"><div class="cellContent"></div></td><td column="3" id="29588c7a-d92d-47c5-be40-f43a98e7c9c9"><div class="cellContent" title="Element Material Reportable
+Steel">Steel</div></td></tr></tbody></table></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Element_Details____Cage"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10430"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10431"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Cage</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="5b0d54b1-eff8-4050-af4d-3f03dcbd2829"><div class="cellContent propertyHeading" title="Distance of the centre of the cross section of the cage from the centre of the bearing.
+
+Bearing Design
+►Cage Pitch Radius (mm)">Cage Pitch Radius (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="a7f88820-dc7f-40d4-8788-1bd15c38c60d"><div class="cellContent" title="Distance of the centre of the cross section of the cage from the centre of the bearing.
+
+Bearing Design
+►Cage Pitch Radius (mm) (Length - Short)"><div class="info">i</div></div></td><td column="2" id="2593172c-20ea-487a-9a19-c62940893dfc"><div class="cellContent" title="Cage Pitch Radius
+1693.077 (Estimated)
+Distance of the centre of the cross section of the cage from the centre of the bearing."><span style="white-space: nowrap">1693.077 (Estimated)</span></div></td></tr><tr><td column="0" id="99346f3c-9e6c-4c4c-af6c-e5d76301383a"><div class="cellContent propertyHeading" title="Cage Material
+
+Bearing Design
+►Cage Material">Cage Material</div></td><td column="1" id="f3d2a21a-6668-4c75-b5d2-0b8df7f85aad"><div class="cellContent"></div></td><td column="2" id="6c85c669-42d5-4517-a041-ff670d61ff44"><div class="cellContent" title="Cage Material
+Steel">Steel</div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="1e71dbc0-7b51-4057-8336-a63cc334096c"><div class="cellContent propertyHeading" title="Width of the cage from the left to right of a radial bearing, or inner to outer of a ninety degree thrust bearing
+
+Bearing Design
+►Cage Width (mm)">Cage Width (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="d42eb9db-1ff3-4ab0-a7ed-5854608a8664"><div class="cellContent" title="Width of the cage from the left to right of a radial bearing, or inner to outer of a ninety degree thrust bearing
+
+Bearing Design
+►Cage Width (mm) (Length - Short)"><div class="info">i</div></div></td><td column="2" id="42d797bc-9218-4cb9-a188-0871a9bc19c2"><div class="cellContent" title="Cage Width
+309.4624 (Estimate)
+Width of the cage from the left to right of a radial bearing, or inner to outer of a ninety degree thrust bearing"><span style="white-space: nowrap">309.462 (Estimate)</span></div></td></tr><tr><td column="0" id="d1a3ec1b-2a09-4294-8985-690ce41dfad8"><div class="cellContent propertyHeading" title="Dimension of cage in direction pointing from one ring to the other, perpendicular to the bearing width measurement direction
+
+Bearing Design
+►Cage Thickness (mm)">Cage Thickness (mm)</div></td><td style="text-align:stretch" class="info" column="1" id="aa1aab1b-6eba-4f2b-923d-2dc760699a40"><div class="cellContent" title="Dimension of cage in direction pointing from one ring to the other, perpendicular to the bearing width measurement direction
+
+Bearing Design
+►Cage Thickness (mm) (Length - Short)"><div class="info">i</div></div></td><td column="2" id="3a79548b-f398-4fc8-9047-d5c42ced1647"><div class="cellContent" title="Cage Thickness
+18.418333333 (From Element Diameter)
+Dimension of cage in direction pointing from one ring to the other, perpendicular to the bearing width measurement direction"><span style="white-space: nowrap">18.418 (From Element Diameter)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="5d675601-1db6-4066-a761-8594e5c74b10"><div class="cellContent propertyHeading" title="Cage Mass (kg)
+
+Bearing Design
+►Cage Mass (kg)">Cage Mass (kg)</div></td><td column="1" id="7e374d6a-1fd2-41f5-a707-ee5b50afb4b0"><div class="cellContent"></div></td><td column="2" id="ebc88643-b240-4229-97ef-6b42b4ba1deb"><div class="cellContent" title="Cage Mass
+189.401868142 (Estimate From Geometry)"><span style="white-space: nowrap">189.4019 (Estimate From Geometry)</span></div></td></tr></tbody></table></div></div></div></div><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles"></a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles____Inner_Profile">Inner Profile</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles____Outer_Profile">Outer Profile</a></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Roller">Roller</a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Roller__Roller">Roller</a></li></ul></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Inner_Race">Inner Race</a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Inner_Race__Inner_Race">Inner Race</a></li></ul></li><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Outer_Race">Outer Race</a><ul><li><a href="#Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Outer_Race__Outer_Race">Outer Race</a></li></ul></li></ul><hr class="sectionHeaderRule" width="50%" height="1px"><div class="outerTable"><div class="columnTable"><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles____Inner_Profile"></a><div class="imageWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10432"></a></div><div class="copyDataToClipboard"><a href="https://masta.smartmt.com/ICommand10433"></a></div><div class="editTable"><a href="https://masta.smartmt.com/ICommand10434"></a></div></div><a href="https://masta.smartmt.com/ICommand10392"><img width="500" height="500" src="Profile_Report.html_Images\ea0d1c13-e076-4dd1-b520-485f1f49d918.Png"></a></div></div><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles____Outer_Profile"></a><div class="imageWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10435"></a></div><div class="copyDataToClipboard"><a href="https://masta.smartmt.com/ICommand10436"></a></div><div class="editTable"><a href="https://masta.smartmt.com/ICommand10437"></a></div></div><a href="https://masta.smartmt.com/ICommand10393"><img width="500" height="500" src="Profile_Report.html_Images\38b77955-c912-451a-910b-5b5b3ccc38e0.Png"></a></div></div></div><div class="columnTable"><div class="columnTableCell"><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Roller"></a><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Roller__Roller"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10438"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10439"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Roller</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="beac7350-7553-44d8-86d4-348b9038f3ff"><div class="cellContent propertyHeading" title="Active Profile Type
+
+Bearing Design
+►Roller Profile Set
+►Active Profile Type">Active Profile Type</div></td><td column="1" id="3780e60d-5125-48a0-b036-0d0819b4f99b"><div class="cellContent"></div></td><td column="2" id="77fb2500-07fb-4f50-91c0-b00b18abda69"><div class="cellContent" title="Active Profile Type
+Din Lundberg">Din Lundberg</div></td></tr><tr><td column="0" id="79841869-6282-4d92-8c9d-4f7012b398e8"><div class="cellContent propertyHeading" title="Axial Offset (mm)
+
+Bearing Design
+►Roller Profile Set
+►Active Profile
+►Axial Offset (mm)">Axial Offset (mm)</div></td><td column="1" id="ee306604-d9dd-41c0-ba70-740ad32ebbc1"><div class="cellContent"></div></td><td column="2" id="8843e653-0136-47ea-bda0-03fc1cb515b1"><div class="cellContent" title="Axial Offset
+0 (From Roller - Raceway Contact Ranges)"><span style="white-space: nowrap">0 (From Roller - Raceway Contact Ranges)</span></div></td></tr><tr style="background-color:#DDDEDF;"><td column="0" id="aae0ff42-c673-4d14-a1e5-090f78989b5a"><div class="cellContent propertyHeading" title="Effective Length (mm)
+
+Bearing Design
+►Roller Profile Set
+►Active Profile
+►Effective Length (mm)">Effective Length (mm)</div></td><td column="1" id="bd3ed8cb-dab9-477a-954e-c151f4940715"><div class="cellContent"></div></td><td column="2" id="37131273-72fa-4734-909d-aae44be791e5"><div class="cellContent" title="Effective Length
+238.048 (Effective Roller Length)"><span style="white-space: nowrap">238.048 (Effective Roller Length)</span></div></td></tr><tr><td column="0" id="a309c20f-3764-42a5-83f2-3655d7ce58b3"><div class="cellContent propertyHeading" title="Extrapolation Method
+
+Bearing Design
+►Roller Profile Set
+►Active Profile
+►Extrapolation Method">Extrapolation Method</div></td><td column="1" id="a8850806-043e-4d9b-a43b-1264739d1ae1"><div class="cellContent"></div></td><td column="2" id="5566fc5e-f6e9-447b-a57c-ce236cd1f6f5"><div class="cellContent" title="Extrapolation Method
+Linear">Linear</div></td></tr></tbody></table></div><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Inner_Race"></a><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Inner_Race__Inner_Race"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10440"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10441"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Inner Race</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="b2f22c97-a1b7-46c8-9343-5e2f4b527a29"><div class="cellContent propertyHeading" title="Active Profile Type
+
+Bearing Design
+►Inner Race Profile Set
+►Active Profile Type">Active Profile Type</div></td><td column="1" id="d93bc80b-6f12-4f1c-b772-b2cb15784c7e"><div class="cellContent"></div></td><td column="2" id="23cd0307-1124-4162-b3ba-7843a140f2e1"><div class="cellContent" title="Active Profile Type
+None">None</div></td></tr></tbody></table></div><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Outer_Race"></a><a name="Rolling_Bearing_Edit_Window_Reporter__Rolling_Bearing_(Bearing_Editor):_____Profiles______Outer_Race__Outer_Race"></a><div class="tableWithCommandsWrapper"><div class="commandsContainer"><div class="copyToClipboard"><a href="https://masta.smartmt.com/ICommand10442"></a></div><div class="copyToClipboardWithoutValueDescriptions"><a href="https://masta.smartmt.com/ICommand10443"></a></div></div><table class="selectable-table" border="1"><thead><tr><th colspan="3" style="background-color:#990000" class="mainTableHeading" column="0"><div class="cellContent">Outer Race</div></th></tr></thead><tbody><tr style="background-color:#DDDEDF;"><td column="0" id="88bc37be-5cdc-4231-993e-3527ada46201"><div class="cellContent propertyHeading" title="Active Profile Type
+
+Bearing Design
+►Outer Race Profile Set
+►Active Profile Type">Active Profile Type</div></td><td column="1" id="1559ec54-4fdc-4ba5-86c1-f9d864af51a4"><div class="cellContent"></div></td><td column="2" id="b51de4b6-9380-472f-a291-3ec3f2bb52ee"><div class="cellContent" title="Active Profile Type
+None">None</div></td></tr></tbody></table></div></div></div></div>
+</body>
+</html>

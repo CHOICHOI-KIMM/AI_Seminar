@@ -1,0 +1,19 @@
+[샤프트 상태]
+  is_replaced_by_fe      = True
+  fe_substructure_replacing_this = FE Substructure
+  재질 = Default Material
+  FE 파트: ['FE Part']
+
+[ShaftSystemDeflection]
+  type = ShaftSystemDeflection
+  shaft_rating_method = ShaftRatingMethod.DIN_743201212
+  safety_factors = SafetyFactorGroup
+  items: 0개
+  worst_inf = <ERR Unable to access Shaft Section>
+  section_results 실패: Unable to access Shaft Section Results because it is invalid ('Main Shaft' in 'System Deflection of Load Case 1 in Fatigue load case'\Shaft Section Results)
+   위치: SMT.MastaAPI.APIBase.getNewValue[TAPI](ReportablePropertyDefinition rpd)
+   위치: SMT.MastaAPI.APIBase.getValue[TAPI](String rpdName)
+   위치: SMT.MastaAPI.APIBase.getNamedObjectList[TElementType](String rpdName)
+
+완료
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

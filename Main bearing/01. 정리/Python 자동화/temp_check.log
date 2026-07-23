@@ -1,0 +1,31 @@
+
+==============================================================
+[80도(기존)]
+==============================================================
+  det.kinematic_viscosity                          = 9.867971788872435e-05
+  det.kinematic_viscosity_of_oil_for_efficiency_calculations = 9.867971788872433e-05
+  det.lubricant_film_temperature                   = 80.0
+  iso281.calculated_viscosity_ratio                   = 0.4886412471262618
+  iso281.contamination_factor                         = 0.9235990973398811
+  iso281.contamination_factor_from_calculated_viscosity_ratio = 0.9235990973398811
+  iso281.reference_kinematic_viscosity                = 0.00020194717181381611
+  iso281.viscosity_ratio                              = 0.4886412471262618
+  Main Bearing_UW    L10=2.0638e+07  L10m=6.5783e+06  a_ISO=0.31874
+  Main Bearing_DW    L10=3.8080e+08  L10m=2.0675e+08  a_ISO=0.54293
+
+==============================================================
+[50도(신규)]
+==============================================================
+  det.kinematic_viscosity                          = 0.0002946372479234612
+  det.kinematic_viscosity_of_oil_for_efficiency_calculations = 0.00029463724792346116
+  det.lubricant_film_temperature                   = 50.0
+  iso281.calculated_viscosity_ratio                   = 1.4589817984433116
+  iso281.contamination_factor                         = 0.8883783481731655
+  iso281.contamination_factor_from_calculated_viscosity_ratio = 0.8883783481731655
+  iso281.reference_kinematic_viscosity                = 0.00020194717181381611
+  iso281.viscosity_ratio                              = 1.4589817984433116
+  Main Bearing_UW    L10=2.0638e+07  L10m=3.4208e+07  a_ISO=1.65753
+  Main Bearing_DW    L10=3.8080e+08  L10m=2.8010e+09  a_ISO=7.35551
+
+완료
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

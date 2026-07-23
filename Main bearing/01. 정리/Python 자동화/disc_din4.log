@@ -1,0 +1,35 @@
+[SafetyFactorItem 전체 attr + str]
+
+ item[0] str='7.0704, (7.0704)'
+    all_properties_are_invalid = False
+    all_properties_are_read_only = False
+    cast_to = _Cast_SafetyFactorItem(__parent__=SafetyFactorItem
+    damage = '<ERR Unable to access Damage be>'
+    description = 'DIN 743:2012-12, Fatigue Safety Factor for Infini
+    invalid_properties = ['Damage', 'Time until Failure', 'Reliability']
+    minimum_required_safety_factor = 1.0
+    read_only_properties = []
+    reliability = '<ERR "Reliability" - The proper>'
+    safety_factor = 7.070398385024129
+    time_until_failure = '<ERR Unable to access Time unti>'
+    wrapped = <SMT.MastaAPI.Materials.SafetyFactorItem object at
+
+ item[1] str='21.5714, (21.5714)'
+    all_properties_are_invalid = False
+    all_properties_are_read_only = False
+    cast_to = _Cast_SafetyFactorItem(__parent__=SafetyFactorItem
+    damage = '<ERR Unable to access Damage be>'
+    description = 'DIN 743:2012-12, Safety Factor for Avoidance of P
+    invalid_properties = ['Damage', 'Time until Failure', 'Reliability']
+    minimum_required_safety_factor = 1.0
+    read_only_properties = []
+    reliability = '<ERR "Reliability" - The proper>'
+    safety_factor = 21.571438581106737
+    time_until_failure = '<ERR Unable to access Time unti>'
+    wrapped = <SMT.MastaAPI.Materials.SafetyFactorItem object at
+
+[ShaftSectionSystemDeflection[0] — fatigue/safety/infinite/reliab]
+  type: ShaftSectionSystemDeflection
+
+완료
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

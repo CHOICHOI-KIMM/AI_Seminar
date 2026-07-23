@@ -1,0 +1,241 @@
+[설정] fatigue_config.xlsx 로드 (8개 항목)
+==================================================================
+ 부록 8 스윕 — 빈 평균 vs 점 추출 (50도 모델)
+==================================================================
+ 모델: 26MW_메인베어링_기본설계_v1.3_샤프트 두께,형상 2안_피로하중 반영_유연체_FE_온도_50도_260721.Masta
+ 시계열 6001점 · ScaleFactor 45,040
+ 총 해석 23,501건 (예상 118분)
+
+[1/12] dt=0.1 bin  (6,001건)
+      … 300/6001  (96s, 322 ms/건)
+      … 600/6001  (188s, 314 ms/건)
+      … 900/6001  (284s, 316 ms/건)
+      … 1200/6001  (379s, 316 ms/건)
+      … 1500/6001  (477s, 318 ms/건)
+      … 1800/6001  (571s, 317 ms/건)
+      … 2100/6001  (669s, 318 ms/건)
+      … 2400/6001  (764s, 318 ms/건)
+      … 2700/6001  (859s, 318 ms/건)
+      … 3000/6001  (954s, 318 ms/건)
+      … 3300/6001  (1054s, 320 ms/건)
+      … 3600/6001  (1157s, 321 ms/건)
+      … 3900/6001  (1257s, 322 ms/건)
+      … 4200/6001  (1348s, 321 ms/건)
+      … 4500/6001  (1441s, 320 ms/건)
+      … 4800/6001  (1539s, 321 ms/건)
+      … 5100/6001  (1634s, 320 ms/건)
+      … 5400/6001  (1732s, 321 ms/건)
+      … 5700/6001  (1827s, 321 ms/건)
+      … 6000/6001  (1929s, 321 ms/건)
+    완료 6001건 / 1929s (321 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_0.1_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_0.1.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[2/12] dt=60 bin  (10건)
+    완료 10건 / 4s (361 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_60_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_60.xlsx
+[2/12] dt=60 pt  (11건)
+    완료 11건 / 4s (349 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_60_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_60.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[3/12] dt=20 bin  (30건)
+    완료 30건 / 10s (342 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_20_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_20.xlsx
+[3/12] dt=20 pt  (31건)
+    완료 31건 / 11s (368 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_20_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_20.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[4/12] dt=10 bin  (60건)
+    완료 60건 / 21s (346 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_10_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_10.xlsx
+[4/12] dt=10 pt  (61건)
+    완료 61건 / 23s (375 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_10_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_10.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[5/12] dt=6 bin  (100건)
+    완료 100건 / 33s (334 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_6_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_6.xlsx
+[5/12] dt=6 pt  (101건)
+    완료 101건 / 33s (326 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_6_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_6.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[6/12] dt=4 bin  (150건)
+    완료 150건 / 50s (332 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_4_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_4.xlsx
+[6/12] dt=4 pt  (151건)
+    완료 151건 / 50s (331 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_4_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_4.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[7/12] dt=2 bin  (300건)
+      … 300/300  (102s, 340 ms/건)
+    완료 300건 / 102s (340 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_2_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_2.xlsx
+[7/12] dt=2 pt  (301건)
+      … 300/301  (97s, 323 ms/건)
+    완료 301건 / 97s (323 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_2_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_2.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[8/12] dt=1 bin  (600건)
+      … 300/600  (99s, 330 ms/건)
+      … 600/600  (199s, 332 ms/건)
+    완료 600건 / 199s (332 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_1_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_1.xlsx
+[8/12] dt=1 pt  (601건)
+      … 300/601  (100s, 335 ms/건)
+      … 600/601  (199s, 332 ms/건)
+    완료 601건 / 199s (332 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_1_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_1.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[9/12] dt=0.6 bin  (1,000건)
+      … 300/1000  (95s, 317 ms/건)
+      … 600/1000  (192s, 320 ms/건)
+      … 900/1000  (287s, 319 ms/건)
+    완료 1000건 / 320s (320 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_0.6_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_0.6.xlsx
+[9/12] dt=0.6 pt  (1,001건)
+      … 300/1001  (95s, 316 ms/건)
+      … 600/1001  (193s, 322 ms/건)
+      … 900/1001  (288s, 321 ms/건)
+    완료 1001건 / 322s (321 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_0.6_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_0.6.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[10/12] dt=0.4 bin  (1,500건)
+      … 300/1500  (94s, 313 ms/건)
+      … 600/1500  (189s, 315 ms/건)
+      … 900/1500  (288s, 320 ms/건)
+      … 1200/1500  (383s, 319 ms/건)
+      … 1500/1500  (481s, 320 ms/건)
+    완료 1500건 / 481s (320 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_0.4_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_0.4.xlsx
+[10/12] dt=0.4 pt  (1,501건)
+      … 300/1501  (93s, 309 ms/건)
+      … 600/1501  (189s, 314 ms/건)
+      … 900/1501  (286s, 318 ms/건)
+      … 1200/1501  (384s, 320 ms/건)
+      … 1500/1501  (481s, 321 ms/건)
+    완료 1501건 / 481s (321 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_0.4_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_0.4.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[11/12] dt=0.3 bin  (2,000건)
+      … 300/2000  (93s, 311 ms/건)
+      … 600/2000  (189s, 315 ms/건)
+      … 900/2000  (283s, 314 ms/건)
+      … 1200/2000  (383s, 319 ms/건)
+      … 1500/2000  (478s, 318 ms/건)
+      … 1800/2000  (575s, 320 ms/건)
+    완료 2000건 / 643s (321 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_0.3_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_0.3.xlsx
+[11/12] dt=0.3 pt  (2,001건)
+      … 300/2001  (93s, 310 ms/건)
+      … 600/2001  (190s, 316 ms/건)
+      … 900/2001  (284s, 316 ms/건)
+      … 1200/2001  (383s, 319 ms/건)
+      … 1500/2001  (478s, 319 ms/건)
+      … 1800/2001  (578s, 321 ms/건)
+    완료 2001건 / 646s (323 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_0.3_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_0.3.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+[12/12] dt=0.2 bin  (3,000건)
+      … 300/3000  (93s, 310 ms/건)
+      … 600/3000  (189s, 316 ms/건)
+      … 900/3000  (292s, 325 ms/건)
+      … 1200/3000  (392s, 326 ms/건)
+      … 1500/3000  (493s, 329 ms/건)
+      … 1800/3000  (602s, 335 ms/건)
+      … 2100/3000  (700s, 333 ms/건)
+      … 2400/3000  (795s, 331 ms/건)
+      … 2700/3000  (892s, 330 ms/건)
+      … 3000/3000  (991s, 330 ms/건)
+    완료 3000건 / 991s (330 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_0.2_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_bin_DLC1.2-c-s1_dt_0.2.xlsx
+[12/12] dt=0.2 pt  (3,001건)
+      … 300/3001  (91s, 305 ms/건)
+      … 600/3001  (187s, 312 ms/건)
+      … 900/3001  (283s, 314 ms/건)
+      … 1200/3001  (378s, 315 ms/건)
+      … 1500/3001  (473s, 316 ms/건)
+      … 1800/3001  (575s, 319 ms/건)
+      … 2100/3001  (671s, 319 ms/건)
+      … 2400/3001  (764s, 319 ms/건)
+      … 2700/3001  (861s, 319 ms/건)
+      … 3000/3001  (959s, 320 ms/건)
+    완료 3001건 / 960s (320 ms/건)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_0.2_summary.csv  (min shaft SF=None)
+엑셀 생성: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\Results\T50_pt_DLC1.2-c-s1_dt_0.2.xlsx
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+Font 'default' does not have a glyph for '\u2212' [U+2212], substituting with a dummy symbol.
+  → 부록 8-5·그래프 갱신
+
+스윕 완료.
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

@@ -1,0 +1,18 @@
+모델 로드: D:\AI\AI_Seminar\Main bearing\02. 자료\MASTA\26MW_메인베어링_기본설계_v1.3_샤프트 두께,형상 2안_피로하중 반영_260720.Masta
+드라이버 LC: Load Case 1 | 베어링: ['Main Bearing_UW', 'Main Bearing_DW']
+DLC=DLC1.2-c-s1 | ScaleFactor=45040.0 | 30yr Hours=7505.501011
+시계열 6001점 파싱, Δt=0.1s
+  [    0] t=-0.00 rpm=5.092 rev=0.00849 | σin=1367MPa s0=10.26
+  [    1] t=0.10 rpm=5.094 rev=0.00849 | σin=1355MPa s0=10.48
+  [    2] t=0.20 rpm=5.096 rev=0.00849 | σin=1366MPa s0=10.27
+  [    3] t=0.30 rpm=5.092 rev=0.00849 | σin=1374MPa s0=10.11
+  [    4] t=0.40 rpm=5.085 rev=0.00848 | σin=1367MPa s0=10.22
+  [    5] t=0.50 rpm=5.084 rev=0.00847 | σin=1355MPa s0=10.45
+  [    6] t=0.60 rpm=5.084 rev=0.00847 | σin=1356MPa s0=10.44
+  [    7] t=0.70 rpm=5.084 rev=0.00847 | σin=1370MPa s0=10.17
+  [    8] t=0.80 rpm=5.080 rev=0.00847 | σin=1374MPa s0=10.08
+  [    9] t=0.90 rpm=5.074 rev=0.00846 | σin=1367MPa s0=10.20
+
+데이터 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\fatigue_test10c_DLC1.2-c-s1.csv  (신규 10점 × 2베어링)
+요약 저장: D:\AI\AI_Seminar\Main bearing\01. 정리\Python 자동화\fatigue_test10c_DLC1.2-c-s1_summary.csv
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

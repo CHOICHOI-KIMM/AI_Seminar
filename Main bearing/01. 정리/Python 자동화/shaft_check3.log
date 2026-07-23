@@ -1,0 +1,47 @@
+active_definition type: SimpleShaftDefinition
+
+[재질/E/강체/단면 관련]
+    design_shaft_sections = [DesignShaftSection(wrapped=<SMT.MastaAPI.Shafts.DesignShaft...
+    factor_for_gjl_material = '<ERR Unable to access Factor for GJL Ma>'
+    inner_profile = ShaftProfile(wrapped=<SMT.MastaAPI.Shafts.ShaftProfile objec...
+    material = 'Rigid Material 1'
+    outer_profile = ShaftProfile(wrapped=<SMT.MastaAPI.Shafts.ShaftProfile objec...
+    override_default_shaft_material = True
+    shaft_material = ShaftMaterialForReports(wrapped=<SMT.MastaAPI.Shafts.ShaftMa...
+    surface_finish_sections = []
+    surface_treatment_factor = '<ERR Unable to access Surface Treatment>'
+
+[material 객체 상세]
+  shaft_material: ShaftMaterialForReports
+    report_names = ['All Properties Report', 'Default CAD Report']
+    tensile_yield_strength = 750000000.0
+
+[단면(sections) — 외경/내경]
+
+완료
+Exception ignored in: <function APIBase.__del__ at 0x0000023A26AD9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000023A26AD9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000023A26AD9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000023A26AD9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+Exception ignored in: <function APIBase.__del__ at 0x0000023A26AD9300>
+Traceback (most recent call last):
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 264, in __del__
+  File "C:\Users\KIMM\AppData\Roaming\Python\Python313\site-packages\mastapy\_private\_0.py", line 268, in disconnect_from_masta
+ImportError: sys.meta_path is None, Python is likely shutting down
+XXX appending C:\Program Files\SMT\MASTA 14.1.1\hasp_windows_x64_59008.dll

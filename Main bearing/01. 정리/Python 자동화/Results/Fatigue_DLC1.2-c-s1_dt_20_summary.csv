@@ -1,0 +1,13 @@
+﻿=== (a) 베어링 손상 ===,,,,,,,,,,
+bearing,standard,life_basis,sample_damage,scale_factor,damage_30yr,SF_fatigue,equiv_life_years,note,,
+Main Bearing_UW,ISO281,basic,5.72E-06,45040,0.257451322,3.884229424,116.5268827,31점 표본(1 DLC),,
+Main Bearing_UW,ISO281,modified,2.22E-05,45040,0.999225656,1.000774944,30.02324831,31점 표본(1 DLC),,
+Main Bearing_UW,ISO16281,basic,3.96E-06,45040,0.178299451,5.60854222,168.2562666,31점 표본(1 DLC),,
+Main Bearing_UW,ISO16281,modified,1.63E-05,45040,0.735367329,1.359864603,40.79593808,31점 표본(1 DLC),,
+Main Bearing_DW,ISO281,basic,9.94E-07,45040,0.044763352,22.33970311,670.1910934,31점 표본(1 DLC),,
+Main Bearing_DW,ISO281,modified,3.08E-06,45040,0.138719022,7.208816707,216.2645012,31점 표본(1 DLC),,
+Main Bearing_DW,ISO16281,basic,9.27E-07,45040,0.041743311,23.95593406,718.6780218,31점 표본(1 DLC),,
+Main Bearing_DW,ISO16281,modified,3.29E-06,45040,0.148320829,6.742141399,202.264242,31점 표본(1 DLC),,
+,,,,,,,,,,
+=== (b) 샤프트 임계점 (DIN743 무한수명 피로 SF 최소) ===,,,,,,,,,,
+min_shaft_DIN743_SF_inf,crit_index,crit_t_s,crit_rpm,crit_force_x_N,crit_force_y_N,crit_axial_load_N,crit_moment_x_Nm,crit_moment_y_Nm,crit_Moment_z_Nm,crit_shaft_SF_offset_m
