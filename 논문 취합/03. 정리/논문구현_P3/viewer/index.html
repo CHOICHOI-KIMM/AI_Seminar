@@ -477,13 +477,14 @@ $("runChain").onclick = async () => {
     linePlot($("wearCanvas"), {
       series: [
         { x: r.x, y: r.hTranProfile.map((v) => v * 1e6), label: "h_tran [µm] (음수=접촉간섭)" },
-        // Δh_w 는 h_tran 과 8자릿수 차 → 우측 보조축(배율 조작 없이 제 크기, raw m/cyc)
-        { x: r.x, y: r.dhWProfile, label: "Δh_w [m/cyc] (우축)", dash: true, axis: "right" },
+        // Δh_w: nm/Mcyc = ×1e15 (nm=1e9 × Mcyc=1e6) — 순수 단위환산으로 O(1) 숫자화.
+        // µm/cyc(×1e6)는 여전히 1e-9 대라 지수표기 불가피 → 기각. 우측 보조축.
+        { x: r.x, y: r.dhWProfile.map((v) => v * 1e15), label: "Δh_w [nm/Mcyc] (우축)", dash: true, axis: "right" },
         { name: "contactMask", x: r.x, y: contactMask },
       ],
       shadeMaskSeries: "contactMask",
       title: "유막·마모율 x-프로파일 — 미마모·정성", xLabel: "x [m]",
-      yLabel: "[µm]", yLabelRight: "[m/cyc]",
+      yLabel: "[µm]", yLabelRight: "[nm/Mcyc]",
     });
     $("contactNote").style.display = contactMask.some((v) => v > 0) ? "block" : "none";
     heatmap($("vmCanvas"), r.vmXz.map((row) => row.map((v) => (v === null ? null : v * GPA))),

@@ -99,13 +99,15 @@ export function linePlot(canvas, opts) {
     ctx.strokeStyle = "#e2e8f0"; ctx.beginPath(); ctx.moveTo(px, T); ctx.lineTo(px, H - B); ctx.stroke();
     ctx.fillText(fmt(t), px - 12, H - B + 16);
   }
+  ctx.textAlign = "right";
   for (const t of niceTicks(ymin, ymax)) {
     const py = ty(t);
     ctx.strokeStyle = "#e2e8f0"; ctx.beginPath(); ctx.moveTo(L, py); ctx.lineTo(W - R, py); ctx.stroke();
-    ctx.fillText(fmt(t), 6, py + 4);
+    ctx.fillText(fmt(t), L - 8, py + 4); // 축에 붙여 우측정렬 → 좌단 회전 단위라벨과 분리
   }
+  ctx.textAlign = "left";
   if (opts.xLabel) ctx.fillText(opts.xLabel, (W - L) / 2, H - 8);
-  if (opts.yLabel) { ctx.save(); ctx.translate(14, (H + T) / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(opts.yLabel, 0, 0); ctx.restore(); }
+  if (opts.yLabel) { ctx.save(); ctx.translate(12, (H + T) / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = "center"; ctx.fillText(opts.yLabel, 0, 0); ctx.restore(); }
   if (opts.title) { ctx.fillStyle = "#0f172a"; ctx.font = "bold 13px sans-serif"; ctx.fillText(opts.title, L, 16); ctx.font = "12px sans-serif"; }
 
   // 우측 보조축 눈금
@@ -154,19 +156,22 @@ export function linePlot(canvas, opts) {
     ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
   });
 
-  // 범례 — 우상단 (T 여백 확대와 함께 곡선 겹침 회피)
+  // 범례 — 플롯 프레임 **밖** 상단 밴드(제목 오른쪽~프레임 위) 가로 배치 → 곡선과 절대 안 겹침
   const labeled = drawSeries.filter((s) => s.label);
-  let maxw = 0;
-  for (const s of labeled) maxw = Math.max(maxw, ctx.measureText(s.label).width);
-  let lx = W - R - maxw - 28, lyy = T + 6;
-  labeled.forEach((s) => {
-    const si = drawSeries.indexOf(s);
-    ctx.fillStyle = s.color || COLORS[si % COLORS.length];
-    ctx.fillRect(lx, lyy, 14, 3);
-    ctx.fillStyle = "#334155";
-    ctx.fillText(s.label, lx + 20, lyy + 6);
-    lyy += 16;
-  });
+  if (labeled.length) {
+    const itemW = labeled.map((s) => 14 + 5 + ctx.measureText(s.label).width + 16);
+    const totalW = itemW.reduce((a, b) => a + b, 0);
+    let lx = Math.max(L, W - R - totalW);
+    const lyy = T - 13; // 프레임(T) 위 밴드
+    labeled.forEach((s, k) => {
+      const si = drawSeries.indexOf(s);
+      ctx.fillStyle = s.color || COLORS[si % COLORS.length];
+      ctx.fillRect(lx, lyy, 14, 3);
+      ctx.fillStyle = "#334155";
+      ctx.fillText(s.label, lx + 19, lyy + 6);
+      lx += itemW[k];
+    });
+  }
 }
 
 // 히트맵. data = [row][col] (row=z, col=x). opts:{xLabel,yLabel,title,x0,x1,y0,y1,yDown}
