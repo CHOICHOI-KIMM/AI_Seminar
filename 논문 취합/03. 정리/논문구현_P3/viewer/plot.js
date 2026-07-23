@@ -29,7 +29,8 @@ function fmt(v) {
 export function linePlot(canvas, opts) {
   const ctx = canvas.getContext("2d");
   const W = canvas.width, H = canvas.height;
-  const L = 62, R = 14, T = 28, B = 44;
+  const hasRight = (opts.series || []).some((s) => s.axis === "right");
+  const L = 62, R = hasRight ? 64 : 14, T = 48, B = 44;
   ctx.clearRect(0, 0, W, H);
   ctx.font = "12px sans-serif";
 
@@ -37,8 +38,11 @@ export function linePlot(canvas, opts) {
   const drawSeries = (opts.series || []).filter((s) => s.name !== shadeName && s.label !== "__mask__");
   const mask = (opts.series || []).find((s) => s.name === shadeName);
 
+  const leftSeries = drawSeries.filter((s) => s.axis !== "right");
+  const rightSeries = drawSeries.filter((s) => s.axis === "right");
   let xs = [], ys = [];
-  for (const s of drawSeries) { xs = xs.concat(s.x); ys = ys.concat(s.y); }
+  for (const s of drawSeries) xs = xs.concat(s.x);
+  for (const s of leftSeries) ys = ys.concat(s.y);
   for (const p of opts.points || []) { xs.push(p.x); ys.push(p.y); }
   if (!xs.length) return;
   xs = xs.filter(Number.isFinite); ys = ys.filter(Number.isFinite);
@@ -49,11 +53,23 @@ export function linePlot(canvas, opts) {
   const pad = 0.06 * (ymax - ymin);
   ymin -= pad; ymax += pad;
 
+  // 우측 보조축 범위 (Δh_w 등 스케일이 다른 시리즈 — 배율 조작 없이 제 크기로)
+  let ys2 = [];
+  for (const s of rightSeries) ys2 = ys2.concat(s.y);
+  ys2 = ys2.filter(Number.isFinite);
+  let ymin2 = 0, ymax2 = 1;
+  if (ys2.length) {
+    ymin2 = Math.min(...ys2, 0); ymax2 = Math.max(...ys2);
+    if (ymax2 === ymin2) ymax2 = ymin2 + 1;
+    const p2 = 0.06 * (ymax2 - ymin2); ymin2 -= p2; ymax2 += p2;
+  }
+
   const xl = opts.xLog;
   const tx = (x) => xl
     ? L + ((Math.log10(x) - Math.log10(xmin0)) / (Math.log10(xmax0) - Math.log10(xmin0))) * (W - L - R)
     : L + ((x - xmin0) / (xmax0 - xmin0)) * (W - L - R);
   const ty = (y) => H - B - ((y - ymin) / (ymax - ymin)) * (H - T - B);
+  const ty2 = (y) => H - B - ((y - ymin2) / (ymax2 - ymin2)) * (H - T - B);
 
   // 음영 (fit degrades 등)
   if (mask) {
@@ -92,6 +108,19 @@ export function linePlot(canvas, opts) {
   if (opts.yLabel) { ctx.save(); ctx.translate(14, (H + T) / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(opts.yLabel, 0, 0); ctx.restore(); }
   if (opts.title) { ctx.fillStyle = "#0f172a"; ctx.font = "bold 13px sans-serif"; ctx.fillText(opts.title, L, 16); ctx.font = "12px sans-serif"; }
 
+  // 우측 보조축 눈금
+  if (rightSeries.length) {
+    ctx.fillStyle = "#9a3412";
+    for (const t of niceTicks(ymin2, ymax2)) {
+      const py = ty2(t);
+      ctx.fillText(fmt(t), W - R + 5, py + 4);
+    }
+    if (opts.yLabelRight) {
+      ctx.save(); ctx.translate(W - 8, (H + T) / 2); ctx.rotate(-Math.PI / 2);
+      ctx.fillText(opts.yLabelRight, 0, 0); ctx.restore();
+    }
+  }
+
   // 수평 기준선
   for (const h of opts.hlines || []) {
     ctx.strokeStyle = "#64748b"; ctx.setLineDash([4, 4]);
@@ -106,10 +135,12 @@ export function linePlot(canvas, opts) {
     ctx.lineWidth = 1.8;
     if (s.dash) ctx.setLineDash([6, 4]);
     ctx.beginPath();
+    const tyf = s.axis === "right" ? ty2 : ty;
     let started = false;
     for (let i = 0; i < s.x.length; i++) {
       if (xl && !(s.x[i] > 0)) continue;
-      const px = tx(s.x[i]), py = ty(s.y[i]);
+      if (!Number.isFinite(s.y[i])) continue;
+      const px = tx(s.x[i]), py = tyf(s.y[i]);
       if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
     }
     ctx.stroke();
@@ -123,10 +154,13 @@ export function linePlot(canvas, opts) {
     ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
   });
 
-  // 범례
-  let lx = L + 8, lyy = T + 8;
-  drawSeries.forEach((s, si) => {
-    if (!s.label) return;
+  // 범례 — 우상단 (T 여백 확대와 함께 곡선 겹침 회피)
+  const labeled = drawSeries.filter((s) => s.label);
+  let maxw = 0;
+  for (const s of labeled) maxw = Math.max(maxw, ctx.measureText(s.label).width);
+  let lx = W - R - maxw - 28, lyy = T + 6;
+  labeled.forEach((s) => {
+    const si = drawSeries.indexOf(s);
     ctx.fillStyle = s.color || COLORS[si % COLORS.length];
     ctx.fillRect(lx, lyy, 14, 3);
     ctx.fillStyle = "#334155";

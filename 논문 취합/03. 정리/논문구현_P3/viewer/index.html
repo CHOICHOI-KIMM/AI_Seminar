@@ -440,45 +440,54 @@ $("runChain").onclick = async () => {
     // 기준형상 (worker echo — 표시=투입)
     if (r.inputEcho) {
       const e = r.inputEcho;
+      // 표시 단위 µm (×1e6 — 단위 환산, 물리 아님)
+      const UM = 1e6;
       const sum = e.rough1.map((v, i) => v + e.rough2[i]);
       linePlot($("roughCanvas"), {
         series: [
-          { x: r.x, y: e.rough1, label: "z₁ 디스크 [m]" },
-          { x: r.x, y: e.rough2, label: "z₂ 롤러 [m]" },
-          { x: r.x, y: sum, label: "z₁+z₂ 합성 [m]", dash: true },
+          { x: r.x, y: e.rough1.map((v) => v * UM), label: "z₁ 디스크 [µm]" },
+          { x: r.x, y: e.rough2.map((v) => v * UM), label: "z₂ 롤러 [µm]" },
+          { x: r.x, y: sum.map((v) => v * UM), label: "z₁+z₂ 합성 [µm]", dash: true },
         ],
-        hlines: [{ y: payload.h_bar, label: "h̄" }],
-        title: "입력 기준형상 — 합성 거칠기 (worker echo)", xLabel: "x [m]", yLabel: "[m]",
+        hlines: [{ y: payload.h_bar * UM, label: "h̄" }],
+        title: "입력 기준형상 — 합성 거칠기 (worker echo)", xLabel: "x [m]", yLabel: "[µm]",
       });
       $("roughFormula").innerHTML =
         `<b>기준형상 수식: z<sub>i</sub>(x) = √2·Rq<sub>i</sub>·sin(2π·N·x / l<sub>x</sub>)</b>` +
         `<ul style="margin:6px 0 0 18px; padding:0;">` +
         `<li>√2 : 사인파 RMS→진폭 환산 — <b>입력 규격</b>(물리 모델 아님)</li>` +
         `<li>Rq₁ = ${$("f_rq1").value} µm · Rq₂ = ${$("f_rq2").value} µm · N = ${payload.waves}</li>` +
+        `<li><b>진폭</b> A₁=√2·Rq₁=${(Math.SQRT2 * Number($("f_rq1").value)).toFixed(3)} µm · ` +
+        `A₂=${(Math.SQRT2 * Number($("f_rq2").value)).toFixed(3)} µm · ` +
+        `<b>A<sub>합성</sub>=√2(Rq₁+Rq₂)=${(Math.SQRT2 * (Number($("f_rq1").value) + Number($("f_rq2").value))).toFixed(3)} µm</b> (동위상·동주파 합)</li>` +
         `<li>l<sub>x</sub> = ${payload.grid.lx} m · h̄ = ${payload.h_bar} m</li>` +
         `<li>합성 진폭 ≳ h̄ → 접촉 간섭 경향 (변형 전 기준)</li>` +
         `<li>실제 접촉 = EHL 평탄화 후 아래 <b>h_tran&lt;0 음영</b></li>` +
         `</ul>`;
     }
+    const GPA = 1e-9; // 표시 단위 GPa (원논문 Fig 6 표기 정합)
     linePlot($("profCanvas"), {
       series: [
-        { x: r.x, y: r.pTranProfile, label: "p_tran [Pa]" },
-        { x: r.x, y: r.qTranProfile, label: "q_tran [Pa]" },
+        { x: r.x, y: r.pTranProfile.map((v) => v * GPA), label: "p_tran [GPa]" },
+        { x: r.x, y: r.qTranProfile.map((v) => v * GPA), label: "q_tran [GPa]" },
       ],
-      title: `압력·트랙션 x-프로파일 (y=j${r.sliceJ}) — 미마모·정성`, xLabel: "x [m]", yLabel: "[Pa]",
+      title: `압력·트랙션 x-프로파일 (y=j${r.sliceJ}) — 미마모·정성`, xLabel: "x [m]", yLabel: "[GPa]",
     });
     const contactMask = r.hTranProfile.map((v) => (v < 0 ? 1 : 0));
     linePlot($("wearCanvas"), {
       series: [
-        { x: r.x, y: r.hTranProfile, label: "h_tran [m] (음수=접촉간섭)" },
-        { x: r.x, y: r.dhWProfile, label: "Δh_w [m/cyc]", dash: true },
+        { x: r.x, y: r.hTranProfile.map((v) => v * 1e6), label: "h_tran [µm] (음수=접촉간섭)" },
+        // Δh_w 는 h_tran 과 8자릿수 차 → 우측 보조축(배율 조작 없이 제 크기, raw m/cyc)
+        { x: r.x, y: r.dhWProfile, label: "Δh_w [m/cyc] (우축)", dash: true, axis: "right" },
         { name: "contactMask", x: r.x, y: contactMask },
       ],
       shadeMaskSeries: "contactMask",
-      title: "유막·마모율 x-프로파일 — 미마모·정성", xLabel: "x [m]", yLabel: "[m]",
+      title: "유막·마모율 x-프로파일 — 미마모·정성", xLabel: "x [m]",
+      yLabel: "[µm]", yLabelRight: "[m/cyc]",
     });
     $("contactNote").style.display = contactMask.some((v) => v > 0) ? "block" : "none";
-    heatmap($("vmCanvas"), r.vmXz, { title: "σ_vM(x,z) @ y₀ [Pa] — 미마모·정성 (cf. Fig 6b)", xLabel: "x →", yLabel: "z(깊이) ↓" });
+    heatmap($("vmCanvas"), r.vmXz.map((row) => row.map((v) => (v === null ? null : v * GPA))),
+      { title: "σ_vM(x,z) @ y₀ [GPa] — 미마모·정성 (cf. Fig 6b)", xLabel: "x →", yLabel: "z(깊이) ↓" });
     heatmap($("dvCanvas"), r.dvYz, { title: "Dang Van D(y,z) [-] — 1사이클(x-스냅샷)", xLabel: "y →", yLabel: "z(깊이) ↓" });
     if (new URLSearchParams(location.search).has("autorun")) {
       fetch("/__viewer__/autorunPlotted").catch(() => {});
