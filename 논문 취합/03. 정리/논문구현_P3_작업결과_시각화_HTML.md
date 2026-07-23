@@ -444,3 +444,24 @@ node verify_phase2.js           # 신선도 가드 + 8/8
 
 **검증**: 셸 **13 green**(+s3 2). 포착 1건: 스모크 fixture 의 `phi_bl=0` — 스텁 아닌 **fixture 물리**(rough2=0 → 유막이 접촉 삼킴). 검증된 verify_phase2 fixture(0.23+0.06µm)로 정렬해 해소. **교훈: phi_bl=0 은 "스텁" 과 "정당한 무접촉" 두 원인이 있다 — 뷰어도 이 구분을 표시해야**(asperity_degenerate·contact_count 노출이 근거).
 → **S④ 진행.**
+
+## S④ — 뷰어 4탭 (결과) — **통과 · 스프린트 완주**
+
+**구성** (`viewer/`): `index.html`(4탭) + `plot.js`(캔버스 렌더 전용, 물리 0건) + `worker.js`(WASM 호출 전담 module worker — R2 대응 UI 비블로킹) + `vc_data.json`(재검토판 전사 29건, **잠정 — 연구자 재검토 대상**) + `spike.html`(S①).
+
+| 탭 | 내용 | 정직성 장치 |
+|---|---|---|
+| ① 참조곡선 | 6종(venner1997/2000·gw1994·mcewen·milano·tripp2003) + Table1 18점 오버레이 | 선/점접촉 배지(겹침 금지)·fit degrades 음영·앵커=anti-fudge 문구 |
+| ② 검증 | VC 29건 색분리 표 | A/B/C/X/OPEN 등급 정의 상단 고정·X(DesiTab)=정상거동 표기·출처·잠정 명시 |
+| ③ 단일스텝 | 폼(원논문 Table1 기본값)→Worker→체인: p/q·h/Δh_w 프로파일 + σ_vM(x,z)·D(y,z) 히트맵 | **미마모·정성 전용 경고 고정**·미수렴 경고배지·φ_bl=0 두 원인 구분 표시(S③ 교훈) |
+| ④ 시간진화 | **곡선 0개** — 안내문만(창발구조 L435·정량임계 금지 L440·anti-fudge L476·전례 wf_2638d46e) | 불가침 1 그대로 |
+
+**기계 판정(헤드리스 Edge, self-report)**: `initDone → gotTables → drewCurve → loadedVC → 스모크 체인 → `**`VIEWER-PASS`**.
+
+**포착·조치**: ⚠️ **`--virtual-time-budget` 이 module worker 의 wasm 인스턴스화를 얼림** — `init()` 이 resolve/reject 모두 안 됨(단계 리포터로 특정: `msg/refTables` 수신 후 `initDone` 부재). 실시간 실행(budget 제거+kill)으로 전환 → 전 시퀀스 완주. **stale(2회)과 동류의 '하네스가 속이는' 3번째 사례 — 이번엔 하네스가 거짓 실패를 만듦.** 뷰어 결함 아님. 단계 리포터는 진단용으로 존치(무해·catch 처리).
+
+**최종 검증**: 모델 **106+2 green**(default·직렬) · 셸 **13 green** · 브라우저 **VIEWER-PASS**.
+
+## 스프린트 판정 — **성공 → P3_HTML 병합**
+
+S①~S④ 전건 통과·중단 기준 미발동·정직성 불가침 5 전건 유지. 커밋 4개(S①~S④)를 `P3_HTML` 로 병합(로컬, **푸시는 별도 결정**). Phase 3 잔여를 스프린트가 흡수했으므로 G-VIS 게이트 항목 중 미완은: 참조곡선 **정량 오라클 전건 일치의 문서화 대조**(§7 G-VIS 1 — 코드 오라클은 green이나 뷰어 표시값 대조 절차 미실시)·R8 구조가드(뷰어 JS 검사 자동화) — **후속 마감 대상**.
