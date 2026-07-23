@@ -37,6 +37,21 @@
   .diag { font-size: 12px; font-family: Consolas, monospace; }
   .kv { display: grid; grid-template-columns: auto auto; gap: 2px 12px; }
   #tab4 .big { font-size: 14px; line-height: 1.7; }
+  /* S5: 알고리즘 도식 */
+  #algoAside { flex: 0 0 300px; }
+  #algoAside svg { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; width: 100%; height: auto; }
+  .dbox rect { fill: #eff6ff; stroke: #2563eb; stroke-width: 1.2; rx: 5; }
+  .dbox text { font: 10.5px "Segoe UI", sans-serif; fill: #0f172a; }
+  .dbox.grp > rect { fill: none; stroke: #7c3aed; stroke-dasharray: none; }
+  .dbox.grp > text { fill: #7c3aed; font-weight: 600; }
+  .dbox { cursor: pointer; }
+  .dbox:hover rect { stroke-width: 2.2; }
+  .dbox.locked rect { fill: #f1f5f9; stroke: #94a3b8; stroke-dasharray: 5 3; }
+  .dbox.locked text { fill: #64748b; }
+  .dedge { stroke: #475569; stroke-width: 1.3; fill: none; marker-end: url(#arr); }
+  .dedge.locked { stroke: #94a3b8; stroke-dasharray: 5 3; }
+  .dcap { font: italic 9.5px "Segoe UI", sans-serif; fill: #64748b; }
+  .flash { outline: 3px solid #38bdf8 !important; transition: outline 0.2s; }
 </style>
 </head>
 <body>
@@ -89,8 +104,97 @@
   <section id="tab3" class="tab">
     <div class="note warn">⚠️ <b>미마모 형상 · 정성 비교 전용 (RP-Field)</b> — 원논문 Fig 6/15 는 "last wear step"(마모 후 형상)의 스냅샷.
       본 정적 체인은 마모 전 형상이므로 형상·경향 비교만 유효하며 정량 대조는 금지된다(재검토판: 이미지·수치추출 불가).</div>
+    <div style="display:flex; gap:14px; align-items:flex-start;">
+    <aside id="algoAside">
+      <!-- S5: 계산 알고리즘 도식 — 원논문 Fig 1 의 "구현 기준 재구성".
+           컬러 실선 = 이번 실행(정적 체인) · 회색 점선+자물쇠 = 시간루프(미구현, 탭4 참조).
+           박스 클릭 → 해당 결과로 스크롤(잠금 박스는 탭4 로 이동). 물리 0건 — 그림일 뿐. -->
+      <svg viewBox="0 0 300 600" role="img" aria-label="계산 알고리즘 도식">
+        <defs><marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 z" fill="#475569"/></marker></defs>
+
+        <g class="dbox" data-target="inputCard">
+          <rect x="10" y="6" width="280" height="40"/>
+          <text x="150" y="22" text-anchor="middle">입력 — 거칠기 Rq·리플 / 운전 p_h·ū·S·η₀·r_x</text>
+          <text x="150" y="36" text-anchor="middle">재료 E_red·H·ν (원논문 Table 1 기본값)</text>
+        </g>
+        <path class="dedge" d="M150,46 L150,60"/>
+
+        <g class="dbox grp" data-target="diagBox">
+          <rect x="10" y="62" width="280" height="130"/>
+          <text x="150" y="78" text-anchor="middle">부분윤활 하중분담 (partial_lub — Fig1 "Mixed-EHL")</text>
+        </g>
+        <g class="dbox" data-target="diagBox">
+          <rect x="20" y="88" width="127" height="38"/>
+          <text x="83" y="103" text-anchor="middle">M1 Dry 접촉</text>
+          <text x="83" y="117" text-anchor="middle">FFT·탄성-완전소성</text>
+        </g>
+        <g class="dbox" data-target="diagBox">
+          <rect x="153" y="88" width="127" height="38"/>
+          <text x="216" y="103" text-anchor="middle">M2 EHL 리플</text>
+          <text x="216" y="117" text-anchor="middle">특수해(식[5])+상보파</text>
+        </g>
+        <path class="dedge" d="M83,126 L120,140"/>
+        <path class="dedge" d="M216,126 L180,140"/>
+        <g class="dbox" data-target="diagBox">
+          <rect x="20" y="142" width="260" height="42"/>
+          <text x="150" y="158" text-anchor="middle">M6 flow-balance: φ_bl 반복 (Johnson 하중분담)</text>
+          <text x="150" y="172" text-anchor="middle">→ p_tran · h_tran · q_tran=μ·p (c_ρ 보정)</text>
+        </g>
+        <path class="dedge" d="M150,192 L150,206"/>
+
+        <g class="dbox" data-target="vmCanvas">
+          <rect x="10" y="208" width="280" height="42"/>
+          <text x="150" y="224" text-anchor="middle">M3 표면하 응력 — Tripp 2003 식[10]/[16]</text>
+          <text x="150" y="238" text-anchor="middle">σ_ij(x,y,z)·σ_vM — 2D-FFT 모드중첩</text>
+        </g>
+        <path class="dedge" d="M80,250 L80,266"/>
+        <path class="dedge" d="M220,250 L220,266"/>
+
+        <g class="dbox" data-target="dvCanvas">
+          <rect x="10" y="268" width="135" height="52"/>
+          <text x="77" y="283" text-anchor="middle">M4 Dang Van</text>
+          <text x="77" y="296" text-anchor="middle">1사이클 (x-스냅샷)</text>
+          <text x="77" y="310" text-anchor="middle">D(y,z) · N (식[9]~[11])</text>
+        </g>
+        <g class="dbox" data-target="wearCanvas">
+          <rect x="155" y="268" width="135" height="52"/>
+          <text x="222" y="283" text-anchor="middle">M5 수정 Archard</text>
+          <text x="222" y="296" text-anchor="middle">식[14][15]</text>
+          <text x="222" y="310" text-anchor="middle">Δh_w = k·p·s_cyc/H</text>
+        </g>
+
+        <text x="150" y="342" text-anchor="middle" class="dcap">─── 이하 시간루프: 미구현 · 잠김 (클릭 → 탭④ 설명) ───</text>
+
+        <path class="dedge locked" d="M77,320 L110,354"/>
+        <path class="dedge locked" d="M222,320 L190,354"/>
+        <g class="dbox locked" data-locked="1">
+          <rect x="10" y="356" width="280" height="38"/>
+          <text x="150" y="371" text-anchor="middle">🔒 Δn 증분 · Palmgren-Miner 누적 d += n/N</text>
+          <text x="150" y="385" text-anchor="middle">(Fig1: n_{i+1}=n_i+Δn)</text>
+        </g>
+        <path class="dedge locked" d="M150,394 L150,408"/>
+        <g class="dbox locked" data-locked="1">
+          <rect x="10" y="410" width="280" height="38"/>
+          <text x="150" y="425" text-anchor="middle">🔒 d&gt;1 → 피트 제거(Removal) · Δh_w 마모</text>
+          <text x="150" y="439" text-anchor="middle">→ 형상·거칠기 갱신 (Fig1: Wear Model)</text>
+        </g>
+        <path class="dedge locked" d="M150,448 L150,462"/>
+        <g class="dbox locked" data-locked="1">
+          <rect x="10" y="464" width="280" height="38"/>
+          <text x="150" y="479" text-anchor="middle">🔒 출력: A_p(%) · 피트 깊이·직경</text>
+          <text x="150" y="493" text-anchor="middle">(원논문 Fig 10 · 11 · 12)</text>
+        </g>
+        <path class="dedge locked" d="M290,429 C 300,300 300,150 290,127"/>
+        <text x="150" y="524" text-anchor="middle" class="dcap">컬러 실선 = 이번 실행(정적 체인, 1 하중스텝)</text>
+        <text x="150" y="538" text-anchor="middle" class="dcap">회색 점선 = 시간루프 — G5 통과 후 활성 (탭④)</text>
+        <text x="150" y="560" text-anchor="middle" class="dcap">원논문 Fig 1 의 구현 기준 재구성 — 논문 그림과</text>
+        <text x="150" y="573" text-anchor="middle" class="dcap">1:1 이 아님 (Fig1 은 시간루프가 뼈대)</text>
+      </svg>
+    </aside>
+    <div style="flex:1; min-width:0;">
     <div class="row">
-      <div class="card">
+      <div class="card" id="inputCard">
         <b style="font-size:13px;">입력 (기본값 = 원논문 Table 1 roller–disc)</b>
         <div class="row">
           <div>
@@ -127,6 +231,8 @@
     <div class="row">
       <canvas id="vmCanvas" width="560" height="330"></canvas>
       <canvas id="dvCanvas" width="560" height="330"></canvas>
+    </div>
+    </div>
     </div>
   </section>
 
@@ -337,6 +443,26 @@ $("runChain").onclick = async () => {
     btn.disabled = false; btn.textContent = "체인 실행 (M1+M2+M6 → M3 → M4 → M5)";
   }
 };
+
+// URL 해시 탭 딥링크 (#tab1~4) — 검수·공유용.
+if (/^#tab[1-4]$/.test(location.hash)) {
+  document.querySelector(`nav button[data-tab="${location.hash.slice(1)}"]`)?.click();
+}
+
+// ── S5: 도식 클릭 → 해당 결과 연동 (잠금 박스 → 탭4) ──
+document.querySelectorAll(".dbox").forEach((g) => {
+  g.addEventListener("click", () => {
+    if (g.dataset.locked) {
+      document.querySelector('nav button[data-tab="tab4"]').click();
+      return;
+    }
+    const t = document.getElementById(g.dataset.target);
+    if (!t) return;
+    t.scrollIntoView({ behavior: "smooth", block: "center" });
+    t.classList.add("flash");
+    setTimeout(() => t.classList.remove("flash"), 1600);
+  });
+});
 
 // ── 부팅 + self-report (헤드리스 판정 채널) ──
 try {
