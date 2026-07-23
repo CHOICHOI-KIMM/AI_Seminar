@@ -366,3 +366,65 @@ wasm-bindgen --target nodejs --out-dir pkg-node \
 node verify_phase2.js           # 신선도 가드 + 8/8
 ```
 **환경 추가**: wasm-bindgen-cli 0.2.126 (wasm-pack 0.15.0 은 실행 차단 상태).
+
+---
+
+# 스프린트 (P3_HTML_spike, 2026-07-23 착수)
+
+> **전략(연구자 승인)**: 빠른 결과 우선 — **스크래치 브랜치 `P3_HTML_spike` + 로컬 커밋(푸시 없음)**.
+> 성공 → `P3_HTML` 병합 · 실패 → 브랜치 삭제(무흔적 롤백). 작업 위치 = worktree `AI_Seminar_P3`.
+> **순서** = 죽을 것부터: **① web 빌드 스파이크 → ② reference 노출 → ③ 필드 진입점 → ④ 4탭**.
+> **중단 기준**: ①에서 web 타깃 WASM 이 브라우저에서 근본적으로 구동 불가일 때 **만** 중단.
+> 성능·레이아웃·개별 탭 문제는 수리 가능 → 중단 사유 아님.
+>
+> **정직성 불가침 5 (스프린트여도 유지)**:
+> 1. 탭4(시간진화) **빈 채 유지** — 그럴듯한 곡선 금지 (R6, 역피팅 전례 `wf_2638d46e`)
+> 2. JS 물리식 **0건** — 숫자는 전부 WASM/reference 경유 (R8)
+> 3. 검증 탭 **A/B/C 등급 분리** — C(회귀가드)를 검증처럼 보이게 하지 않기
+> 4. **미수렴 경고 배지** — `converged=false` 숨기지 않기
+> 5. 탭3 **"미마모 형상·정성 전용(RP-Field)" 캡션**
+>
+> 미결이던 **탭2 VC 데이터 출처 = JSON 데이터 파일안으로 잠정 확정**(스프린트 판단, 연구자 재검토 대상).
+
+## S① — web 빌드 스파이크 (계획)
+
+**목적**: 유일한 전체 킬러 리스크 해소 — `--target web` WASM 이 **실제 브라우저 환경**에서
+로드·실행되는가. 지금까지 검증된 것은 nodejs 타깃뿐(Phase 0~2). Phase 0 R1 과 동성격의
+미검증 전제이므로 최선행.
+
+**작업**:
+1. `cargo build --target wasm32-unknown-unknown --release` (기존 산출물 재사용 가능)
+2. `wasm-bindgen --target web --out-dir viewer/pkg` — **web 타깃 glue** 신규 생성
+   (wasm-pack 실행차단 지속 → Phase 2 확립한 2단계 직접 빌드 그대로)
+3. 최소 테스트 페이지 `viewer/spike.html`: 모듈 로드 → `solve_wear_json`(Phase 0 fixture)
+   + `solve_partial_json` 호출 → 결과를 DOM 에 기록
+4. **로컬 서버 필수**: web 타깃 glue 는 `.wasm` 을 fetch 로 로드 → `file://` 불가.
+   `python -m http.server` 사용. (SharedArrayBuffer 미사용 → COOP/COEP 불요 = 계획 §3.3 결정 유지)
+5. **헤드리스 브라우저로 기계 판정**: Edge(`msedge --headless`) 로 페이지 열어 DOM 덤프
+   → `[SPIKE-PASS]` 문자열 확인. 수동 클릭 불요·재현 가능.
+
+**통과 기준**:
+- (a) web 타깃 빌드 성공 + 페이지 로드 시 JS 예외 없음
+- (b) `solve_wear_json` 출력 == **nodejs/네이티브 기지값**(`dh_w_mean=1.168142857142861e-15`,
+  Phase 0 파리티 앵커) — 문자열 동일
+- (c) `solve_partial_json` 이 `phi_bl≠0` + `diagnostics.outerConverged=true` 반환
+  (진짜 오케스트레이터·진단 채널이 브라우저에서도 생존)
+- (d) 신선도 가드(진입점 존재·mtime) 페이지에 내장 — stale 3회차 방지
+
+**리스크**: 헤드리스 Edge 부재/차단 시 → 대안: 결과를 fetch 로 서버에 회신하는 self-report 페이지
+또는 연구자 수동 1회 확인(최후). wasm-bindgen CLI 는 이미 확보(0.2.126, Phase 2).
+
+### S① 결과 (2026-07-23) — **통과, 중단 기준 미발동**
+
+| 기준 | 결과 |
+|---|---|
+| (a) web 타깃 빌드·로드 | ✅ `wasm-bindgen --target web` 성공(446KB) · 실브라우저(Edge)서 glue+wasm fetch·초기화 확인(서버 액세스 로그) |
+| (b) 파리티 앵커 | ✅ `dh_w_mean == 1.168142857142861e-15` 문자열 동일 (네이티브=nodejs=**web 3자 일치**) |
+| (c) 오케스트레이터·진단 | ✅ `phi_bl≠0` + `outerConverged=true` 브라우저 생존 |
+| (d) 신선도 가드 | ✅ 페이지 내장(진입점 3종 검사) |
+| 차원검사 | ✅ 브라우저에서도 `{ok:false}` (abort 아님) |
+
+**기계 판정**: 헤드리스 Edge → 페이지 **self-report** `GET /__spike__/SPIKE-PASS/fails=0`
+(Edge `--dump-dom` 이 Windows 서 stdout 0바이트 quirk → 계획된 폴백 사용. 서버 로그 = 판정 채널).
+**빌드 절차**: Phase 2 확립 2단계 그대로 + `--target web`. 로컬 서버 `python -m http.server` 필수(`file://` 불가) 확정.
+→ **S② 진행.**
