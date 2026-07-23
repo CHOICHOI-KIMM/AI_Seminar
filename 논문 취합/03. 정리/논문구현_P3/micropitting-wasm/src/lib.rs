@@ -40,6 +40,7 @@ use micropitting_model::m5_wear::{self, WearInput, WearParams};
 // ★ R4: `partial_lub::` 만 import — `m2_lub::solve_partial`(스텁) 은 이 셸에서 **도달 불가**.
 //   시그니처가 동일해 오사용해도 조용히 컴파일되므로, 구조 가드 테스트가 이 불변식을 강제한다.
 use micropitting_model::partial_lub;
+use micropitting_model::reference as refr;
 use micropitting_model::types::{
     Field2, Grid, MaterialProps, OperatingConditions, PartialLubInput, PartialLubResult, WearResult,
 };
@@ -399,6 +400,388 @@ fn stress_fatigue_inner(input_json: &str) -> Result<StressFatigueSummary, String
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+//  S② — reference(leaf) 노출: 곡선 샘플러 + 정적 데이터 (계획 탭1 참조곡선)
+//
+//  ★ 역할: 수식 평가는 전부 `micropitting_model::reference` 호출. 셸은 **샘플링 루프만**
+//    (x 격자 생성·반복은 물리가 아니다). JS 에는 완성된 배열만 넘어간다(R8: JS 물리 0건).
+//  ★ leaf 무관: 금지는 "m1~m6 생산코드 → reference" 방향이다. 셸(소비자)의 사용이 용도다.
+//  ★ 스칼라 함수 개별 노출 대신 곡선 단위 반환 = 경계 호출 수천회 회피(계획 Phase3 숙제 1).
+// ─────────────────────────────────────────────────────────────────────────
+
+/// 곡선 한 줄 (플로팅 시리즈).
+#[derive(Debug, Serialize)]
+pub struct Series {
+    pub name: String,
+    pub x: Vec<f64>,
+    pub y: Vec<f64>,
+}
+
+/// 참조곡선 응답. `meta` 는 곡선별 부속 데이터(표·앵커·피크 등).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CurveResp {
+    pub ok: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    pub kind: String,
+    pub series: Vec<Series>,
+    pub meta: serde_json::Value,
+}
+
+fn curve_err(kind: &str, e: String) -> String {
+    serde_json::to_string(&CurveResp {
+        ok: false,
+        error: Some(e),
+        kind: kind.to_string(),
+        series: vec![],
+        meta: serde_json::Value::Null,
+    })
+    .unwrap_or_default()
+}
+
+/// x 샘플 격자(선형/로그). 물리 아님 — 순수 좌표 생성.
+fn sample_axis(min: f64, max: f64, n: usize, log: bool) -> Result<Vec<f64>, String> {
+    if n < 2 || !(max > min) {
+        return Err(format!("잘못된 축: min={min}, max={max}, n={n}"));
+    }
+    if log && !(min > 0.0) {
+        return Err(format!("로그축은 min>0 필요: {min}"));
+    }
+    Ok((0..n)
+        .map(|i| {
+            let t = i as f64 / (n - 1) as f64;
+            if log {
+                (min.ln() + t * (max.ln() - min.ln())).exp()
+            } else {
+                min + t * (max - min)
+            }
+        })
+        .collect())
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct Venner97Req {
+    #[serde(default = "d_lob_min")]
+    lob_min: f64,
+    #[serde(default = "d_lob_max")]
+    lob_max: f64,
+    #[serde(default = "d_n")]
+    n: usize,
+    /// 선접촉 M (기본 = Venner1997 Table1 사례).
+    #[serde(default = "d_m97")]
+    m: f64,
+    #[serde(default = "d_l97")]
+    l: f64,
+}
+fn d_lob_min() -> f64 { 0.05 }
+fn d_lob_max() -> f64 { 8.0 }
+fn d_n() -> usize { 200 }
+fn d_m97() -> f64 { refr::VENNER1997_M }
+fn d_l97() -> f64 { refr::VENNER1997_L }
+
+fn curve_venner1997(params: &str) -> Result<CurveResp, String> {
+    let q: Venner97Req = serde_json::from_str(params).map_err(|e| e.to_string())?;
+    let lob = sample_axis(q.lob_min, q.lob_max, q.n, true)?;
+    let nabla: Vec<f64> = lob.iter().map(|&v| refr::venner1997_nabla(v, q.m, q.l)).collect();
+    let y: Vec<f64> = nabla.iter().map(|&nb| refr::venner1997_amplitude_reduction(nb)).collect();
+    // 원문 자인 과소예측역(0.5<A_d/A_i<1) 마스크 — 뷰어 음영용.
+    let degrade: Vec<f64> =
+        y.iter().map(|&v| if refr::venner1997_fit_degrades(v) { 1.0 } else { 0.0 }).collect();
+    Ok(CurveResp {
+        ok: true,
+        error: None,
+        kind: "venner1997".into(),
+        series: vec![
+            Series { name: "eq5".into(), x: lob.clone(), y },
+            Series { name: "fitDegradesMask".into(), x: lob.clone(), y: degrade },
+        ],
+        meta: serde_json::json!({
+            "m": q.m, "l": q.l,
+            "nabla": nabla,
+            "table1": refr::VENNER1997_TABLE1.iter()
+                .map(|(lb, a)| serde_json::json!({"lob": lb, "adAi": a}))
+                .collect::<Vec<_>>(),
+            "table1Cols": [0.1, 0.2, 0.5],
+            "anchorSpots": refr::VENNER1997_ANCHOR_SPOTS,
+            "halfCrossingBracket": refr::VENNER1997_HALF_CROSSING_BRACKET,
+            "lineContactOnly": true, // ★ 점접촉(venner2000)과 축 겹침 금지 (총괄계획 L476)
+        }),
+    })
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct Venner2000Req {
+    #[serde(default = "d_n2_min")]
+    nabla2_min: f64,
+    #[serde(default = "d_n2_max")]
+    nabla2_max: f64,
+    #[serde(default = "d_n")]
+    n: usize,
+    /// 이방성비 r = λx/λy (기본 1 = 등방).
+    #[serde(default = "d_r")]
+    r: f64,
+}
+fn d_n2_min() -> f64 { 0.01 }
+fn d_n2_max() -> f64 { 100.0 }
+fn d_r() -> f64 { 1.0 }
+
+fn curve_venner2000(params: &str) -> Result<CurveResp, String> {
+    let q: Venner2000Req = serde_json::from_str(params).map_err(|e| e.to_string())?;
+    let x = sample_axis(q.nabla2_min, q.nabla2_max, q.n, true)?;
+    let fb = refr::venner2000_f_bar(q.r);
+    let y: Vec<f64> = x.iter().map(|&nb| refr::venner2000_amplitude_reduction(nb, fb)).collect();
+    let (m, l, loa) = refr::VENNER2000_EXAMPLE;
+    let ex_nb = refr::venner2000_nabla2(loa, m, l);
+    Ok(CurveResp {
+        ok: true,
+        error: None,
+        kind: "venner2000".into(),
+        series: vec![Series { name: "eq29".into(), x, y }],
+        meta: serde_json::json!({
+            "fBar": fb, "r": q.r,
+            "example": { "m": m, "l": l, "lamOverA": loa, "nabla2": ex_nb,
+                          "eq29": refr::venner2000_amplitude_reduction(ex_nb, 1.0),
+                          "numerics": refr::VENNER2000_EXAMPLE_NUMERICS },
+            "pointContactOnly": true, // ★ 선접촉(venner1997)과 축 겹침 금지
+        }),
+    })
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct Gw1994Req {
+    #[serde(default = "d_lam_min")]
+    lambda_min: f64,
+    #[serde(default = "d_lam_max")]
+    lambda_max: f64,
+    #[serde(default = "d_n")]
+    n: usize,
+    /// 압축성항 C (VC-M2-AR 대표값 기본).
+    #[serde(default = "d_c")]
+    c: f64,
+    /// 압점도 [1/Pa] (기본 = GW Table2 Kweh 50℃).
+    #[serde(default = "d_alpha")]
+    alpha_visc: f64,
+    /// 평균유막 [m] (동).
+    #[serde(default = "d_hbar")]
+    h_bar: f64,
+    /// 논문 E' [Pa] (= 2·E_red).
+    #[serde(default = "d_ep")]
+    e_prime: f64,
+}
+fn d_lam_min() -> f64 { 1e-6 }
+fn d_lam_max() -> f64 { 1e-3 }
+fn d_c() -> f64 { 0.03 }
+fn d_alpha() -> f64 { refr::GW1994_TABLE2_KWEH[0].0 }
+fn d_hbar() -> f64 { refr::GW1994_TABLE2_KWEH[0].1 }
+fn d_ep() -> f64 { refr::GW1994_E_PRIME_PA }
+
+fn curve_gw1994(params: &str) -> Result<CurveResp, String> {
+    let q: Gw1994Req = serde_json::from_str(params).map_err(|e| e.to_string())?;
+    let lam = sample_axis(q.lambda_min, q.lambda_max, q.n, true)?;
+    let a: Vec<f64> =
+        lam.iter().map(|&v| refr::gw1994_a(v, q.alpha_visc, q.h_bar, q.e_prime)).collect();
+    let h: Vec<f64> = a.iter().map(|&av| refr::gw1994_h1_over_z1(q.c, av)).collect();
+    let p: Vec<f64> = a.iter().map(|&av| refr::gw1994_p1_over_z1(q.c, av).abs()).collect();
+    Ok(CurveResp {
+        ok: true,
+        error: None,
+        kind: "gw1994".into(),
+        series: vec![
+            Series { name: "h1OverZ1".into(), x: lam.clone(), y: h },
+            Series { name: "absP1OverZ1".into(), x: lam.clone(), y: p },
+        ],
+        meta: serde_json::json!({
+            "c": q.c, "alphaVisc": q.alpha_visc, "hBar": q.h_bar, "ePrime": q.e_prime,
+            "table1Present": refr::GW1994_TABLE1_PRESENT,
+            "table2Kweh": refr::GW1994_TABLE2_KWEH,
+            "lambdaM": refr::GW1994_LAMBDA_M, "z1M": refr::GW1994_Z1_M,
+        }),
+    })
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct McewenReq {
+    #[serde(default = "d_nu")]
+    nu: f64,
+    #[serde(default = "d_zb_max")]
+    zb_max: f64,
+    #[serde(default = "d_n")]
+    n: usize,
+}
+fn d_nu() -> f64 { 0.3 }
+fn d_zb_max() -> f64 { 1.2 }
+
+fn curve_mcewen(params: &str) -> Result<CurveResp, String> {
+    let q: McewenReq = serde_json::from_str(params).map_err(|e| e.to_string())?;
+    let x = sample_axis(1e-3, q.zb_max, q.n, false)?;
+    let y: Vec<f64> = x.iter().map(|&z| refr::mcewen_von_mises_over_p0(z, q.nu)).collect();
+    let (pk_vm, pk_z) = refr::mcewen_von_mises_peak(q.nu, 1e-3);
+    Ok(CurveResp {
+        ok: true,
+        error: None,
+        kind: "mcewen".into(),
+        series: vec![Series { name: "vmOverP0".into(), x, y }],
+        meta: serde_json::json!({ "nu": q.nu, "peak": { "vm": pk_vm, "zOverB": pk_z } }),
+    })
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct MilanoReq {
+    /// σ_a [Pa] (기본 = VC-M4-Milano 오라클 값).
+    #[serde(default = "d_sa")]
+    sigma_a: f64,
+    #[serde(default = "d_ta")]
+    tau_a: f64,
+    #[serde(default = "d_n")]
+    n: usize,
+}
+fn d_sa() -> f64 { 200.0e6 }
+fn d_ta() -> f64 { 150.0e6 }
+
+fn curve_milano(params: &str) -> Result<CurveResp, String> {
+    let q: MilanoReq = serde_json::from_str(params).map_err(|e| e.to_string())?;
+    let x = sample_axis(0.0, 2.0 * std::f64::consts::PI, q.n, false)?;
+    let tau: Vec<f64> =
+        x.iter().map(|&wt| refr::milano2006_tau_dv(q.sigma_a, q.tau_a, wt)).collect();
+    let sh: Vec<f64> = x.iter().map(|&wt| refr::milano2006_sigma_h(q.sigma_a, wt)).collect();
+    Ok(CurveResp {
+        ok: true,
+        error: None,
+        kind: "milano".into(),
+        series: vec![
+            Series { name: "tauDv".into(), x: x.clone(), y: tau },
+            Series { name: "sigmaH".into(), x: x.clone(), y: sh },
+        ],
+        meta: serde_json::json!({ "sigmaA": q.sigma_a, "tauA": q.tau_a }),
+    })
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct TrippReq {
+    #[serde(default = "d_p0")]
+    p0: f64,
+    #[serde(default)]
+    q0: f64,
+    /// 파수 α, β [1/m] (기본 = VC-M3-Sin 오라클 격자).
+    #[serde(default = "d_alpha_w")]
+    alpha: f64,
+    #[serde(default = "d_beta_w")]
+    beta: f64,
+    #[serde(default = "d_nu")]
+    nu: f64,
+    /// 평가 위상 (기본: cc=1 위치 x=y=0 — 법선 성분 최대 가시화).
+    #[serde(default)]
+    x: f64,
+    #[serde(default)]
+    y: f64,
+    /// 깊이 최대 [1/ζ 배수] (기본 3/ζ).
+    #[serde(default = "d_zmul")]
+    z_max_over_zeta: f64,
+    #[serde(default = "d_n")]
+    n: usize,
+}
+fn d_p0() -> f64 { 1.0e9 }
+fn d_alpha_w() -> f64 { 2.0 * std::f64::consts::PI * 3.0 / 1.0e-4 }
+fn d_beta_w() -> f64 { 2.0 * std::f64::consts::PI * 2.0 / 1.0e-4 }
+fn d_zmul() -> f64 { 3.0 }
+
+fn curve_tripp(params: &str) -> Result<CurveResp, String> {
+    let q: TrippReq = serde_json::from_str(params).map_err(|e| e.to_string())?;
+    let zeta = (q.alpha * q.alpha + q.beta * q.beta).sqrt();
+    if !(zeta > 0.0) {
+        return Err("alpha·beta 파수가 0".into());
+    }
+    let z = sample_axis(0.0, q.z_max_over_zeta / zeta, q.n, false)?;
+    const NAMES: [&str; 6] = ["sxx", "syy", "szz", "sxy", "syz", "sxz"];
+    let mut comp: [Vec<f64>; 6] = Default::default();
+    let mut trace: Vec<f64> = Vec::with_capacity(z.len());
+    for &zz in &z {
+        let sn = refr::tripp2003_normal_bisin(q.p0, q.alpha, q.beta, q.nu, q.x, q.y, zz);
+        let st = refr::tripp2003_tangential_bisin(q.q0, q.alpha, q.beta, q.nu, q.x, q.y, zz);
+        for c in 0..6 {
+            comp[c].push(sn[c] + st[c]);
+        }
+        trace.push(
+            refr::tripp2003_trace_normal(q.p0, q.alpha, q.beta, q.nu, q.x, q.y, zz)
+                + refr::tripp2003_trace_tangential(q.q0, q.alpha, q.beta, q.nu, q.x, q.y, zz),
+        );
+    }
+    let mut series: Vec<Series> = comp
+        .into_iter()
+        .zip(NAMES)
+        .map(|(y, nm)| Series { name: nm.into(), x: z.clone(), y })
+        .collect();
+    series.push(Series { name: "traceIdentity".into(), x: z.clone(), y: trace });
+    Ok(CurveResp {
+        ok: true,
+        error: None,
+        kind: "tripp2003".into(),
+        series,
+        meta: serde_json::json!({ "zeta": zeta, "p0": q.p0, "q0": q.q0, "nu": q.nu }),
+    })
+}
+
+/// 참조곡선 디스패처: `kind` ∈ venner1997 | venner2000 | gw1994 | mcewen | milano | tripp2003.
+pub fn run_reference_curve(kind: &str, params_json: &str) -> String {
+    let params = if params_json.trim().is_empty() { "{}" } else { params_json };
+    let res = match kind {
+        "venner1997" => curve_venner1997(params),
+        "venner2000" => curve_venner2000(params),
+        "gw1994" => curve_gw1994(params),
+        "mcewen" => curve_mcewen(params),
+        "milano" => curve_milano(params),
+        "tripp2003" => curve_tripp(params),
+        other => Err(format!("unknown kind: {other}")),
+    };
+    match res {
+        Ok(r) => serde_json::to_string(&r).unwrap_or_default(),
+        Err(e) => curve_err(kind, e),
+    }
+}
+
+/// 정적 문헌 데이터 일괄(JSON) — 표·상수·실험치. 곡선이 아닌 것 전부.
+pub fn run_reference_tables() -> String {
+    serde_json::json!({
+        "ok": true,
+        "venner1997": {
+            "m": refr::VENNER1997_M, "l": refr::VENNER1997_L,
+            "table1": refr::VENNER1997_TABLE1.iter()
+                .map(|(lb, a)| serde_json::json!({"lob": lb, "adAi": a}))
+                .collect::<Vec<_>>(),
+            "table1Cols": [0.1, 0.2, 0.5],
+            "anchorSpots": refr::VENNER1997_ANCHOR_SPOTS,
+            "halfCrossingBracket": refr::VENNER1997_HALF_CROSSING_BRACKET,
+        },
+        "venner2000": {
+            "example": refr::VENNER2000_EXAMPLE, "numerics": refr::VENNER2000_EXAMPLE_NUMERICS,
+        },
+        "gw1994": {
+            "table1Present": refr::GW1994_TABLE1_PRESENT,
+            "table2Kweh": refr::GW1994_TABLE2_KWEH,
+            "ePrime": refr::GW1994_E_PRIME_PA, "lambda": refr::GW1994_LAMBDA_M,
+            "z1": refr::GW1994_Z1_M,
+            "halfPumpingG": refr::GW1994_HALF_PUMPING_G,
+        },
+        "archard1953": {
+            "fig7SlopeBrass": refr::ARCHARD1953_FIG7_SLOPE_BRASS,
+            "fig7SlopeStellite": refr::ARCHARD1953_FIG7_SLOPE_STELLITE,
+            "fig7SlopeStdErr": refr::ARCHARD1953_FIG7_SLOPE_STD_ERR,
+        },
+        "desimone2006": {
+            "rRatioTable": refr::DESIMONE2006_R_RATIO_TABLE,
+            "alphaDvVonMises": refr::desimone2006_alpha_dv(1.0 / 3.0_f64.sqrt()),
+        },
+    })
+    .to_string()
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 //  WASM 경계 — wasm32 에서만
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -424,6 +807,20 @@ pub fn solve_stress_fatigue_json(input_json: &str) -> String {
 #[wasm_bindgen]
 pub fn solve_partial_json(input_json: &str) -> String {
     run_partial(input_json)
+}
+
+/// 참조곡선: kind + params JSON → CurveResp JSON.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn reference_curve_json(kind: &str, params_json: &str) -> String {
+    run_reference_curve(kind, params_json)
+}
+
+/// 정적 문헌 데이터 일괄 JSON.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn reference_tables_json() -> String {
+    run_reference_tables()
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -520,5 +917,60 @@ mod tests {
         let out = run_wear(json);
         assert!(out.contains("\"ok\":false"), "{out}");
         assert!(out.contains("차원 불일치"), "{out}");
+    }
+    // ── S②: reference 노출 스모크 (수식 자체는 reference.rs 오라클 19건이 담당;
+    //        여기는 경계 pass-through 등가성·오류경로만) ──
+
+    #[test]
+    fn s2_venner1997_curve_matches_reference_fn() {
+        let out = run_reference_curve("venner1997", r#"{"lobMin":0.5,"lobMax":1.0,"n":2}"#);
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["ok"], true, "{out}");
+        // 경계 pass-through 등가성: y[0] == reference 직접 호출값 (bit-exact).
+        let y0 = v["series"][0]["y"][0].as_f64().unwrap();
+        let expect = refr::venner1997_amplitude_reduction(refr::venner1997_nabla(
+            0.5,
+            refr::VENNER1997_M,
+            refr::VENNER1997_L,
+        ));
+        assert_eq!(y0, expect, "pass-through 불일치");
+        // 앵커 스팟·브래킷 meta 동봉 확인 (탭1 데이터 완비성).
+        assert_eq!(v["meta"]["anchorSpots"].as_array().unwrap().len(), 3);
+        assert_eq!(v["meta"]["lineContactOnly"], true);
+    }
+
+    #[test]
+    fn s2_mcewen_peak_in_meta() {
+        let out = run_reference_curve("mcewen", "{}");
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["ok"], true, "{out}");
+        let vm = v["meta"]["peak"]["vm"].as_f64().unwrap();
+        assert!((vm - 0.557).abs() < 0.01, "McEwen peak {vm}");
+    }
+
+    #[test]
+    fn s2_tables_json_complete() {
+        let out = run_reference_tables();
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["ok"], true);
+        assert_eq!(v["venner1997"]["table1"].as_array().unwrap().len(), 6, "Table1 6행(18점)");
+        assert_eq!(v["archard1953"]["fig7SlopeBrass"], 1.0);
+        // a_DV 값이 SKF 채택값과 일치(문헌 교차검증 값 그대로 노출되는지).
+        let a = v["desimone2006"]["alphaDvVonMises"].as_f64().unwrap();
+        assert!((a - 0.232_050_807_568_877_2).abs() < 1e-12);
+    }
+
+    #[test]
+    fn s2_unknown_kind_and_bad_axis_are_structured_errors() {
+        let v: serde_json::Value =
+            serde_json::from_str(&run_reference_curve("nope", "{}")).unwrap();
+        assert_eq!(v["ok"], false);
+        // 로그축 min<=0 거부.
+        let v2: serde_json::Value = serde_json::from_str(&run_reference_curve(
+            "venner1997",
+            r#"{"lobMin":0.0,"lobMax":1.0,"n":10}"#,
+        ))
+        .unwrap();
+        assert_eq!(v2["ok"], false);
     }
 }

@@ -428,3 +428,12 @@ node verify_phase2.js           # 신선도 가드 + 8/8
 (Edge `--dump-dom` 이 Windows 서 stdout 0바이트 quirk → 계획된 폴백 사용. 서버 로그 = 판정 채널).
 **빌드 절차**: Phase 2 확립 2단계 그대로 + `--target web`. 로컬 서버 `python -m http.server` 필수(`file://` 불가) 확정.
 → **S② 진행.**
+
+## S② — reference 노출 (결과) — **통과**
+
+**설계**: 셸에 2 진입점 — `reference_curve_json(kind, params)`(곡선 샘플러: venner1997·venner2000·gw1994·mcewen·milano·tripp2003) + `reference_tables_json()`(정적 표·상수 일괄). 수식 평가는 전부 `reference.rs` 호출, 셸은 **샘플링 루프만**(좌표 생성은 물리 아님) → JS 에는 완성 배열만 = R8 유지. 곡선 단위 반환으로 경계 호출 수천회 회피(Phase 3 숙제 1 해소).
+
+**정직성 장치 내장**: venner1997 meta 에 `lineContactOnly`·venner2000 에 `pointContactOnly` 플래그(축 겹침 금지, 총괄계획 L476) · `fitDegradesMask` 시리즈(원문 자인 과소예측역 음영용) · Table1 18점·앵커 스팟·브래킷 동봉.
+
+**검증**: 셸 **11 green**(기존 7 + s2 4: pass-through bit-exact 등가·McEwen peak·tables 완비성·오류경로). 로그축 min≤0 등 구조적 오류 반환.
+→ **S③ 진행.**
