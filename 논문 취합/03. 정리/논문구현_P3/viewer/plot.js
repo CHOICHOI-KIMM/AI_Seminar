@@ -198,17 +198,47 @@ export function heatmap(canvas, data, opts = {}) {
     const c0 = stops[s], c1 = stops[s + 1];
     return `rgb(${Math.round(c0[0] + (c1[0] - c0[0]) * u)},${Math.round(c0[1] + (c1[1] - c0[1]) * u)},${Math.round(c0[2] + (c1[2] - c0[2]) * u)})`;
   };
-  const cw = (W - L - R) / nx, ch = (H - T - B) / nz;
-  for (let r = 0; r < nz; r++) {
-    const rr = opts.yDown === false ? nz - 1 - r : r;
-    for (let c = 0; c < nx; c++) {
-      const v = data[rr][c];
-      ctx.fillStyle = (v === null || !Number.isFinite(v))
-        ? "#e11d48" // ∞ 전용색 (컬러맵과 구분되는 마젠타-레드)
-        : colorOf((v - vmin) / (vmax - vmin));
-      ctx.fillRect(L + c * cw, T + r * ch, cw + 0.6, ch + 0.6);
+  // ── contourf 스타일: 쌍선형 보간 + 이산 레벨 양자화 (표시 계층 — 데이터 불변) ──
+  // 논문 Fig 6(b)(MATLAB contourf) 대응: 셀 블록 대신 픽셀 보간, ~levels 단의 깔끔한 띠.
+  const levels = opts.levels || 10;
+  const PW = Math.max(1, Math.round(W - L - R)), PH = Math.max(1, Math.round(H - T - B));
+  const img = ctx.createImageData(PW, PH);
+  const px8 = img.data;
+  const colorRGB = (t) => {
+    const stops = [[68, 1, 84], [33, 145, 140], [253, 231, 37]];
+    const si = t < 0.5 ? 0 : 1, u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+    const c0 = stops[si], c1 = stops[si + 1];
+    return [Math.round(c0[0] + (c1[0] - c0[0]) * u), Math.round(c0[1] + (c1[1] - c0[1]) * u), Math.round(c0[2] + (c1[2] - c0[2]) * u)];
+  };
+  const INF_RGB = [225, 29, 72]; // ∞ 전용색 유지
+  const fin = (v) => v !== null && Number.isFinite(v);
+  for (let py = 0; py < PH; py++) {
+    const gz = nz > 1 ? (py / (PH - 1)) * (nz - 1) : 0;
+    const z0 = Math.min(nz - 1, Math.floor(gz)), z1 = Math.min(nz - 1, z0 + 1), fz = gz - z0;
+    for (let pxx = 0; pxx < PW; pxx++) {
+      const gx = nx > 1 ? (pxx / (PW - 1)) * (nx - 1) : 0;
+      const x0 = Math.min(nx - 1, Math.floor(gx)), x1 = Math.min(nx - 1, x0 + 1), fx = gx - x0;
+      const v00 = data[z0][x0], v10 = data[z0][x1], v01 = data[z1][x0], v11 = data[z1][x1];
+      let rgb;
+      if (!fin(v00) || !fin(v10) || !fin(v01) || !fin(v11)) {
+        // ∞/NaN 이웃 → 최근접 코너 값으로 폴백 (∞이면 전용색: D 기준위배 띠를 뭉개지 않음)
+        const near = fz < 0.5 ? (fx < 0.5 ? v00 : v10) : (fx < 0.5 ? v01 : v11);
+        if (fin(near)) {
+          const kn = Math.max(0, Math.min(levels - 1, Math.floor(((near - vmin) / (vmax - vmin)) * levels)));
+          rgb = colorRGB(levels > 1 ? kn / (levels - 1) : 0.5);
+        } else {
+          rgb = INF_RGB;
+        }
+      } else {
+        const v = v00 * (1 - fx) * (1 - fz) + v10 * fx * (1 - fz) + v01 * (1 - fx) * fz + v11 * fx * fz;
+        const k = Math.max(0, Math.min(levels - 1, Math.floor(((v - vmin) / (vmax - vmin)) * levels)));
+        rgb = colorRGB(levels > 1 ? k / (levels - 1) : 0.5);
+      }
+      const o = (py * PW + pxx) * 4;
+      px8[o] = rgb[0]; px8[o + 1] = rgb[1]; px8[o + 2] = rgb[2]; px8[o + 3] = 255;
     }
   }
+  ctx.putImageData(img, L, T);
   ctx.strokeStyle = "#94a3b8"; ctx.strokeRect(L, T, W - L - R, H - T - B);
   ctx.fillStyle = "#475569"; ctx.font = "12px sans-serif";
   // 실단위 눈금 (opts.x0/x1 = 가로, opts.y0/y1 = 세로(깊이, 아래로 증가))
@@ -233,9 +263,10 @@ export function heatmap(canvas, data, opts = {}) {
   if (opts.yLabel) { ctx.save(); ctx.translate(14, (H + T) / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(opts.yLabel, 0, 0); ctx.restore(); }
   // 컬러바
   const cbX = W - R + 14, cbW = 14, cbH = H - T - B;
-  for (let i = 0; i < cbH; i++) {
-    ctx.fillStyle = colorOf(1 - i / cbH);
-    ctx.fillRect(cbX, T + i, cbW, 1.5);
+  for (let k = 0; k < levels; k++) {
+    ctx.fillStyle = colorOf(levels > 1 ? k / (levels - 1) : 0.5);
+    const y1b = T + cbH - ((k + 1) / levels) * cbH;
+    ctx.fillRect(cbX, y1b, cbW, cbH / levels + 0.5);
   }
   ctx.strokeRect(cbX, T, cbW, cbH);
   ctx.fillText(fmt(vmax), cbX - 4, T - 4);
