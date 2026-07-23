@@ -226,13 +226,22 @@
     </div>
     <div class="row">
       <canvas id="roughCanvas" width="560" height="330"></canvas>
-      <div class="note" id="roughFormula" style="flex:1; min-width:260px; max-width:560px; align-self:stretch;">기준형상: 체인 실행 시 <b>실제 투입 파형</b>(worker echo — 표시 = 투입 동일 배열, 재계산 아님)이 여기 표시됩니다.</div>
+      <div class="note" id="roughFormula" style="flex:1; min-width:240px; max-width:560px; margin:0;">기준형상: 체인 실행 시 <b>실제 투입 파형</b>(worker echo — 표시 = 투입 동일 배열, 재계산 아님)이 여기 표시됩니다.</div>
     </div>
     <div class="row">
       <canvas id="profCanvas" width="560" height="330"></canvas>
-      <canvas id="wearCanvas" width="560" height="330"></canvas>
     </div>
-    <div class="note" id="contactNote" style="display:none">붉은 음영 = <b>h_tran &lt; 0 접촉 간섭부</b> — h_tran 은 클램프 없는 <b>선형 중첩 간극함수</b>라 음수가 허용되며(간섭 깊이), 이 구간의 하중은 M1 dry 접촉이 받아 φ_bl 로 분담된다(진단 패널의 접촉점 수와 대응). 원논문 Fig 6(a) 변형 거칠기의 음수 표시와 같은 계열의 표현.</div>
+    <div class="row">
+      <canvas id="wearCanvas" width="560" height="330"></canvas>
+      <div class="note" id="contactNote" style="display:none; flex:1; min-width:240px; max-width:560px; margin:0;">
+        <b>붉은 음영 = h_tran &lt; 0 접촉 간섭부</b>
+        <ul style="margin:6px 0 0 18px; padding:0;">
+          <li>h_tran = 클램프 없는 <b>선형 중첩 간극함수</b> → 음수 = 간섭 깊이</li>
+          <li>이 구간 하중은 <b>M1 dry 접촉</b>이 부담 → φ_bl 분담 (진단 패널 접촉점 수와 대응)</li>
+          <li>원논문 Fig 6(a) 변형 거칠기의 음수 표시와 동계열</li>
+        </ul>
+      </div>
+    </div>
     <div class="row">
       <canvas id="vmCanvas" width="560" height="330"></canvas>
       <canvas id="dvCanvas" width="560" height="330"></canvas>
@@ -442,11 +451,14 @@ $("runChain").onclick = async () => {
         title: "입력 기준형상 — 합성 거칠기 (worker echo)", xLabel: "x [m]", yLabel: "[m]",
       });
       $("roughFormula").innerHTML =
-        `기준형상 수식: <b>z<sub>i</sub>(x) = √2·Rq<sub>i</sub>·sin(2π·N·x / l<sub>x</sub>)</b> ` +
-        `— √2 는 사인파 RMS→진폭 환산(<b>입력 규격이지 물리 모델 아님</b>) · ` +
-        `현재값: Rq₁=${$("f_rq1").value} µm · Rq₂=${$("f_rq2").value} µm · N=${payload.waves} · ` +
-        `l<sub>x</sub>=${payload.grid.lx} m · h̄=${payload.h_bar} m. ` +
-        `합성 진폭이 h̄ 에 근접·초과하면 접촉 간섭 경향(변형 전 기준 — 실제 접촉은 EHL 평탄화 후 아래 h_tran&lt;0 음영).`;
+        `<b>기준형상 수식: z<sub>i</sub>(x) = √2·Rq<sub>i</sub>·sin(2π·N·x / l<sub>x</sub>)</b>` +
+        `<ul style="margin:6px 0 0 18px; padding:0;">` +
+        `<li>√2 : 사인파 RMS→진폭 환산 — <b>입력 규격</b>(물리 모델 아님)</li>` +
+        `<li>Rq₁ = ${$("f_rq1").value} µm · Rq₂ = ${$("f_rq2").value} µm · N = ${payload.waves}</li>` +
+        `<li>l<sub>x</sub> = ${payload.grid.lx} m · h̄ = ${payload.h_bar} m</li>` +
+        `<li>합성 진폭 ≳ h̄ → 접촉 간섭 경향 (변형 전 기준)</li>` +
+        `<li>실제 접촉 = EHL 평탄화 후 아래 <b>h_tran&lt;0 음영</b></li>` +
+        `</ul>`;
     }
     linePlot($("profCanvas"), {
       series: [
