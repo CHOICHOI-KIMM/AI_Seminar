@@ -147,6 +147,21 @@
   </section>
 </main>
 
+<script>
+// file:// 가드 (classic script — module 은 file:// 에서 import 실패로 통째 침묵하므로 여기서 잡는다).
+// 무증상("로딩 중" 정지) 대신 명확한 안내 = 이 저장소의 무증상 실패 봉쇄 원칙.
+if (location.protocol === "file:") {
+  document.addEventListener("DOMContentLoaded", () => {
+    const b = document.getElementById("boot");
+    b.className = "note warn";
+    b.innerHTML = "<b>이 뷰어는 file:// (더블클릭)으로는 실행되지 않습니다.</b><br>" +
+      "web 타깃 WASM 은 fetch/module worker 를 쓰는데 file:// 에서는 브라우저가 차단합니다.<br><br>" +
+      "<b>실행 방법</b> — 뷰어 폴더의 <code>뷰어실행.bat</code> 더블클릭, 또는 터미널에서:<br>" +
+      "<code>python -m http.server 8741</code> (뷰어 폴더에서) → " +
+      "<a href='http://127.0.0.1:8741/index.html'>http://127.0.0.1:8741/index.html</a> 접속";
+  });
+}
+</script>
 <script type="module">
 import { linePlot, heatmap } from "./plot.js";
 
