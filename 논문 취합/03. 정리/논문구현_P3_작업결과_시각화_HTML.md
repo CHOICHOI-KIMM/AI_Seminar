@@ -366,3 +366,102 @@ wasm-bindgen --target nodejs --out-dir pkg-node \
 node verify_phase2.js           # 신선도 가드 + 8/8
 ```
 **환경 추가**: wasm-bindgen-cli 0.2.126 (wasm-pack 0.15.0 은 실행 차단 상태).
+
+---
+
+# 스프린트 (P3_HTML_spike, 2026-07-23 착수)
+
+> **전략(연구자 승인)**: 빠른 결과 우선 — **스크래치 브랜치 `P3_HTML_spike` + 로컬 커밋(푸시 없음)**.
+> 성공 → `P3_HTML` 병합 · 실패 → 브랜치 삭제(무흔적 롤백). 작업 위치 = worktree `AI_Seminar_P3`.
+> **순서** = 죽을 것부터: **① web 빌드 스파이크 → ② reference 노출 → ③ 필드 진입점 → ④ 4탭**.
+> **중단 기준**: ①에서 web 타깃 WASM 이 브라우저에서 근본적으로 구동 불가일 때 **만** 중단.
+> 성능·레이아웃·개별 탭 문제는 수리 가능 → 중단 사유 아님.
+>
+> **정직성 불가침 5 (스프린트여도 유지)**:
+> 1. 탭4(시간진화) **빈 채 유지** — 그럴듯한 곡선 금지 (R6, 역피팅 전례 `wf_2638d46e`)
+> 2. JS 물리식 **0건** — 숫자는 전부 WASM/reference 경유 (R8)
+> 3. 검증 탭 **A/B/C 등급 분리** — C(회귀가드)를 검증처럼 보이게 하지 않기
+> 4. **미수렴 경고 배지** — `converged=false` 숨기지 않기
+> 5. 탭3 **"미마모 형상·정성 전용(RP-Field)" 캡션**
+>
+> 미결이던 **탭2 VC 데이터 출처 = JSON 데이터 파일안으로 잠정 확정**(스프린트 판단, 연구자 재검토 대상).
+
+## S① — web 빌드 스파이크 (계획)
+
+**목적**: 유일한 전체 킬러 리스크 해소 — `--target web` WASM 이 **실제 브라우저 환경**에서
+로드·실행되는가. 지금까지 검증된 것은 nodejs 타깃뿐(Phase 0~2). Phase 0 R1 과 동성격의
+미검증 전제이므로 최선행.
+
+**작업**:
+1. `cargo build --target wasm32-unknown-unknown --release` (기존 산출물 재사용 가능)
+2. `wasm-bindgen --target web --out-dir viewer/pkg` — **web 타깃 glue** 신규 생성
+   (wasm-pack 실행차단 지속 → Phase 2 확립한 2단계 직접 빌드 그대로)
+3. 최소 테스트 페이지 `viewer/spike.html`: 모듈 로드 → `solve_wear_json`(Phase 0 fixture)
+   + `solve_partial_json` 호출 → 결과를 DOM 에 기록
+4. **로컬 서버 필수**: web 타깃 glue 는 `.wasm` 을 fetch 로 로드 → `file://` 불가.
+   `python -m http.server` 사용. (SharedArrayBuffer 미사용 → COOP/COEP 불요 = 계획 §3.3 결정 유지)
+5. **헤드리스 브라우저로 기계 판정**: Edge(`msedge --headless`) 로 페이지 열어 DOM 덤프
+   → `[SPIKE-PASS]` 문자열 확인. 수동 클릭 불요·재현 가능.
+
+**통과 기준**:
+- (a) web 타깃 빌드 성공 + 페이지 로드 시 JS 예외 없음
+- (b) `solve_wear_json` 출력 == **nodejs/네이티브 기지값**(`dh_w_mean=1.168142857142861e-15`,
+  Phase 0 파리티 앵커) — 문자열 동일
+- (c) `solve_partial_json` 이 `phi_bl≠0` + `diagnostics.outerConverged=true` 반환
+  (진짜 오케스트레이터·진단 채널이 브라우저에서도 생존)
+- (d) 신선도 가드(진입점 존재·mtime) 페이지에 내장 — stale 3회차 방지
+
+**리스크**: 헤드리스 Edge 부재/차단 시 → 대안: 결과를 fetch 로 서버에 회신하는 self-report 페이지
+또는 연구자 수동 1회 확인(최후). wasm-bindgen CLI 는 이미 확보(0.2.126, Phase 2).
+
+### S① 결과 (2026-07-23) — **통과, 중단 기준 미발동**
+
+| 기준 | 결과 |
+|---|---|
+| (a) web 타깃 빌드·로드 | ✅ `wasm-bindgen --target web` 성공(446KB) · 실브라우저(Edge)서 glue+wasm fetch·초기화 확인(서버 액세스 로그) |
+| (b) 파리티 앵커 | ✅ `dh_w_mean == 1.168142857142861e-15` 문자열 동일 (네이티브=nodejs=**web 3자 일치**) |
+| (c) 오케스트레이터·진단 | ✅ `phi_bl≠0` + `outerConverged=true` 브라우저 생존 |
+| (d) 신선도 가드 | ✅ 페이지 내장(진입점 3종 검사) |
+| 차원검사 | ✅ 브라우저에서도 `{ok:false}` (abort 아님) |
+
+**기계 판정**: 헤드리스 Edge → 페이지 **self-report** `GET /__spike__/SPIKE-PASS/fails=0`
+(Edge `--dump-dom` 이 Windows 서 stdout 0바이트 quirk → 계획된 폴백 사용. 서버 로그 = 판정 채널).
+**빌드 절차**: Phase 2 확립 2단계 그대로 + `--target web`. 로컬 서버 `python -m http.server` 필수(`file://` 불가) 확정.
+→ **S② 진행.**
+
+## S② — reference 노출 (결과) — **통과**
+
+**설계**: 셸에 2 진입점 — `reference_curve_json(kind, params)`(곡선 샘플러: venner1997·venner2000·gw1994·mcewen·milano·tripp2003) + `reference_tables_json()`(정적 표·상수 일괄). 수식 평가는 전부 `reference.rs` 호출, 셸은 **샘플링 루프만**(좌표 생성은 물리 아님) → JS 에는 완성 배열만 = R8 유지. 곡선 단위 반환으로 경계 호출 수천회 회피(Phase 3 숙제 1 해소).
+
+**정직성 장치 내장**: venner1997 meta 에 `lineContactOnly`·venner2000 에 `pointContactOnly` 플래그(축 겹침 금지, 총괄계획 L476) · `fitDegradesMask` 시리즈(원문 자인 과소예측역 음영용) · Table1 18점·앵커 스팟·브래킷 동봉.
+
+**검증**: 셸 **11 green**(기존 7 + s2 4: pass-through bit-exact 등가·McEwen peak·tables 완비성·오류경로). 로그축 min≤0 등 구조적 오류 반환.
+→ **S③ 진행.**
+
+## S③ — 전체 체인 진입점 (결과) — **통과**
+
+**설계**: `solve_chain_json` 1개 — partial_lub(traced)→M3(`solve_stress_at_depths`)→M4→M5 배선. **크기 대책**: 6성분 전체 필드(수십 MB) 대신 뷰어가 그릴 것만 — y₀ 슬라이스 `vm_xz`(nz×nx)·x-프로파일(p/h/q/Δh_w)·**(y,z) Dang Van·수명 맵**(M4 의 D 는 x=시간이력 broadcast 라 (y,z)가 정보 전부). **정직성**: `unwornGeometry:true` 플래그 동봉(RP-Field 캡션 강제용) + `diagnostics` 비-Option 유지.
+
+**검증**: 셸 **13 green**(+s3 2). 포착 1건: 스모크 fixture 의 `phi_bl=0` — 스텁 아닌 **fixture 물리**(rough2=0 → 유막이 접촉 삼킴). 검증된 verify_phase2 fixture(0.23+0.06µm)로 정렬해 해소. **교훈: phi_bl=0 은 "스텁" 과 "정당한 무접촉" 두 원인이 있다 — 뷰어도 이 구분을 표시해야**(asperity_degenerate·contact_count 노출이 근거).
+→ **S④ 진행.**
+
+## S④ — 뷰어 4탭 (결과) — **통과 · 스프린트 완주**
+
+**구성** (`viewer/`): `index.html`(4탭) + `plot.js`(캔버스 렌더 전용, 물리 0건) + `worker.js`(WASM 호출 전담 module worker — R2 대응 UI 비블로킹) + `vc_data.json`(재검토판 전사 29건, **잠정 — 연구자 재검토 대상**) + `spike.html`(S①).
+
+| 탭 | 내용 | 정직성 장치 |
+|---|---|---|
+| ① 참조곡선 | 6종(venner1997/2000·gw1994·mcewen·milano·tripp2003) + Table1 18점 오버레이 | 선/점접촉 배지(겹침 금지)·fit degrades 음영·앵커=anti-fudge 문구 |
+| ② 검증 | VC 29건 색분리 표 | A/B/C/X/OPEN 등급 정의 상단 고정·X(DesiTab)=정상거동 표기·출처·잠정 명시 |
+| ③ 단일스텝 | 폼(원논문 Table1 기본값)→Worker→체인: p/q·h/Δh_w 프로파일 + σ_vM(x,z)·D(y,z) 히트맵 | **미마모·정성 전용 경고 고정**·미수렴 경고배지·φ_bl=0 두 원인 구분 표시(S③ 교훈) |
+| ④ 시간진화 | **곡선 0개** — 안내문만(창발구조 L435·정량임계 금지 L440·anti-fudge L476·전례 wf_2638d46e) | 불가침 1 그대로 |
+
+**기계 판정(헤드리스 Edge, self-report)**: `initDone → gotTables → drewCurve → loadedVC → 스모크 체인 → `**`VIEWER-PASS`**.
+
+**포착·조치**: ⚠️ **`--virtual-time-budget` 이 module worker 의 wasm 인스턴스화를 얼림** — `init()` 이 resolve/reject 모두 안 됨(단계 리포터로 특정: `msg/refTables` 수신 후 `initDone` 부재). 실시간 실행(budget 제거+kill)으로 전환 → 전 시퀀스 완주. **stale(2회)과 동류의 '하네스가 속이는' 3번째 사례 — 이번엔 하네스가 거짓 실패를 만듦.** 뷰어 결함 아님. 단계 리포터는 진단용으로 존치(무해·catch 처리).
+
+**최종 검증**: 모델 **106+2 green**(default·직렬) · 셸 **13 green** · 브라우저 **VIEWER-PASS**.
+
+## 스프린트 판정 — **성공 → P3_HTML 병합**
+
+S①~S④ 전건 통과·중단 기준 미발동·정직성 불가침 5 전건 유지. 커밋 4개(S①~S④)를 `P3_HTML` 로 병합(로컬, **푸시는 별도 결정**). Phase 3 잔여를 스프린트가 흡수했으므로 G-VIS 게이트 항목 중 미완은: 참조곡선 **정량 오라클 전건 일치의 문서화 대조**(§7 G-VIS 1 — 코드 오라클은 green이나 뷰어 표시값 대조 절차 미실시)·R8 구조가드(뷰어 JS 검사 자동화) — **후속 마감 대상**.

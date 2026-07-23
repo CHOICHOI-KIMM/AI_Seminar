@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>S1 web spike</title>
+</head>
+<body>
+<h1>S① — web 타깃 WASM 브라우저 구동 스파이크</h1>
+<pre id="out">로딩…</pre>
+<script type="module">
+// S① 스파이크 (작업결과 §S① 계획).
+// 통과 기준: (a) 로드·예외없음 (b) solve_wear == Phase 0 파리티 앵커(문자열)
+//           (c) solve_partial phi_bl≠0 + outerConverged (d) 신선도 가드
+// ★ JS 물리식 0건(R8) — 아래 숫자는 전부 "기지 출력값 문자열"(오라클)이지 계산이 아니다.
+const out = document.getElementById("out");
+const lines = [];
+let fail = 0;
+const log = (s) => { lines.push(s); out.textContent = lines.join("\n"); };
+const check = (cond, msg) => { log(`  [${cond ? "PASS" : "FAIL"}] ${msg}`); if (!cond) fail++; };
+
+try {
+  // ── (d) 신선도 가드: glue 에 진입점 3종 존재 확인 (stale 3회차 방지) ──
+  const glueSrc = await (await fetch("./pkg/micropitting_wasm.js")).text();
+  const required = ["solve_wear_json", "solve_stress_fatigue_json", "solve_partial_json"];
+  const missing = required.filter((f) => !glueSrc.includes(f));
+  if (missing.length) {
+    log(`[SPIKE-STALE] 진입점 부재: ${missing.join(", ")} → 재빌드 필요`);
+    document.title = "SPIKE-STALE";
+    throw new Error("stale pkg");
+  }
+  log("신선도 가드 통과 (진입점 3종)");
+
+  // ── (a) 모듈 로드 ──
+  const mod = await import("./pkg/micropitting_wasm.js");
+  await mod.default(); // wasm 초기화 (fetch)
+  log("모듈 로드·초기화 OK");
+
+  // ── (b) solve_wear: Phase 0 파리티 앵커와 문자열 대조 ──
+  const OP = { p_h: 1.5e9, u_mean: 1.0, u2: 1.01, slide_roll: 0.02, eta0: 0.0094,
+               alpha_visc: 20.78e-9, tau0: 3.0e6, temp: 348.15, r_x: 0.01 };
+  const MAT = { e_red: 115.384615384615e9, nu: 0.3, hardness: 7.0e9, p_lim: 4.0e9 };
+  const wearOut = mod.solve_wear_json(JSON.stringify({
+    grid: { nx: 4, ny: 2, lx: 4e-5, ly: 2e-5 },
+    p_tran: { nx: 4, ny: 2, data: [1.5e9, 0.75e9, 0, -1e8, 1.2e9, 0.3e9, 0, 5e8] },
+    op: OP, mat: MAT, phi_bl: 0.3, params: {} }));
+  const wear = JSON.parse(wearOut);
+  // 기지값 = Phase 0 네이티브·nodejs 양쪽에서 확정된 파리티 앵커 (손계산 교차검증 완료분).
+  check(wear.ok === true, "solve_wear ok");
+  check(wear.result.dh_w_mean === 1.168142857142861e-15,
+        `dh_w_mean == 파리티 앵커 (got ${wear.result.dh_w_mean})`);
+
+  // ── (c) solve_partial: 진짜 오케스트레이터 + 진단 생존 ──
+  const N = 32, M = 8;
+  const rough = (rq) => ({ nx: N, ny: M,
+    data: Array.from({ length: N * M }, (_, k) => rq * Math.sin(2 * Math.PI * 6 * (k % N) / N)) });
+  const p = JSON.parse(mod.solve_partial_json(JSON.stringify({
+    grid: { nx: N, ny: M, lx: 5.2e-4, ly: 1.3e-4 },
+    rough1: rough(0.23e-6), rough2: rough(0.06e-6),
+    mat: MAT, op: OP, h_bar: 1.4e-7 })));
+  check(p.ok === true, "solve_partial ok");
+  check(p.ok && p.result.phi_bl !== 0, `phi_bl=${p.ok ? p.result.phi_bl.toFixed(4) : "-"} ≠ 0 (스텁 아님)`);
+  check(p.ok && p.diagnostics && p.diagnostics.outerConverged === true,
+        "diagnostics.outerConverged (진단 채널 생존)");
+
+  // ── 차원검사 생존 (WASM abort 아닌 구조적 오류) ──
+  const bad = JSON.parse(mod.solve_wear_json(JSON.stringify({
+    grid: { nx: 64, ny: 16, lx: 4e-5, ly: 2e-5 },
+    p_tran: { nx: 2, ny: 1, data: [0, 0] },
+    op: OP, mat: MAT, phi_bl: 0.3, params: {} })));
+  check(bad.ok === false, "차원 불일치 → {ok:false} (모듈 생존)");
+
+  const verdict = fail === 0 ? "[SPIKE-PASS]" : `[SPIKE-FAIL] ${fail}건`;
+  log("");
+  log(verdict);
+  document.title = fail === 0 ? "SPIKE-PASS" : "SPIKE-FAIL";
+  // self-report: 판정을 URL 로 서버에 회신 → 서버 액세스 로그 = 기계 판정 채널
+  // (Edge --dump-dom 이 Windows 서 stdout 0바이트를 내는 quirk 의 폴백; 계획 §S① 리스크 항).
+  fetch(`/__spike__/${document.title}/fails=${fail}`).catch(() => {});
+} catch (e) {
+  log(`[SPIKE-ERROR] ${e}`);
+  document.title = "SPIKE-ERROR";
+  fetch(`/__spike__/SPIKE-ERROR/${encodeURIComponent(String(e)).slice(0, 120)}`).catch(() => {});
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Micropitting P3 뷰어 — M1~M6 정적 체인</title>
+<style>
+  :root { font-family: "Segoe UI", sans-serif; color: #0f172a; }
+  body { margin: 0; background: #f8fafc; }
+  header { background: #0f172a; color: #f1f5f9; padding: 10px 18px; }
+  header h1 { font-size: 16px; margin: 0; }
+  header .sub { font-size: 12px; color: #94a3b8; }
+  nav { display: flex; gap: 2px; background: #1e293b; padding: 0 12px; }
+  nav button { background: none; border: none; color: #cbd5e1; padding: 10px 16px; cursor: pointer; font-size: 13px; border-bottom: 3px solid transparent; }
+  nav button.active { color: #fff; border-bottom-color: #38bdf8; }
+  nav button.locked { color: #64748b; font-style: italic; }
+  main { padding: 14px 18px; max-width: 1200px; margin: 0 auto; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+  canvas { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; }
+  .note { font-size: 12px; color: #475569; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 10px; margin: 8px 0; }
+  .warn { background: #fef2f2; border-color: #fecaca; color: #991b1b; font-weight: 600; }
+  .okbadge { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+  table { border-collapse: collapse; font-size: 12px; }
+  th, td { border: 1px solid #e2e8f0; padding: 4px 8px; text-align: left; }
+  th { background: #f1f5f9; }
+  tr.gA td:first-child { border-left: 5px solid #059669; }
+  tr.gB td:first-child { border-left: 5px solid #d97706; }
+  tr.gC td:first-child { border-left: 5px solid #94a3b8; }
+  tr.gX td:first-child { border-left: 5px solid #7c3aed; }
+  tr.gOPEN td:first-child { border-left: 5px solid #dc2626; }
+  label { font-size: 12px; color: #334155; display: block; margin: 6px 0 2px; }
+  input, select { font-size: 13px; padding: 3px 6px; width: 130px; }
+  button.run { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 8px 18px; font-size: 14px; cursor: pointer; margin-top: 10px; }
+  button.run:disabled { background: #94a3b8; }
+  .diag { font-size: 12px; font-family: Consolas, monospace; }
+  .kv { display: grid; grid-template-columns: auto auto; gap: 2px 12px; }
+  #tab4 .big { font-size: 14px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Micropitting P3 뷰어 — Morales-Espejel &amp; Brizmer (2011) M1~M6 정적 체인</h1>
+  <div class="sub">SSOT: Rust <code>micropitting_model</code> → WASM · JS 물리식 0건 · 스프린트판(P3_HTML_spike)</div>
+</header>
+<nav>
+  <button data-tab="tab1" class="active">① 참조곡선</button>
+  <button data-tab="tab2">② 검증 (VC 27+)</button>
+  <button data-tab="tab3">③ 단일스텝 필드</button>
+  <button data-tab="tab4" class="locked">④ 시간진화 (잠김)</button>
+</nav>
+<main>
+  <div id="boot" class="note">WASM 로딩 중…</div>
+
+  <!-- ① 참조곡선 -->
+  <section id="tab1" class="tab active">
+    <div class="card">
+      <label>곡선 선택</label>
+      <select id="curveKind">
+        <option value="venner1997">Venner 1997 — 진폭감소 식(5) + Table1 18점 [선접촉]</option>
+        <option value="venner2000">Venner 2000 — 식(29) 마스터커브 [점접촉]</option>
+        <option value="gw1994">GW 1994 — 식(15)(16) 진폭비</option>
+        <option value="mcewen">McEwen — 선접촉 축상 von Mises</option>
+        <option value="milano">Milano 2006 — Dang Van 닫힌해 (A.8/A.10)</option>
+        <option value="tripp2003">Tripp 2003 — 6응력 깊이 프로파일 + trace 항등</option>
+      </select>
+      <span id="contactBadge" class="note" style="display:inline-block; margin-left:10px;"></span>
+    </div>
+    <div class="row">
+      <canvas id="refCanvas" width="760" height="430"></canvas>
+      <div class="card" id="refMeta" style="max-width:380px; font-size:12px;"></div>
+    </div>
+    <div class="note" id="refHonesty"></div>
+  </section>
+
+  <!-- ② 검증 -->
+  <section id="tab2" class="tab">
+    <div class="note">등급 정의(재검토판 L9-11): <b style="color:#059669">A=문헌·해석해 정량 일치(진짜 검증)</b> ·
+      <b style="color:#d97706">B=구조·보존·차원·극한·정성</b> ·
+      <b style="color:#64748b">C=자기일관·항등·가정 — 회귀가드일 뿐 검증 아님</b> ·
+      <b style="color:#7c3aed">X=상태갱신(모델 한계의 정직 기록)</b> ·
+      <b style="color:#dc2626">OPEN=미결·이월</b></div>
+    <div class="note" id="vcProvenance" style="font-size:11px;"></div>
+    <div class="card" style="overflow-x:auto;"><table id="vcTable"></table></div>
+  </section>
+
+  <!-- ③ 단일스텝 필드 -->
+  <section id="tab3" class="tab">
+    <div class="note warn">⚠️ <b>미마모 형상 · 정성 비교 전용 (RP-Field)</b> — 원논문 Fig 6/15 는 "last wear step"(마모 후 형상)의 스냅샷.
+      본 정적 체인은 마모 전 형상이므로 형상·경향 비교만 유효하며 정량 대조는 금지된다(재검토판: 이미지·수치추출 불가).</div>
+    <div class="row">
+      <div class="card">
+        <b style="font-size:13px;">입력 (기본값 = 원논문 Table 1 roller–disc)</b>
+        <div class="row">
+          <div>
+            <label>격자 nx×ny</label>
+            <select id="f_grid"><option value="128,32">128×32 (빠름)</option><option value="256,32" selected>256×32 (기본)</option><option value="512,64">512×64 (정밀·~1.3s)</option></select>
+            <label>디스크 Rq [µm]</label><input id="f_rq1" type="number" step="0.01" value="0.23">
+            <label>롤러 Rq [µm]</label><input id="f_rq2" type="number" step="0.01" value="0.06">
+            <label>리플 파수 (창 내 주기수)</label><input id="f_waves" type="number" step="1" value="6">
+            <label>평균유막 h̄ [µm]</label><input id="f_hbar" type="number" step="0.01" value="0.14">
+          </div>
+          <div>
+            <label>p_h [GPa]</label><input id="f_ph" type="number" step="0.1" value="1.5">
+            <label>ū [m/s]</label><input id="f_um" type="number" step="0.1" value="1.0">
+            <label>SRR S [-]</label><input id="f_srr" type="number" step="0.005" value="0.02">
+            <label>η₀ [Pa·s] (VG32@75℃)</label><input id="f_eta" type="number" step="0.0001" value="0.0094">
+            <label>r_x [m]</label><input id="f_rx" type="number" step="0.001" value="0.01">
+          </div>
+          <div>
+            <label>α [1/GPa]</label><input id="f_alpha" type="number" step="0.01" value="20.78">
+            <label>τ₀ [MPa]</label><input id="f_tau0" type="number" step="0.1" value="3.0">
+            <label>H [GPa]</label><input id="f_hard" type="number" step="0.1" value="7.0">
+            <label>깊이층 nz</label><input id="f_nz" type="number" step="1" value="15">
+          </div>
+        </div>
+        <button class="run" id="runChain">체인 실행 (M1+M2+M6 → M3 → M4 → M5)</button>
+        <div class="note" style="font-size:11px;">고정 상수(코드 SSOT): E_red=115.38 GPa(E'=231) · ν=0.3(가정) · μ_bl=0.12 · μ_ehl=0.05 · Wöhler A=−43/B=1220 MPa · a_DV=0.232 · k_lub=4e-10 · f_w=10</div>
+      </div>
+      <div class="card diag" id="diagBox" style="min-width:280px;">진단: (실행 전)</div>
+    </div>
+    <div class="row">
+      <canvas id="profCanvas" width="560" height="330"></canvas>
+      <canvas id="wearCanvas" width="560" height="330"></canvas>
+    </div>
+    <div class="row">
+      <canvas id="vmCanvas" width="560" height="330"></canvas>
+      <canvas id="dvCanvas" width="560" height="330"></canvas>
+    </div>
+  </section>
+
+  <!-- ④ 시간진화 — 비활성 -->
+  <section id="tab4" class="tab">
+    <div class="card big">
+      <h3>Fig 10 · 11 · 12 는 아직 그릴 수 없습니다 — 그리고 그리지 않는 것이 맞습니다</h3>
+      <p><b>Fig 10</b>(A_p vs Λ) · <b>Fig 11</b>(A_p vs S) · <b>Fig 12</b>(A_p vs 하중 사이클수)는
+        전부 피팅면적률 A_p 를 요구하며, A_p 는 <b>Δn 시간루프</b>(총괄계획 §8.C.5 — M4 의 d&gt;1 피트와
+        M5 의 Δh_w 가 동일 형상을 함께 갱신 → M1/M2/M6 재실행)의 산물입니다.</p>
+      <p>Λ≈1.1 의 A_p 최대는 피로↔마모 경쟁의 <b>창발 결과로 폐형식이 없고</b>(총괄계획 L435),
+        원문 대조 자체가 정성(qualitatively)이라 <b>정량 임계 표기가 금지</b>되어 있으며(L440),
+        역피팅은 anti-fudge 게이트(L476)로 차단됩니다 — 이전 시도(wf_2638d46e)가 역피팅으로
+        적대 크리틱에서 fail 한 전례가 그 근거입니다.</p>
+      <p><b>그럴듯한 곡선을 미리 그려두면, 나중에 시간루프가 다른 답을 낼 때 어느 쪽이 정본인지
+        판별할 수 없습니다.</b> 빈 탭이 틀린 탭보다 낫습니다. 시간루프 G5 통과 후 활성화됩니다.</p>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import { linePlot, heatmap } from "./plot.js";
+
+const $ = (id) => document.getElementById(id);
+const boot = $("boot");
+
+// ── 신선도 가드 (stale 사고 2회 교훈 — 테스트·표시 전 필수) ──
+try {
+  const glue = await (await fetch("./pkg/micropitting_wasm.js")).text();
+  const need = ["solve_chain_json", "reference_curve_json", "reference_tables_json", "solve_partial_json"];
+  const missing = need.filter((f) => !glue.includes(f));
+  if (missing.length) {
+    boot.className = "note warn";
+    boot.textContent = `[STALE] pkg 에 진입점 부재: ${missing.join(", ")} — wasm 재빌드 필요. 옛 pkg 로 보이는 결과는 거짓이다.`;
+    throw new Error("stale");
+  }
+} catch (e) { if (String(e).includes("stale")) throw e; }
+
+// ── Worker 부팅 ──
+const step = (n) => fetch(`/__viewer__/step/${n}`).catch(() => {});
+step("boot0");
+const worker = new Worker("./worker.js", { type: "module" });
+worker.onerror = (e) => { step("workerError/" + encodeURIComponent(e.message || "?").slice(0,80)); };
+worker.onmessageerror = () => step("workerMsgError");
+let seq = 0;
+const pending = new Map();
+worker.onmessage = (ev) => {
+  const { id, ok, result, error } = ev.data;
+  const p = pending.get(id); pending.delete(id);
+  if (p) ok ? p.res(result) : p.rej(new Error(error));
+};
+const call = (cmd, payload) => new Promise((res, rej) => {
+  const id = ++seq; pending.set(id, { res, rej });
+  worker.postMessage({ id, cmd, payload });
+});
+
+// ── 탭 전환 ──
+document.querySelectorAll("nav button").forEach((b) => {
+  b.onclick = () => {
+    document.querySelectorAll("nav button").forEach((x) => x.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    $(b.dataset.tab).classList.add("active");
+  };
+});
+
+// ── ① 참조곡선 ──
+const CURVE_HONESTY = {
+  venner1997: "선접촉 전용 (M=W(2U)^{-1/2}). 붉은 음영 = 원문 자인 과소예측역(0.5<A_d/A_i<1). ● Table1 18점 = 출판 수치해 verbatim. 앵커 3점(λ/b=1.0/0.5/0.25)은 anti-fudge 게이트 — 튜닝 금지.",
+  venner2000: "점접촉 전용 (M=W(2U)^{-3/4}). 선접촉(1997)과 같은 축에 겹쳐 그리지 말 것 — 카테고리 오류(총괄계획 L476, 코드 오라클로 기계 고정됨). ● = worked example, 문헌 수치해 0.739 대비 fit <6%.",
+  gw1994: "정상상태(특수해) 진폭감소 — 상보파(전이해)와 별개. C 는 대표값 파라미터.",
+  mcewen: "고전 폐형식 — M3 의 최강 독립 외부앵커(피크 0.557 @ z/b≈0.70, 코드 +0.49% 재현).",
+  milano: "Milano App A 닫힌해 — 구현(MCE+Tresca)에 미사용이라 독립 검증 성립.",
+  tripp2003: "Tripp 2003 식[10]/[16] 정본(2011 재인용본 식[12][13]은 OCR 손상 — 미사용). traceIdentity 는 성분합의 독립 판별자.",
+};
+
+async function drawCurve() {
+  const kind = $("curveKind").value;
+  const r = await call("refCurve", { kind, params: {} });
+  if (!r.ok) { $("refMeta").textContent = "오류: " + r.error; return; }
+  const badge = $("contactBadge");
+  if (r.meta?.lineContactOnly) { badge.textContent = "선접촉 전용"; badge.style.display = "inline-block"; }
+  else if (r.meta?.pointContactOnly) { badge.textContent = "점접촉 전용"; badge.style.display = "inline-block"; }
+  else badge.style.display = "none";
+
+  const series = r.series.map((s, i) => ({ ...s, label: s.name }));
+  const points = [];
+  if (kind === "venner1997" && r.meta?.table1) {
+    const cols = ["#0f172a", "#64748b", "#cbd5e1"];
+    r.meta.table1.forEach((row) => row.adAi.forEach((v, ci) =>
+      points.push({ x: row.lob, y: v, color: cols[ci] })));
+  }
+  if (kind === "venner2000" && r.meta?.example) {
+    points.push({ x: r.meta.example.nabla2, y: r.meta.example.numerics, color: "#0f172a" });
+  }
+  const xLogKinds = { venner1997: 1, venner2000: 1, gw1994: 1 };
+  const XL = { venner1997: "λ/b", venner2000: "∇₂", gw1994: "λ [m]", mcewen: "z/b", milano: "ωt [rad]", tripp2003: "z [m]" };
+  linePlot($("refCanvas"), {
+    series, points,
+    xLog: !!xLogKinds[kind],
+    shadeMaskSeries: "fitDegradesMask",
+    title: $("curveKind").selectedOptions[0].textContent,
+    xLabel: XL[kind] || "x", yLabel: kind === "milano" || kind === "tripp2003" ? "[Pa]" : "[-]",
+    hlines: kind === "venner1997" ? [{ y: 0.5, label: "0.5 교차" }] : [],
+  });
+  $("refHonesty").textContent = CURVE_HONESTY[kind] || "";
+  const metaShow = { ...r.meta }; delete metaShow.nabla; delete metaShow.table1;
+  $("refMeta").innerHTML = "<b>meta (WASM 반환 원본)</b><pre style='white-space:pre-wrap'>" +
+    JSON.stringify(metaShow, null, 1).slice(0, 1400) + "</pre>";
+}
+$("curveKind").onchange = drawCurve;
+
+// ── ② 검증 탭 ──
+async function loadVC() {
+  const d = await (await fetch("./vc_data.json")).json();
+  $("vcProvenance").textContent = d._provenance;
+  const t = $("vcTable");
+  t.innerHTML = "<tr><th>ID</th><th>모듈</th><th>등급</th><th>내용</th><th>기대값</th><th>상태</th><th>비고</th></tr>";
+  const badge = { green: "✅", indirect: "▫️간접", carryover: "↩️이월", assumption: "☑️가정", deferred: "⏳P4", "model-limit": "△한계", qualitative: "≈정성" };
+  for (const it of d.items) {
+    const tr = document.createElement("tr");
+    tr.className = "g" + it.grade;
+    tr.innerHTML = `<td><b>${it.id}</b></td><td>${it.module}</td><td>${it.grade}</td>` +
+      `<td>${it.summary}</td><td>${it.expected}</td><td>${badge[it.status] || it.status}</td><td>${it.note}</td>`;
+    t.appendChild(tr);
+  }
+}
+
+// ── ③ 단일스텝 필드 ──
+$("runChain").onclick = async () => {
+  const btn = $("runChain");
+  btn.disabled = true; btn.textContent = "계산 중… (Worker)";
+  try {
+    const [nx, ny] = $("f_grid").value.split(",").map(Number);
+    // 단위 환산(µm→m 등)은 입력 규격 변환 — 물리 아님.
+    const payload = {
+      grid: { nx, ny, lx: 5.2e-4, ly: 1.3e-4 },
+      rq1: Number($("f_rq1").value) * 1e-6,
+      rq2: Number($("f_rq2").value) * 1e-6,
+      waves: Number($("f_waves").value),
+      h_bar: Number($("f_hbar").value) * 1e-6,
+      nz: Number($("f_nz").value),
+      mat: { e_red: 115.384615384615e9, nu: 0.3, hardness: Number($("f_hard").value) * 1e9, p_lim: 4.0e9 },
+      op: {
+        p_h: Number($("f_ph").value) * 1e9, u_mean: Number($("f_um").value),
+        u2: Number($("f_um").value) * (1 + Number($("f_srr").value) / 2),
+        slide_roll: Number($("f_srr").value), eta0: Number($("f_eta").value),
+        alpha_visc: Number($("f_alpha").value) * 1e-9, tau0: Number($("f_tau0").value) * 1e6,
+        temp: 348.15, r_x: Number($("f_rx").value),
+      },
+    };
+    const t0 = performance.now();
+    const r = await call("chain", payload);
+    const ms = Math.round(performance.now() - t0);
+    if (!r.ok) { $("diagBox").innerHTML = `<span style="color:#991b1b">오류: ${r.error}</span>`; return; }
+
+    const d = r.diagnostics;
+    const conv = d.outerConverged && d.shareConverged;
+    // phi_bl=0 의 두 원인 구분 표시 (S③ 교훈): 스텁 vs 정당한 무접촉.
+    const phiNote = r.phiBl === 0
+      ? (d.contactCount === 0 ? " (접촉 0 — 유막이 거칠기를 초과: 정당한 무접촉)" : " ⚠️ 원인 확인 필요")
+      : "";
+    $("diagBox").innerHTML =
+      (conv ? `<div class="note okbadge">수렴 ✅</div>`
+            : `<div class="note warn">⚠️ 미수렴 — 이 결과를 신뢰하지 말 것</div>`) +
+      `<div class="kv">` +
+      `<span>φ_bl</span><b>${r.phiBl.toExponential(3)}${phiNote}</b>` +
+      `<span>접촉점</span><b>${d.contactCount}${d.asperityDegenerate ? " (축퇴)" : ""}</b>` +
+      `<span>b</span><b>${r.b.toExponential(3)} m</b>` +
+      `<span>μ_eff</span><b>${d.muEff.toFixed(4)}</b>` +
+      `<span>하중잔차</span><b>${d.loadResidual.toExponential(2)}</b>` +
+      `<span>iters</span><b>outer ${d.outerIters} / share ${d.shareIters}</b>` +
+      `<span>Δh_w 평균</span><b>${r.dhWMean.toExponential(3)} m/cyc</b>` +
+      `<span>계산</span><b>${ms} ms</b></div>`;
+
+    linePlot($("profCanvas"), {
+      series: [
+        { x: r.x, y: r.pTranProfile, label: "p_tran [Pa]" },
+        { x: r.x, y: r.qTranProfile, label: "q_tran [Pa]" },
+      ],
+      title: `압력·트랙션 x-프로파일 (y=j${r.sliceJ}) — 미마모·정성`, xLabel: "x [m]", yLabel: "[Pa]",
+    });
+    linePlot($("wearCanvas"), {
+      series: [
+        { x: r.x, y: r.hTranProfile, label: "h_tran [m]" },
+        { x: r.x, y: r.dhWProfile, label: "Δh_w [m/cyc]", dash: true },
+      ],
+      title: "유막·마모율 x-프로파일 — 미마모·정성", xLabel: "x [m]", yLabel: "[m]",
+    });
+    heatmap($("vmCanvas"), r.vmXz, { title: "σ_vM(x,z) @ y₀ [Pa] — 미마모·정성 (cf. Fig 6b)", xLabel: "x →", yLabel: "z(깊이) ↓" });
+    heatmap($("dvCanvas"), r.dvYz, { title: "Dang Van D(y,z) [-] — 1사이클(x-스냅샷)", xLabel: "y →", yLabel: "z(깊이) ↓" });
+  } finally {
+    btn.disabled = false; btn.textContent = "체인 실행 (M1+M2+M6 → M3 → M4 → M5)";
+  }
+};
+
+// ── 부팅 + self-report (헤드리스 판정 채널) ──
+try {
+  step("callTables");
+  await call("refTables", {});
+  step("gotTables");
+  await drawCurve();
+  step("drewCurve");
+  await loadVC();
+  step("loadedVC");
+  // 자가 스모크: 소형 체인 1회 (16×4, 판정용 — 표시는 안 함)
+  const smoke = await call("chain", {
+    grid: { nx: 16, ny: 4, lx: 5.2e-4, ly: 1.3e-4 },
+    rq1: 0.23e-6, rq2: 0.06e-6, waves: 3, h_bar: 1.4e-7, nz: 5,
+    mat: { e_red: 115.384615384615e9, nu: 0.3, hardness: 7e9, p_lim: 4e9 },
+    op: { p_h: 1.5e9, u_mean: 1.0, u2: 1.01, slide_roll: 0.02, eta0: 0.0094,
+          alpha_visc: 20.78e-9, tau0: 3e6, temp: 348.15, r_x: 0.01 },
+  });
+  const pass = smoke.ok && smoke.unwornGeometry === true && smoke.diagnostics;
+  boot.className = pass ? "note okbadge" : "note warn";
+  boot.textContent = pass ? "WASM 준비 완료 — 3탭 활성 (시간진화는 시간루프 G5 후)" : "자가점검 실패";
+  document.title = pass ? "VIEWER-PASS" : "VIEWER-FAIL";
+  fetch(`/__viewer__/${document.title}`).catch(() => {});
+} catch (e) {
+  boot.className = "note warn";
+  boot.textContent = "초기화 실패: " + e;
+  document.title = "VIEWER-ERROR";
+  fetch(`/__viewer__/VIEWER-ERROR/${encodeURIComponent(String(e)).slice(0, 120)}`).catch(() => {});
+}
+</script>
+</body>
+</html>
