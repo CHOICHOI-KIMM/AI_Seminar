@@ -446,6 +446,10 @@ pub struct ChainArgs {
     /// σ_vM(x,z) 슬라이스의 y 인덱스 (기본 ny/2).
     #[serde(default)]
     pub slice_j: Option<usize>,
+    /// 깊이 범위 z_max = depth_frac·b (기본 = 모델 `DEPTH_FRAC` 0.25; 상한 4b — 셸 경계 knob,
+    /// `solve_stress_at_depths` 가 임의 깊이를 받으므로 **모델 무변경**).
+    #[serde(default)]
+    pub depth_frac: Option<f64>,
     #[serde(default)]
     pub fatigue: FatigueParamsArgs,
     #[serde(default)]
@@ -526,12 +530,16 @@ fn chain_inner(input_json: &str) -> Result<ChainResp, String> {
     };
     let (part, tr) = partial_lub::solve_partial_traced(&input);
 
-    // ② M3 — 깊이는 모델 소유 상수·contact_half_width 로 (셸 재유도 금지 = SSOT)
+    // ② M3 — b 는 모델 소유(contact_half_width), 깊이범위는 depth_frac·b (기본 = 모델 DEPTH_FRAC)
     let b = m3_stress::contact_half_width(&args.op, &args.mat);
+    let df = args.depth_frac.unwrap_or(m3_stress::DEPTH_FRAC);
+    if !(df > 0.0 && df <= 4.0) {
+        return Err(format!("depth_frac 은 (0, 4] 여야 한다: {df}"));
+    }
     let z_depths: Vec<f64> = (0..args.nz)
         .map(|k| {
             let f = if args.nz <= 1 { 0.0 } else { k as f64 / (args.nz - 1) as f64 };
-            m3_stress::DEPTH_FRAC * b * f
+            df * b * f
         })
         .collect();
     let stress = m3_stress::solve_stress_at_depths(

@@ -217,6 +217,7 @@
             <label>τ₀ [MPa]</label><input id="f_tau0" type="number" step="0.1" value="3.0">
             <label>H [GPa]</label><input id="f_hard" type="number" step="0.1" value="7.0">
             <label>깊이층 nz</label><input id="f_nz" type="number" step="1" value="15">
+            <label>깊이범위 z_max/b</label><input id="f_zfrac" type="number" step="0.05" value="0.25">
           </div>
         </div>
         <button class="run" id="runChain">체인 실행 (M1+M2+M6 → M3 → M4 → M5)</button>
@@ -404,6 +405,7 @@ $("runChain").onclick = async () => {
       waves: Number($("f_waves").value),
       h_bar: Number($("f_hbar").value) * 1e-6,
       nz: Number($("f_nz").value),
+      depth_frac: Number($("f_zfrac").value),
       mat: { e_red: 115.384615384615e9, nu: 0.3, hardness: Number($("f_hard").value) * 1e9, p_lim: 4.0e9 },
       op: {
         p_h: Number($("f_ph").value) * 1e9, u_mean: Number($("f_um").value),
@@ -471,7 +473,7 @@ $("runChain").onclick = async () => {
         { x: r.x, y: r.pTranProfile.map((v) => v * GPA), label: "p_tran [GPa]" },
         { x: r.x, y: r.qTranProfile.map((v) => v * GPA), label: "q_tran [GPa]" },
       ],
-      title: `압력·트랙션 x-프로파일 (y=j${r.sliceJ}) — 미마모·정성`, xLabel: "x [m]", yLabel: "[GPa]",
+      title: `압력·트랙션 x-프로파일 (y=j${r.sliceJ})`, xLabel: "x [m]", yLabel: "[GPa]",
     });
     const contactMask = r.hTranProfile.map((v) => (v < 0 ? 1 : 0));
     linePlot($("wearCanvas"), {
@@ -483,13 +485,17 @@ $("runChain").onclick = async () => {
         { name: "contactMask", x: r.x, y: contactMask },
       ],
       shadeMaskSeries: "contactMask",
-      title: "유막·마모율 x-프로파일 — 미마모·정성", xLabel: "x [m]",
+      title: "유막·마모율 x-프로파일", xLabel: "x [m]",
       yLabel: "[µm]", yLabelRight: "[nm/Mcyc]",
     });
     $("contactNote").style.display = contactMask.some((v) => v > 0) ? "block" : "none";
+    const zMaxUm = r.zDepths[r.zDepths.length - 1] * 1e6;
     heatmap($("vmCanvas"), r.vmXz.map((row) => row.map((v) => (v === null ? null : v * GPA))),
-      { title: "σ_vM(x,z) @ y₀ [GPa] — 미마모·정성 (cf. Fig 6b)", xLabel: "x →", yLabel: "z(깊이) ↓" });
-    heatmap($("dvCanvas"), r.dvYz, { title: "Dang Van D(y,z) [-] — 1사이클(x-스냅샷)", xLabel: "y →", yLabel: "z(깊이) ↓" });
+      { title: "σ_vM(x,z) @ y₀ [GPa] (cf. Fig 6b)", xLabel: "x [µm]", yLabel: "z [µm]",
+        x0: 0, x1: payload.grid.lx * 1e6, y0: 0, y1: zMaxUm });
+    heatmap($("dvCanvas"), r.dvYz,
+      { title: "Dang Van D(y,z) [-] — 1사이클(x-스냅샷)", xLabel: "y [µm]", yLabel: "z [µm]",
+        x0: 0, x1: payload.grid.ly * 1e6, y0: 0, y1: zMaxUm });
     if (new URLSearchParams(location.search).has("autorun")) {
       fetch("/__viewer__/autorunPlotted").catch(() => {});
     }

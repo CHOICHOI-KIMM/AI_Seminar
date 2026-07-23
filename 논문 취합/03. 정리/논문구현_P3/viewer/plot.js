@@ -211,6 +211,23 @@ export function heatmap(canvas, data, opts = {}) {
   }
   ctx.strokeStyle = "#94a3b8"; ctx.strokeRect(L, T, W - L - R, H - T - B);
   ctx.fillStyle = "#475569"; ctx.font = "12px sans-serif";
+  // 실단위 눈금 (opts.x0/x1 = 가로, opts.y0/y1 = 세로(깊이, 아래로 증가))
+  if (opts.x1 !== undefined) {
+    for (const t of niceTicks(opts.x0 || 0, opts.x1)) {
+      const px = L + ((t - (opts.x0 || 0)) / (opts.x1 - (opts.x0 || 0))) * (W - L - R);
+      ctx.beginPath(); ctx.moveTo(px, H - B); ctx.lineTo(px, H - B + 4); ctx.stroke();
+      ctx.fillText(fmt(t), px - 10, H - B + 16);
+    }
+  }
+  if (opts.y1 !== undefined) {
+    ctx.textAlign = "right";
+    for (const t of niceTicks(opts.y0 || 0, opts.y1)) {
+      const py = T + ((t - (opts.y0 || 0)) / (opts.y1 - (opts.y0 || 0))) * (H - T - B);
+      ctx.beginPath(); ctx.moveTo(L - 4, py); ctx.lineTo(L, py); ctx.stroke();
+      ctx.fillText(fmt(t), L - 7, py + 4);
+    }
+    ctx.textAlign = "left";
+  }
   if (opts.title) { ctx.fillStyle = "#0f172a"; ctx.font = "bold 13px sans-serif"; ctx.fillText(opts.title, L, 16); ctx.font = "12px sans-serif"; ctx.fillStyle = "#475569"; }
   if (opts.xLabel) ctx.fillText(opts.xLabel, (W - L) / 2, H - 8);
   if (opts.yLabel) { ctx.save(); ctx.translate(14, (H + T) / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(opts.yLabel, 0, 0); ctx.restore(); }

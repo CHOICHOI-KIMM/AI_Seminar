@@ -30,7 +30,7 @@ self.onmessage = async (ev) => {
     let result;
     if (cmd === "chain") {
       // payload: {grid:{nx,ny,lx,ly}, rq1, rq2, waves, mat, op, h_bar, nz}
-      const { grid, rq1, rq2, waves, mat, op, h_bar, nz } = payload;
+      const { grid, rq1, rq2, waves, mat, op, h_bar, nz, depth_frac } = payload;
       const args = {
         grid,
         rough1: sineRough(grid.nx, grid.ny, rq1, waves),
@@ -39,6 +39,7 @@ self.onmessage = async (ev) => {
         op,
         h_bar,
         nz,
+        depth_frac,
       };
       result = JSON.parse(solve_chain_json(JSON.stringify(args)));
       // 입력 echo — WASM 에 투입된 **바로 그 배열**의 j0 행을 그대로 반환(표시=투입, 재계산 금지).
