@@ -400,6 +400,211 @@ fn stress_fatigue_inner(input_json: &str) -> Result<StressFatigueSummary, String
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+//  S③ — 전체 체인(탭3): partial_lub → M3 → M4 → M5, 뷰어 슬라이스 반환
+//
+//  ★ 크기 대책(Phase 3 숙제 3): 6성분 전체 필드(수십 MB JSON)는 반환하지 않는다.
+//    탭3 이 그리는 것만 — y₀ 슬라이스 σ_vM(x,z)·x-프로파일(p·h·q·Δh_w)·(y,z) Dang Van 맵.
+//    (M4 의 D 는 x 방향 broadcast — x=시간이력이라 한 열당 스칼라 → (y,z) 맵이 정보 전부.)
+//  ★ 정직성: `unwornGeometry: true` 플래그 동봉 — 원논문 Fig 6/15 는 "last wear step"(마모 후)
+//    이므로 정적 체인 결과는 **미마모 형상·정성 전용(RP-Field)** 캡션 필수(불가침 5).
+// ─────────────────────────────────────────────────────────────────────────
+
+/// [`FatigueParams`] JSON 미러 (serde 미파생 → Option override, 기본값은 모델 소유).
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct FatigueParamsArgs {
+    pub wohler_a: Option<f64>,
+    pub wohler_b: Option<f64>,
+    pub n_ref: Option<f64>,
+    pub alpha_dv: Option<f64>,
+}
+
+impl FatigueParamsArgs {
+    fn to_params(&self) -> FatigueParams {
+        let mut p = FatigueParams::default();
+        if let Some(v) = self.wohler_a { p.wohler_a = v; }
+        if let Some(v) = self.wohler_b { p.wohler_b = v; }
+        if let Some(v) = self.n_ref { p.n_ref = v; }
+        if let Some(v) = self.alpha_dv { p.alpha_dv = v; }
+        p
+    }
+}
+
+/// 전체 체인 입력 = 부분윤활 입력 + 깊이/슬라이스/파라미터 옵션.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChainArgs {
+    pub grid: Grid,
+    pub rough1: Field2,
+    pub rough2: Field2,
+    pub mat: MaterialProps,
+    pub op: OperatingConditions,
+    pub h_bar: f64,
+    /// 깊이층 수 (기본 = 모델 `NZ_DEFAULT`).
+    #[serde(default = "d_nz")]
+    pub nz: usize,
+    /// σ_vM(x,z) 슬라이스의 y 인덱스 (기본 ny/2).
+    #[serde(default)]
+    pub slice_j: Option<usize>,
+    #[serde(default)]
+    pub fatigue: FatigueParamsArgs,
+    #[serde(default)]
+    pub wear: WearParamsArgs,
+}
+fn d_nz() -> usize { m3_stress::NZ_DEFAULT }
+
+/// 전체 체인 응답 — 뷰어가 그릴 것만.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChainResp {
+    pub ok: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    /// ★ 정직성: 정적 체인 = 미마모 형상. 뷰어 캡션 필수(RP-Field 정성 전용).
+    pub unworn_geometry: bool,
+    /// 진단 — 성공 시 항상(R5).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diagnostics: Option<Diagnostics>,
+    pub b: f64,
+    pub phi_bl: f64,
+    pub dh_w_mean: f64,
+    pub slice_j: usize,
+    /// x 좌표 [m] (nx).
+    pub x: Vec<f64>,
+    /// 깊이 [m] (nz).
+    pub z_depths: Vec<f64>,
+    /// y₀ x-프로파일 (nx): 전이압/유막/트랙션/마모율.
+    pub p_tran_profile: Vec<f64>,
+    pub h_tran_profile: Vec<f64>,
+    pub q_tran_profile: Vec<f64>,
+    pub dh_w_profile: Vec<f64>,
+    /// σ_vM(x,z) @ y₀ — row-major [z][x] (nz×nx).
+    pub vm_xz: Vec<Vec<f64>>,
+    /// Dang Van D(y,z) — row-major [z][y] (nz×ny; x broadcast 라 (y,z) 가 정보 전부).
+    pub dv_yz: Vec<Vec<f64>>,
+    /// 수명 N(y,z) — 동일 배치.
+    pub life_yz: Vec<Vec<f64>>,
+}
+
+fn chain_err(e: String) -> String {
+    serde_json::to_string(&serde_json::json!({ "ok": false, "error": e })).unwrap_or_default()
+}
+
+/// 전체 체인: 부분윤활 → 응력 → 피로 → 마모. **모든 물리는 모델 크레이트**(셸은 배선·슬라이스만).
+pub fn run_chain(input_json: &str) -> String {
+    match chain_inner(input_json) {
+        Ok(r) => serde_json::to_string(&r).unwrap_or_default(),
+        Err(e) => chain_err(e),
+    }
+}
+
+fn chain_inner(input_json: &str) -> Result<ChainResp, String> {
+    let args: ChainArgs =
+        serde_json::from_str(input_json).map_err(|e| format!("input parse failed: {e}"))?;
+    check_dims("rough1", &args.grid, &args.rough1)?;
+    check_dims("rough2", &args.grid, &args.rough2)?;
+    if !(args.h_bar > 0.0) {
+        return Err(format!("h_bar 는 양수여야 한다: {}", args.h_bar));
+    }
+    if args.nz == 0 {
+        return Err("nz 는 1 이상".into());
+    }
+    let (nx, ny) = (args.grid.nx, args.grid.ny);
+    let j0 = args.slice_j.unwrap_or(ny / 2);
+    if j0 >= ny {
+        return Err(format!("slice_j={j0} >= ny={ny}"));
+    }
+
+    // ① 부분윤활 (R4: partial_lub:: 진짜 오케스트레이터 · R5: _traced)
+    let input = PartialLubInput {
+        grid: args.grid,
+        rough1: args.rough1,
+        rough2: args.rough2,
+        mat: args.mat,
+        op: args.op,
+        h_bar: args.h_bar,
+    };
+    let (part, tr) = partial_lub::solve_partial_traced(&input);
+
+    // ② M3 — 깊이는 모델 소유 상수·contact_half_width 로 (셸 재유도 금지 = SSOT)
+    let b = m3_stress::contact_half_width(&args.op, &args.mat);
+    let z_depths: Vec<f64> = (0..args.nz)
+        .map(|k| {
+            let f = if args.nz <= 1 { 0.0 } else { k as f64 / (args.nz - 1) as f64 };
+            m3_stress::DEPTH_FRAC * b * f
+        })
+        .collect();
+    let stress = m3_stress::solve_stress_at_depths(
+        &args.grid,
+        &part.p_tran,
+        &part.q_tran,
+        args.mat.nu,
+        &z_depths,
+    );
+
+    // ③ M4
+    let fat = m4_fatigue::solve_fatigue(&stress, &args.fatigue.to_params());
+
+    // ④ M5
+    let wear = m5_wear::solve_wear(
+        &WearInput {
+            grid: args.grid,
+            p_tran: &part.p_tran,
+            op: args.op,
+            mat: args.mat,
+            phi_bl: part.phi_bl,
+        },
+        &args.wear.to_params(),
+    );
+
+    // ⑤ 슬라이스 (그릴 것만)
+    let dx = args.grid.dx();
+    let x: Vec<f64> = (0..nx).map(|i| i as f64 * dx).collect();
+    let prof = |f: &Field2| -> Vec<f64> { (0..nx).map(|i| f.at(i, j0)).collect() };
+    let vm_xz: Vec<Vec<f64>> = stress
+        .von_mises
+        .iter()
+        .map(|layer| (0..nx).map(|i| layer.at(i, j0)).collect())
+        .collect();
+    // D·N 은 x broadcast → x=0 열로 (y,z) 맵 구성.
+    let dv_yz: Vec<Vec<f64>> =
+        fat.dang_van_d.iter().map(|layer| (0..ny).map(|j| layer.at(0, j)).collect()).collect();
+    let life_yz: Vec<Vec<f64>> =
+        fat.life_n.iter().map(|layer| (0..ny).map(|j| layer.at(0, j)).collect()).collect();
+
+    Ok(ChainResp {
+        ok: true,
+        error: None,
+        unworn_geometry: true,
+        diagnostics: Some(Diagnostics {
+            outer_converged: tr.outer_converged,
+            share_converged: tr.share.converged,
+            outer_iters: tr.outer_iters,
+            share_iters: tr.share.iters,
+            load_residual: tr.share.load_residual,
+            flow_balance_residual: tr.share.flow_balance_residual,
+            mu_eff: tr.mu_eff,
+            p_bar: tr.p_bar,
+            asperity_degenerate: tr.share.asperity_degenerate,
+            contact_count: tr.share.contact_count,
+        }),
+        b,
+        phi_bl: part.phi_bl,
+        dh_w_mean: wear.dh_w_mean,
+        slice_j: j0,
+        x,
+        z_depths,
+        p_tran_profile: prof(&part.p_tran),
+        h_tran_profile: prof(&part.h_tran),
+        q_tran_profile: prof(&part.q_tran),
+        dh_w_profile: prof(&wear.dh_w),
+        vm_xz,
+        dv_yz,
+        life_yz,
+    })
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 //  S② — reference(leaf) 노출: 곡선 샘플러 + 정적 데이터 (계획 탭1 참조곡선)
 //
 //  ★ 역할: 수식 평가는 전부 `micropitting_model::reference` 호출. 셸은 **샘플링 루프만**
@@ -823,6 +1028,13 @@ pub fn reference_tables_json() -> String {
     run_reference_tables()
 }
 
+/// 전체 체인(탭3): ChainArgs JSON → ChainResp JSON (뷰어 슬라이스만, unwornGeometry 플래그).
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn solve_chain_json(input_json: &str) -> String {
+    run_chain(input_json)
+}
+
 // ═════════════════════════════════════════════════════════════════════════
 //  구조 가드 — 무증상 실패의 봉쇄를 기계적으로 강제
 // ═════════════════════════════════════════════════════════════════════════
@@ -972,5 +1184,60 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(v2["ok"], false);
+    }
+    // ── S③: 전체 체인 스모크 ──
+
+    fn chain_json(nx: usize, ny: usize) -> String {
+        let rough: Vec<f64> = (0..nx * ny)
+            .map(|k| 0.23e-6 * (2.0 * std::f64::consts::PI * 6.0 * (k % nx) as f64 / nx as f64).sin())
+            .collect();
+        serde_json::json!({
+            "grid": {"nx": nx, "ny": ny, "lx": 5.2e-4, "ly": 1.3e-4},
+            "rough1": {"nx": nx, "ny": ny, "data": rough},
+            "rough2": {"nx": nx, "ny": ny, "data": (0..nx * ny)
+                .map(|k| 0.06e-6 * (2.0 * std::f64::consts::PI * 6.0 * (k % nx) as f64 / nx as f64).sin())
+                .collect::<Vec<f64>>()},
+            "mat": {"e_red": 1.15384615384615e11, "nu": 0.3, "hardness": 7e9, "p_lim": 4e9},
+            "op": {"p_h": 1.5e9, "u_mean": 1.0, "u2": 1.01, "slide_roll": 0.02,
+                    "eta0": 0.0094, "alpha_visc": 2.078e-8, "tau0": 3e6, "temp": 348.15, "r_x": 0.01},
+            "h_bar": 1.4e-7
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn s3_chain_returns_slices_with_honesty_flags() {
+        let out = run_chain(&chain_json(32, 8));
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["ok"], true, "{out}");
+        // 정직성 플래그·진단 필수.
+        assert_eq!(v["unwornGeometry"], true, "미마모 캡션 플래그");
+        assert_eq!(v["diagnostics"]["outerConverged"], true);
+        // 차원: vm_xz = nz×nx, dv_yz = nz×ny.
+        let nz = v["zDepths"].as_array().unwrap().len();
+        assert_eq!(nz, m3_stress::NZ_DEFAULT);
+        assert_eq!(v["vmXz"].as_array().unwrap().len(), nz);
+        assert_eq!(v["vmXz"][0].as_array().unwrap().len(), 32);
+        assert_eq!(v["dvYz"][0].as_array().unwrap().len(), 8);
+        // phi_bl ≠ 0 (스텁 아님, R4).
+        assert!(v["phiBl"].as_f64().unwrap() != 0.0);
+        // 프로파일 길이.
+        assert_eq!(v["pTranProfile"].as_array().unwrap().len(), 32);
+    }
+
+    #[test]
+    fn s3_chain_rejects_bad_inputs_structurally() {
+        // slice_j 범위 밖.
+        let mut v: serde_json::Value = serde_json::from_str(&chain_json(16, 4)).unwrap();
+        v["sliceJ"] = serde_json::json!(99);
+        // ChainArgs 는 snake_case 필드 → sliceJ 는 unknown → 구조적 거부(deny_unknown_fields).
+        let out = run_chain(&v.to_string());
+        let r: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(r["ok"], false, "{out}");
+        // 올바른 필드명으로 범위 밖.
+        let mut v2: serde_json::Value = serde_json::from_str(&chain_json(16, 4)).unwrap();
+        v2["slice_j"] = serde_json::json!(99);
+        let r2: serde_json::Value = serde_json::from_str(&run_chain(&v2.to_string())).unwrap();
+        assert_eq!(r2["ok"], false);
     }
 }

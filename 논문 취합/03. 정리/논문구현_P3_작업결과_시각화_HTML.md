@@ -437,3 +437,10 @@ node verify_phase2.js           # 신선도 가드 + 8/8
 
 **검증**: 셸 **11 green**(기존 7 + s2 4: pass-through bit-exact 등가·McEwen peak·tables 완비성·오류경로). 로그축 min≤0 등 구조적 오류 반환.
 → **S③ 진행.**
+
+## S③ — 전체 체인 진입점 (결과) — **통과**
+
+**설계**: `solve_chain_json` 1개 — partial_lub(traced)→M3(`solve_stress_at_depths`)→M4→M5 배선. **크기 대책**: 6성분 전체 필드(수십 MB) 대신 뷰어가 그릴 것만 — y₀ 슬라이스 `vm_xz`(nz×nx)·x-프로파일(p/h/q/Δh_w)·**(y,z) Dang Van·수명 맵**(M4 의 D 는 x=시간이력 broadcast 라 (y,z)가 정보 전부). **정직성**: `unwornGeometry:true` 플래그 동봉(RP-Field 캡션 강제용) + `diagnostics` 비-Option 유지.
+
+**검증**: 셸 **13 green**(+s3 2). 포착 1건: 스모크 fixture 의 `phi_bl=0` — 스텁 아닌 **fixture 물리**(rough2=0 → 유막이 접촉 삼킴). 검증된 verify_phase2 fixture(0.23+0.06µm)로 정렬해 해소. **교훈: phi_bl=0 은 "스텁" 과 "정당한 무접촉" 두 원인이 있다 — 뷰어도 이 구분을 표시해야**(asperity_degenerate·contact_count 노출이 근거).
+→ **S④ 진행.**
