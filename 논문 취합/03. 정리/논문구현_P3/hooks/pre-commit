@@ -1,0 +1,17 @@
+#!/bin/sh
+# 자립판 지속 갱신 2층 (계획: 작업결과 §자립판) — viewer 변경 커밋 시 자립판 자동 재생성.
+# - viewer/ 미변경 커밋(Main bearing 등)은 즉시 통과 (무간섭)
+# - main 워크트리(viewer 부재)에서도 안전: 빌더 없으면 통과
+# - 우회(--no-verify) 시에도 3층(build_standalone.py --check)이 잡는다.
+top=$(git rev-parse --show-toplevel) || exit 0
+builder="$top/논문 취합/03. 정리/논문구현_P3/viewer/build_standalone.py"
+[ -f "$builder" ] || exit 0
+git diff --cached --name-only | grep -q "viewer/" || exit 0
+
+if python "$builder" --check >/dev/null 2>&1; then
+  exit 0   # 자립판이 이미 최신 (타임스탬프 공회전 방지)
+fi
+echo "[pre-commit] viewer 변경 감지 -> 자립판 재생성"
+python "$builder" || { echo "[pre-commit] 자립판 빌드 실패 - 커밋 중단"; exit 1; }
+git add "$top/논문 취합/03. 정리/논문구현_P3/viewer/micropitting_viewer.html"
+echo "[pre-commit] micropitting_viewer.html 갱신본을 커밋에 포함"

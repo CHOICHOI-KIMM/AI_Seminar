@@ -512,3 +512,26 @@ S①~S④ 전건 통과·중단 기준 미발동·정직성 불가침 5 전건 �
 **연구자 3문 사인오프**: 보간+이산 레벨(contourf) / viridis 유지+레벨화(jet 은 지각왜곡으로 비권장 수용) / nz 기본 15→31.
 **구현**: heatmap 을 **픽셀 쌍선형 보간(ImageData) + 10단 레벨 양자화**로 재작성 — 저응력 하단이 논문처럼 한 색의 연속 띠. 컬러바도 이산 밴드. **∞ 셀 처리 유지**(이웃에 ∞ 있으면 최근접 코너 폴백 — D 기준위배 띠를 보간으로 뭉개지 않음). 표시 계층만 변경(데이터 불변·표준 시각화).
 **검증**: autorunPlotted(신규 타임스탬프) · 셸/모델 무변경.
+
+## S⑩ — 자립판(단일 HTML) + 지속 갱신 3중 체계 (2026-07-24) — **통과**
+
+**배경(연구자 요청)**: 외부 PC 에서 **배치파일·서버 없이 더블클릭** 실행. 본질 = fetch 전면 제거.
+방안 검토: GitHub Pages 는 무료 티어 repo 공개 필수(연구자료 노출)로 기각, 브라우저 보안플래그 해제 기각 → **단일 자립 HTML** 채택.
+
+**빌더 `viewer/build_standalone.py`** → `micropitting_viewer.html`(**801 KB**, fetch 0건):
+- wasm **base64 내장** → `initSync({module})` 동기 인스턴스화(fetch·비동기 컴파일 없음 — 부수효과로 virtual-time 하네스 문제도 소멸)
+- glue/plot.js: export 구문 제거 후 인라인 · vc_data 인라인
+- **worker.js 본문 verbatim 인라인**(가짜 worker 객체·메인스레드) — 디스패치 로직의 SSOT 를 worker.js 하나로 유지(빌더가 복제 로직을 갖지 않음). setTimeout 양보로 "계산 중" 페인트 확보
+- 헤더에 **빌드시각 + 소스해시(src f68d92bae45c 형)** 상시 표시
+
+**지속 갱신 3중 체계** (연구자 질의 "향후 계속 업데이트?" 답):
+- **1층 SSOT**: 자립판 = 빌더의 순수 생성물, 수기 편집 금지
+- **2층 pre-commit 훅**(`논문구현_P3/hooks/pre-commit` + `core.hooksPath`): viewer/ 변경 커밋 시 자동 재생성·커밋 포함. 무간섭 가드(viewer 미변경 즉시 통과·main 워크트리 빌더 부재 시 통과·**check 통과 시 재생성 생략** = 타임스탬프 공회전 방지)
+- **3층 `--check`**: 소스 **내용해시**(mtime 아님 — git checkout 이 mtime 미보존) vs 자립판 내장 마커 대조, 불일치 exit 1
+
+**검증**:
+- 빌드·check OK · **file:// 헤드리스 스크린샷**(?autorun#tab3, virtual-time) — 부팅·도식·전 플롯(µm/GPa·Δh_w 우축·contourf·∞ 띠) **autorun 완주 시각 확인**
+- **3층 변이시험 CAUGHT**: vc_data 1바이트 변이 → `STALE f68d92… ≠ eb2dc4…` exit 1 → 원복·재빌드 OK
+- 빌더 자체 결함 2건 즉석 수정: `instance.exports` 문자열에 export-잔존 assert 과민(구문 검사로 정정) · cp949 콘솔 유니코드 출력(utf-8 reconfigure)
+
+**외부 배포 절차 = `viewer/micropitting_viewer.html` 파일 1개 복사 → 더블클릭.** (서버판 index.html·뷰어실행.bat 은 개발용으로 공존)
