@@ -263,6 +263,11 @@
     </div>
     <div class="row">
       <canvas id="vmCanvas" width="560" height="330"></canvas>
+      <div id="compToggle" class="card" style="display:none; padding:8px; min-width:96px;">
+        <div style="font-size:11px; color:#475569; margin-bottom:4px;">응력 성분<br>(M3 6성분 전부 계산됨)</div>
+        <div id="compBtns" style="display:flex; flex-direction:column; gap:3px;"></div>
+        <div style="font-size:10.5px; color:#64748b; margin-top:6px;">σ_vM = viridis(≥0) · 성분 = 발산(파랑 −/흰 0/빨강 +)</div>
+      </div>
       <canvas id="dvCanvas" width="560" height="330"></canvas>
     </div>
     </div>
@@ -527,9 +532,55 @@ $("runChain").onclick = async () => {
     });
     $("contactNote").style.display = contactMask.some((v) => v > 0) ? "block" : "none";
     const zMaxUm = r.zDepths[r.zDepths.length - 1] * 1e6;
-    heatmap($("vmCanvas"), r.vmXz.map((row) => row.map((v) => (v === null ? null : v * GPA))),
-      { title: "σ_vM(x,z) @ y₀ [GPa] (cf. Fig 6b)", xLabel: "x [µm]", yLabel: "z [µm]",
-        x0: 0, x1: payload.grid.lx * 1e6, y0: 0, y1: zMaxUm });
+    const xMaxUm = payload.grid.lx * 1e6;
+    // ── 성분 토글 (M3 6성분 + von Mises) ── 데이터는 이미 받아둔 것 → 재계산 없이 전환.
+    const COMPS = {
+      vm:  { data: r.vmXz,           label: "σ_vM",  title: "σ_vM(x,z) @ y₀ [GPa] (cf. Fig 6b)", div: false },
+      sxx: { data: r.stressXz.sxx,   label: "σxx",   title: "σxx(x,z) @ y₀ [GPa]", div: true },
+      syy: { data: r.stressXz.syy,   label: "σyy",   title: "σyy(x,z) @ y₀ [GPa]", div: true },
+      szz: { data: r.stressXz.szz,   label: "σzz",   title: "σzz(x,z) @ y₀ [GPa]", div: true },
+      sxy: { data: r.stressXz.sxy,   label: "σxy",   title: "σxy(x,z) @ y₀ [GPa]", div: true },
+      syz: { data: r.stressXz.syz,   label: "σyz",   title: "σyz(x,z) @ y₀ [GPa]", div: true },
+      sxz: { data: r.stressXz.sxz,   label: "σxz",   title: "σxz(x,z) @ y₀ [GPa]", div: true },
+    };
+    const drawComp = (key) => {
+      const c = COMPS[key];
+      heatmap($("vmCanvas"), c.data.map((row) => row.map((v) => (v === null ? null : v * GPA))),
+        { title: c.title, xLabel: "x [µm]", yLabel: "z [µm]",
+          x0: 0, x1: xMaxUm, y0: 0, y1: zMaxUm, diverging: c.div });
+    };
+    // 토글 버튼 (최초 1회 생성)
+    const btnWrap = $("compBtns");
+    if (!btnWrap.dataset.built) {
+      for (const key of Object.keys(COMPS)) {
+        const b = document.createElement("button");
+        b.textContent = COMPS[key].label; b.dataset.key = key;
+        b.style.cssText = "font-size:12px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:4px; cursor:pointer; background:#fff;";
+        b.onclick = () => {
+          btnWrap.querySelectorAll("button").forEach((x) => { x.style.background = "#fff"; x.style.color = "#0f172a"; });
+          b.style.background = "#2563eb"; b.style.color = "#fff";
+          drawComp(key);
+        };
+        btnWrap.appendChild(b);
+      }
+      btnWrap.dataset.built = "1";
+    }
+    // 현재 선택 유지(없으면 vm) — 재실행 시 같은 성분 재렌더.
+    const active = btnWrap.querySelector('button[style*="rgb(37, 99, 235)"]')?.dataset.key
+                 || window.__lastComp || "vm";
+    window.__lastComp = active;
+    btnWrap.querySelectorAll("button").forEach((x) => {
+      const on = x.dataset.key === active;
+      x.style.background = on ? "#2563eb" : "#fff"; x.style.color = on ? "#fff" : "#0f172a";
+      x.onclick = () => {
+        window.__lastComp = x.dataset.key;
+        btnWrap.querySelectorAll("button").forEach((y) => { y.style.background = "#fff"; y.style.color = "#0f172a"; });
+        x.style.background = "#2563eb"; x.style.color = "#fff";
+        drawComp(x.dataset.key);
+      };
+    });
+    $("compToggle").style.display = "block";
+    drawComp(active);
     heatmap($("dvCanvas"), r.dvYz,
       { title: "Dang Van D(y,z) [-] — 1사이클(x-스냅샷)", xLabel: "y [µm]", yLabel: "z [µm]",
         x0: 0, x1: payload.grid.ly * 1e6, y0: 0, y1: zMaxUm });

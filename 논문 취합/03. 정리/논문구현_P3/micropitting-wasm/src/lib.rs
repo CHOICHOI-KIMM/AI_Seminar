@@ -484,6 +484,10 @@ pub struct ChainResp {
     pub dh_w_profile: Vec<f64>,
     /// σ_vM(x,z) @ y₀ — row-major [z][x] (nz×nx).
     pub vm_xz: Vec<Vec<f64>>,
+    /// 6성분 응력 σ_ij(x,z) @ y₀ — 각 [z][x] (nz×nx). 키 = sxx·syy·szz·sxy·syz·sxz [Pa].
+    /// M3 는 6성분을 전부 산출하므로(StressTensor6) 같은 y₀ 슬라이스로 함께 반환(뷰어 성분 토글용).
+    /// 개별 성분은 부호(압축−/인장+, 전단 대칭)를 가진다 → 뷰어는 0중심 발산 컬러맵으로 표시.
+    pub stress_xz: std::collections::BTreeMap<String, Vec<Vec<f64>>>,
     /// Dang Van D(y,z) — row-major [z][y] (nz×ny; x broadcast 라 (y,z) 가 정보 전부).
     pub dv_yz: Vec<Vec<f64>>,
     /// 수명 N(y,z) — 동일 배치.
@@ -574,6 +578,17 @@ fn chain_inner(input_json: &str) -> Result<ChainResp, String> {
         .iter()
         .map(|layer| (0..nx).map(|i| layer.at(i, j0)).collect())
         .collect();
+    // 6성분 y₀ 슬라이스 — StressTensor6 의 각 필드를 [z][x] 로 (M3 가 이미 다 계산해 둔 것을 노출).
+    let comp = |sel: &dyn Fn(&micropitting_model::types::StressTensor6) -> &Field2| -> Vec<Vec<f64>> {
+        stress.stress.iter().map(|t| (0..nx).map(|i| sel(t).at(i, j0)).collect()).collect()
+    };
+    let mut stress_xz = std::collections::BTreeMap::new();
+    stress_xz.insert("sxx".to_string(), comp(&|t| &t.sxx));
+    stress_xz.insert("syy".to_string(), comp(&|t| &t.syy));
+    stress_xz.insert("szz".to_string(), comp(&|t| &t.szz));
+    stress_xz.insert("sxy".to_string(), comp(&|t| &t.sxy));
+    stress_xz.insert("syz".to_string(), comp(&|t| &t.syz));
+    stress_xz.insert("sxz".to_string(), comp(&|t| &t.sxz));
     // D·N 은 x broadcast → x=0 열로 (y,z) 맵 구성.
     let dv_yz: Vec<Vec<f64>> =
         fat.dang_van_d.iter().map(|layer| (0..ny).map(|j| layer.at(0, j)).collect()).collect();
@@ -607,6 +622,7 @@ fn chain_inner(input_json: &str) -> Result<ChainResp, String> {
         q_tran_profile: prof(&part.q_tran),
         dh_w_profile: prof(&wear.dh_w),
         vm_xz,
+        stress_xz,
         dv_yz,
         life_yz,
     })
@@ -1226,6 +1242,19 @@ mod tests {
         assert_eq!(nz, m3_stress::NZ_DEFAULT);
         assert_eq!(v["vmXz"].as_array().unwrap().len(), nz);
         assert_eq!(v["vmXz"][0].as_array().unwrap().len(), 32);
+        // 6성분 슬라이스 동봉·차원 일치 (M3 6성분 노출).
+        for k in ["sxx", "syy", "szz", "sxy", "syz", "sxz"] {
+            assert_eq!(v["stressXz"][k].as_array().unwrap().len(), nz, "{k} nz");
+            assert_eq!(v["stressXz"][k][0].as_array().unwrap().len(), 32, "{k} nx");
+        }
+        // 셸 계약 = 6성분 노출·차원 일치(위). 개별 성분의 **부호**는 격자·입력 의존
+        // (실측: nx=64 서 sxx 압축·인장 혼재, nx=32 서 전부 양수 — 리플 해상도 차)이라
+        // 유닛에 단정하지 않는다. 부호가 존재할 수 있으므로 뷰어는 0중심 발산 컬러맵 사용.
+        // vM 은 항상 ≥0 임은 확인(비음수 규약).
+        let vm_min = v["vmXz"].as_array().unwrap().iter()
+            .flat_map(|r| r.as_array().unwrap()).map(|x| x.as_f64().unwrap())
+            .fold(f64::INFINITY, f64::min);
+        assert!(vm_min >= 0.0, "von Mises 는 비음수여야: {vm_min}");
         assert_eq!(v["dvYz"][0].as_array().unwrap().len(), 8);
         // phi_bl ≠ 0 (스텁 아님, R4).
         assert!(v["phiBl"].as_f64().unwrap() != 0.0);

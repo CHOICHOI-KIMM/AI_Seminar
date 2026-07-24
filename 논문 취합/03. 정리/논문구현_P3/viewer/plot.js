@@ -190,26 +190,33 @@ export function heatmap(canvas, data, opts = {}) {
     if (v < vmin) vmin = v; if (v > vmax) vmax = v;
   }
   if (!Number.isFinite(vmin)) { vmin = 0; vmax = 1; }
+  // ── 발산(0중심) 모드: 개별 응력성분(압축−/인장+·전단대칭)용 대칭 범위 ──
+  // opts.diverging=true → vmin=−A, vmax=+A (A=max|값|) → 0 이 컬러맵 중앙(흰)으로 고정.
+  if (opts.diverging) {
+    const a = Math.max(Math.abs(vmin), Math.abs(vmax)) || 1;
+    vmin = -a; vmax = a;
+  }
   if (vmax === vmin) vmax = vmin + 1;
-  // viridis 근사 3-스톱 (렌더링 전용)
-  const colorOf = (t) => {
+  // 컬러맵: 기본 viridis / 발산 시 파랑(압축)→흰(0)→빨강(인장). 렌더링 전용.
+  const lerp = (c0, c1, u) => [Math.round(c0[0] + (c1[0] - c0[0]) * u), Math.round(c0[1] + (c1[1] - c0[1]) * u), Math.round(c0[2] + (c1[2] - c0[2]) * u)];
+  const rampRGB = (t) => {
+    if (opts.diverging) {
+      // RdBu 역: 0→파랑, 0.5→흰, 1→빨강
+      const blue = [33, 102, 172], white = [247, 247, 247], red = [178, 24, 43];
+      return t < 0.5 ? lerp(blue, white, t * 2) : lerp(white, red, (t - 0.5) * 2);
+    }
     const stops = [[68, 1, 84], [33, 145, 140], [253, 231, 37]];
-    const s = t < 0.5 ? 0 : 1, u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
-    const c0 = stops[s], c1 = stops[s + 1];
-    return `rgb(${Math.round(c0[0] + (c1[0] - c0[0]) * u)},${Math.round(c0[1] + (c1[1] - c0[1]) * u)},${Math.round(c0[2] + (c1[2] - c0[2]) * u)})`;
+    const si = t < 0.5 ? 0 : 1, u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+    return lerp(stops[si], stops[si + 1], u);
   };
+  const colorOf = (t) => { const c = rampRGB(t); return `rgb(${c[0]},${c[1]},${c[2]})`; };
   // ── contourf 스타일: 쌍선형 보간 + 이산 레벨 양자화 (표시 계층 — 데이터 불변) ──
   // 논문 Fig 6(b)(MATLAB contourf) 대응: 셀 블록 대신 픽셀 보간, ~levels 단의 깔끔한 띠.
   const levels = opts.levels || 10;
   const PW = Math.max(1, Math.round(W - L - R)), PH = Math.max(1, Math.round(H - T - B));
   const img = ctx.createImageData(PW, PH);
   const px8 = img.data;
-  const colorRGB = (t) => {
-    const stops = [[68, 1, 84], [33, 145, 140], [253, 231, 37]];
-    const si = t < 0.5 ? 0 : 1, u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
-    const c0 = stops[si], c1 = stops[si + 1];
-    return [Math.round(c0[0] + (c1[0] - c0[0]) * u), Math.round(c0[1] + (c1[1] - c0[1]) * u), Math.round(c0[2] + (c1[2] - c0[2]) * u)];
-  };
+  const colorRGB = rampRGB; // 발산/viridis 공용 (위 정의 재사용)
   const INF_RGB = [225, 29, 72]; // ∞ 전용색 유지
   const fin = (v) => v !== null && Number.isFinite(v);
   for (let py = 0; py < PH; py++) {
