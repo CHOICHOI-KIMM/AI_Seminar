@@ -37,6 +37,17 @@
   .diag { font-size: 12px; font-family: Consolas, monospace; }
   .kv { display: grid; grid-template-columns: auto auto; gap: 2px 12px; }
   #tab4 .big { font-size: 14px; line-height: 1.7; }
+  details.refs { margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; }
+  details.refs summary { cursor: pointer; padding: 8px 12px; font-weight: 600; font-size: 13px; color: #0f172a; user-select: none; }
+  details.refs summary:hover { background: #f8fafc; }
+  #refsTable { font-size: 11.5px; }
+  #refsTable th { position: sticky; top: 0; }
+  #refsTable td.tierA { border-left: 4px solid #059669; }
+  #refsTable td.tierB { border-left: 4px solid #d97706; }
+  #refsTable td.tierC { border-left: 4px solid #0891b2; }
+  #refsTable td.tierD { border-left: 4px solid #94a3b8; }
+  #refsTable .title { max-width: 420px; }
+  #refsTable .held { text-align: center; }
   /* S5: 알고리즘 도식 */
   #algoAside { flex: 0 0 300px; }
   #algoAside svg { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; width: 100%; height: auto; }
@@ -91,6 +102,13 @@
 
   <!-- ② 검증 -->
   <section id="tab2" class="tab">
+    <details class="refs" id="refsBox">
+      <summary>📚 참고문헌 <span id="refsCount"></span> — Tier A/B/C/D (클릭하여 펼치기)</summary>
+      <div style="max-height:340px; overflow:auto; padding:0 12px 12px;">
+        <div class="note" id="refsProv" style="font-size:10.5px;"></div>
+        <table id="refsTable"></table>
+      </div>
+    </details>
     <div class="note">등급 정의(재검토판 L9-11): <b style="color:#059669">A=문헌·해석해 정량 일치(진짜 검증)</b> ·
       <b style="color:#d97706">B=구조·보존·차원·극한·정성</b> ·
       <b style="color:#64748b">C=자기일관·항등·가정 — 회귀가드일 뿐 검증 아님</b> ·
@@ -376,6 +394,25 @@ async function drawCurve() {
 $("curveKind").onchange = drawCurve;
 
 // ── ② 검증 탭 ──
+async function loadRefs() {
+  const d = await (await fetch("./refs_data.json")).json();
+  $("refsCount").textContent = `${d.count}편 (보유 ${d.heldCount})`;
+  $("refsProv").textContent = d._provenance;
+  const t = $("refsTable");
+  t.innerHTML = "<tr><th>Ref</th><th>Tier</th><th>논문명</th><th>년도</th><th>저자</th><th>저널</th><th>보유</th></tr>";
+  const tierName = d.tierLabel;
+  for (const it of d.items) {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td class="tier${it.tier}"><b>(${it.ref})</b></td>` +
+      `<td>${it.tier} · ${tierName[it.tier]}</td>` +
+      `<td class="title">${it.title || "—"}</td>` +
+      `<td>${it.year}</td><td>${it.authors}</td><td>${it.journal}</td>` +
+      `<td class="held">${it.held ? "✅" : "—"}</td>`;
+    t.appendChild(tr);
+  }
+}
+
 async function loadVC() {
   const d = await (await fetch("./vc_data.json")).json();
   $("vcProvenance").textContent = d._provenance;
@@ -535,6 +572,7 @@ try {
   await drawCurve();
   step("drewCurve");
   await loadVC();
+  await loadRefs();
   step("loadedVC");
   // 자가 스모크: 소형 체인 1회 (16×4, 판정용 — 표시는 안 함)
   const smoke = await call("chain", {

@@ -535,3 +535,16 @@ S①~S④ 전건 통과·중단 기준 미발동·정직성 불가침 5 전건 �
 - 빌더 자체 결함 2건 즉석 수정: `instance.exports` 문자열에 export-잔존 assert 과민(구문 검사로 정정) · cp949 콘솔 유니코드 출력(utf-8 reconfigure)
 
 **외부 배포 절차 = `viewer/micropitting_viewer.html` 파일 1개 복사 → 더블클릭.** (서버판 index.html·뷰어실행.bat 은 개발용으로 공존)
+
+## S⑪ — 검증 탭 참고문헌 표 41편 (연구자 지시, 2026-07-24) — **통과**
+
+**지시**: 「참고문헌·모델 정리.md」부록1(41편)을 검증 탭 본문 **최상위**에 삽입. 열 = Ref/논문명/년도/저자/저널 재편집.
+**연구자 3문 사인오프**: 제목 = **Scholar ?q= 역파싱**(원본 md 보유 데이터, 자의 생성 아님) · 부가열 = **Tier+보유**(DOI 링크 제외) · **접이식(기본 접힘) 상단 삽입**.
+
+**구현**:
+- `parse_refs.py`(scratchpad) 로 부록1 자동 파싱 → `viewer/refs_data.json`(41편: tier·ref·title·year·authors·journal·held). **수동 전사 0** — 서지 약칭에서 년도 정규식 분해, 제목은 Scholar 쿼리 `+`→공백 역파싱. 스팟체크 3건 원본 일치. 집계 A16·B6·C7·D12, 보유 29 (원본 부합).
+- 검증 탭 최상위에 `<details>` 접이식 표(Tier별 좌측 색바·sticky 헤더·max-height 스크롤). 기본 접힘 → 기존 VC 표 가독성 유지.
+- **자립판 빌더 확장**: `refs_data.json` 을 SRCS(해시 대상)+인라인 대상에 추가 → 자립판도 `__REFS_DATA__` 인라인(fetch 0 유지).
+
+**검증**: 서버판 autorunPlotted · **자립판 file:// 부팅 정상**(refs 인라인, "Failed to fetch" 소멸) · 접이식 펼침 렌더 시각확인(41행·제목 EHL/FFT 약어 보존) · `--check` OK(src 54922de24225) · 자립판 813 KB.
+**포착**: 빌더 3차 편집이 heredoc `\n` ↔ 실개행 불일치로 조용히 미적용 → 첫 재빌드가 refs fetch 잔존한 자립판 생성(file:// "Failed to fetch"). Edit 도구로 정확 교체 후 해소. **교훈: 정규식/문자열 치환 편집은 적용 여부를 grep 으로 확인**(빌더 자기변경은 조용히 실패 가능).

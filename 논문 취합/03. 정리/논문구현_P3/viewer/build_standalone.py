@@ -26,7 +26,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "micropitting_viewer.html")
-SRCS = ["index.html", "plot.js", "worker.js", "vc_data.json",
+SRCS = ["index.html", "plot.js", "worker.js", "vc_data.json", "refs_data.json",
         os.path.join("pkg", "micropitting_wasm.js"),
         os.path.join("pkg", "micropitting_wasm_bg.wasm")]
 
@@ -49,6 +49,7 @@ def build():
     plot = read("plot.js")
     worker = read("worker.js")
     vc = read("vc_data.json").strip()
+    refs = read("refs_data.json").strip()
     glue = read(os.path.join("pkg", "micropitting_wasm.js"))
     wasm_b64 = base64.b64encode(read(os.path.join("pkg", "micropitting_wasm_bg.wasm"), binary=True)).decode()
 
@@ -126,12 +127,16 @@ def build():
     )
     html = html.replace(old, engine, 1)
 
-    # ── 6) vc_data fetch → 인라인 ──
+    # ── 6) vc_data / refs_data fetch → 인라인 ──
     old = 'const d = await (await fetch("./vc_data.json")).json();'
     assert old in html
     html = html.replace(old, "const d = __VC_DATA__;", 1)
+    old = 'const d = await (await fetch("./refs_data.json")).json();'
+    assert old in html
+    html = html.replace(old, "const d = __REFS_DATA__;", 1)
     html = html.replace("// ── ② 검증 탭 ──",
-                        "// ── ② 검증 탭 ──\nconst __VC_DATA__ = " + vc + ";", 1)
+                        "// ── ② 검증 탭 ──\nconst __VC_DATA__ = " + vc +
+                        ";\nconst __REFS_DATA__ = " + refs + ";", 1)
 
     # ── 해시 마커 (--check 용) ──
     html += f"\n<!-- STANDALONE_SRC_HASH:{ih} -->\n"
