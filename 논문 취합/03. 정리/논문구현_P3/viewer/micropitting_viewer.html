@@ -68,7 +68,7 @@
 <body>
 <header>
   <h1>Micropitting P3 뷰어 — Morales-Espejel &amp; Brizmer (2011) M1~M6 정적 체인</h1>
-  <div class="sub">SSOT: Rust <code>micropitting_model</code> → WASM · JS 물리식 0건 · <b>자립판</b> 빌드 2026-07-24 13:06 · src 68f66a784640</div>
+  <div class="sub">SSOT: Rust <code>micropitting_model</code> → WASM · JS 물리식 0건 · <b>자립판</b> 빌드 2026-07-24 13:14 · src 6be7fa984597</div>
 </header>
 <nav>
   <button data-tab="tab1" class="active">① 참조곡선</button>
@@ -261,6 +261,7 @@
         </ul>
       </div>
     </div>
+    <div id="compZeroNote" class="note" style="display:none; margin:0 0 4px;"></div>
     <div class="row">
       <canvas id="vmCanvas" width="560" height="330"></canvas>
       <div id="compToggle" class="card" style="display:none; padding:8px; min-width:96px;">
@@ -586,7 +587,7 @@ const $ = (id) => document.getElementById(id);
 const boot = $("boot");
 
 // 자립판: fetch 기반 신선도 가드 불가 → 빌드 정보 표시(검사는 build_standalone.py --check)
-const __BUILD_INFO__ = { time: "2026-07-24 13:06", hash: "68f66a784640" };
+const __BUILD_INFO__ = { time: "2026-07-24 13:14", hash: "6be7fa984597" };
 boot.textContent = `자립판 로딩… (빌드 ${__BUILD_INFO__.time} · src ${__BUILD_INFO__.hash})`;
 
 // ── Worker 부팅 ──
@@ -1621,6 +1622,22 @@ $("runChain").onclick = async () => {
       heatmap($("vmCanvas"), c.data.map((row) => row.map((v) => (v === null ? null : v * GPA))),
         { title: c.title, xLabel: "x [µm]", yLabel: "z [µm]",
           x0: 0, x1: xMaxUm, y0: 0, y1: zMaxUm, diverging: c.div });
+      // β=0(y-불변 입력) 감지: σxy·σyz 는 공식상 β 인자를 가져 정확히 0이 된다.
+      // 값을 지어내지 않고 "0인 이유"만 안내(무증상 금지의 반대 — 0을 정직하게 설명).
+      const note = $("compZeroNote");
+      const maxAbs = Math.max(0, ...c.data.flat().map((v) => (v === null ? 0 : Math.abs(v))));
+      if ((key === "sxy" || key === "syz") && maxAbs === 0) {
+        note.className = "note";
+        note.style.display = "block";
+        note.innerHTML =
+          `<b>${c.label} ≡ 0 (물리적으로 정확 — 결함 아님)</b> · ` +
+          `현재 입력은 <b>y-불변 사인 거칠기</b>(y방향 파수 β=0). ` +
+          `Tripp 식[10]/[16]에서 ${c.label} 는 β·sin(βy) 를 인수로 가져 β=0 이면 전 영역 0. ` +
+          `이 전단은 <b>y방향 응력 구배</b>가 있어야 발생 → y-의존(2D 광대역) 거칠기 입력 시 활성화. ` +
+          `(원논문 Fig 6 은 실측 2D 표면이라 존재.)`;
+      } else {
+        note.style.display = "none";
+      }
     };
     // 토글 버튼 (최초 1회 생성)
     const btnWrap = $("compBtns");
@@ -1724,4 +1741,4 @@ try {
 </body>
 </html>
 
-<!-- STANDALONE_SRC_HASH:68f66a784640 -->
+<!-- STANDALONE_SRC_HASH:6be7fa984597 -->
