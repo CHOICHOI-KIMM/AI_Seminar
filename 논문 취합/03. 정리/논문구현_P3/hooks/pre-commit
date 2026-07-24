@@ -6,12 +6,13 @@
 top=$(git rev-parse --show-toplevel) || exit 0
 builder="$top/논문 취합/03. 정리/논문구현_P3/viewer/build_standalone.py"
 [ -f "$builder" ] || exit 0
-git diff --cached --name-only | grep -q "viewer/" || exit 0
+# viewer/ 소스가 스테이징됐는지 (자립판 산출물 자신은 제외 — 자기 트리거 방지)
+changed=$(git diff --cached --name-only | grep "viewer/" | grep -v "micropitting_viewer.html")
+[ -n "$changed" ] || exit 0
 
-if python "$builder" --check >/dev/null 2>&1; then
-  exit 0   # 자립판이 이미 최신 (타임스탬프 공회전 방지)
-fi
-echo "[pre-commit] viewer 변경 감지 -> 자립판 재생성"
+# ★ 항상 재빌드 + add: --check 통과(이미 최신)라도 그 최신본이 **미스테이징**일 수 있으므로
+#   스킵하지 않는다(옛 결함: 디스크 최신·미커밋 자립판을 놓쳐 커밋에서 누락).
+echo "[pre-commit] viewer 소스 변경 -> 자립판 재생성"
 python "$builder" || { echo "[pre-commit] 자립판 빌드 실패 - 커밋 중단"; exit 1; }
 git add "$top/논문 취합/03. 정리/논문구현_P3/viewer/micropitting_viewer.html"
 echo "[pre-commit] micropitting_viewer.html 갱신본을 커밋에 포함"
