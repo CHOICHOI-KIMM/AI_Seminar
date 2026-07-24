@@ -37,6 +37,17 @@
   .diag { font-size: 12px; font-family: Consolas, monospace; }
   .kv { display: grid; grid-template-columns: auto auto; gap: 2px 12px; }
   #tab4 .big { font-size: 14px; line-height: 1.7; }
+  details.refs { margin: 8px 0; border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; }
+  details.refs summary { cursor: pointer; padding: 8px 12px; font-weight: 600; font-size: 13px; color: #0f172a; user-select: none; }
+  details.refs summary:hover { background: #f8fafc; }
+  #refsTable { font-size: 11.5px; }
+  #refsTable th { position: sticky; top: 0; }
+  #refsTable td.tierA { border-left: 4px solid #059669; }
+  #refsTable td.tierB { border-left: 4px solid #d97706; }
+  #refsTable td.tierC { border-left: 4px solid #0891b2; }
+  #refsTable td.tierD { border-left: 4px solid #94a3b8; }
+  #refsTable .title { max-width: 420px; }
+  #refsTable .held { text-align: center; }
   /* S5: 알고리즘 도식 */
   #algoAside { flex: 0 0 300px; }
   #algoAside svg { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; width: 100%; height: auto; }
@@ -57,7 +68,7 @@
 <body>
 <header>
   <h1>Micropitting P3 뷰어 — Morales-Espejel &amp; Brizmer (2011) M1~M6 정적 체인</h1>
-  <div class="sub">SSOT: Rust <code>micropitting_model</code> → WASM · JS 물리식 0건 · <b>자립판</b> 빌드 2026-07-24 00:10 · src b4d2e14ac028</div>
+  <div class="sub">SSOT: Rust <code>micropitting_model</code> → WASM · JS 물리식 0건 · <b>자립판</b> 빌드 2026-07-24 12:37 · src 54922de24225</div>
 </header>
 <nav>
   <button data-tab="tab1" class="active">① 참조곡선</button>
@@ -91,6 +102,13 @@
 
   <!-- ② 검증 -->
   <section id="tab2" class="tab">
+    <details class="refs" id="refsBox">
+      <summary>📚 참고문헌 <span id="refsCount"></span> — Tier A/B/C/D (클릭하여 펼치기)</summary>
+      <div style="max-height:340px; overflow:auto; padding:0 12px 12px;">
+        <div class="note" id="refsProv" style="font-size:10.5px;"></div>
+        <table id="refsTable"></table>
+      </div>
+    </details>
     <div class="note">등급 정의(재검토판 L9-11): <b style="color:#059669">A=문헌·해석해 정량 일치(진짜 검증)</b> ·
       <b style="color:#d97706">B=구조·보존·차원·극한·정성</b> ·
       <b style="color:#64748b">C=자기일관·항등·가정 — 회귀가드일 뿐 검증 아님</b> ·
@@ -556,7 +574,7 @@ const $ = (id) => document.getElementById(id);
 const boot = $("boot");
 
 // 자립판: fetch 기반 신선도 가드 불가 → 빌드 정보 표시(검사는 build_standalone.py --check)
-const __BUILD_INFO__ = { time: "2026-07-24 00:10", hash: "b4d2e14ac028" };
+const __BUILD_INFO__ = { time: "2026-07-24 12:37", hash: "54922de24225" };
 boot.textContent = `자립판 로딩… (빌드 ${__BUILD_INFO__.time} · src ${__BUILD_INFO__.hash})`;
 
 // ── Worker 부팅 ──
@@ -1060,6 +1078,407 @@ const __VC_DATA__ = {
     { "id": "RP-Field", "module": "M2·M3·M6", "grade": "B", "summary": "Fig6/15 필드 형상 (정성)", "expected": "이미지 — 수치추출 불가", "status": "qualitative", "note": "탭3 정성 전용의 근거. 원문은 last wear step(마모 후)" }
   ]
 };
+const __REFS_DATA__ = {
+ "_provenance": "논문 구현 참고문헌·모델 정리.md 부록1(41편) 자동 파싱 — 제목은 Google Scholar ?q= 쿼리 역파싱(원본 md 보유 데이터, 자의 생성 아님). DOI 링크는 미포함(연구자 지시). 일부 제목은 쿼리 특성상 하이픈·콜론 등 구두점이 공백일 수 있음.",
+ "tierLabel": {
+  "A": "구현 핵심",
+  "B": "구현 지원",
+  "C": "검증·비교·현상이해",
+  "D": "배경·정의"
+ },
+ "count": 41,
+ "heldCount": 29,
+ "items": [
+  {
+   "tier": "A",
+   "ref": "16",
+   "title": "Effects of Surface Micro-Geometry on the Pressures and Internal Stresses of Pure Rolling EHL Contacts",
+   "year": "2003",
+   "authors": "Morales-Espejel et al.",
+   "journal": "Trib. Trans. 46",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "21",
+   "title": "Micro-Geometry Effects on the Sliding Friction Transition in Elastohydrodynamic Lubrication",
+   "year": "2010",
+   "authors": "Morales-Espejel et al.",
+   "journal": "Proc. IMechE Part J 224",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "22",
+   "title": "A FFT-Based Method for Rough Surface Contact",
+   "year": "1997",
+   "authors": "Stanley & Kato",
+   "journal": "J. Trib. 119",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "24",
+   "title": "Variational Principles of Contact Elastostatics",
+   "year": "1977",
+   "authors": "Kalker",
+   "journal": "J. IMA 20",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "25",
+   "title": "A Numerical Three-Dimensional Model for the Contact of Rough Surfaces by Variational Principle",
+   "year": "1996",
+   "authors": "Tian & Bhushan",
+   "journal": "J. Trib. 118",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "26",
+   "title": "The Contact of Elastic Regular Wavy Surfaces",
+   "year": "1985",
+   "authors": "Johnson et al.",
+   "journal": "IJMS 27(6)",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "27",
+   "title": "Roughness in Rolling Sliding Elastohydrodynamic Lubricated Contacts",
+   "year": "2006",
+   "authors": "Hooke",
+   "journal": "Proc. IMechE Part J 220",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "28",
+   "title": "Rapid Calculation of the Pressures and Clearances in Rough Rolling Sliding EHL Contacts Part 1 Low-Amplitude Sinusoidal Roughness",
+   "year": "2007",
+   "authors": "Hooke et al.",
+   "journal": "Proc. IMechE Part C 221",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "29",
+   "title": "The Behaviour of Transverse Roughness in EHL Contacts",
+   "year": "1994",
+   "authors": "Greenwood & Morales-Espejel",
+   "journal": "Proc. IMechE Part J 208",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "30",
+   "title": "On Lubricant Transport Conditions in Elastohydrodynamic Conjunctions",
+   "year": "1998",
+   "authors": "Ehret et al.",
+   "journal": "Proc. R. Soc. A 454",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "31",
+   "title": "Multigrid Techniques Numerical Simulation of Elastohydrodynamically Lubricated Point Contact Problems",
+   "year": "2000",
+   "authors": "Venner & Lubrecht",
+   "journal": "Proc. IMechE Part J 214",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "13",
+   "title": "On a New Multiaxial Fatigue Limit Criterion Theory and Application Dang Van",
+   "year": "1989",
+   "authors": "Dang Van et al.",
+   "journal": "(EGF3)",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "14",
+   "title": "Macro-Micro Approach in High-Cycle Multiaxial Fatigue",
+   "year": "1993",
+   "authors": "Dang Van",
+   "journal": "ASTM STP 1191",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "17",
+   "title": "Contact and Rubbing of Flat Surfaces Archard",
+   "year": "1953",
+   "authors": "Archard",
+   "journal": "J. Appl. Phys. 24(8)",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "23",
+   "title": "A Simple Theory of Asperity Contact in Elastohydrodynamic Lubrication",
+   "year": "1972",
+   "authors": "Johnson et al.",
+   "journal": "Wear 19",
+   "held": true
+  },
+  {
+   "tier": "A",
+   "ref": "19",
+   "title": "Probabilistic Stress-Life P-S-N Study on Bearing Steel Using Alternating Torsion Life Test",
+   "year": "2009",
+   "authors": "Shimizu et al.",
+   "journal": "Trib. Trans. 52",
+   "held": true
+  },
+  {
+   "tier": "B",
+   "ref": "15",
+   "title": "Amplitude Reduction of Waviness in Transient EHL Line Contacts",
+   "year": "1997",
+   "authors": "Venner et al.",
+   "journal": "Leeds-Lyon",
+   "held": true
+  },
+  {
+   "tier": "B",
+   "ref": "33",
+   "title": "On the Application of Dang Van Criterion to Rolling Contact Fatigue",
+   "year": "2006",
+   "authors": "Desimone et al.",
+   "journal": "Wear 260",
+   "held": true
+  },
+  {
+   "tier": "B",
+   "ref": "34",
+   "title": "Multiaxial Fatigue of a Railway Wheel Steel under Non-Proportional Loading",
+   "year": "2006",
+   "authors": "Bernasconi et al.",
+   "journal": "Int. J. Fatigue 28",
+   "held": true
+  },
+  {
+   "tier": "B",
+   "ref": "36",
+   "title": "A Multi-Model X-FEM Strategy Dedicated to Frictional Crack Growth under Cyclic Fretting Fatigue Loadings",
+   "year": "2010",
+   "authors": "Baietto et al.",
+   "journal": "IJSS 47",
+   "held": true
+  },
+  {
+   "tier": "B",
+   "ref": "32",
+   "title": "Rolling Contact in Railways Modelling Simulation and Damage Prediction",
+   "year": "2003",
+   "authors": "Dang Van & Maitournam",
+   "journal": "FFEMS 26",
+   "held": true
+  },
+  {
+   "tier": "B",
+   "ref": "37",
+   "title": "Wear Modelling Analytical Computational and Mapping A Continuum Mechanics Approach",
+   "year": "1999",
+   "authors": "Williams",
+   "journal": "Wear 225-229",
+   "held": true
+  },
+  {
+   "tier": "C",
+   "ref": "38",
+   "title": "Stress History in Rolling Sliding Contact of Rough Surfaces",
+   "year": "1998",
+   "authors": "Kim & Olver",
+   "journal": "Trib. Int. 31(12)",
+   "held": true
+  },
+  {
+   "tier": "C",
+   "ref": "8",
+   "title": "Surface Initiated Tooth Flank Damage Part I Numerical Model",
+   "year": "2010",
+   "authors": "Brandao et al.",
+   "journal": "(I), Wear 268",
+   "held": true
+  },
+  {
+   "tier": "C",
+   "ref": "9",
+   "title": "Surface Initiated Tooth Flank Damage Part II Prediction of Micropitting Initiation and Mass Loss",
+   "year": "2010",
+   "authors": "Brandao et al.",
+   "journal": "(II), Wear 268",
+   "held": true
+  },
+  {
+   "tier": "C",
+   "ref": "11",
+   "title": "Effect of Lubricants on Micropitting and Wear",
+   "year": "2008",
+   "authors": "Laine et al.",
+   "journal": "Trib. Int. 41",
+   "held": true
+  },
+  {
+   "tier": "C",
+   "ref": "12",
+   "title": "The Effect of a Friction Modifier Additive on Micropitting",
+   "year": "2009",
+   "authors": "Laine et al.",
+   "journal": "Trib. Trans. 52",
+   "held": true
+  },
+  {
+   "tier": "C",
+   "ref": "7",
+   "title": "Assessment of the Factors Influencing Micropitting in Rolling Sliding Contacts",
+   "year": "2005",
+   "authors": "Oila & Bull",
+   "journal": "Wear 258",
+   "held": true
+  },
+  {
+   "tier": "C",
+   "ref": "39",
+   "title": "An Experimental Investigation of Micropitting Using a Roller Disk Machine",
+   "year": "1995",
+   "authors": "Webster & Norbart",
+   "journal": "Trib. Trans. 38",
+   "held": true
+  },
+  {
+   "tier": "D",
+   "ref": "1",
+   "title": "Rolling Bearings Damage and Failures Terms Characteristics and Causes",
+   "year": "2004",
+   "authors": "ISO 15243 (",
+   "journal": ")",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "2",
+   "title": "Pitting Due to Rolling Contact",
+   "year": "1935",
+   "authors": "Way",
+   "journal": "J. Appl. Mech. 57",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "3",
+   "title": "Effect of Metallic Contact on the Pitting of Lubricated Rolling Surfaces",
+   "year": "1962",
+   "authors": "Dawson",
+   "journal": "JMES 4(1)",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "4",
+   "title": "The Effect of Metallic Contact and Sliding on the Shape of the S-N Curve for Pitting Fatigue",
+   "year": "1964",
+   "authors": "Dawson",
+   "journal": "IMechE Fatigue in Rolling Contact",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "5",
+   "title": "Further Experiments on the Effect of Metallic Contact on the Pitting of Lubricated Rolling Surfaces",
+   "year": "1965-66",
+   "authors": "Dawson",
+   "journal": "Proc. IMechE 180",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "6",
+   "title": "The Mechanism of Rolling Contact Fatigue An Update",
+   "year": "2005",
+   "authors": "Olver",
+   "journal": "Proc. IMechE Part J 219",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "40",
+   "title": "Unique Fatigue Failure of Spherical Roller Bearings and Life-Enhancing Measures",
+   "year": "2005",
+   "authors": "Ueda et al.",
+   "journal": "World Trib. Congress III",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "41",
+   "title": "Tribological Advancements for Reliable Wind Turbine Performance",
+   "year": "2010",
+   "authors": "Kotzalas & Doll",
+   "journal": "Phil. Trans. R. Soc. A 368",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "18",
+   "title": "Uber die Festigkeitsversuche mit Eisen und Stahl",
+   "year": "1870",
+   "authors": "Wohler",
+   "journal": "Z. Bauwesen 20",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "20",
+   "title": "Die Lebensdauer von Kugellagern Palmgren",
+   "year": "1924",
+   "authors": "Palmgren",
+   "journal": "VDI Z. 68",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "10",
+   "title": "The Effect of Anti-Wear Additives on Fatigue Damage Laine Olver",
+   "year": "2007",
+   "authors": "Laine & Olver",
+   "journal": "STLE (abstract)",
+   "held": false
+  },
+  {
+   "tier": "D",
+   "ref": "35",
+   "title": "Fretting-Wear and Fretting-Fatigue Relation Through a Mapping Concept",
+   "year": "2000",
+   "authors": "Fouvry et al.",
+   "journal": "ASTM STP 1367",
+   "held": false
+  }
+ ]
+};
+async function loadRefs() {
+  const d = __REFS_DATA__;
+  $("refsCount").textContent = `${d.count}편 (보유 ${d.heldCount})`;
+  $("refsProv").textContent = d._provenance;
+  const t = $("refsTable");
+  t.innerHTML = "<tr><th>Ref</th><th>Tier</th><th>논문명</th><th>년도</th><th>저자</th><th>저널</th><th>보유</th></tr>";
+  const tierName = d.tierLabel;
+  for (const it of d.items) {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td class="tier${it.tier}"><b>(${it.ref})</b></td>` +
+      `<td>${it.tier} · ${tierName[it.tier]}</td>` +
+      `<td class="title">${it.title || "—"}</td>` +
+      `<td>${it.year}</td><td>${it.authors}</td><td>${it.journal}</td>` +
+      `<td class="held">${it.held ? "✅" : "—"}</td>`;
+    t.appendChild(tr);
+  }
+}
+
 async function loadVC() {
   const d = __VC_DATA__;
   $("vcProvenance").textContent = d._provenance;
@@ -1219,6 +1638,7 @@ try {
   await drawCurve();
   step("drewCurve");
   await loadVC();
+  await loadRefs();
   step("loadedVC");
   // 자가 스모크: 소형 체인 1회 (16×4, 판정용 — 표시는 안 함)
   const smoke = await call("chain", {
@@ -1246,4 +1666,4 @@ try {
 </body>
 </html>
 
-<!-- STANDALONE_SRC_HASH:b4d2e14ac028 -->
+<!-- STANDALONE_SRC_HASH:54922de24225 -->
