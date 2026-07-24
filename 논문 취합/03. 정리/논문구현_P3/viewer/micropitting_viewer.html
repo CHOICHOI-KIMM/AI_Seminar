@@ -68,7 +68,7 @@
 <body>
 <header>
   <h1>Micropitting P3 뷰어 — Morales-Espejel &amp; Brizmer (2011) M1~M6 정적 체인</h1>
-  <div class="sub">SSOT: Rust <code>micropitting_model</code> → WASM · JS 물리식 0건 · <b>자립판</b> 빌드 2026-07-24 12:37 · src 54922de24225</div>
+  <div class="sub">SSOT: Rust <code>micropitting_model</code> → WASM · JS 물리식 0건 · <b>자립판</b> 빌드 2026-07-24 12:40 · src 29c52f8b3bef</div>
 </header>
 <nav>
   <button data-tab="tab1" class="active">① 참조곡선</button>
@@ -574,7 +574,7 @@ const $ = (id) => document.getElementById(id);
 const boot = $("boot");
 
 // 자립판: fetch 기반 신선도 가드 불가 → 빌드 정보 표시(검사는 build_standalone.py --check)
-const __BUILD_INFO__ = { time: "2026-07-24 12:37", hash: "54922de24225" };
+const __BUILD_INFO__ = { time: "2026-07-24 12:40", hash: "29c52f8b3bef" };
 boot.textContent = `자립판 로딩… (빌드 ${__BUILD_INFO__.time} · src ${__BUILD_INFO__.hash})`;
 
 // ── Worker 부팅 ──
@@ -1666,4 +1666,5 @@ try {
 </body>
 </html>
 
-<!-- STANDALONE_SRC_HASH:54922de24225 -->
+<!-- hook test -->
+<!-- STANDALONE_SRC_HASH:29c52f8b3bef -->
