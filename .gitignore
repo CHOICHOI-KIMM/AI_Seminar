@@ -13,3 +13,10 @@ Main bearing/02. 자료/MASTA/*.lock
 
 # MS Office 임시 잠금 파일
 **/~$*
+
+# Python 캐시
+__pycache__/
+*.pyc
+
+# 파이프라인 실행 로그 (재생성 가능)
+Main bearing/01. 정리/Python 자동화/Results/DLC별해석/*.log

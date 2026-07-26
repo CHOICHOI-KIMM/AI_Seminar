@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>DLC별 피로해석 — 방법론·결과 대시보드</title>
+<style>
+  html,body{margin:0;padding:0}
+  *,*::before,*::after{box-sizing:border-box}
+  img,svg{max-width:100%}
+  button{font:inherit}
+</style>
+<body>
+<title>DLC별 피로해석 — 방법론·결과 대시보드</title>
+<style>
+  :root{
+    color-scheme: light;
+    --plane:#f4f5f6; --surface:#fcfcfc; --surface-2:#f0f1f3;
+    --ink:#0d1013; --ink-2:#4c5560; --muted:#8a919b;
+    --grid:#e3e6ea; --axis:#c4c9d0; --border:rgba(13,16,19,0.10);
+    --accent:#2a6fd6; --accent-soft:#e7effb;
+    --s1:#2a78d6; --s2:#eb6834;
+    --good:#0ca30c; --good-ink:#0a7d0a; --warn:#e08a00; --crit:#d03b3b;
+    --good-soft:#e4f4e4; --crit-soft:#f9e4e4; --warn-soft:#fbefda;
+    --mono:ui-monospace,"Cascadia Code","Consolas","SFMono-Regular",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme:dark;
+      --plane:#0c0d0e; --surface:#16181a; --surface-2:#1d2023;
+      --ink:#f2f4f6; --ink-2:#b3bac2; --muted:#7f868f;
+      --grid:#26292c; --axis:#3a3e42; --border:rgba(255,255,255,0.10);
+      --accent:#4a90ec; --accent-soft:#16283f;
+      --s1:#3987e5; --s2:#d95926;
+      --good:#22b422; --good-ink:#3ecb3e; --warn:#f0a71a; --crit:#e05a5a;
+      --good-soft:#132b13; --crit-soft:#2e1616; --warn-soft:#2c2410;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --plane:#0c0d0e; --surface:#16181a; --surface-2:#1d2023;
+    --ink:#f2f4f6; --ink-2:#b3bac2; --muted:#7f868f;
+    --grid:#26292c; --axis:#3a3e42; --border:rgba(255,255,255,0.10);
+    --accent:#4a90ec; --accent-soft:#16283f;
+    --s1:#3987e5; --s2:#d95926;
+    --good:#22b422; --good-ink:#3ecb3e; --warn:#f0a71a; --crit:#e05a5a;
+    --good-soft:#132b13; --crit-soft:#2e1616; --warn-soft:#2c2410;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--plane);color:var(--ink);font-family:var(--sans);
+    font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 24px 64px}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .tnum{font-variant-numeric:tabular-nums}
+
+  /* masthead */
+  .mast{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 24px;
+    padding-bottom:20px;border-bottom:1px solid var(--border);margin-bottom:28px}
+  .mast .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 6px}
+  .mast h1{font-size:26px;line-height:1.2;margin:0;font-weight:680;
+    letter-spacing:-.01em;text-wrap:balance}
+  .mast .sub{color:var(--ink-2);font-size:14px;margin:6px 0 0}
+  .mast .meta{margin-left:auto;text-align:right;font-size:12.5px;color:var(--muted)}
+  .mast .meta .live{display:inline-flex;align-items:center;gap:6px;
+    color:var(--warn);font-weight:600;font-family:var(--mono)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--warn);
+    box-shadow:0 0 0 0 var(--warn);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(224,138,0,.5)}
+    70%{box-shadow:0 0 0 6px rgba(224,138,0,0)}100%{box-shadow:0 0 0 0 rgba(224,138,0,0)}}
+  @media (prefers-reduced-motion:reduce){.dot{animation:none}}
+
+  section{margin-top:38px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+  .sec-head h2{font-size:13px;letter-spacing:.12em;text-transform:uppercase;
+    font-family:var(--mono);color:var(--ink-2);font-weight:600;margin:0}
+  .sec-head .rule{flex:1;height:1px;background:var(--border)}
+
+  /* KPI row */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:18px 20px}
+  .kpi .label{font-size:12.5px;color:var(--ink-2);margin:0 0 10px;font-weight:600}
+  .kpi .big{font-size:38px;font-weight:700;letter-spacing:-.02em;line-height:1;
+    font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .kpi .unit{font-size:15px;color:var(--muted);font-weight:500}
+  .kpi .row2{display:flex;gap:18px;margin-top:14px;padding-top:12px;
+    border-top:1px solid var(--border)}
+  .kpi .row2 div{font-size:12px;color:var(--muted)}
+  .kpi .row2 b{display:block;font-size:17px;color:var(--ink);font-weight:650;
+    font-family:var(--mono);margin-top:2px}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;
+    font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:999px;
+    letter-spacing:.02em;vertical-align:middle}
+  .b-live{background:var(--warn-soft);color:var(--warn)}
+  .b-good{background:var(--good-soft);color:var(--good-ink)}
+  .b-crit{background:var(--crit-soft);color:var(--crit)}
+  .b-mut{background:var(--surface-2);color:var(--muted)}
+
+  /* status strip */
+  .strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+  .chip{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:13px}
+  .chip .n{font-family:var(--mono);font-size:19px;font-weight:700}
+  .chip .k{color:var(--ink-2)}
+  .sw{width:10px;height:10px;border-radius:3px}
+
+  /* methodology 2×2 */
+  .method{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:640px){.method{grid-template-columns:1fr}}
+  .mcard{padding:22px 24px;display:flex;flex-direction:column}
+  .mcard h3{font-size:16.5px;margin:0 0 4px;font-weight:680;display:flex;
+    align-items:center;gap:9px}
+  .mcard .step{font-family:var(--mono);font-size:12px;color:var(--accent);
+    background:var(--accent-soft);padding:2px 8px;border-radius:5px;font-weight:600}
+  .mcard p{margin:10px 0 0;font-size:14px;color:var(--ink-2);line-height:1.55}
+  .mcard .eq{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);
+    padding:9px 12px;border-radius:6px;margin-top:auto;color:var(--ink);
+    overflow-x:auto;white-space:nowrap}
+  .mcard .eq.multi{white-space:pre;line-height:1.7;font-size:12px}
+  .mcard .eqcap{font-size:11.5px;color:var(--muted);font-family:var(--mono);margin-top:6px}
+
+  /* validation */
+  .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:760px){.vgrid{grid-template-columns:1fr}}
+  .vintro{font-size:13.5px;color:var(--ink-2);margin:0 0 16px;max-width:70ch}
+  .card h3.vh{font-size:14px;margin:0 0 12px;font-weight:660}
+  table.vtab{border-collapse:collapse;width:100%;font-size:12.5px}
+  table.vtab th,table.vtab td{padding:6px 8px;text-align:right;font-family:var(--mono);
+    font-variant-numeric:tabular-nums}
+  table.vtab thead th{color:var(--ink-2);font-weight:600;border-bottom:1px solid var(--axis)}
+  table.vtab td:first-child,table.vtab th:first-child{text-align:left;color:var(--ink-2)}
+  table.vtab tbody tr+tr td{border-top:1px solid var(--grid)}
+  table.vtab .rng{color:var(--muted);font-size:11px}
+  table.vtab .hi{color:var(--crit);font-weight:650}
+  .vnote{font-size:12px;color:var(--muted);margin:12px 0 0;line-height:1.5}
+  .vnote b{color:var(--ink-2)}
+
+  /* charts */
+  figure{margin:0;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:18px 20px 14px}
+  figcaption{margin-top:2px}
+  .fig-t{font-size:15px;font-weight:660;margin:0}
+  .fig-d{font-size:12.5px;color:var(--muted);margin:3px 0 14px}
+  .chartbox{overflow-x:auto}
+  svg{display:block;max-width:100%;height:auto}
+  .grid-charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:760px){.grid-charts{grid-template-columns:1fr}}
+  text{font-family:var(--sans)}
+  .ax{fill:var(--muted);font-size:11px}
+  .axm{fill:var(--muted);font-size:11px;font-family:var(--mono)}
+  .vlab{fill:var(--ink);font-size:10.5px;font-family:var(--mono);font-weight:600}
+  .lgd{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--ink-2)}
+  .lgd span{display:inline-flex;align-items:center;gap:6px}
+
+  .tip{position:fixed;pointer-events:none;z-index:20;background:var(--surface);
+    border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:12px;
+    box-shadow:0 6px 20px rgba(0,0,0,.16);opacity:0;transition:opacity .1s;max-width:220px}
+  .tip .tt{font-family:var(--mono);font-weight:700;margin-bottom:3px}
+  .tip .tr{color:var(--ink-2);font-family:var(--mono)}
+
+  .foot{margin-top:44px;padding-top:16px;border-top:1px solid var(--border);
+    font-size:12px;color:var(--muted);line-height:1.6}
+  .foot b{color:var(--ink-2)}
+  details{margin-top:12px}summary{cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:600}
+  table.dt{border-collapse:collapse;margin-top:10px;font-size:12px;width:100%}
+  table.dt th,table.dt td{border:1px solid var(--border);padding:4px 8px;text-align:right;
+    font-family:var(--mono)}
+  table.dt th{background:var(--surface-2);color:var(--ink-2);font-weight:600}
+  table.dt td:first-child,table.dt th:first-child{text-align:left}
+  /* theme toggle (standalone) */
+  .themebtn{position:fixed;top:14px;right:14px;z-index:40;display:inline-flex;
+    align-items:center;gap:7px;font-family:var(--mono);font-size:12px;font-weight:600;
+    color:var(--ink-2);background:var(--surface);border:1px solid var(--border);
+    border-radius:999px;padding:7px 13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  .themebtn:hover{border-color:var(--accent);color:var(--accent)}
+  .themebtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media print{.themebtn{display:none}}
+</style>
+
+<button class="themebtn" id="themebtn" type="button" aria-label="테마 전환">◐ 테마</button>
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <p class="eyebrow">26 MW 메인베어링 · TRB Pair (UW/DW) · 50 °C FE 모델</p>
+      <h1>DLC별 피로수명 해석 — 방법론·결과 대시보드</h1>
+      <p class="sub">평균+kσ 빈 대표하중 방법론 · 111 설계하중케이스 확장 · MASTA 본해석 검증</p>
+    </div>
+    <div class="meta">
+      <div class="live"><span class="dot"></span>해석 진행 중</div>
+      <div id="gen" style="margin-top:5px"></div>
+    </div>
+  </header>
+
+  <!-- KPI -->
+  <section style="margin-top:0">
+    <div class="kpis">
+      <div class="card kpi">
+        <p class="label">부분 시스템 수명 <span class="badge b-live" id="pbadge"></span></p>
+        <div><span class="big" id="lifeSys"></span> <span class="unit">yr · L10,sys</span></div>
+        <div class="row2">
+          <div>UW 베어링<b id="lifeUW"></b></div>
+          <div>DW 베어링<b id="lifeDW"></b></div>
+          <div>Σ D30 (UW)<b id="sumd"></b></div>
+        </div>
+      </div>
+      <div class="card kpi">
+        <p class="label">방법론 정확도 <span class="badge b-good">스크리닝 예측 ↔ MASTA 실측</span></p>
+        <div><span class="big" id="acc"></span> <span class="unit">%p · 평균 예측오차 (ε_UW)</span></div>
+        <div class="row2">
+          <div>최대 오차<b id="accmax"></b></div>
+          <div>조합 합산 편향<b id="bias"></b></div>
+          <div>판정 창<b>0 ~ +3%</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="strip" id="strip"></div>
+  </section>
+
+  <!-- 방법론 -->
+  <section>
+    <div class="sec-head"><h2>방법론</h2><div class="rule"></div></div>
+    <div class="method">
+      <div class="card mcard">
+        <h3><span class="step">01</span> 빈 대표하중 (평균+kσ)</h3>
+        <p>시계열을 dt 구간 빈으로 묶고, 5개 점하중 성분을 <b>구간 평균 + k·표준편차</b>(부호 보존)로 대표화. 빈 평균화의 손상 과소(∝ −CV²)를 kσ 보정(∝ +CV)이 상쇄.</p>
+        <div class="eq">rep = μ + sign(μ)·k·σ &nbsp;|&nbsp; k* ≈ 1.17·CV</div>
+      </div>
+      <div class="card mcard">
+        <h3><span class="step">02</span> 강체 스크리닝</h3>
+        <p>핀지지 정역학으로 UW·DW 래디얼 반력 → 카탈로그 P → ISO 281 a_ISO 손상(MASTA 불필요, 수 초). 절대값은 3~5× 편향이나 <b>ε 비율은 상쇄</b>되어 최적 (dt,k) 탐색에 유효.</p>
+        <div class="eq multi">R<sub>A,X</sub> = F_X·b/L − M_Y/L
+R<sub>A,Y</sub> = F_Y·b/L + M_X/L
+R<sub>B,X</sub> = F_X·a/L + M_Y/L
+R<sub>B,Y</sub> = F_Y·a/L − M_X/L</div>
+        <p class="eqcap">L=2.5, a=−0.5, b=3.0 · 축분배 S=0.5·Fr/Y1 · |ε_예측−ε_실측| ≤ 0.6%p</p>
+      </div>
+      <div class="card mcard">
+        <h3><span class="step">03</span> 정책 스택 선정·보정</h3>
+        <p>연속 k <b>중앙 타겟팅</b>(ε_Sys→1.5%)으로 큰 dt 우선 선정. 여유 &lt;0.5%p면 dt 축소. MASTA 실측 불합격 시 <b>k 보정 ≤3회 → dt 축소</b>.</p>
+        <div class="eq">판정 = ε_UW ∧ ε_Sys ∈ [0, +3%]</div>
+      </div>
+      <div class="card mcard">
+        <h3><span class="step">04</span> 시스템 수명 합산</h3>
+        <p>UW·DW 직렬 와이블 결합(e=9/8)으로 시스템 수명. 함대 합산은 <b>참값(dt=0.1 MASTA)</b> D30 누적 기준.</p>
+        <div class="eq">L10,sys = [L_UW^−9/8 + L_DW^−9/8]^−8/9</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 강체모델 검증 -->
+  <section id="valsec">
+    <div class="sec-head"><h2>강체모델 검증 · 부록 1</h2><div class="rule"></div></div>
+    <p class="vintro" id="vintro"></p>
+    <div class="vgrid">
+      <div class="card">
+        <h3 class="vh">베어링 반력 오차 &nbsp;<span style="color:var(--muted);font-weight:400">(핀지지+자중 − MASTA) / MASTA</span></h3>
+        <table class="vtab" id="vreact"></table>
+        <p class="vnote" id="vreact-note"></p>
+      </div>
+      <div class="card">
+        <h3 class="vh">30년 손상·수명 총량 비교 <span style="color:var(--muted);font-weight:400">(30빈)</span></h3>
+        <table class="vtab" id="vtot"></table>
+        <p class="vnote" id="vtot-note"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 결과 -->
+  <section>
+    <div class="sec-head"><h2>결과 · 실측</h2><div class="rule"></div></div>
+
+    <figure style="margin-bottom:14px">
+      <figcaption>
+        <p class="fig-t">풍속구간(빈)별 30년 손상 — MASTA 참값</p>
+        <p class="fig-d">DLC1.2 정상운전. 손상은 저번호 빈(a–e, 고손상 운전구간)에 집중 · 각 빈 6개 시드 합산 · 막대 위 = 합격 시드 수</p>
+      </figcaption>
+      <div class="chartbox"><svg id="c-bar"></svg></div>
+    </figure>
+
+    <div class="grid-charts">
+      <figure>
+        <figcaption>
+          <p class="fig-t">예측 vs 실측 — ε_UW</p>
+          <p class="fig-d">스크리닝 예측(x) ↔ MASTA 실측(y). 대각선 ±0.5%p 밴드. ○ = 보정 사례</p>
+        </figcaption>
+        <div class="chartbox"><svg id="c-scatter"></svg></div>
+        <div class="lgd">
+          <span><span class="sw" style="background:var(--good)"></span>합격</span>
+          <span><span class="sw" style="background:var(--crit)"></span>불합격</span>
+          <span><svg width="12" height="12"><circle cx="6" cy="6" r="4.2" fill="none" stroke="var(--ink-2)" stroke-width="1.6"/></svg>보정 후</span>
+        </div>
+      </figure>
+      <figure>
+        <figcaption>
+          <p class="fig-t">손상 커버리지</p>
+          <p class="fig-d">스크리닝 D30 내림차순 누적. 상위 소수 DLC가 손상 대부분 지배</p>
+        </figcaption>
+        <div class="chartbox"><svg id="c-cov"></svg></div>
+        <div class="lgd">
+          <span><span class="sw" style="background:var(--s1)"></span>누적 손상 %</span>
+          <span><span class="sw" style="background:var(--s2)"></span>누적 가동시간 %</span>
+        </div>
+      </figure>
+    </div>
+
+    <details>
+      <summary>데이터 표 — 빈별 손상 / 커버리지 마일스톤</summary>
+      <div style="overflow-x:auto"><table class="dt" id="dtable"></table></div>
+    </details>
+  </section>
+
+  <div class="foot" id="foot"></div>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+const DATA = {
+ "generated": "2026-07-24 16:17",
+ "kpi": {
+  "n_done": 46,
+  "n_total": 111,
+  "n_pass": 42,
+  "n_corr": 5,
+  "n_fail": 4,
+  "life_UW": 4.61,
+  "life_Sys": 4.08,
+  "life_DW": 25.36,
+  "sumD30_UW": 6.513,
+  "acc_mean_pp": 0.312,
+  "acc_max_pp": 2.026,
+  "combo_bias_pct": 2.53,
+  "cov_dmg_pct": null,
+  "done_cov_pct": 97.0
+ },
+ "bins": [
+  {
+   "bin": "1.2-a",
+   "D30_UW": 1.2699989168296721,
+   "D30_DW": 0.0874878927433004,
+   "n": 6,
+   "n_pass": 6
+  },
+  {
+   "bin": "1.2-b",
+   "D30_UW": 1.1589584399282913,
+   "D30_DW": 0.08184968271486887,
+   "n": 6,
+   "n_pass": 6
+  },
+  {
+   "bin": "1.2-c",
+   "D30_UW": 1.0515048297288863,
+   "D30_DW": 0.1800611308533795,
+   "n": 6,
+   "n_pass": 6
+  },
+  {
+   "bin": "1.2-d",
+   "D30_UW": 1.304323163204543,
+   "D30_DW": 0.3468377298953276,
+   "n": 6,
+   "n_pass": 6
+  },
+  {
+   "bin": "1.2-e",
+   "D30_UW": 0.948929047178362,
+   "D30_DW": 0.2676783170663161,
+   "n": 6,
+   "n_pass": 6
+  },
+  {
+   "bin": "1.2-f",
+   "D30_UW": 0.4667198330323847,
+   "D30_DW": 0.1291770825196424,
+   "n": 6,
+   "n_pass": 2
+  },
+  {
+   "bin": "1.2-g",
+   "D30_UW": 0.2341422265404276,
+   "D30_DW": 0.06403876536955971,
+   "n": 6,
+   "n_pass": 6
+  },
+  {
+   "bin": "1.2-h",
+   "D30_UW": 0.07847408228222313,
+   "D30_DW": 0.025638497585001477,
+   "n": 4,
+   "n_pass": 4
+  }
+ ],
+ "scatter": [
+  {
+   "dlc": "DLC1.2-a-s1",
+   "bin": "1.2-a",
+   "pred_UW": 2.106,
+   "meas_UW": 2.385,
+   "pred_Sys": 1.686,
+   "meas_Sys": 2.214,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-a-s2",
+   "bin": "1.2-a",
+   "pred_UW": 1.689,
+   "meas_UW": 1.84,
+   "pred_Sys": 1.405,
+   "meas_Sys": 1.723,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-a-s3",
+   "bin": "1.2-a",
+   "pred_UW": 1.794,
+   "meas_UW": 1.914,
+   "pred_Sys": 1.517,
+   "meas_Sys": 1.802,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-a-s4",
+   "bin": "1.2-a",
+   "pred_UW": 1.699,
+   "meas_UW": 1.804,
+   "pred_Sys": 1.455,
+   "meas_Sys": 1.701,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-a-s5",
+   "bin": "1.2-a",
+   "pred_UW": 1.76,
+   "meas_UW": 1.947,
+   "pred_Sys": 1.463,
+   "meas_Sys": 1.811,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-a-s6",
+   "bin": "1.2-a",
+   "pred_UW": 1.924,
+   "meas_UW": 2.116,
+   "pred_Sys": 1.587,
+   "meas_Sys": 1.984,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-b-s1",
+   "bin": "1.2-b",
+   "pred_UW": 2.379,
+   "meas_UW": 2.947,
+   "pred_Sys": 1.737,
+   "meas_Sys": 2.569,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-b-s2",
+   "bin": "1.2-b",
+   "pred_UW": 1.978,
+   "meas_UW": 2.432,
+   "pred_Sys": 1.453,
+   "meas_Sys": 2.128,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-b-s3",
+   "bin": "1.2-b",
+   "pred_UW": 2.143,
+   "meas_UW": 2.63,
+   "pred_Sys": 1.463,
+   "meas_Sys": 2.249,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-b-s4",
+   "bin": "1.2-b",
+   "pred_UW": 2.224,
+   "meas_UW": 2.817,
+   "pred_Sys": 1.55,
+   "meas_Sys": 2.439,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-b-s5",
+   "bin": "1.2-b",
+   "pred_UW": 2.199,
+   "meas_UW": 2.579,
+   "pred_Sys": 1.634,
+   "meas_Sys": 2.249,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-b-s6",
+   "bin": "1.2-b",
+   "pred_UW": 2.19,
+   "meas_UW": 2.74,
+   "pred_Sys": 1.571,
+   "meas_Sys": 2.375,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-c-s1",
+   "bin": "1.2-c",
+   "pred_UW": 2.504,
+   "meas_UW": 2.555,
+   "pred_Sys": 1.771,
+   "meas_Sys": 1.921,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-c-s2",
+   "bin": "1.2-c",
+   "pred_UW": 2.494,
+   "meas_UW": 2.442,
+   "pred_Sys": 1.464,
+   "meas_Sys": 1.514,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-c-s3",
+   "bin": "1.2-c",
+   "pred_UW": 2.355,
+   "meas_UW": 2.584,
+   "pred_Sys": 1.405,
+   "meas_Sys": 1.761,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-c-s4",
+   "bin": "1.2-c",
+   "pred_UW": 2.84,
+   "meas_UW": 2.747,
+   "pred_Sys": 1.894,
+   "meas_Sys": 1.969,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-c-s5",
+   "bin": "1.2-c",
+   "pred_UW": 2.493,
+   "meas_UW": 2.683,
+   "pred_Sys": 1.525,
+   "meas_Sys": 1.839,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-c-s6",
+   "bin": "1.2-c",
+   "pred_UW": 2.243,
+   "meas_UW": 2.134,
+   "pred_Sys": 1.264,
+   "meas_Sys": 1.234,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-d-s1",
+   "bin": "1.2-d",
+   "pred_UW": 3.011,
+   "meas_UW": 2.687,
+   "pred_Sys": 1.638,
+   "meas_Sys": 1.192,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-d-s2",
+   "bin": "1.2-d",
+   "pred_UW": 2.626,
+   "meas_UW": 2.31,
+   "pred_Sys": 1.345,
+   "meas_Sys": 0.924,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-d-s3",
+   "bin": "1.2-d",
+   "pred_UW": 2.591,
+   "meas_UW": 2.027,
+   "pred_Sys": 1.446,
+   "meas_Sys": 0.911,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-d-s4",
+   "bin": "1.2-d",
+   "pred_UW": 3.257,
+   "meas_UW": 2.786,
+   "pred_Sys": 1.843,
+   "meas_Sys": 1.372,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-d-s5",
+   "bin": "1.2-d",
+   "pred_UW": 3.06,
+   "meas_UW": 2.756,
+   "pred_Sys": 1.73,
+   "meas_Sys": 1.337,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-d-s6",
+   "bin": "1.2-d",
+   "pred_UW": 2.628,
+   "meas_UW": 2.64,
+   "pred_Sys": 1.315,
+   "meas_Sys": 1.219,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-e-s1",
+   "bin": "1.2-e",
+   "pred_UW": 2.805,
+   "meas_UW": 2.289,
+   "pred_Sys": 0.778,
+   "meas_Sys": 0.143,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-e-s2",
+   "bin": "1.2-e",
+   "pred_UW": 3.194,
+   "meas_UW": 2.891,
+   "pred_Sys": 1.219,
+   "meas_Sys": 0.785,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-e-s3",
+   "bin": "1.2-e",
+   "pred_UW": 2.589,
+   "meas_UW": 2.772,
+   "pred_Sys": 1.294,
+   "meas_Sys": 1.355,
+   "pass": 1,
+   "ncorr": "4"
+  },
+  {
+   "dlc": "DLC1.2-e-s4",
+   "bin": "1.2-e",
+   "pred_UW": 3.206,
+   "meas_UW": 2.984,
+   "pred_Sys": 1.353,
+   "meas_Sys": 0.916,
+   "pass": 1,
+   "ncorr": "4"
+  },
+  {
+   "dlc": "DLC1.2-e-s5",
+   "bin": "1.2-e",
+   "pred_UW": 2.657,
+   "meas_UW": 2.519,
+   "pred_Sys": 1.363,
+   "meas_Sys": 1.119,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-e-s6",
+   "bin": "1.2-e",
+   "pred_UW": 2.897,
+   "meas_UW": 2.92,
+   "pred_Sys": 1.529,
+   "meas_Sys": 1.405,
+   "pass": 1,
+   "ncorr": "4"
+  },
+  {
+   "dlc": "DLC1.2-f-s1",
+   "bin": "1.2-f",
+   "pred_UW": 2.988,
+   "meas_UW": 2.986,
+   "pred_Sys": 0.894,
+   "meas_Sys": 0.816,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-f-s2",
+   "bin": "1.2-f",
+   "pred_UW": 3.024,
+   "meas_UW": 3.513,
+   "pred_Sys": 1.208,
+   "meas_Sys": 1.578,
+   "pass": 0,
+   "ncorr": "4"
+  },
+  {
+   "dlc": "DLC1.2-f-s3",
+   "bin": "1.2-f",
+   "pred_UW": 2.796,
+   "meas_UW": 2.726,
+   "pred_Sys": 0.87,
+   "meas_Sys": 0.977,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-f-s4",
+   "bin": "1.2-f",
+   "pred_UW": 2.941,
+   "meas_UW": 3.203,
+   "pred_Sys": 1.193,
+   "meas_Sys": 1.286,
+   "pass": 0,
+   "ncorr": "4"
+  },
+  {
+   "dlc": "DLC1.2-f-s5",
+   "bin": "1.2-f",
+   "pred_UW": 3.01,
+   "meas_UW": 3.244,
+   "pred_Sys": 1.763,
+   "meas_Sys": 1.87,
+   "pass": 0,
+   "ncorr": "4"
+  },
+  {
+   "dlc": "DLC1.2-f-s6",
+   "bin": "1.2-f",
+   "pred_UW": 3.341,
+   "meas_UW": 3.504,
+   "pred_Sys": 1.919,
+   "meas_Sys": 1.961,
+   "pass": 0,
+   "ncorr": "4"
+  },
+  {
+   "dlc": "DLC1.2-g-s1",
+   "bin": "1.2-g",
+   "pred_UW": 3.083,
+   "meas_UW": 2.581,
+   "pred_Sys": 1.234,
+   "meas_Sys": 0.882,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-g-s2",
+   "bin": "1.2-g",
+   "pred_UW": 3.06,
+   "meas_UW": 1.961,
+   "pred_Sys": 0.915,
+   "meas_Sys": 0.181,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-g-s3",
+   "bin": "1.2-g",
+   "pred_UW": 2.53,
+   "meas_UW": 2.516,
+   "pred_Sys": 0.493,
+   "meas_Sys": 0.302,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-g-s4",
+   "bin": "1.2-g",
+   "pred_UW": 2.904,
+   "meas_UW": 2.58,
+   "pred_Sys": 0.647,
+   "meas_Sys": 0.637,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-g-s5",
+   "bin": "1.2-g",
+   "pred_UW": 2.854,
+   "meas_UW": 2.752,
+   "pred_Sys": 1.082,
+   "meas_Sys": 0.921,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-g-s6",
+   "bin": "1.2-g",
+   "pred_UW": 2.533,
+   "meas_UW": 2.539,
+   "pred_Sys": 0.1,
+   "meas_Sys": 0.067,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-h-s1",
+   "bin": "1.2-h",
+   "pred_UW": 4.49,
+   "meas_UW": 2.464,
+   "pred_Sys": 2.256,
+   "meas_Sys": 0.811,
+   "pass": 1,
+   "ncorr": "1"
+  },
+  {
+   "dlc": "DLC1.2-h-s3",
+   "bin": "1.2-h",
+   "pred_UW": 2.934,
+   "meas_UW": 2.817,
+   "pred_Sys": 1.093,
+   "meas_Sys": 0.806,
+   "pass": 1,
+   "ncorr": "0"
+  },
+  {
+   "dlc": "DLC1.2-h-s4",
+   "bin": "1.2-h",
+   "pred_UW": 2.468,
+   "meas_UW": 1.947,
+   "pred_Sys": 0.857,
+   "meas_Sys": 0.361,
+   "pass": 1,
+   "ncorr": "4"
+  },
+  {
+   "dlc": "DLC1.2-h-s5",
+   "bin": "1.2-h",
+   "pred_UW": 2.839,
+   "meas_UW": 2.602,
+   "pred_Sys": 0.663,
+   "meas_Sys": 0.418,
+   "pass": 1,
+   "ncorr": "0"
+  }
+ ],
+ "coverage": [
+  {
+   "n": 1,
+   "dmg_pct": 4.18,
+   "time_pct": 2.42
+  },
+  {
+   "n": 2,
+   "dmg_pct": 8.31,
+   "time_pct": 4.84
+  },
+  {
+   "n": 3,
+   "dmg_pct": 12.09,
+   "time_pct": 7.26
+  },
+  {
+   "n": 4,
+   "dmg_pct": 15.79,
+   "time_pct": 9.68
+  },
+  {
+   "n": 5,
+   "dmg_pct": 19.48,
+   "time_pct": 12.1
+  },
+  {
+   "n": 6,
+   "dmg_pct": 23.15,
+   "time_pct": 14.52
+  },
+  {
+   "n": 7,
+   "dmg_pct": 26.23,
+   "time_pct": 16.32
+  },
+  {
+   "n": 8,
+   "dmg_pct": 29.29,
+   "time_pct": 18.13
+  },
+  {
+   "n": 9,
+   "dmg_pct": 32.32,
+   "time_pct": 20.98
+  },
+  {
+   "n": 10,
+   "dmg_pct": 35.18,
+   "time_pct": 22.79
+  },
+  {
+   "n": 11,
+   "dmg_pct": 37.95,
+   "time_pct": 24.59
+  },
+  {
+   "n": 12,
+   "dmg_pct": 40.71,
+   "time_pct": 26.4
+  },
+  {
+   "n": 13,
+   "dmg_pct": 43.46,
+   "time_pct": 29.25
+  },
+  {
+   "n": 14,
+   "dmg_pct": 46.21,
+   "time_pct": 32.11
+  },
+  {
+   "n": 15,
+   "dmg_pct": 48.96,
+   "time_pct": 34.96
+  },
+  {
+   "n": 16,
+   "dmg_pct": 51.57,
+   "time_pct": 37.81
+  },
+  {
+   "n": 17,
+   "dmg_pct": 54.04,
+   "time_pct": 40.67
+  },
+  {
+   "n": 18,
+   "dmg_pct": 56.5,
+   "time_pct": 43.06
+  },
+  {
+   "n": 19,
+   "dmg_pct": 58.91,
+   "time_pct": 45.96
+  },
+  {
+   "n": 20,
+   "dmg_pct": 61.27,
+   "time_pct": 48.35
+  },
+  {
+   "n": 21,
+   "dmg_pct": 63.59,
+   "time_pct": 50.16
+  },
+  {
+   "n": 22,
+   "dmg_pct": 65.91,
+   "time_pct": 52.55
+  },
+  {
+   "n": 23,
+   "dmg_pct": 68.22,
+   "time_pct": 54.95
+  },
+  {
+   "n": 24,
+   "dmg_pct": 70.53,
+   "time_pct": 57.85
+  },
+  {
+   "n": 25,
+   "dmg_pct": 72.81,
+   "time_pct": 60.24
+  },
+  {
+   "n": 26,
+   "dmg_pct": 75.08,
+   "time_pct": 62.64
+  },
+  {
+   "n": 27,
+   "dmg_pct": 77.31,
+   "time_pct": 65.53
+  },
+  {
+   "n": 28,
+   "dmg_pct": 79.54,
+   "time_pct": 68.43
+  },
+  {
+   "n": 29,
+   "dmg_pct": 81.77,
+   "time_pct": 71.32
+  },
+  {
+   "n": 30,
+   "dmg_pct": 84.0,
+   "time_pct": 74.22
+  },
+  {
+   "n": 31,
+   "dmg_pct": 85.53,
+   "time_pct": 75.42
+  },
+  {
+   "n": 32,
+   "dmg_pct": 86.9,
+   "time_pct": 76.62
+  },
+  {
+   "n": 33,
+   "dmg_pct": 88.24,
+   "time_pct": 77.83
+  },
+  {
+   "n": 34,
+   "dmg_pct": 89.57,
+   "time_pct": 79.03
+  },
+  {
+   "n": 35,
+   "dmg_pct": 90.84,
+   "time_pct": 80.23
+  },
+  {
+   "n": 36,
+   "dmg_pct": 91.94,
+   "time_pct": 81.43
+  },
+  {
+   "n": 37,
+   "dmg_pct": 92.64,
+   "time_pct": 82.15
+  },
+  {
+   "n": 38,
+   "dmg_pct": 93.32,
+   "time_pct": 82.87
+  },
+  {
+   "n": 39,
+   "dmg_pct": 93.99,
+   "time_pct": 83.59
+  },
+  {
+   "n": 40,
+   "dmg_pct": 94.61,
+   "time_pct": 84.31
+  },
+  {
+   "n": 41,
+   "dmg_pct": 95.2,
+   "time_pct": 85.03
+  },
+  {
+   "n": 42,
+   "dmg_pct": 95.76,
+   "time_pct": 85.74
+  },
+  {
+   "n": 43,
+   "dmg_pct": 96.13,
+   "time_pct": 86.13
+  },
+  {
+   "n": 44,
+   "dmg_pct": 96.44,
+   "time_pct": 86.52
+  },
+  {
+   "n": 45,
+   "dmg_pct": 96.74,
+   "time_pct": 86.91
+  },
+  {
+   "n": 46,
+   "dmg_pct": 97.03,
+   "time_pct": 87.3
+  },
+  {
+   "n": 47,
+   "dmg_pct": 97.32,
+   "time_pct": 87.69
+  },
+  {
+   "n": 48,
+   "dmg_pct": 97.58,
+   "time_pct": 88.07
+  },
+  {
+   "n": 49,
+   "dmg_pct": 97.77,
+   "time_pct": 89.62
+  },
+  {
+   "n": 50,
+   "dmg_pct": 97.93,
+   "time_pct": 91.16
+  },
+  {
+   "n": 51,
+   "dmg_pct": 98.07,
+   "time_pct": 91.37
+  },
+  {
+   "n": 52,
+   "dmg_pct": 98.21,
+   "time_pct": 91.58
+  },
+  {
+   "n": 53,
+   "dmg_pct": 98.35,
+   "time_pct": 91.79
+  },
+  {
+   "n": 54,
+   "dmg_pct": 98.48,
+   "time_pct": 91.98
+  },
+  {
+   "n": 55,
+   "dmg_pct": 98.6,
+   "time_pct": 92.17
+  },
+  {
+   "n": 56,
+   "dmg_pct": 98.73,
+   "time_pct": 92.36
+  },
+  {
+   "n": 57,
+   "dmg_pct": 98.85,
+   "time_pct": 93.9
+  },
+  {
+   "n": 58,
+   "dmg_pct": 98.96,
+   "time_pct": 95.45
+  },
+  {
+   "n": 59,
+   "dmg_pct": 99.08,
+   "time_pct": 96.99
+  },
+  {
+   "n": 60,
+   "dmg_pct": 99.19,
+   "time_pct": 97.18
+  },
+  {
+   "n": 61,
+   "dmg_pct": 99.3,
+   "time_pct": 97.37
+  },
+  {
+   "n": 62,
+   "dmg_pct": 99.41,
+   "time_pct": 98.91
+  },
+  {
+   "n": 63,
+   "dmg_pct": 99.51,
+   "time_pct": 99.1
+  },
+  {
+   "n": 64,
+   "dmg_pct": 99.56,
+   "time_pct": 99.19
+  },
+  {
+   "n": 65,
+   "dmg_pct": 99.6,
+   "time_pct": 99.27
+  },
+  {
+   "n": 66,
+   "dmg_pct": 99.65,
+   "time_pct": 99.35
+  },
+  {
+   "n": 67,
+   "dmg_pct": 99.69,
+   "time_pct": 99.44
+  },
+  {
+   "n": 68,
+   "dmg_pct": 99.73,
+   "time_pct": 99.52
+  },
+  {
+   "n": 69,
+   "dmg_pct": 99.78,
+   "time_pct": 99.61
+  },
+  {
+   "n": 70,
+   "dmg_pct": 99.81,
+   "time_pct": 99.64
+  },
+  {
+   "n": 71,
+   "dmg_pct": 99.83,
+   "time_pct": 99.68
+  },
+  {
+   "n": 72,
+   "dmg_pct": 99.85,
+   "time_pct": 99.71
+  },
+  {
+   "n": 73,
+   "dmg_pct": 99.86,
+   "time_pct": 99.74
+  },
+  {
+   "n": 74,
+   "dmg_pct": 99.88,
+   "time_pct": 99.78
+  },
+  {
+   "n": 75,
+   "dmg_pct": 99.9,
+   "time_pct": 99.8
+  },
+  {
+   "n": 76,
+   "dmg_pct": 99.91,
+   "time_pct": 99.83
+  },
+  {
+   "n": 77,
+   "dmg_pct": 99.92,
+   "time_pct": 99.85
+  },
+  {
+   "n": 78,
+   "dmg_pct": 99.93,
+   "time_pct": 99.87
+  },
+  {
+   "n": 79,
+   "dmg_pct": 99.93,
+   "time_pct": 99.88
+  },
+  {
+   "n": 80,
+   "dmg_pct": 99.94,
+   "time_pct": 99.9
+  },
+  {
+   "n": 81,
+   "dmg_pct": 99.95,
+   "time_pct": 99.91
+  },
+  {
+   "n": 82,
+   "dmg_pct": 99.95,
+   "time_pct": 99.93
+  },
+  {
+   "n": 83,
+   "dmg_pct": 99.96,
+   "time_pct": 99.94
+  },
+  {
+   "n": 84,
+   "dmg_pct": 99.97,
+   "time_pct": 99.96
+  },
+  {
+   "n": 85,
+   "dmg_pct": 99.97,
+   "time_pct": 99.97
+  },
+  {
+   "n": 86,
+   "dmg_pct": 99.98,
+   "time_pct": 99.98
+  },
+  {
+   "n": 87,
+   "dmg_pct": 99.98,
+   "time_pct": 99.99
+  },
+  {
+   "n": 88,
+   "dmg_pct": 99.98,
+   "time_pct": 99.99
+  },
+  {
+   "n": 89,
+   "dmg_pct": 99.98,
+   "time_pct": 99.99
+  },
+  {
+   "n": 90,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 91,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 92,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 93,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 94,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 95,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 96,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 97,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 98,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 99,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 100,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 101,
+   "dmg_pct": 99.99,
+   "time_pct": 99.99
+  },
+  {
+   "n": 102,
+   "dmg_pct": 100.0,
+   "time_pct": 99.99
+  },
+  {
+   "n": 103,
+   "dmg_pct": 100.0,
+   "time_pct": 99.99
+  },
+  {
+   "n": 104,
+   "dmg_pct": 100.0,
+   "time_pct": 99.99
+  },
+  {
+   "n": 105,
+   "dmg_pct": 100.0,
+   "time_pct": 100.0
+  },
+  {
+   "n": 106,
+   "dmg_pct": 100.0,
+   "time_pct": 100.0
+  },
+  {
+   "n": 107,
+   "dmg_pct": 100.0,
+   "time_pct": 100.0
+  },
+  {
+   "n": 108,
+   "dmg_pct": 100.0,
+   "time_pct": 100.0
+  },
+  {
+   "n": 109,
+   "dmg_pct": 100.0,
+   "time_pct": 100.0
+  },
+  {
+   "n": 110,
+   "dmg_pct": 100.0,
+   "time_pct": 100.0
+  },
+  {
+   "n": 111,
+   "dmg_pct": 100.0,
+   "time_pct": 100.0
+  }
+ ],
+ "coverage_marks": {
+  "50": {
+   "n": 16,
+   "dmg_pct": 51.57,
+   "time_pct": 37.81
+  },
+  "80": {
+   "n": 29,
+   "dmg_pct": 81.77,
+   "time_pct": 71.32
+  },
+  "90": {
+   "n": 35,
+   "dmg_pct": 90.84,
+   "time_pct": 80.23
+  },
+  "95": {
+   "n": 41,
+   "dmg_pct": 95.2,
+   "time_pct": 85.03
+  }
+ },
+ "validation": {
+  "dlc": "DLC1.2-d-s1",
+  "dt": 20,
+  "k": 0.26,
+  "nbin": 30,
+  "W_kN": 424.0,
+  "zW_m": 18.78,
+  "react": {
+   "UW_RX": [
+    5.85,
+    -12.2,
+    16.2
+   ],
+   "UW_RY": [
+    45.14,
+    43.4,
+    48.2
+   ],
+   "UW_RZ": [
+    17.03,
+    -1.2,
+    27.2
+   ],
+   "UW_Fr": [
+    12.88,
+    -5.6,
+    24.8
+   ],
+   "DW_RX": [
+    9.16,
+    -50.1,
+    26.0
+   ],
+   "DW_RY": [
+    44.44,
+    41.7,
+    46.2
+   ],
+   "DW_RZ": [
+    39.7,
+    -4.9,
+    55.3
+   ],
+   "DW_Fr": [
+    25.4,
+    -15.9,
+    38.8
+   ]
+  },
+  "totals": {
+   "D30_UW": [
+    0.7157,
+    0.241,
+    0.2347
+   ],
+   "D30_DW": [
+    0.1503,
+    0.0642,
+    0.0675
+   ],
+   "life_UW": [
+    41.9,
+    124.5,
+    127.8
+   ],
+   "life_DW": [
+    199.5,
+    467.2,
+    444.2
+   ],
+   "life_Sys": [
+    36.4,
+    103.9,
+    105.1
+   ]
+  },
+  "bias_UW_pct": 197.0,
+  "bias_DW_pct": 134.1
+ }
+};
+const $ = id => document.getElementById(id);
+const fmt = (v,d=2)=> v==null?'–':Number(v).toFixed(d);
+const tip = $('tip');
+function showTip(html,x,y){tip.innerHTML=html;tip.style.opacity=1;
+  const w=tip.offsetWidth,h=tip.offsetHeight;
+  let nx=x+14,ny=y-h-10; if(nx+w>innerWidth-8)nx=x-w-14; if(ny<8)ny=y+16;
+  tip.style.left=nx+'px';tip.style.top=ny+'px';}
+function hideTip(){tip.style.opacity=0;}
+
+// ---------- KPI ----------
+const k=DATA.kpi;
+$('gen').textContent = '기준 '+DATA.generated+' · '+k.n_done+'/'+k.n_total+' DLC';
+$('lifeSys').textContent = fmt(k.life_Sys,2);
+$('lifeUW').textContent = fmt(k.life_UW,2)+' yr';
+$('lifeDW').textContent = fmt(k.life_DW,1)+' yr';
+$('sumd').textContent = fmt(k.sumD30_UW,2);
+$('pbadge').textContent = '부분값 '+k.n_done+'/'+k.n_total;
+$('acc').textContent = fmt(k.acc_mean_pp,2);
+$('accmax').textContent = '±'+fmt(k.acc_max_pp,2)+'%p';
+$('bias').textContent = '+'+fmt(k.combo_bias_pct,2)+'%';
+const strip=$('strip');
+[['진행', k.n_done+' / '+k.n_total, 'var(--accent)','본해석 완료 DLC'],
+ ['합격', k.n_pass, 'var(--good)','UW ∧ Sys ∈ [0,+3%]'],
+ ['보정', k.n_corr, 'var(--warn)','k·dt 보정 후 합격'],
+ ['불합격', k.n_fail, 'var(--crit)','f빈 협소창 — 재처리 대기']
+].forEach(([kk,n,c,d])=>{
+  const el=document.createElement('div');el.className='chip';
+  el.innerHTML='<span class="sw" style="background:'+c+'"></span><span class="n" style="color:'+c+'">'+n+'</span><span class="k">'+kk+'<br><span style="font-size:11px;color:var(--muted)">'+d+'</span></span>';
+  strip.appendChild(el);
+});
+
+// ---------- SVG helpers ----------
+const NS='http://www.w3.org/2000/svg';
+function mk(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+// ---------- Bar: 빈별 D30 ----------
+function drawBar(){
+  const svg=$('c-bar'), W=1000,H=300,m={t:26,r:20,b:46,l:56};
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML='';
+  const bins=DATA.bins, iw=W-m.l-m.r, ih=H-m.t-m.b;
+  const max=Math.max(...bins.map(b=>b.D30_UW))*1.15;
+  const bw=iw/bins.length, bar=Math.min(bw*0.56,64);
+  // y grid
+  for(let i=0;i<=4;i++){const v=max*i/4,y=m.t+ih-ih*i/4;
+    svg.appendChild(mk('line',{x1:m.l,y1:y,x2:W-m.r,y2:y,stroke:css('--grid'),'stroke-width':1}));
+    svg.appendChild(mk('text',{x:m.l-8,y:y+4,'text-anchor':'end',class:'axm'})).textContent=v.toFixed(1);}
+  svg.appendChild(mk('line',{x1:m.l,y1:m.t+ih,x2:W-m.r,y2:m.t+ih,stroke:css('--axis'),'stroke-width':1.5}));
+  svg.appendChild(mk('text',{x:m.l-8,y:m.t-10,'text-anchor':'end',class:'ax'})).textContent='ΣD30';
+  bins.forEach((b,i)=>{
+    const x=m.l+bw*i+(bw-bar)/2, h=ih*b.D30_UW/max, y=m.t+ih-h;
+    const full=b.n_pass===b.n, col=full?css('--s1'):css('--warn');
+    const r=mk('rect',{x,y,width:bar,height:h,rx:4,fill:col,'fill-opacity':0.92});
+    r.style.cursor='pointer';
+    r.addEventListener('mousemove',e=>showTip(
+      `<div class="tt">빈 ${b.bin.replace('1.2-','')}</div>`+
+      `<div class="tr">ΣD30(UW) ${b.D30_UW.toFixed(3)}</div>`+
+      `<div class="tr">ΣD30(DW) ${b.D30_DW.toFixed(3)}</div>`+
+      `<div class="tr">합격 ${b.n_pass}/${b.n} 시드</div>`,e.clientX,e.clientY));
+    r.addEventListener('mouseleave',hideTip);
+    svg.appendChild(r);
+    svg.appendChild(mk('text',{x:x+bar/2,y:y-7,'text-anchor':'middle',class:'vlab'})).textContent=b.D30_UW.toFixed(2);
+    const seed=mk('text',{x:x+bar/2,y:y-20,'text-anchor':'middle',class:'axm',fill:full?css('--muted'):css('--warn')});
+    seed.textContent=b.n_pass+'/'+b.n; svg.appendChild(seed);
+    svg.appendChild(mk('text',{x:x+bar/2,y:m.t+ih+20,'text-anchor':'middle',class:'axm',
+      'font-weight':600,fill:css('--ink-2')})).textContent=b.bin.replace('1.2-','');
+  });
+  svg.appendChild(mk('text',{x:m.l+iw/2,y:H-6,'text-anchor':'middle',class:'ax'})).textContent='풍속구간 빈 (a = 고손상 · h = 저손상)';
+}
+
+// ---------- Scatter: pred vs meas ε_UW ----------
+function drawScatter(){
+  const svg=$('c-scatter'),W=500,H=380,m={t:16,r:16,b:44,l:44};
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML='';
+  const iw=W-m.l-m.r,ih=H-m.t-m.b, lo=1,hi=4.7;
+  const X=v=>m.l+iw*(v-lo)/(hi-lo), Y=v=>m.t+ih-ih*(v-lo)/(hi-lo);
+  // ±0.5 band
+  const band=mk('polygon',{fill:css('--accent'),'fill-opacity':0.07,stroke:'none'});
+  band.setAttribute('points',[[lo,lo-0.5],[hi,hi-0.5],[hi,hi+0.5],[lo,lo+0.5]].map(p=>X(p[0])+','+Y(p[1])).join(' '));
+  svg.appendChild(band);
+  // grid + ticks
+  for(let v=1;v<=4;v++){
+    svg.appendChild(mk('line',{x1:X(v),y1:m.t,x2:X(v),y2:m.t+ih,stroke:css('--grid'),'stroke-width':1}));
+    svg.appendChild(mk('line',{x1:m.l,y1:Y(v),x2:m.l+iw,y2:Y(v),stroke:css('--grid'),'stroke-width':1}));
+    svg.appendChild(mk('text',{x:X(v),y:m.t+ih+18,'text-anchor':'middle',class:'axm'})).textContent=v+'%';
+    svg.appendChild(mk('text',{x:m.l-7,y:Y(v)+4,'text-anchor':'end',class:'axm'})).textContent=v+'%';
+  }
+  // 3% limit line
+  svg.appendChild(mk('line',{x1:m.l,y1:Y(3),x2:m.l+iw,y2:Y(3),stroke:css('--crit'),
+    'stroke-width':1,'stroke-dasharray':'4 3','stroke-opacity':0.6}));
+  svg.appendChild(mk('text',{x:m.l+iw-2,y:Y(3)-5,'text-anchor':'end',class:'axm',fill:css('--crit')})).textContent='ε=+3% 상한';
+  // diagonal
+  svg.appendChild(mk('line',{x1:X(lo),y1:Y(lo),x2:X(hi),y2:Y(hi),stroke:css('--ink-2'),
+    'stroke-width':1.5,'stroke-dasharray':'2 3'}));
+  // axis labels
+  svg.appendChild(mk('text',{x:m.l+iw/2,y:H-6,'text-anchor':'middle',class:'ax'})).textContent='스크리닝 예측 ε_UW';
+  const yl=mk('text',{x:0,y:0,'text-anchor':'middle',class:'ax',transform:`translate(13,${m.t+ih/2}) rotate(-90)`});
+  yl.textContent='MASTA 실측 ε_UW';svg.appendChild(yl);
+  DATA.scatter.forEach(p=>{
+    const cx=X(p.pred_UW),cy=Y(p.meas_UW),corr=p.ncorr!=='0';
+    const col=p.pass?css('--good'):css('--crit');
+    const c=mk('circle',{cx,cy,r:5,fill:corr?'none':col,stroke:col,'stroke-width':corr?1.8:0.8,
+      'fill-opacity':0.85});
+    c.style.cursor='pointer';
+    c.addEventListener('mousemove',e=>showTip(
+      `<div class="tt">${p.dlc.replace('DLC','')}</div>`+
+      `<div class="tr">예측 ${p.pred_UW.toFixed(2)} → 실측 ${p.meas_UW.toFixed(2)}%</div>`+
+      `<div class="tr">Δ ${(p.meas_UW-p.pred_UW>=0?'+':'')}${(p.meas_UW-p.pred_UW).toFixed(2)}%p · Sys ${p.meas_Sys.toFixed(2)}%</div>`+
+      `<div class="tr">${p.pass?'합격':'불합격'}${corr?' · 보정 '+p.ncorr+'회':''}</div>`,e.clientX,e.clientY));
+    c.addEventListener('mouseleave',hideTip);
+    svg.appendChild(c);
+  });
+}
+
+// ---------- Coverage line ----------
+function drawCov(){
+  const svg=$('c-cov'),W=500,H=380,m={t:16,r:16,b:44,l:40};
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML='';
+  const iw=W-m.l-m.r,ih=H-m.t-m.b, nmax=60;
+  const cov=DATA.coverage.filter(c=>c.n<=nmax);
+  const X=n=>m.l+iw*(n-1)/(nmax-1), Y=v=>m.t+ih-ih*v/100;
+  for(let v=0;v<=100;v+=25){
+    svg.appendChild(mk('line',{x1:m.l,y1:Y(v),x2:m.l+iw,y2:Y(v),stroke:css('--grid'),'stroke-width':1}));
+    svg.appendChild(mk('text',{x:m.l-7,y:Y(v)+4,'text-anchor':'end',class:'axm'})).textContent=v;}
+  [1,16,29,41,60].forEach(n=>svg.appendChild(mk('text',{x:X(n),y:m.t+ih+18,'text-anchor':'middle',class:'axm'})).textContent=n);
+  svg.appendChild(mk('text',{x:m.l+iw/2,y:H-6,'text-anchor':'middle',class:'ax'})).textContent='해석한 DLC 수 (손상 큰 순)';
+  const line=(key,col)=>{
+    let d='';cov.forEach((c,i)=>d+=(i?'L':'M')+X(c.n)+','+Y(c[key]));
+    svg.appendChild(mk('path',{d,fill:'none',stroke:col,'stroke-width':2,
+      'stroke-linejoin':'round','stroke-linecap':'round'}));
+  };
+  line('time_pct',css('--s2')); line('dmg_pct',css('--s1'));
+  // milestone marks (dmg)
+  Object.entries(DATA.coverage_marks).forEach(([t,c])=>{
+    if(!c||c.n>nmax)return;const x=X(c.n),y=Y(c.dmg_pct);
+    svg.appendChild(mk('line',{x1:x,y1:y,x2:x,y2:m.t+ih,stroke:css('--s1'),'stroke-width':1,'stroke-dasharray':'2 3','stroke-opacity':.5}));
+    svg.appendChild(mk('circle',{cx:x,cy:y,r:4,fill:css('--surface'),stroke:css('--s1'),'stroke-width':2}));
+    svg.appendChild(mk('text',{x:x+6,y:y-6,class:'axm',fill:css('--s1'),'font-weight':600})).textContent=t+'% · '+c.n+'개';
+  });
+  // endpoint label for time
+  const last=cov[cov.length-1];
+  svg.appendChild(mk('text',{x:X(last.n)-2,y:Y(last.time_pct)+14,'text-anchor':'end',class:'axm',fill:css('--s2')})).textContent='가동시간';
+  // hover overlay
+  const ov=mk('rect',{x:m.l,y:m.t,width:iw,height:ih,fill:'transparent'});ov.style.cursor='crosshair';
+  const cross=mk('line',{y1:m.t,y2:m.t+ih,stroke:css('--axis'),'stroke-width':1,opacity:0});
+  ov.addEventListener('mousemove',e=>{
+    const r=svg.getBoundingClientRect(),sx=(e.clientX-r.left)/r.width*W;
+    let n=Math.round(1+(sx-m.l)/iw*(nmax-1));n=Math.max(1,Math.min(nmax,n));
+    const c=cov[n-1];cross.setAttribute('x1',X(n));cross.setAttribute('x2',X(n));cross.setAttribute('opacity',1);
+    showTip(`<div class="tt">상위 ${n}개 DLC</div><div class="tr" style="color:var(--s1)">손상 ${c.dmg_pct.toFixed(1)}%</div><div class="tr" style="color:var(--s2)">가동시간 ${c.time_pct.toFixed(1)}%</div>`,e.clientX,e.clientY);
+  });
+  ov.addEventListener('mouseleave',()=>{hideTip();cross.setAttribute('opacity',0);});
+  svg.appendChild(cross);svg.appendChild(ov);
+}
+
+// ---------- validation (부록1) ----------
+(function(){
+  const v=DATA.validation; if(!v){$('valsec').style.display='none';return;}
+  $('vintro').innerHTML='자중 '+v.W_kN.toFixed(0)+' kN(전 빈 상수)을 포함한 핀지지 정역학 모델을 '+
+    v.dlc.replace('DLC','')+'(dt='+v.dt+', '+v.nbin+'빈)에서 MASTA와 전수 대조. '+
+    '<b>힘평형은 정확히 일치</b>하나 두 베어링 간 배분·수명 절대값은 크게 다르다 — 이것이 왜 상대지표 ε는 정확한지를 규명한다.';
+  // 반력 오차표
+  const rk=[['UW','R_X','UW_RX'],['','R_Y','UW_RY'],['','R_Z','UW_RZ'],['','Fr','UW_Fr'],
+            ['DW','R_X','DW_RX'],['','R_Y','DW_RY'],['','R_Z','DW_RZ'],['','Fr','DW_Fr']];
+  let h='<thead><tr><th>베어링</th><th>성분</th><th>평균</th><th>최소~최대</th></tr></thead><tbody>';
+  rk.forEach(([bk,c,key])=>{
+    const s=v.react[key],big=Math.abs(s[0])>=30;
+    h+='<tr><td>'+bk+'</td><td>'+c+'</td><td class="'+(c==='Fr'?'hi':'')+'">'+
+       (s[0]>=0?'+':'')+s[0].toFixed(2)+'%</td>'+
+       '<td class="rng">'+(s[1]>=0?'+':'')+s[1]+' ~ '+(s[2]>=0?'+':'')+s[2]+'</td></tr>';
+  });
+  $('vreact').innerHTML=h+'</tbody>';
+  $('vreact-note').innerHTML='<b>R_Y 오차 ~+45%가 전 빈 거의 상수</b>이고 자중(X축)과 무관 — '+
+    'FE 유연 샤프트 처짐 + 롤러 접촉 강성이 원인(하우징 없음·외륜 ground 실측 확인).';
+  // 총량 비교표
+  const t=v.totals, cols=['핀지지+자중','MASTA','참값(dt=0.1)'];
+  const rows=[['D30 UW','D30_UW',4],['D30 DW','D30_DW',4],
+              ['수명 UW [yr]','life_UW',1],['수명 DW [yr]','life_DW',1],
+              ['수명 Sys [yr]','life_Sys',1]];
+  let h2='<thead><tr><th></th><th>'+cols.join('</th><th>')+'</th></tr></thead><tbody>';
+  rows.forEach(([lab,key,d])=>{
+    h2+='<tr><td>'+lab+'</td>'+t[key].map((x,i)=>'<td'+(i===0?' class="hi"':'')+'>'+
+        x.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d})+'</td>').join('')+'</tr>';
+  });
+  $('vtot').innerHTML=h2+'</tbody>';
+  $('vtot-note').innerHTML='핀지지 절대 손상은 MASTA 대비 <b>UW +'+v.bias_UW_pct+'% · DW +'+v.bias_DW_pct+'%</b>'+
+    '(≈3× 보수). 그럼에도 <b>조합/참값 비율에서 편향이 상쇄</b>되어 ε 예측은 0.6%p 내 — 절대값 부정확과 상대지표 정확이 양립한다.';
+})();
+
+// ---------- data table ----------
+(function(){
+  const t=$('dtable');let h='<tr><th>빈</th><th>ΣD30 UW</th><th>ΣD30 DW</th><th>합격/시드</th></tr>';
+  DATA.bins.forEach(b=>h+=`<tr><td>${b.bin.replace('1.2-','')}</td><td>${b.D30_UW.toFixed(3)}</td><td>${b.D30_DW.toFixed(3)}</td><td>${b.n_pass}/${b.n}</td></tr>`);
+  h+='<tr><th>커버리지</th><th>DLC 수</th><th>손상 %</th><th>가동시간 %</th></tr>';
+  Object.entries(DATA.coverage_marks).forEach(([tg,c])=>{if(c)h+=`<tr><td>${tg}%</td><td>${c.n}</td><td>${c.dmg_pct.toFixed(1)}</td><td>${c.time_pct.toFixed(1)}</td></tr>`;});
+  t.innerHTML=h;
+})();
+
+$('foot').innerHTML='<b>주 지표는 진행 중 부분값입니다.</b> 시스템 수명은 현재까지 완료된 '+k.n_done+
+  '개 DLC(스크리닝 손상 상위 = 함대 손상의 '+k.done_cov_pct+'%)의 참값 D30 합산 기준으로, 나머지 저손상 DLC가 합산될수록 수명은 소폭 늘어납니다. '+
+  '방법론 정확도는 스크리닝 예측 ε_UW와 MASTA 실측의 편차(무보정·보정 포함 '+DATA.scatter.length+'건). '+
+  '불합격 '+k.n_fail+'건은 f빈(합격창 폭 ~0.01)의 보정 진동으로, 완주 후 실측 2점 중점 타겟팅으로 일괄 재처리 예정. '+
+  '판정 = UW ∧ Sys 손상편향 ∈ [0, +3%] (DW 병기·미고려).';
+
+drawBar();drawScatter();drawCov();
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{drawBar();drawScatter();drawCov();},150);});
+
+// ---------- theme toggle (standalone) ----------
+(function(){
+  const root=document.documentElement, btn=document.getElementById('themebtn');
+  const KEY='dlc-dash-theme';
+  const saved=localStorage.getItem(KEY);
+  if(saved==='dark'||saved==='light') root.setAttribute('data-theme',saved);
+  function cur(){const a=root.getAttribute('data-theme');
+    if(a)return a;
+    return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+  function paint(){btn.textContent=(cur()==='dark'?'☀ 라이트':'☾ 다크');}
+  btn.addEventListener('click',()=>{const n=cur()==='dark'?'light':'dark';
+    root.setAttribute('data-theme',n);localStorage.setItem(KEY,n);
+    paint();drawBar();drawScatter();drawCov();});
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{
+    if(!root.getAttribute('data-theme')){paint();drawBar();drawScatter();drawCov();}});
+  paint();
+})();
+</script>
+</body>
+</html>
