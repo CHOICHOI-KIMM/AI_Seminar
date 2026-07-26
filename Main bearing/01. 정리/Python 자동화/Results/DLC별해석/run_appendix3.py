@@ -145,9 +145,24 @@ def main():
                 raise MemoryError("메모리 95% 초과")
         return dmg
 
+    # 병합모드: 기존 per_dlc.csv 재사용, 누락분만 신규 해석
+    existing = {}
+    perp = os.path.join(OUTDIR, "per_dlc.csv")
+    if os.path.isfile(perp):
+        numf = ("dt", "k", "nbin", "D30_ref_UW", "D30_ref_DW", "D30_scr_UW",
+                "D30_scr_DW", "eps_UW", "eps_DW", "eps_Sys", "life_ref_UW",
+                "life_scr_UW", "t_s")
+        for r in csv.DictReader(open(perp, encoding="utf-8-sig")):
+            existing[r["DLC"]] = {k: (float(v) if k in numf else v)
+                                  for k, v in r.items()}
+        print(f"[병합] 기존 {len(existing)}개 재사용, 누락분만 해석")
+
     rows = []
     t0 = time.time()
     for i, (name, dt, k) in enumerate(targets, 1):
+        if name in existing:
+            rows.append(existing[name])
+            continue
         sf = float(meta[name]["ScaleFactor"])
         rd = ref_d30(name, sf)
         if rd is None or rd[0] <= 0:
@@ -179,6 +194,12 @@ def main():
             w = csv.DictWriter(f, fieldnames=list(rows[0]))
             w.writeheader(); w.writerows(rows)
 
+    # per_dlc 최종 일괄 저장 (병합 시 existing 스킵으로 누락 방지)
+    with open(os.path.join(OUTDIR, "per_dlc.csv"), "w", newline="",
+              encoding="utf-8-sig") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w.writeheader(); w.writerows(rows)
+
     # ── 함대 요약 ──
     sU_r = sum(r["D30_ref_UW"] for r in rows)
     sD_r = sum(r["D30_ref_DW"] for r in rows)
@@ -200,19 +221,23 @@ def main():
 
     # ── DLC 개수별 수명 수렴 (참값 D30 내림차순 누적) ──
     order = sorted(rows, key=lambda r: -r["D30_ref_UW"])
+    Lsys_scr_final = lsys(LUc, LDc)          # 최종(111) 스크리닝 Sys
     cU_r = cD_r = cU_c = cD_c = 0.0
+    conv = []
+    for n, r in enumerate(order, 1):
+        cU_r += r["D30_ref_UW"]; cD_r += r["D30_ref_DW"]
+        cU_c += r["D30_scr_UW"]; cD_c += r["D30_scr_DW"]
+        lur, ldr = 30.0 / cU_r, 30.0 / cD_r
+        luc, ldc = 30.0 / cU_c, 30.0 / cD_c
+        conv.append((n, lur, lsys(lur, ldr), luc, lsys(luc, ldc),
+                     (lsys(lur, ldr) / lsys(luc, ldc) - 1) * 100,
+                     (lsys(luc, ldc) / Lsys_scr_final - 1) * 100))
     with open(os.path.join(OUTDIR, "convergence.csv"), "w", newline="",
               encoding="utf-8-sig") as f:
         w = csv.writer(f)
-        w.writerow(["n", "life_UW_ref", "life_Sys_ref",
-                    "life_UW_scr", "life_Sys_scr", "bias_Sys_life_pct"])
-        for n, r in enumerate(order, 1):
-            cU_r += r["D30_ref_UW"]; cD_r += r["D30_ref_DW"]
-            cU_c += r["D30_scr_UW"]; cD_c += r["D30_scr_DW"]
-            lur, ldr = 30.0 / cU_r, 30.0 / cD_r
-            luc, ldc = 30.0 / cU_c, 30.0 / cD_c
-            w.writerow([n, lur, lsys(lur, ldr), luc, lsys(luc, ldc),
-                        (lsys(lur, ldr) / lsys(luc, ldc) - 1) * 100])
+        w.writerow(["n", "life_UW_ref", "life_Sys_ref", "life_UW_scr",
+                    "life_Sys_scr", "bias_Sys_life_pct", "vs_final_scr_Sys_pct"])
+        w.writerows(conv)
 
     print(f"\n[완료] {len(rows)} DLC · {time.time()-t0:.0f}s")
     print(f"  Σ D30_UW 참값 {sU_r:.3f} vs 스크리닝 {sU_c:.3f} → "
