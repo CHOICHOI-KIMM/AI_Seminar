@@ -20,3 +20,6 @@ __pycache__/
 
 # 파이프라인 실행 로그 (재생성 가능)
 Main bearing/01. 정리/Python 자동화/Results/DLC별해석/*.log
+
+# Claude 환경 export zip (비밀정보·세션 포함 — 커밋 금지)
+**/claude_env_export_*.zip
