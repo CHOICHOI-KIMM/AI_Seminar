@@ -29,3 +29,8 @@ Main bearing/01. 정리/Python 자동화/Results/DLC별해석/*.log
 
 # 부록5 검증용 MASTA 파일 (사용자 지시로 커밋 제외, 260727)
 Main bearing/02. 자료/MASTA/*_검증_*.Masta
+
+# 해석 실행 노이즈 (260728)
+*.err
+~$*
+Main bearing/01. 정리/Python 자동화/Results/**/*.log
