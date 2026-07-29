@@ -46,7 +46,7 @@ LIMIT = 2100.0            # MPa
 
 FIELDS = ["idx", "S_rank", "z1", "z2", "D_pw_mm", "alpha", "D_we_mm", "L_we_mm",
           "Z", "bore_mm", "D_mm", "T_mm", "B_mm", "C_mm",
-          "L_eff_m", "S_index", "mass_brg_kg", "mass_shaft_kg", "mass_total_kg",
+          "L_eff_m", "L_eff_appx_m", "S_index", "mass_brg_kg", "mass_shaft_kg", "mass_total_kg",
           "Myz_max_UW", "Myz_max_DW", "My_min_UW", "My_min_DW",
           "Mz_min_UW", "Mz_min_DW",
           "sigma_max_MPa", "governing", "feasible", "t_s", "warn"]
@@ -188,6 +188,12 @@ def main(probe=False):
                 warn.append(f"{tg} 미장착")
         cur_z = (r["z1"], r["z2"])
 
+        # L_eff — MASTA 실측 a 로 산출 (§8-1.7.3.1 결정)
+        a_m = sc(uw.detail, "effective_centre_from_front_face")
+        T_m = sc(uw.detail, "width")
+        L_meas = ((r["z2"] - r["z1"]) + 2 * (a_m - T_m / 2)
+                  if (a_m is not None and T_m is not None) else None)
+
         # ── 해석: LC 복제 + 듀티사이클 (기하 변경 시 캐시 회피 — 필수) ──
         sig, best, who = {}, 0.0, ""
         names, dups = [], []
@@ -235,7 +241,8 @@ def main(probe=False):
                    D_mm=g["outer_diameter"] * 1e3, T_mm=g["width"] * 1e3,
                    B_mm=g["inner_ring_width"] * 1e3,
                    C_mm=g["outer_ring_width"] * 1e3,
-                   L_eff_m=round(r["L_eff"], 5), S_index=round(r["S"], 3),
+                   L_eff_m=None if L_meas is None else round(L_meas, 5),
+                   L_eff_appx_m=round(r["L_eff"], 5), S_index=round(r["S"], 3),
                    mass_brg_kg=round(mb, 1), mass_shaft_kg=round(ms, 1),
                    mass_total_kg=round(2 * mb + ms, 1),
                    sigma_max_MPa=round(best, 1), governing=who,
