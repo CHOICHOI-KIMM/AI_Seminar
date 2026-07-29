@@ -12,11 +12,21 @@ import math
 
 # ── v1.3 실측에서 확정한 비율 상수 (결정 #7 · #14e · 260728 축방향 확정) ──
 ETA = 0.92                    # 롤러 수 케이지 여유율 (v1.3 실증 87/94.61)
-TI_OVER_DPW = 0.025674        # 내륜 반경두께 / D_pw
-TO_OVER_DPW = 0.024654        # 외륜 반경두께 / D_pw
+# 260729 개정 — 원뿔 테이퍼 반영 (diag_sigma_zero.py 진단)
+#   구식은 '중앙면' 궤도반경에서 일정 두께를 뺐다. 테이퍼 롤러의 궤도는 원뿔이라
+#   L_we 가 커지면 내륜 궤도가 소단에서 보어 아래로 내려가 형상이 무효가 되고
+#   MASTA 가 최대응력을 반환하지 않았다(격자의 약 1/3). 실패 임계는 소단 벽두께
+#   약 3 mm. 따라서 벽두께를 '소단(내륜)·대단(외륜)' 에서 정의하도록 바꾼다.
+#   비율은 v1.3 실측(bore 3055 · OD 3600)에서 역산했고 검산이 정확히 재현된다.
+# 260729 재개정 — 링 두께를 D_pw 가 아니라 링 폭 기준으로 (부록 4)
+#   D_pw 기준은 작은 피치경에 큰 롤러를 올릴 때 JIS 관행(살두께 >= 0.20·D_we)을
+#   지키지 못한다 — P1 격자 240종 중 12종 미달(부록 4-6). 링 폭 기준은 세장비
+#   하한 1.5 와 결합해 t/D_we >= 0.274 를 구조적으로 보장한다.
+TI_OVER_B = 0.15652           # 내륜 소단 벽두께 / B  (v1.3 실측 46.95/300)
+TO_OVER_C = 0.17215           # 외륜 대단 벽두께 / C  (v1.3 실측 43.55/253)
 T_OVER_LWE = 1.30226          # 조립폭 T / L_we
-B_OVER_T = 0.96774            # 내륜폭 B / T
-C_OVER_T = 0.81613            # 외륜폭 C / T
+B_OVER_LWE = 1.26025          # 내륜폭 B / L_we  (= 0.96774 · T/L_we)
+C_OVER_LWE = 1.06281          # 외륜폭 C / L_we  (= 0.81613 · T/L_we)
 ID_OVER_OD = 0.88543          # 샤프트 내경 / 외경 (벽두께 비율)
 SHAFT_TAIL = 0.5              # 샤프트 후단 여유 [m] — L_shaft = z2 + 0.5
 
@@ -26,14 +36,19 @@ V13 = dict(D_pw=3.3309, alpha=19.0, D_we=0.11051, L_we=0.238048,
 
 
 def bearing(D_pw, alpha_deg, D_we, L_we):
-    """자유변수 4개 → 베어링 종속제원 dict [m, 개]"""
-    ca = math.cos(math.radians(alpha_deg))
-    t_i, t_o = TI_OVER_DPW * D_pw, TO_OVER_DPW * D_pw
-    d = round((D_pw - D_we * ca - 2 * t_i) * 1000) / 1000     # 1 mm 반올림 (#11)
-    D = round((D_pw + D_we * ca + 2 * t_o) * 1000) / 1000
+    """자유변수 4개 → 베어링 종속제원 dict [m, 개]
+
+    bore/OD 는 원뿔 궤도의 소단/대단에서 벽두께를 확보하도록 산출한다.
+    궤도 반경은 중앙면에서 ±(L_we/2)·sinα 만큼 변하므로 지름으로는 L_we·sinα.
+    """
+    ra = math.radians(alpha_deg)
+    ca, sa = math.cos(ra), math.sin(ra)
     T = T_OVER_LWE * L_we
-    B = B_OVER_T * T
-    C = C_OVER_T * T
+    B = B_OVER_LWE * L_we
+    C = C_OVER_LWE * L_we
+    t_i, t_o = TI_OVER_B * B, TO_OVER_C * C
+    d = round((D_pw - D_we * ca - L_we * sa - 2 * t_i) * 1000) / 1000   # 1mm (#11)
+    D = round((D_pw + D_we * ca + L_we * sa + 2 * t_o) * 1000) / 1000
     Z = int(ETA * math.pi * D_pw / D_we)                       # floor
     return dict(D_pw=D_pw, alpha_deg=alpha_deg, D_we=D_we, L_we=L_we,
                 t_i=t_i, t_o=t_o, bore=d, outer_diameter=D,
@@ -48,23 +63,26 @@ def shaft(bore, z2):
 
 
 def constraints(g, z1, z2, cone_deg=None):
-    """(C1)~(C11) 위반 목록 반환. cone_deg 미지정 시 alpha 로 근사."""
+    """제약 위반 목록 반환. cone_deg 인자는 하위호환용으로 남기며 사용하지 않는다.
+
+    260729 정리 (문서 §4-4) — 격자 12,000 조합 전수 감사에서 한 번도 활성화되지
+    않고 규칙상 자동 만족인 (C1)(C3)(C10)(C11) 을 삭제했다. 번호는 결번으로 두어
+    기존 문서 참조를 보존한다. (C12) 는 JIS 관행 살두께 기준으로 신설.
+    """
     D_we, L_we, T = g["D_we"], g["L_we"], g["width"]
-    B, C, Z = g["inner_ring_width"], g["outer_ring_width"], g["number_of_elements"]
-    cone = math.radians(cone_deg if cone_deg is not None else g["alpha_deg"])
-    L_ax = L_we * math.cos(cone)                 # 롤러 축투영
+    B, C = g["inner_ring_width"], g["outer_ring_width"]
     v = []
-    if Z < 20:                       v.append("C1 롤러수 <20")
-    if not (1.5 <= L_we / D_we <= 4.0): v.append("C2 세장비 이탈")
-    if g["bore"] <= 0:               v.append("C3 bore<=0")
+    # 260729 재조사 — 세장비 상한 4.0 → 2.5
+    if not (1.5 <= L_we / D_we <= 2.5): v.append("C2 세장비 이탈")
     if z2 - z1 < 1.5:                v.append("C4 스팬 <1.5m")
     if z1 < 0.3:                     v.append("C5 z1 <0.3m")
     if g["D_pw"] > 4.5:              v.append("C6 D_pw >4500mm")
     if z2 - z1 < T + 0.1:            v.append("C7 축방향 간섭")
     if z1 - T / 2 < 0:               v.append("C8 UW 가 하중점 앞으로")
     if z2 + T / 2 > z2 + SHAFT_TAIL: v.append("C9 DW 샤프트 이탈")
-    if B < L_ax:                     v.append("C10 콘이 롤러 축투영 미포함")
-    if C < L_ax:                     v.append("C11 컵이 롤러 축투영 미포함")
+    # C12 — 궤도륜 살두께 >= 전동체 지름의 20% (JIS 관행, Hertz 반무한체 가정)
+    if min(TI_OVER_B * B, TO_OVER_C * C) < 0.20 * D_we:
+        v.append("C12 살두께 <0.20 D_we")
     return v
 
 

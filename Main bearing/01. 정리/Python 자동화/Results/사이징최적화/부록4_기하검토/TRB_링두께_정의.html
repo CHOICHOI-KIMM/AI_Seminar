@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>TRB 링 두께 t_i · t_o 정의</title>
+<style>
+  :root {
+    --paper:       #e9eef0;
+    --surface:     #f9fbfb;
+    --line:        #c9d4d9;
+    --ink:         #14191c;
+    --muted:       #5c6e78;
+    --steel:       #2f6b8f;
+    --steel-fill:  #dbe8f0;
+    --roller:      #b0701a;
+    --roller-fill: #f1e3c8;
+    --fail:        #9c2a24;
+    --ok:          #3a7657;
+    --shaft:       #b6c2c8;
+    --sans: "Pretendard", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", system-ui, sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0f1518; --surface: #171f24; --line: #2b383f;
+      --ink: #e3eaee; --muted: #91a4ae;
+      --steel: #6fb0d4; --steel-fill: #1c3644;
+      --roller: #d69f4b; --roller-fill: #3a2f1a;
+      --fail: #dd6a60; --ok: #6dbb92; --shaft: #35444c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0f1518; --surface: #171f24; --line: #2b383f;
+    --ink: #e3eaee; --muted: #91a4ae;
+    --steel: #6fb0d4; --steel-fill: #1c3644;
+    --roller: #d69f4b; --roller-fill: #3a2f1a;
+    --fail: #dd6a60; --ok: #6dbb92; --shaft: #35444c;
+  }
+  :root[data-theme="light"] {
+    --paper: #e9eef0; --surface: #f9fbfb; --line: #c9d4d9;
+    --ink: #14191c; --muted: #5c6e78;
+    --steel: #2f6b8f; --steel-fill: #dbe8f0;
+    --roller: #b0701a; --roller-fill: #f1e3c8;
+    --fail: #9c2a24; --ok: #3a7657; --shaft: #b6c2c8;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.65;
+    margin: 0;
+    padding: 3rem 1.5rem 5rem;
+  }
+  .wrap { max-width: 62rem; margin: 0 auto; display: flex; flex-direction: column; gap: 2.75rem; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: .74rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 .5rem;
+  }
+  h1 { font-size: clamp(1.6rem, 3.4vw, 2.3rem); line-height: 1.2; margin: 0 0 .75rem; text-wrap: balance; letter-spacing: -.015em; }
+  h2 { font-size: 1.18rem; margin: 0 0 .3rem; letter-spacing: -.01em; }
+  .lede { max-width: 60ch; color: var(--muted); margin: 0; }
+  p { max-width: 68ch; margin: 0; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 3px; padding: 1.75rem;
+    display: flex; flex-direction: column; gap: 1.1rem;
+  }
+  .figframe { overflow-x: auto; }
+  svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+
+  .cap { font-size: .86rem; color: var(--muted); max-width: 66ch; }
+  .cap strong { color: var(--ink); font-weight: 600; }
+
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { padding: .5rem .7rem; border-bottom: 1px solid var(--line); text-align: left; }
+  th { font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  td.num { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+  .tbl-wrap { overflow-x: auto; }
+  .bad { color: var(--fail); font-weight: 600; }
+  .good { color: var(--ok); font-weight: 600; }
+
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper); padding: .1em .35em; border-radius: 2px; }
+
+  .keys { display: grid; gap: .9rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .key { border-left: 2px solid var(--steel); padding-left: .85rem; }
+  .key .kt { font-family: var(--mono); font-size: .8rem; color: var(--steel); letter-spacing: .04em; }
+  .key .kd { font-size: .88rem; color: var(--muted); }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">26MW Main Bearing · Sizing</p>
+    <h1>링 두께 <span style="font-family:var(--mono)">t_i</span> · <span style="font-family:var(--mono)">t_o</span> 는 어디를 재는가</h1>
+    <p class="lede">테이퍼 롤러 베어링의 궤도는 원뿔이라 링 두께가 축방향 위치마다 다르다. 두께를 <strong>어느 지점에서 정의하느냐</strong>가 260729 개정의 전부다. 아래는 v1.3 실측 치수(D_pw 3,330.9 · D_we 110.51 · α 19° · L_we 238.05)로 1:1 축척 작도한 반단면이다.</p>
+  </header>
+
+  <section class="card">
+    <div>
+      <h2>반단면 — 두께를 재는 두 지점</h2>
+      <p class="cap">궤도선이 기울어져 있으므로 <strong>내륜은 소단(좌)에서 가장 얇고, 외륜은 대단(우)에서 가장 얇다.</strong> 개정식은 이 두 최소 지점에서 두께를 정의한다.</p>
+    </div>
+    <div class="figframe">
+      <svg viewBox="-96 8 512 366" role="img" aria-label="테이퍼 롤러 베어링 반단면과 t_i, t_o 치수">
+        <defs>
+          <pattern id="hatchSteel" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+            <rect width="7" height="7" fill="var(--steel-fill)"/>
+            <line x1="0" y1="0" x2="0" y2="7" stroke="var(--steel)" stroke-width="0.7" opacity="0.55"/>
+          </pattern>
+          <pattern id="hatchShaft" width="6" height="6" patternTransform="rotate(-45)" patternUnits="userSpaceOnUse">
+            <rect width="6" height="6" fill="none"/>
+            <line x1="0" y1="0" x2="0" y2="6" stroke="var(--shaft)" stroke-width="1"/>
+          </pattern>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L10,5 L0,9 z" fill="var(--ink)"/>
+          </marker>
+          <marker id="arM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L10,5 L0,9 z" fill="var(--muted)"/>
+          </marker>
+        </defs>
+
+        <!-- 샤프트(보어 아래) -->
+        <rect x="-90" y="313.5" width="440" height="46" fill="url(#hatchShaft)" opacity="0.5"/>
+        <line x1="-90" y1="312.5" x2="350" y2="312.5" stroke="var(--ink)" stroke-width="1.6"/>
+        <text x="-88" y="332" font-family="var(--mono)" font-size="10.5" fill="var(--muted)">보어면 ⌀3,055</text>
+
+        <!-- 외경선 -->
+        <line x1="-30" y1="40" x2="330" y2="40" stroke="var(--ink)" stroke-width="1.6"/>
+        <text x="-88" y="36" font-family="var(--mono)" font-size="10.5" fill="var(--muted)">외경 ⌀3,600</text>
+
+        <!-- 내륜 (cone) -->
+        <polygon points="5,312.5 305,312.5 305,175.13 5,278.46" fill="url(#hatchSteel)" stroke="var(--steel)" stroke-width="1.5"/>
+        <!-- 외륜 (cup) -->
+        <polygon points="28.5,40 281.5,40 281.5,78.74 28.5,165.88" fill="url(#hatchSteel)" stroke="var(--steel)" stroke-width="1.5"/>
+        <!-- 롤러 -->
+        <polygon points="42.5,265.54 267.5,188.04 267.5,83.56 42.5,161.06" fill="var(--roller-fill)" stroke="var(--roller)" stroke-width="1.5"/>
+
+        <!-- 궤도선 강조 -->
+        <line x1="42.5" y1="265.54" x2="267.5" y2="188.04" stroke="var(--steel)" stroke-width="2.4"/>
+        <line x1="42.5" y1="161.06" x2="267.5" y2="83.56" stroke="var(--steel)" stroke-width="2.4"/>
+
+        <!-- t_i 치수 (소단) -->
+        <line x1="42.5" y1="265.54" x2="42.5" y2="312.5" stroke="var(--ink)" stroke-width="1.1" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <line x1="-42" y1="288" x2="36" y2="288" stroke="var(--ink)" stroke-width="0.8"/>
+        <text x="-92" y="285" font-family="var(--mono)" font-size="12" font-weight="700" fill="var(--ink)">t_i = 46.96</text>
+        <text x="-92" y="299" font-family="var(--sans)" font-size="10" fill="var(--muted)">내륜 · 소단</text>
+
+        <!-- t_o 치수 (대단) -->
+        <line x1="267.5" y1="40" x2="267.5" y2="83.56" stroke="var(--ink)" stroke-width="1.1" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <line x1="274" y1="62" x2="346" y2="62" stroke="var(--ink)" stroke-width="0.8"/>
+        <text x="350" y="59" font-family="var(--mono)" font-size="12" font-weight="700" fill="var(--ink)">t_o = 43.56</text>
+        <text x="350" y="73" font-family="var(--sans)" font-size="10" fill="var(--muted)">외륜 · 대단</text>
+
+        <!-- 구식: 중앙면 기준 -->
+        <line x1="155" y1="226.79" x2="155" y2="312.5" stroke="var(--muted)" stroke-width="1" stroke-dasharray="5 3" marker-start="url(#arM)" marker-end="url(#arM)"/>
+        <text x="162" y="266" font-family="var(--mono)" font-size="11" fill="var(--muted)">85.52</text>
+        <text x="162" y="279" font-family="var(--sans)" font-size="9.5" fill="var(--muted)">구식 · 중앙면</text>
+
+        <!-- 부품 라벨 -->
+        <text x="150" y="303" font-family="var(--sans)" font-size="11" fill="var(--steel)" text-anchor="middle">내륜 (Cone)</text>
+        <text x="150" y="58" font-family="var(--sans)" font-size="11" fill="var(--steel)" text-anchor="middle">외륜 (Cup)</text>
+        <text x="155" y="139" font-family="var(--sans)" font-size="11" fill="var(--roller)" text-anchor="middle">롤러</text>
+
+        <!-- 소단/대단 표기 -->
+        <line x1="42.5" y1="320" x2="42.5" y2="352" stroke="var(--muted)" stroke-width="0.7" stroke-dasharray="3 3"/>
+        <line x1="267.5" y1="320" x2="267.5" y2="352" stroke="var(--muted)" stroke-width="0.7" stroke-dasharray="3 3"/>
+        <text x="42.5" y="367" font-family="var(--sans)" font-size="11" fill="var(--muted)" text-anchor="middle">소단 (small end)</text>
+        <text x="267.5" y="367" font-family="var(--sans)" font-size="11" fill="var(--muted)" text-anchor="middle">대단 (large end)</text>
+        <line x1="52" y1="348" x2="258" y2="348" stroke="var(--muted)" stroke-width="0.8" marker-start="url(#arM)" marker-end="url(#arM)"/>
+        <text x="155" y="344" font-family="var(--mono)" font-size="10" fill="var(--muted)" text-anchor="middle">L_we·cos α = 225.1</text>
+      </svg>
+    </div>
+
+    <div class="keys">
+      <div class="key">
+        <div class="kt">t_i</div>
+        <div class="kd">내륜 <strong>소단</strong>에서 보어면 → 궤도면까지의 반경 두께. 궤도가 가장 낮게 내려온 지점이라 내륜의 최소 살두께다.</div>
+      </div>
+      <div class="key">
+        <div class="kt">t_o</div>
+        <div class="kd">외륜 <strong>대단</strong>에서 궤도면 → 외경면까지의 반경 두께. 궤도가 가장 높게 올라간 지점이라 외륜의 최소 살두께다.</div>
+      </div>
+      <div class="key">
+        <div class="kt">구식 기준면</div>
+        <div class="kd">개정 전에는 롤러 <strong>중앙면</strong>에서 쟀다. 같은 v1.3 에서 85.52 mm 로, 실제 최소 두께의 1.8배를 두께로 착각한 셈이다.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div>
+      <h2>왜 이 차이가 σ = 0 을 만들었나</h2>
+      <p class="cap">중앙면에서 두께를 고정하면, 롤러가 길어지거나 α 가 커질수록 <strong>소단 궤도가 보어 아래로 내려간다.</strong> 링이 뚫린 형상이 되어 MASTA 가 응력을 반환하지 못한다. 아래는 소단 내륜 벽두께 실측이다.</p>
+    </div>
+    <div class="figframe">
+      <svg viewBox="0 0 640 268" role="img" aria-label="소단 내륜 벽두께 비교 막대그래프">
+        <!-- 눈금 -->
+        <line x1="272.7" y1="26" x2="272.7" y2="238" stroke="var(--ink)" stroke-width="1.2"/>
+        <text x="272.7" y="255" font-family="var(--mono)" font-size="10" fill="var(--muted)" text-anchor="middle">0</text>
+        <line x1="283.6" y1="26" x2="283.6" y2="238" stroke="var(--fail)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="292" y="22" font-family="var(--mono)" font-size="10" fill="var(--fail)">실패 임계 ≈ 3 mm</text>
+        <line x1="600" y1="238" x2="600" y2="243" stroke="var(--muted)" stroke-width="1"/>
+        <text x="600" y="255" font-family="var(--mono)" font-size="10" fill="var(--muted)" text-anchor="middle">90 mm</text>
+
+        <!-- 막대: y0=32, h=22, step=34 -->
+        <g font-family="var(--sans)" font-size="11" fill="var(--muted)">
+          <text x="0" y="47">v1.3 기준선 · 구식</text>
+          <text x="0" y="81">v1.3 기준선 · <tspan fill="var(--steel)">신식</tspan></text>
+          <text x="0" y="115">3900 α24 L460 · 구식</text>
+          <text x="0" y="149">3900 α24 L480 · 구식</text>
+          <text x="0" y="183">3900 α30 L440 · 구식</text>
+          <text x="0" y="217">3900 α30 L440 · <tspan fill="var(--steel)">신식</tspan></text>
+        </g>
+
+        <rect x="272.7" y="32" width="310.9" height="22" fill="var(--ok)" opacity="0.75"/>
+        <text x="590" y="47" font-family="var(--mono)" font-size="11" fill="var(--ink)" text-anchor="end">85.5</text>
+
+        <rect x="272.7" y="66" width="170.9" height="22" fill="var(--steel)" opacity="0.85"/>
+        <text x="452" y="81" font-family="var(--mono)" font-size="11" fill="var(--ink)">47.0</text>
+
+        <rect x="272.7" y="100" width="24.7" height="22" fill="var(--ok)" opacity="0.75"/>
+        <text x="306" y="115" font-family="var(--mono)" font-size="11" fill="var(--ok)">+6.8 OK</text>
+
+        <rect x="272.7" y="134" width="9.8" height="22" fill="var(--fail)" opacity="0.85"/>
+        <text x="292" y="149" font-family="var(--mono)" font-size="11" fill="var(--fail)">+2.7 σ=0</text>
+
+        <rect x="236.0" y="168" width="36.7" height="22" fill="var(--fail)" opacity="0.85"/>
+        <text x="230" y="183" font-family="var(--mono)" font-size="11" fill="var(--fail)" text-anchor="end">−10.1 σ=0</text>
+
+        <rect x="272.7" y="202" width="200.0" height="22" fill="var(--steel)" opacity="0.85"/>
+        <text x="481" y="217" font-family="var(--mono)" font-size="11" fill="var(--ink)">55.0</text>
+      </svg>
+    </div>
+    <p class="cap">구식 기준으로 <code>α = 30°</code> · <code>L_we 440</code> 은 벽두께가 <strong class="bad">−10.1 mm</strong> — 궤도가 보어를 파고든다. 신식은 같은 조건에서 <strong class="good">55.0 mm</strong> 를 확보한다. 신식 두께는 <code>0.014097 × D_pw</code> 로 지름에만 비례하므로 롤러 길이·접촉각과 무관하게 항상 47 ~ 63 mm 다.</p>
+  </section>
+
+  <section class="card">
+    <div>
+      <h2>산출식</h2>
+      <p class="cap">궤도 반경은 중앙면에서 소단·대단으로 각각 <code>(L_we/2)·sin α</code> 만큼 변한다. 지름으로는 <code>L_we·sin α</code> 다.</p>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>항목</th><th>구식 (중앙면)</th><th>신식 (소단·대단)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>보어 <code>d</code></td>
+            <td><code>D_pw − D_we·cosα − 2·t_i</code></td>
+            <td><code>D_pw − D_we·cosα − <strong>L_we·sinα</strong> − 2·t_i</code></td>
+          </tr>
+          <tr>
+            <td>외경 <code>D</code></td>
+            <td><code>D_pw + D_we·cosα + 2·t_o</code></td>
+            <td><code>D_pw + D_we·cosα + <strong>L_we·sinα</strong> + 2·t_o</code></td>
+          </tr>
+          <tr><td><code>t_i</code></td><td class="num">0.025674 · D_pw</td><td class="num">0.014097 · D_pw</td></tr>
+          <tr><td><code>t_o</code></td><td class="num">0.024654 · D_pw</td><td class="num">0.013076 · D_pw</td></tr>
+          <tr><td>v1.3 검산 (보어 / 외경)</td><td class="num">3,055 / 3,600</td><td class="num">3,055 / 3,600</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap">두 식 모두 v1.3 을 정확히 재현한다 — 비율을 v1.3 에서 역산했기 때문이다. 차이는 <strong>v1.3 에서 벗어났을 때</strong> 나타난다. 구식은 롤러가 길어질수록 소단 살을 잠식하지만, 신식은 <code>L_we·sinα</code> 항이 그만큼 보어를 밀어내려 살두께를 지킨다.</p>
+  </section>
+
+</div>
+
+</body>
+</html>

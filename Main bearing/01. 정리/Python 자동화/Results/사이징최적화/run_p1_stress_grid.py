@@ -1,11 +1,16 @@
 """
-P1 — 극한 응력 전수 격자 (문서 §8-1)
+P1 — 극한 응력 전수 격자 · Phase 2 (문서 §8-2)
 =====================================
-4,900 유효 설계점 × 지배 극한 3 LC × 2 베어링 → σ_max 가능영역 확정.
+유효 설계점 × 지배 극한 LC × 2 베어링 → σ_max 가능영역 확정.
 
   정렬  : 응력 유리도 복합지표 S = L_we × Z × L_eff 내림차순 (큰 것부터)
   체크포인트 : 매 점 CSV append — 재시작 시 기존 행 건너뜀
   프루닝 : 사용하지 않음 (α 비단조 · Z=floor 계단형)
+
+Phase 2 (260729 확정 격자) — Phase 1 결과는 전부 무효, 문서 §8-1 참조
+  · 세장비 상한 4.0 → 2.5 · 산출식 소단/대단 기준 · 링두께 링폭 기준 (R5·R6)
+  · D_we 110~230 · L_we 175~550 (75 mm 절대격자) → 유효 4,500점
+  · 극한 LC 는 지배 1건(Myz_max)만 — Phase 1 전 점에서 Myz_max/UW 지배 확인 (§8-1.7.2)
 
 사용:
     python run_p1_stress_grid.py --probe      # 예비측정 10점
@@ -21,7 +26,7 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.dirname(HERE)
 ROOT = os.path.dirname(RES)
-OUTDIR = os.path.join(HERE, "P1_극한응력")
+OUTDIR = os.path.join(HERE, "P1_극한응력_Phase2")
 GRID_CSV = os.path.join(OUTDIR, "p1_grid.csv")
 sys.path.insert(0, HERE)
 sys.path.insert(0, ROOT)
@@ -35,20 +40,22 @@ MODEL = (r"D:\AI\AI_Seminar\Main bearing\02. 자료\MASTA"
 # ── 격자 (§8-1.1) ──
 Z1 = [0.3, 0.5, 0.7, 1.0]
 Z2 = [3.0, 3.5, 4.0, 4.5, 5.0]
-DPW = [3.3309, 3.600, 3.900, 4.200, 4.500]
-ALPHA = [12.0, 18.0, 24.0, 30.0]
-DWE = [0.110, 0.140, 0.170, 0.200]
-LWE = [0.238, 0.295, 0.350, 0.410]
+DPW = [3.300, 3.600, 3.900, 4.200, 4.500]
+ALPHA = [15.0, 19.0, 23.0, 27.0, 31.0]   # 260729 개정 — 4도 등간격
+# 260729 개정 — 세장비 상한 2.5 반영 + D_we 확대 + L_we 75mm 절대격자
+DWE = [0.110, 0.140, 0.170, 0.200, 0.230]
+LWE = [0.175, 0.250, 0.325, 0.400, 0.475, 0.550]
 
-# ── 지배 극한 3 LC (§8-1.2) : 이름 → 축토크 [kNm] ──
-GOV = {"Myz_max": 22673.0, "My_min": 27453.0, "Mz_min": 17013.0}
+# ── 지배 극한 LC (§8-1.2) : 이름 → 축토크 [kNm] ──
+GOV = {"Myz_max": 22673.0}          # Phase 2 — 지배 1 LC 만
 LIMIT = 2100.0            # MPa
 
 FIELDS = ["idx", "S_rank", "z1", "z2", "D_pw_mm", "alpha", "D_we_mm", "L_we_mm",
+          "slenderness",
           "Z", "bore_mm", "D_mm", "T_mm", "B_mm", "C_mm",
-          "L_eff_m", "L_eff_appx_m", "S_index", "mass_brg_kg", "mass_shaft_kg", "mass_total_kg",
-          "Myz_max_UW", "Myz_max_DW", "My_min_UW", "My_min_DW",
-          "Mz_min_UW", "Mz_min_DW",
+          "t_i_mm", "t_o_mm", "c12_margin",
+          "L_eff_m", "S_index", "mass_brg_kg", "mass_shaft_kg", "mass_total_kg",
+          "Myz_max_UW", "Myz_max_DW",
           "sigma_max_MPa", "governing", "feasible", "t_s", "warn"]
 
 
@@ -111,7 +118,7 @@ def main(probe=False):
 
     os.makedirs(OUTDIR, exist_ok=True)
     pts = build_grid()
-    print(f"[P1] 유효 설계점 {len(pts):,} · 지배 3 LC · 정렬 S = L_we x Z x L_eff")
+    print(f"[P1 Phase 2] 유효 설계점 {len(pts):,} · 지배 LC {list(GOV)} · 정렬 S = L_we x Z x L_eff")
     if probe:
         pts = pts[:10]
         print("     [예비측정] 상위 10점만 수행")
@@ -237,12 +244,15 @@ def main(probe=False):
         row = dict(idx=key_of(r), S_rank=r["S_rank"], z1=r["z1"], z2=r["z2"],
                    D_pw_mm=g["D_pw"] * 1e3, alpha=g["alpha_deg"],
                    D_we_mm=g["D_we"] * 1e3, L_we_mm=g["L_we"] * 1e3,
+                   slenderness=round(g["L_we"] / g["D_we"], 3),
                    Z=g["number_of_elements"], bore_mm=g["bore"] * 1e3,
                    D_mm=g["outer_diameter"] * 1e3, T_mm=g["width"] * 1e3,
                    B_mm=g["inner_ring_width"] * 1e3,
                    C_mm=g["outer_ring_width"] * 1e3,
+                   t_i_mm=round(g["t_i"] * 1e3, 2), t_o_mm=round(g["t_o"] * 1e3, 2),
+                   c12_margin=round(min(g["t_i"], g["t_o"]) / (0.20 * g["D_we"]), 3),
                    L_eff_m=None if L_meas is None else round(L_meas, 5),
-                   L_eff_appx_m=round(r["L_eff"], 5), S_index=round(r["S"], 3),
+                   S_index=round(r["S"], 3),
                    mass_brg_kg=round(mb, 1), mass_shaft_kg=round(ms, 1),
                    mass_total_kg=round(2 * mb + ms, 1),
                    sigma_max_MPa=round(best, 1), governing=who,

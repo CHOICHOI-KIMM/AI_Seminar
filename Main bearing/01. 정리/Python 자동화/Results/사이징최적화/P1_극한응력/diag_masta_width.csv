@@ -1,0 +1,21 @@
+﻿phase,test,B0,B1,C0,C1,T0,T1,auto,err
+B,B +100mm,300.0,400.0,253.001,253.001,310.0,400.0,1,
+B,C +100mm,300.0,300.0,253.001,353.001,310.0,360.0,1,
+B,B·C 동시 +100mm,300.0,400.0,253.001,353.001,310.0,410.0,1,
+B,B −50mm,300.0,250.0,253.001,253.001,310.0,285.0,1,
+B,B +400mm (T 초과),300.0,700.0,253.001,253.001,310.0,700.0,1,
+C,T=400,,,,,,400.0,1,
+C,T=320,,,,,,320.0,1,
+C,T=310,,,,,,310.0,1,
+C,T=300,,,,,,300.0,1,
+C,T=299,,,,,,310.0,0,The width cannot be less than the maximum of the inner and outer ring widths.
+C,T=280,,,,,,310.0,0,The width cannot be less than the maximum of the inner and outer ring widths.
+C,T=253,,,,,,310.0,0,The width cannot be less than the maximum of the inner and outer ring widths.
+C,T=252,,,,,,310.0,0,The width cannot be less than the maximum of the inner and outer ring widths.
+C,T=200,,,,,,310.0,0,The width cannot be less than the maximum of the inner and outer ring widths.
+D,L_we=175,,220.544,,185.992,227.895,227.895,,
+D,L_we=250,,315.063,,265.703,325.565,325.565,,
+D,L_we=325,,409.581,,345.414,423.235,423.234,,
+D,L_we=400,,504.1,,425.124,520.904,520.904,,
+D,L_we=475,,598.619,,504.835,618.573,618.573,,
+D,L_we=550,,693.138,,584.546,716.243,716.243,,
