@@ -27,12 +27,13 @@ DOC = os.path.join(os.path.dirname(os.path.dirname(HERE)),
                    "DLC기반_피로해석_사이징_최적화.md")
 SECT = "##### 8-3.6.2"
 LIMIT = 0.5
-HDR = ("| # | D_pw [mm] | d [mm] | D [mm] | α [°] | D_we [mm] | L_we [mm] | "
+HDR = ("| # | D_pw [mm] | d [mm] | D [mm] | B [mm] | C [mm] | T [mm] | "
+       "α [°] | D_we [mm] | L_we [mm] | "
        "세장비 | z1 [m] | z2 [m] | Z [개] | L_eff [m] | "
        "질량 [t] | 베어링 [t] | 샤프트 [t] | σ_max [MPa] | "
        "**ΣD30_UW** | **ΣD30_DW** | life_Sys [yr] | **판정** |")
 SEP = ("|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|"
-       "--:|--:|--:|:-:|")
+       "--:|--:|--:|--:|--:|--:|:-:|")
 # 기준선 질량 — v1.3 MASTA 실측 (§4-3). 격자점이 아니라 p1_feasible 에 없다.
 BASE_MB, BASE_MS = 5600.5, 43225.8
 
@@ -74,7 +75,9 @@ def build():
             cells = ("·", "·", "·", "·")
         lines.append(
             f"| {lbl} | {dpw:,.0f} | {g['bore']*1e3:,.0f} | "
-            f"{g['outer_diameter']*1e3:,.0f} | {al:.0f} | {dwe:.0f} | {lwe:.0f} | "
+            f"{g['outer_diameter']*1e3:,.0f} | "
+            f"{g['inner_ring_width']*1e3:,.1f} | {g['outer_ring_width']*1e3:,.1f} | "
+            f"{g['width']*1e3:,.1f} | {al:.0f} | {dwe:.0f} | {lwe:.0f} | "
             f"{lwe/dwe:.3f} | {float(c['z1']):.1f} | {float(c['z2']):.1f} | "
             f"{g['number_of_elements']} | {float(c['L_eff_m']):.3f} | "
             f"{mt/1000:.1f} | {mb/1000:.1f} | {ms/1000:.1f} | {sig} | "
@@ -87,7 +90,7 @@ def main():
     s = io.open(DOC, encoding="utf-8").read()
     base = s.index(SECT)
     # 절 안의 첫 표를 찾아 통째로 교체 (헤더 문자열 비의존)
-    m = re.search(r"^\| # \| D_pw \|.*?(?=\n\n)", s[base:], re.S | re.M)
+    m = re.search(r"^\| # \| D_pw.*?(?=\n\n)", s[base:], re.S | re.M)
     if not m:
         raise RuntimeError("§8-3.6.2 표를 찾지 못했다")
     i, j = base + m.start(), base + m.end()

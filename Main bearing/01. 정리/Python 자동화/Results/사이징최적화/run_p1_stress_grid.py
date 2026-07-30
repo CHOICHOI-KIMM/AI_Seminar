@@ -1,5 +1,5 @@
 """
-P1 — 극한 응력 전수 격자 · Phase 2 (문서 §8-2)
+P1 — 극한 응력 전수 격자 · Phase 3 (문서 §8-4)
 =====================================
 유효 설계점 × 지배 극한 LC × 2 베어링 → σ_max 가능영역 확정.
 
@@ -7,10 +7,11 @@ P1 — 극한 응력 전수 격자 · Phase 2 (문서 §8-2)
   체크포인트 : 매 점 CSV append — 재시작 시 기존 행 건너뜀
   프루닝 : 사용하지 않음 (α 비단조 · Z=floor 계단형)
 
-Phase 2 (260729 확정 격자) — Phase 1 결과는 전부 무효, 문서 §8-1 참조
-  · 세장비 상한 4.0 → 2.5 · 산출식 소단/대단 기준 · 링두께 링폭 기준 (R5·R6)
-  · D_we 110~230 · L_we 175~550 (75 mm 절대격자) → 유효 4,500점
-  · 극한 LC 는 지배 1건(Myz_max)만 — Phase 1 전 점에서 Myz_max/UW 지배 확인 (§8-1.7.2)
+Phase 3 (260730) — 배치 변수 확대. 베어링 제원 격자는 Phase 2 와 동일
+  · z1 0.3~1.0 → 1.0~3.0 (5) · z2 3.0~5.0 → 3.0~6.0 (7) → 유효 8,700점
+  · (C8) 비활성화 · (C4) 스팬 하한이 실효 제약으로 (1,800점 탈락)
+  · Phase 2 중복 1,500점(z1 1.0 x z2 3.0~5.0)은 시딩해 재사용
+  · 극한 LC 는 지배 1건(Myz_max) · 500점마다 문서 §8-4.3 자동 갱신
 
 사용:
     python run_p1_stress_grid.py --probe      # 예비측정 10점
@@ -26,20 +27,22 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.dirname(HERE)
 ROOT = os.path.dirname(RES)
-OUTDIR = os.path.join(HERE, "P1_극한응력_Phase2")
+OUTDIR = os.path.join(HERE, "P1_극한응력_Phase3")
 GRID_CSV = os.path.join(OUTDIR, "p1_grid.csv")
 sys.path.insert(0, HERE)
 sys.path.insert(0, ROOT)
 
-import sizing_geom as sg   # noqa: E402
+import sizing_geom as sg      # noqa: E402
+import update_p1_table       # noqa: E402
 
 MODEL = (r"D:\AI\AI_Seminar\Main bearing\02. 자료\MASTA"
          r"\26MW_메인베어링_기본설계_v1.4_샤프트 두께,형상 3안"
          r"_베어링 크기 확대_롤러 확대_온도_50도_260726.Masta")
 
 # ── 격자 (§8-1.1) ──
-Z1 = [0.3, 0.5, 0.7, 1.0]
-Z2 = [3.0, 3.5, 4.0, 4.5, 5.0]
+# 260730 Phase 3 — 배치 변수 확대 (§8-4.1)
+Z1 = [1.0, 1.5, 2.0, 2.5, 3.0]
+Z2 = [3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0]
 DPW = [3.300, 3.600, 3.900, 4.200, 4.500]
 ALPHA = [15.0, 19.0, 23.0, 27.0, 31.0]   # 260729 개정 — 4도 등간격
 # 260729 개정 — 세장비 상한 2.5 반영 + D_we 확대 + L_we 75mm 절대격자
@@ -118,7 +121,7 @@ def main(probe=False):
 
     os.makedirs(OUTDIR, exist_ok=True)
     pts = build_grid()
-    print(f"[P1 Phase 2] 유효 설계점 {len(pts):,} · 지배 LC {list(GOV)} · 정렬 S = L_we x Z x L_eff")
+    print(f"[P1 Phase 3] 유효 설계점 {len(pts):,} · 지배 LC {list(GOV)} · 정렬 S = L_we x Z x L_eff")
     if probe:
         pts = pts[:10]
         print("     [예비측정] 상위 10점만 수행")
@@ -262,6 +265,11 @@ def main(probe=False):
         for k_, v_ in sig.items():
             row[k_] = None if v_ is None else round(v_, 1)
         w.writerow(row); f.flush()
+        if n % 500 == 0 or n == len(todo):        # 문서 §8-4.3 실시간 갱신
+            try:
+                update_p1_table.main((time.time() - t0) / 60.0)
+            except Exception as e:
+                print("  [warn] 문서 갱신 실패:", str(e).splitlines()[0][:60])
         if n <= 10 or n % 50 == 0 or n == len(todo):
             el = time.time() - t0
             eta = el / n * (len(todo) - n) / 3600
