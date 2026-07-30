@@ -27,9 +27,14 @@ DOC = os.path.join(os.path.dirname(os.path.dirname(HERE)),
                    "DLC기반_피로해석_사이징_최적화.md")
 SECT = "##### 8-3.6.2"
 LIMIT = 0.5
-HDR = ("| # | D_pw | d | D | α | D_we | L_we | 세장비 | z1 | z2 | 질량 | σ_max | "
-       "**ΣD30_UW** | **ΣD30_DW** | life_Sys | **판정** |")
-SEP = "|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:-:|"
+HDR = ("| # | D_pw [mm] | d [mm] | D [mm] | α [°] | D_we [mm] | L_we [mm] | "
+       "세장비 | z1 [m] | z2 [m] | Z [개] | L_eff [m] | "
+       "질량 [t] | 베어링 [t] | 샤프트 [t] | σ_max [MPa] | "
+       "**ΣD30_UW** | **ΣD30_DW** | life_Sys [yr] | **판정** |")
+SEP = ("|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|"
+       "--:|--:|--:|:-:|")
+# 기준선 질량 — v1.3 MASTA 실측 (§4-3). 격자점이 아니라 p1_feasible 에 없다.
+BASE_MB, BASE_MS = 5600.5, 43225.8
 
 
 def load(path):
@@ -52,8 +57,9 @@ def build():
         dwe, lwe = float(c["D_we_mm"]), float(c["L_we_mm"])
         g = sg.bearing(dpw / 1e3, al, dwe / 1e3, lwe / 1e3)
         f = feas.get(tag, {})
-        mass = (f"{float(f['mass_total_kg'])/1000:.1f} t" if f.get("mass_total_kg")
-                else "54.4 t")
+        mb = float(f["mass_brg_kg"]) if f.get("mass_brg_kg") else BASE_MB
+        ms = float(f["mass_shaft_kg"]) if f.get("mass_shaft_kg") else BASE_MS
+        mt = float(f["mass_total_kg"]) if f.get("mass_total_kg") else 2 * mb + ms
         sig = (f"{float(f['sigma_max_MPa']):,.1f}" if f.get("sigma_max_MPa")
                else "3,424.2")
         r = res.get(tag)
@@ -62,7 +68,7 @@ def build():
             du, dd = float(r["D30_UW"]), float(r["D30_DW"])
             ok = du <= LIMIT and float(r["D30_Sys"]) <= LIMIT
             cells = (f"**{du:.4f}**", f"{dd:.4f}",
-                     f"{float(r['life_Sys_yr']):,.1f} yr",
+                     f"{float(r['life_Sys_yr']):,.1f}",
                      "**합격**" if ok else "**불합격**")
         else:
             cells = ("·", "·", "·", "·")
@@ -70,7 +76,9 @@ def build():
             f"| {lbl} | {dpw:,.0f} | {g['bore']*1e3:,.0f} | "
             f"{g['outer_diameter']*1e3:,.0f} | {al:.0f} | {dwe:.0f} | {lwe:.0f} | "
             f"{lwe/dwe:.3f} | {float(c['z1']):.1f} | {float(c['z2']):.1f} | "
-            f"{mass} | {sig} | " + " | ".join(cells) + " |")
+            f"{g['number_of_elements']} | {float(c['L_eff_m']):.3f} | "
+            f"{mt/1000:.1f} | {mb/1000:.1f} | {ms/1000:.1f} | {sig} | "
+            + " | ".join(cells) + " |")
     return "\n".join(lines), done, len(specs)
 
 
