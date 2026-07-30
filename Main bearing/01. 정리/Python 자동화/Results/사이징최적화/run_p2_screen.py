@@ -25,8 +25,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.dirname(HERE)
 ROOT = os.path.dirname(RES)
 DLCDIR = os.path.join(RES, "DLC별해석")
-CONST = os.path.join(HERE, "P1_극한응력_Phase2", "p2_constants.csv")
-OUTDIR = os.path.join(HERE, "P2_피로수명_Phase1")
+# argv[1] == "2" → P2 Phase 2 (24건) · 없으면 Phase 1 (13건)
+_PH2 = len(sys.argv) > 1 and sys.argv[1] == "2"
+if _PH2:
+    OUTDIR = os.path.join(HERE, "P2_피로수명_Phase2")
+    CONST = os.path.join(OUTDIR, "p2b_constants.csv")
+else:
+    OUTDIR = os.path.join(HERE, "P2_피로수명_Phase1")
+    CONST = os.path.join(HERE, "P1_극한응력_Phase2", "p2_constants.csv")
 
 NU50 = 294.637                 # Mobilith SHC 460 @ 50°C [mm²/s] — MASTA 실측 일치
 P_EXP = 10.0 / 3.0

@@ -24,8 +24,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.dirname(HERE)
 ROOT = os.path.dirname(RES)
 DLCDIR = os.path.join(RES, "DLC별해석")
-DIR = os.path.join(HERE, "P2_피로수명_Phase1")
-CONST = os.path.join(HERE, "P1_극한응력_Phase2", "p2_constants.csv")
+# argv[1] == "2" → P2 Phase 2 (24건 · A/B) · 없으면 Phase 1 (13건)
+_PH2 = len(sys.argv) > 1 and sys.argv[1] == "2"
+if _PH2:
+    DIR = os.path.join(HERE, "P2_피로수명_Phase2")
+    CONST = os.path.join(DIR, "p2b_constants.csv")
+else:
+    DIR = os.path.join(HERE, "P2_피로수명_Phase1")
+    CONST = os.path.join(HERE, "P1_극한응력_Phase2", "p2_constants.csv")
 PERDLC = os.path.join(DIR, "fatigue_per_dlc.csv")
 SUMMARY = os.path.join(DIR, "fatigue_summary.csv")
 SAVEDIR = os.path.join(DIR, "MASTA")
@@ -34,11 +40,13 @@ sys.path.insert(0, ROOT)
 
 import sizing_geom as sg          # noqa: E402
 import update_p2_table            # noqa: E402
+import update_p2b_table           # noqa: E402
 
 MODEL = (r"D:\AI\AI_Seminar\Main bearing\02. 자료\MASTA"
          r"\26MW_메인베어링_기본설계_v1.4_샤프트 두께,형상 3안"
          r"_베어링 크기 확대_롤러 확대_온도_50도_260726.Masta")
-SAVE_TAGS = {"1", "base"}
+SAVE_TAGS = ({"A1", "A2", "A3", "B1", "B2", "B3"} if _PH2
+             else {"1", "base"})
 NBATCH = 20
 DT0, DT = 0.1, 20.0
 E_W = 9.0 / 8.0
@@ -246,7 +254,8 @@ def main():
                 print(f"  [저장] {os.path.basename(p)}  {st}")
             except Exception as e:
                 print(f"  !! MASTA 저장 실패: {str(e).splitlines()[0][:70]}")
-        d, t = update_p2_table.main()
+        upd = update_p2b_table if _PH2 else update_p2_table
+        d, t = upd.main()
         print(f"  [문서] §8-3.6 갱신 {d}/{t}", flush=True)
 
     fh.close()

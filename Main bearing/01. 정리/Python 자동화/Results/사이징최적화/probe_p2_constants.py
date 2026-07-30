@@ -17,8 +17,14 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.dirname(HERE)
 ROOT = os.path.dirname(RES)
-DIR = os.path.join(HERE, "P1_극한응력_Phase2")
-OUT = os.path.join(DIR, "p2_constants.csv")
+# argv[1] == "2" → P2 Phase 2 (24건, 기준선 없음) · 없으면 Phase 1 (12건 + 기준선)
+PH2 = len(sys.argv) > 1 and sys.argv[1] == "2"
+if PH2:
+    DIR = os.path.join(HERE, "P2_피로수명_Phase2")
+    SRCF, OUT = "p2b_targets.csv", os.path.join(DIR, "p2b_constants.csv")
+else:
+    DIR = os.path.join(HERE, "P1_극한응력_Phase2")
+    SRCF, OUT = "p1_feasible.csv", os.path.join(DIR, "p2_constants.csv")
 sys.path.insert(0, HERE)
 sys.path.insert(0, ROOT)
 
@@ -74,11 +80,13 @@ def main():
     from mastapy.system_model import Design
     from mastapy.bearings import RollerBearingProfileTypes as RP
 
-    with open(os.path.join(DIR, "p1_feasible.csv"), encoding="utf-8-sig") as f:
-        top = list(csv.DictReader(f))[:NTOP]
-    # 기준선 (v1.3 제원 · z 0.5/3.0) — 격자점이 아니므로 별도 지정 (§8-3.1)
-    top.append(dict(rank_mass="base", D_pw_mm="3330.9", alpha="19.0",
-                    D_we_mm="110.51", L_we_mm="238.048", z1="0.5", z2="3.0"))
+    with open(os.path.join(DIR, SRCF), encoding="utf-8-sig") as f:
+        top = list(csv.DictReader(f))
+    if not PH2:
+        top = top[:NTOP]
+        # 기준선 (v1.3 제원 · z 0.5/3.0) — 격자점이 아니므로 별도 지정 (§8-3.1)
+        top.append(dict(rank_mass="base", D_pw_mm="3330.9", alpha="19.0",
+                        D_we_mm="110.51", L_we_mm="238.048", z1="0.5", z2="3.0"))
 
     design = Design.load(MODEL)
     asm = design.all_parts_of_type_root_assembly()[0]
