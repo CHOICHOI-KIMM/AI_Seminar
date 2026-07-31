@@ -1,0 +1,2302 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>풍력터빈 메인샤프트 피로해석 — DIN 743:2012-12 · IEC 61400-8:2024 적용 가이드</title>
+<style>
+:root{
+  --surface-1:#fcfcfb; --page:#f9f9f7;
+  --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s7:#4a3aa7; --s8:#e34948;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --seq100:#cde2fb; --seq250:#86b6ef; --seq400:#3987e5; --seq550:#1c5cab; --seq700:#0d366b;
+  --wash:rgba(42,120,214,0.08);
+  --h1:#cde2fb;--h1i:#0b0b0b; --h2:#86b6ef;--h2i:#0b0b0b; --h3:#3987e5;--h3i:#ffffff;
+  --h4:#1c5cab;--h4i:#ffffff; --h5:#0d366b;--h5i:#ffffff;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --surface-1:#1a1a19; --page:#0d0d0d;
+  --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s7:#9085e9; --s8:#e66767;
+  --seq100:#0d366b; --seq250:#184f95; --seq400:#3987e5; --seq550:#6da7ec; --seq700:#cde2fb;
+  --wash:rgba(57,135,229,0.12);
+  --h1:#0d366b;--h1i:#ffffff; --h2:#184f95;--h2i:#ffffff; --h3:#3987e5;--h3i:#ffffff;
+  --h4:#86b6ef;--h4i:#0b0b0b; --h5:#cde2fb;--h5i:#0b0b0b;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:1rem}
+body{
+  margin:0; background:var(--page); color:var(--text-primary);
+  font-family:system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased;
+}
+.layout{display:grid; grid-template-columns:290px minmax(0,1fr); gap:0; max-width:1560px; margin:0 auto}
+/* ---------- TOC ---------- */
+#toc{
+  position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  padding:26px 18px 60px 24px; border-right:1px solid var(--border); background:var(--page);
+}
+#toc .brand{font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:4px}
+#toc .ttl{font-size:15px; font-weight:700; line-height:1.4; margin-bottom:18px; color:var(--text-primary)}
+#toc ol{list-style:none; margin:0; padding:0; counter-reset:sec}
+#toc li{margin:0}
+#toc a{
+  display:block; padding:5px 10px; border-left:2px solid transparent; margin-left:-2px;
+  color:var(--text-secondary); text-decoration:none; font-size:13.5px; line-height:1.45; border-radius:0 4px 4px 0;
+}
+#toc a:hover{background:var(--wash); color:var(--text-primary)}
+#toc a.active{border-left-color:var(--s1); color:var(--text-primary); font-weight:650; background:var(--wash)}
+#toc a.sub{padding-left:26px; font-size:12.5px; color:var(--text-muted)}
+#toc a.sub.active{color:var(--text-primary)}
+#toc .tocgap{height:10px}
+/* ---------- main ---------- */
+main{padding:34px 44px 120px; min-width:0}
+.topbar{display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:8px; flex-wrap:wrap}
+.eyebrow{font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); font-weight:700}
+h1{font-size:31px; line-height:1.25; margin:6px 0 10px; letter-spacing:-.015em}
+.sub{color:var(--text-secondary); font-size:15px; margin:0 0 6px}
+.meta{color:var(--text-muted); font-size:13px; margin:0 0 30px}
+h2{font-size:22px; margin:56px 0 14px; padding-top:14px; border-top:1px solid var(--border); letter-spacing:-.01em; scroll-margin-top:16px}
+h2 .num{color:var(--text-muted); font-weight:600; margin-right:10px; font-variant-numeric:tabular-nums}
+h3{font-size:17px; margin:32px 0 10px; letter-spacing:-.005em; scroll-margin-top:16px}
+h4{font-size:14.5px; margin:22px 0 8px; color:var(--text-secondary)}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:22px}
+li{margin:5px 0}
+code,.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace; font-size:13px}
+code{background:var(--wash); padding:1px 5px; border-radius:4px}
+a{color:var(--s1)}
+.theme-btn{
+  border:1px solid var(--border); background:var(--surface-1); color:var(--text-secondary);
+  border-radius:999px; padding:7px 15px; font-size:12.5px; cursor:pointer; font-family:inherit; white-space:nowrap;
+}
+.theme-btn:hover{color:var(--text-primary)}
+/* ---------- blocks ---------- */
+.card{background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:20px 22px; margin:20px 0}
+.formula{
+  background:var(--surface-1); border:1px solid var(--border); border-left:3px solid var(--s1);
+  border-radius:8px; padding:14px 18px; margin:14px 0; overflow-x:auto;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:13.5px; line-height:1.85;
+  white-space:pre; color:var(--text-primary);
+}
+.callout{border-radius:10px; padding:14px 18px; margin:16px 0; border:1px solid var(--border); background:var(--surface-1); border-left-width:3px; border-left-style:solid}
+.callout p:first-child{margin-top:0} .callout p:last-child{margin-bottom:0}
+.callout .tag{display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px}
+.c-key{border-left-color:var(--s1)} .c-key .tag{color:var(--s1)}
+.c-warn{border-left-color:var(--warn)} .c-warn .tag{color:var(--text-secondary)}
+.c-crit{border-left-color:var(--crit)} .c-crit .tag{color:var(--crit)}
+.c-good{border-left-color:var(--good)} .c-good .tag{color:var(--good)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+/* ---------- tables ---------- */
+.tw{overflow-x:auto; margin:16px 0; border:1px solid var(--border); border-radius:10px; background:var(--surface-1)}
+table{border-collapse:collapse; width:100%; font-size:13.5px}
+th,td{padding:9px 13px; text-align:left; border-bottom:1px solid var(--grid); vertical-align:top}
+thead th{background:var(--wash); font-weight:700; font-size:12.5px; color:var(--text-secondary); white-space:nowrap; border-bottom:1px solid var(--axis)}
+tbody tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+td.mid,th.mid{text-align:center}
+.tag-ok{color:var(--good); font-weight:700} .tag-no{color:var(--crit); font-weight:700} .tag-w{color:var(--serious); font-weight:700}
+/* ---------- figures ---------- */
+figure{margin:26px 0; background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:18px 20px 14px}
+figure .fig-h{font-size:14.5px; font-weight:700; margin:0 0 3px}
+figure .fig-s{font-size:12.5px; color:var(--text-secondary); margin:0 0 14px; line-height:1.6}
+figcaption{font-size:12.5px; color:var(--text-secondary); margin-top:12px; padding-top:11px; border-top:1px solid var(--grid); line-height:1.65}
+.legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:0 0 12px; font-size:12.5px; color:var(--text-secondary)}
+.legend span{display:inline-flex; align-items:center; gap:7px}
+.legend i{width:14px; height:3px; border-radius:2px; display:inline-block}
+.legend i.sq{width:11px; height:11px; border-radius:3px}
+svg{display:block; max-width:100%; height:auto; overflow:visible}
+.svgwrap{overflow-x:auto}
+/* ---------- KPI ---------- */
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:12px; margin:18px 0}
+.kpi{background:var(--surface-1); border:1px solid var(--border); border-radius:11px; padding:15px 16px}
+.kpi .l{font-size:12px; color:var(--text-secondary); margin-bottom:5px; line-height:1.4}
+.kpi .v{font-size:29px; font-weight:700; line-height:1.1; letter-spacing:-.02em}
+.kpi .d{font-size:12px; margin-top:5px; display:flex; align-items:center; gap:6px; color:var(--text-muted)}
+.kpi.ok{border-top:3px solid var(--good)} .kpi.no{border-top:3px solid var(--crit)} .kpi.nt{border-top:3px solid var(--s1)}
+/* ---------- flow ---------- */
+.flow{display:flex; flex-direction:column; gap:0; margin:18px 0}
+.fstep{display:grid; grid-template-columns:34px 1fr; gap:14px; align-items:start}
+.fstep .bub{width:28px;height:28px;border-radius:50%;background:var(--s1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700; flex:none}
+.fstep .bub.alt{background:var(--s2)} .fstep .bub.star{background:var(--crit)}
+.fstep .bd{padding-bottom:16px; min-width:0}
+.fstep .bd b{display:block; font-size:14px; margin-bottom:3px}
+.fstep .bd .t{font-size:13px; color:var(--text-secondary); line-height:1.6}
+.fline{grid-column:1; width:2px; background:var(--grid); margin:0 auto; height:100%}
+.fstep .rail{display:flex; flex-direction:column; align-items:center; height:100%}
+.fstep .rail .ln{width:2px; flex:1; background:var(--grid); min-height:10px}
+.fstep:last-child .rail .ln{background:transparent}
+/* ---------- misc ---------- */
+.pill{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:.03em; white-space:nowrap}
+.p-ok{background:rgba(12,163,12,.13); color:var(--good)}
+.p-w{background:rgba(250,178,25,.18); color:#8a6100}
+:root[data-theme="dark"] .p-w{color:var(--warn)}
+.p-no{background:rgba(208,59,59,.14); color:var(--crit)}
+.p-n{background:var(--wash); color:var(--s1)}
+.two{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+.quote{border-left:3px solid var(--axis); padding:6px 0 6px 16px; margin:14px 0; color:var(--text-secondary); font-size:13.5px; line-height:1.7}
+.quote b{color:var(--text-primary)}
+.arch{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0}
+@media (max-width:760px){.arch{grid-template-columns:1fr}}
+.arch .col{background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px 18px}
+.arch .col h5{margin:0 0 4px; font-size:14.5px}
+.arch .col .cs{font-size:12px; color:var(--text-muted); margin:0 0 12px}
+.arch .lay{border-radius:8px; padding:9px 12px; margin:7px 0; font-size:12.5px; line-height:1.5; border:1px solid var(--border)}
+.arch .lay > b:first-child{display:block; font-size:13px; margin-bottom:2px}
+.arch .lay.acc{border-left:3px solid var(--s1)} .arch .lay.acc2{border-left:3px solid var(--s2)}
+.arch .lay.new{border-left:3px solid var(--good); background:var(--wash)}
+.arch .lay.non{border-left:3px solid var(--axis); color:var(--text-muted)}
+.ev{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:4px;letter-spacing:.03em;vertical-align:1px;white-space:nowrap}
+.ev-a{background:rgba(12,163,12,.14);color:var(--good)} .ev-b{background:rgba(250,178,25,.18);color:#8a6100}
+:root[data-theme="dark"] .ev-b{color:var(--warn)}
+.ev-c{background:rgba(208,59,59,.13);color:var(--crit)}
+.srcs{font-size:13px; color:var(--text-secondary)}
+.srcs a{word-break:break-all}
+hr{border:none; border-top:1px solid var(--border); margin:40px 0}
+@media (max-width:1000px){
+  .layout{grid-template-columns:1fr}
+  #toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--border); max-height:none}
+  main{padding:24px 18px 80px}
+  h1{font-size:25px}
+}
+@media print{
+  #toc,.theme-btn{display:none} .layout{display:block} main{padding:0}
+  figure,.card,.tw{break-inside:avoid} h2{break-after:avoid}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav id="toc">
+  <div class="brand">Engineering Reference</div>
+  <div class="ttl">풍력터빈 메인샤프트 피로해석<br>DIN 743:2012-12 · IEC 61400-8:2024</div>
+  <button class="theme-btn" id="themeBtn" type="button">◐ 다크모드</button>
+  <div class="tocgap"></div>
+  <ol>
+    <li><a href="#s0">0. 핵심 요약 (3가지)</a></li>
+    <li><a href="#s0-1" class="sub">① 규격 위치</a></li>
+    <li><a href="#s0-2" class="sub">② 치수 유효범위</a></li>
+    <li><a href="#s0-3" class="sub">③ 회전좌표계</a></li>
+    <li><a href="#s1">1. DIN 743 규격 체계</a></li>
+    <li><a href="#s2">2. 입력 데이터 체크리스트</a></li>
+    <li><a href="#s3">3. 재료 강도값 (Part 3)</a></li>
+    <li><a href="#s4">4. 영향계수 (Part 2)</a></li>
+    <li><a href="#s4-1" class="sub">4.1 K₁ 기술적 크기계수</a></li>
+    <li><a href="#s4-2" class="sub">4.2 K₂ 기하학적 크기계수</a></li>
+    <li><a href="#s4-3" class="sub">4.3 K_F 표면조도계수</a></li>
+    <li><a href="#s4-4" class="sub">4.4 K_V 표면경화계수</a></li>
+    <li><a href="#s4-5" class="sub">4.5 β 노치효과계수</a></li>
+    <li><a href="#s5">5. 정적 검증 — 극한하중</a></li>
+    <li><a href="#s6">6. 피로 검증 — 무한수명</a></li>
+    <li><a href="#s6-2" class="sub">6.2 계산 순서</a></li>
+    <li><a href="#s6-4" class="sub">6.4 하중경우 (Fall)</a></li>
+    <li><a href="#s7">7. 유한수명 — Part 4</a></li>
+    <li><a href="#s8">8. 극한 vs 피로 적용전략</a></li>
+    <li><a href="#s8-3" class="sub">8.3 시계열 변환 절차</a></li>
+    <li><a href="#s8-4" class="sub">8.4 무한수명 vs Miner</a></li>
+    <li><a href="#s8-5" class="sub">8.5 Wöhler 지수 m</a></li>
+    <li><a href="#s9">9. 안전율 체계 조율</a></li>
+    <li><a href="#s10">10. 예제 계산</a></li>
+    <li><a href="#s11">11. 권장값 요약표</a></li>
+    <li><a href="#s12">12. 메인샤프트 함정</a></li>
+    <li><a href="#s13">13. IEC 61400-8:2024</a></li>
+    <li><a href="#s13-3" class="sub">13.3 부분안전계수 체계</a></li>
+    <li><a href="#s13-5" class="sub">13.5 정적강도 §7.4</a></li>
+    <li><a href="#s13-6" class="sub">13.6 피로강도 §7.5</a></li>
+    <li><a href="#s13-7" class="sub">13.7 크기효과 §7.3.2</a></li>
+    <li><a href="#s13-10" class="sub">13.10 DIN 743 대비 비교</a></li>
+    <li><a href="#s14">14. 검증 상태</a></li>
+    <li><a href="#s15">15. 참고문헌</a></li>
+  </ol>
+</nav>
+
+<main>
+  <div class="topbar">
+    <div>
+      <div class="eyebrow">Engineering Reference · Wind Turbine Drivetrain</div>
+      <h1>풍력터빈 메인샤프트 피로해석<br>DIN 743:2012-12 · IEC 61400-8:2024 적용 가이드</h1>
+      <p class="sub">이론 · 수식 · 입력조건 · 권장값 · 극한하중/피로하중 적용전략 · 시계열 처리절차 · IEC 61400-8 정적·피로 조항</p>
+      <p class="meta">작성일 2026-07-30 · 대상: 다중 MW급 로터 메인샤프트(주축) · 본 문서는 공개 2차 자료 기반이며 DIN 743 원문을 대체하지 않습니다</p>
+    </div>
+  </div>
+
+  <h2 id="s0"><span class="num">0</span>먼저 읽어야 할 3가지</h2>
+  <p>본 가이드를 조사하는 과정에서 일반적 통념과 다른 결과가 3가지 나왔습니다. 세부 수식보다 먼저 이 3가지를 확정해야 이후 계산이 의미를 갖습니다.</p>
+
+  <h3 id="s0-1">① DIN 743은 메인샤프트의 "인증 규격"이 아니다</h3>
+  <p>DIN 743이 <b>인용규격(normative reference)으로 명시된 풍력 규격은 IEC 61400-4 하나뿐</b>이며, 그것도 <b>기어박스 내부 축</b>(LSS/IMS/HSS) 대상입니다. 메인샤프트는 GL·DNV·IEC 어디서도 DIN 743 경로로 검증하도록 규정하지 않습니다.</p>
+
+  <figure>
+    <p class="fig-h">규격 적용 지도 — 메인샤프트는 어느 규격의 어느 조항에 있는가</p>
+    <p class="fig-s">각 규격에서 메인샤프트가 놓이는 위치와 DIN 743 인용 여부</p>
+    <div class="tw" style="margin:0;border:none">
+    <table>
+      <thead><tr><th>규격</th><th>메인샤프트에 대한 지위</th><th style="width:130px">DIN 743 인용</th></tr></thead>
+      <tbody>
+        <tr><td><b>IEC 61400-4</b><br><span style="color:var(--text-muted);font-size:12.5px">Gearboxes</span></td><td>기어박스 내부 축(LSS/IMS/HSS) 대상. 메인샤프트는 <b>경계조건</b>(전단면·정렬·토크암 반력)으로만 등장</td><td><span class="pill p-ok">✓ 명시</span><br><span style="font-size:12px;color:var(--text-muted)">ed.1 §7.4.1 / ed.2 §6.4.1</span></td></tr>
+        <tr><td><b>GL 2010 / Offshore 2012</b></td><td><b>Ch.6.3 Machinery Structures</b> → Ch.5 방법론<br>(5.3.3 정적 / 5.3.4 피로) + App.5.A FEM + App.5.B 합성 S/N</td><td><span class="pill p-w">? 미확인</span><br><span style="font-size:12px;color:var(--text-muted)">§7.4.6은 기어박스 축</span></td></tr>
+        <tr><td><b>DNV(GL)-ST-0361</b><br><span style="color:var(--text-muted);font-size:12.5px">Machinery for wind turbines</span></td><td>"machinery structures"로 메인샤프트 포함. §4.4 Fatigue strength analysis. DNVGL-SE-0441 §3.3.5가 적용을 의무화</td><td><span class="pill p-w">? 근거 없음</span><br><span style="font-size:12px;color:var(--text-muted)">참조규격 목록에 부재</span></td></tr>
+        <tr><td><b>IEC 61400-1 ed.4</b></td><td>하중·부분안전계수만 제공. <b>축·기계부품 전용 계수 없음</b></td><td><span class="pill p-no">✗ 없음</span></td></tr>
+        <tr><td><b><a href="#s13">IEC 61400-8:2024</a></b> ★<br><span style="color:var(--text-muted);font-size:12.5px">Structural components</span></td><td>scope에 <b>"the hub, mainframe, <u>main shaft</u>"</b> 를 <b>명시적 포함</b>. 현재 메인샤프트 구조검증의 정본. §7.4 정적 / §7.5 피로 / §7.3.2 크기효과 → <b><a href="#s13">§13에서 상세</a></b></td><td><span class="pill p-no">✗ 없음</span><br><span style="font-size:12px;color:var(--text-muted)">FKM 2018·EN 1993-1-9 인용</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <figcaption>메인샤프트 인증 proof는 대부분 <b>FEA + S/N 곡선 + Palmgren-Miner</b> 경로입니다. DIN 743은 이를 대체하지 않고 보조 역할로 씁니다.</figcaption>
+  </figure>
+
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>DIN 743의 올바른 3가지 역할</div>
+    <p><b>① 개념설계 사이징/스크리닝</b> — 초기 지름 결정과 대안 비교</p>
+    <p><b>② 고전적 노치 단면의 기계요소 국부 검증</b> — 단차, 리테이닝링 홈, 압입 끝단, 키홈. DIN 743-2의 β<sub>k</sub> 카탈로그가 범용 FEA 노치 처리보다 잘 교정되어 있음</p>
+    <p><b>③ 무한수명 강건성 논증</b> — 스펙트럼 대부분이 σ<sub>ADK</sub> 아래임을 보여, Miner 손상이 소수의 고진폭 사이클에만 지배됨을 입증</p>
+    <p style="margin-top:10px">인증서에 "DIN 743으로 메인샤프트를 검증했다"고 단독 기재하려면 인증기관과 <b>사전 서면 합의</b>가 필요합니다 (§9).</p>
+  </div>
+
+  <h3 id="s0-2">② 치수 유효범위를 벗어난다 — 가장 큰 기술적 리스크</h3>
+  <p>DIN 743의 모든 크기 관련 계수는 <b>소형 축에서 교정</b>되었고 메인샤프트 치수에서 전부 포화(plateau)합니다. 아래 차트가 이 문제의 전부입니다.</p>
+
+  <figure>
+    <p class="fig-h">DIN 743 계수별 교정범위 vs 메인샤프트 실제 치수</p>
+    <p class="fig-s">가로축 = 지름 (mm, 로그 스케일). 파란 구간이 규격이 실제로 교정된 범위, 회색 점선은 규격이 값을 고정(plateau)시키는 구간</p>
+    <div class="legend">
+      <span><i class="sq" style="background:var(--s1)"></i>교정된 유효범위</span>
+      <span><i class="sq" style="background:var(--axis)"></i>규격이 값을 고정 (외삽)</span>
+      <span><i class="sq" style="background:var(--crit);opacity:.16"></i>메인샤프트 실제 치수대 400–1000 mm</span>
+    </div>
+    <div class="svgwrap" id="fig-range"></div>
+    <figcaption><b>400–1000 mm 축이면 4개 계수 모두에서 동시 외삽</b>입니다. 특히 <b>K<sub>V</sub> 표는 40 mm에서 끝나므로 K<sub>V</sub> &gt; 1.0 은 사용 불가</b>이며 인증기관도 수용하지 않습니다. K₁은 FVA 703 I(700 mm까지 유효) 식을 쓰고 design basis에 명시하는 것이 맞습니다.</figcaption>
+  </figure>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>계수</th><th>DIN 743 유효/교정 범위</th><th>메인샤프트 실제</th><th style="width:110px">상태</th></tr></thead>
+    <tbody>
+      <tr><td>K₁(d<sub>eff</sub>) 기술적 크기계수</td><td>d<sub>eff</sub> ≤ 300 mm (그 이상 상수)</td><td>단조소재 500–1000 mm</td><td><span class="pill p-w">외삽</span></td></tr>
+      <tr><td>K₂(d) 기하학적 크기계수</td><td>d &lt; 150 mm (그 이상 0.8 고정)</td><td>400–1000 mm</td><td><span class="pill p-w">외삽</span></td></tr>
+      <tr><td>β<sub>σ,τ</sub> (축-허브 결합)</td><td>기준지름 <b>d<sub>BK</sub> = 40 mm</b> 실험값</td><td>압입/수축링 400–1000 mm</td><td><span class="pill p-w">외삽</span></td></tr>
+      <tr><td>K<sub>V</sub> 표면경화계수</td><td><b>d = 7 ~ 40 mm 표만 존재</b></td><td>—</td><td><span class="pill p-no">K<sub>V</sub> = 1.0 강제</span></td></tr>
+      <tr><td>N<sub>D</sub> 무한수명 무릎점</td><td>10⁶ (743-3 유효성 ~10⁷ cycles)</td><td>20년 ≈ <b>10⁸ ~ 10⁹</b> cycles</td><td><span class="pill p-w">외삽</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>대응 — FVA 703 I</div>
+    <p>FVA 703 I / IGF 17731 BR (TU Dresden 기계요소연구소) 가 정확히 이 문제를 위해 수행되었습니다. 동기로 <i>"Schiffsantriebe, <b>Offshore-Windenergieanlagen</b>, Tagebaubagger"</i> 를 명시하고, 4종 재료·소재 500 mm까지 시험, 수치적으로 <b>700 mm까지 확장</b>하여 <b>K₁ 계산식을 화학조성·경화능 기반으로 재정의</b>했습니다. &gt;500 mm 축에 DIN 743을 쓸 거면 DIN 743-2 표가 아니라 <b>FVA 703 K₁ 식을 쓰고 design basis에 명시</b>해야 합니다.</p>
+  </div>
+
+  <h3 id="s0-3">③ 회전축의 응력 이력 — 가장 자주 틀리는 부분</h3>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>필수</div>
+    <p><b>허브 좌표계(고정계)의 하중 시계열을 그대로 rainflow 하면 안 됩니다.</b> 이 단계를 빠뜨리면 굽힘 사이클 수가 수십~수백 배 과소평가됩니다.</p>
+  </div>
+
+  <figure>
+    <p class="fig-h">고정계 하중 → 회전계 응력 변환</p>
+    <p class="fig-s">동일한 로터 굽힘모멘트가 두 좌표계에서 전혀 다른 이력으로 보인다. 좌: 허브 고정계의 합성모멘트 M<sub>res</sub> · 우: 회전축 표면 재료점의 굽힘응력 σ<sub>b</sub></p>
+    <div class="svgwrap" id="fig-rot"></div>
+    <figcaption>고정계에서 준정적으로 보이는 M<sub>res</sub> 도, 회전축 표면의 한 재료점에서는 <b>1P 주기의 완전교번(R = −1)</b> 굽힘응력이 됩니다: σ<sub>b</sub>(t) = M<sub>res</sub>(t)/W · cos(ωt − φ). 굽힘 평균응력 σ<sub>bm</sub> ≈ 0, 사이클 수는 로터 회전수(10–15 rpm)로 결정 → <b>20년 ≈ 1.3 × 10⁸ cycles</b>.</figcaption>
+  </figure>
+
+  <div class="two">
+    <div class="card">
+      <h4 style="margin-top:0">성분별 회전계 거동</h4>
+      <div class="tw" style="margin:0;border:none">
+      <table>
+        <thead><tr><th>성분</th><th>회전계 거동</th><th>R</th></tr></thead>
+        <tbody>
+          <tr><td><b>굽힘</b> (로터 M<sub>y</sub>, M<sub>z</sub>)</td><td>완전교번, 1P 주기</td><td class="num">−1</td></tr>
+          <tr><td><b>비틀림</b> (토크 M<sub>x</sub>)</td><td>준정적. 큰 평균 + 작은 진폭</td><td class="num">0 ~ +</td></tr>
+          <tr><td><b>축력</b> (스러스트 F<sub>x</sub>)</td><td>준정적 + 변동</td><td class="num">+</td></tr>
+          <tr><td>압입·수축링</td><td>정적 후프·반경응력</td><td class="num">정적</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">따라서</h4>
+      <p style="font-size:13.5px">메인샤프트는 <b>굽힘 = 완전교번 / 비틀림 = 맥동</b> 이라는 매우 특징적인 다축 조합입니다. DIN 743의 <b>Fall 1 / Fall 2 선택</b>이 결과를 크게 바꿉니다 (§6.4).</p>
+      <p style="font-size:13.5px;margin-bottom:0"><b>절차:</b> 고정계 6성분 시계열 → <b>회전계 좌표변환</b> → 국부 응력 전달(FEA 단위하중 중첩) → <b>회전계에서 rainflow / Markov(from-to)</b> → DIN 743 입력</p>
+    </div>
+  </div>
+
+  <h2 id="s1"><span class="num">1</span>DIN 743 규격 체계</h2>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:150px">Part</th><th style="width:230px">제목</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td><b>743-1:2012-12</b></td><td>Grundlagen (General)</td><td>적용범위, 기호, 공칭응력, <b>2가지 proof</b>(피로 / 영구변형), K<sub>σ</sub>·K<sub>τ</sub> 조립, 평균응력 처리, 하중경우(Fall), S<sub>min</sub></td></tr>
+      <tr><td><b>743-2:2012-12</b></td><td>Formzahlen und Kerbwirkungszahlen</td><td>α<sub>σ</sub>/α<sub>τ</sub>, β<sub>σ</sub>/β<sub>τ</sub>, 지지계수 n<sub>χ</sub>, 상대응력구배 G′, K₂(d), K₃(d), K<sub>Fσ</sub>, K<sub>V</sub>, <b>및 기술적 크기계수 K₁(d<sub>eff</sub>) — Clause 6</b></td></tr>
+      <tr><td><b>743-3:2012-12</b><br><span style="font-size:12px;color:var(--text-muted)">→ 2024-07로 개정, 구판 폐지</span></td><td>Werkstoff-Festigkeitswerte</td><td>기준지름 d<sub>B</sub>에서의 R<sub>m</sub>, R<sub>p0.2</sub> ; R<sub>m</sub>으로부터 σ<sub>W</sub>/τ<sub>W</sub> 도출</td></tr>
+      <tr><td><b>743-4:2012-12</b></td><td>Zeitfestigkeit, Dauerfestigkeit — Schädigungsäquivalente Spannungsamplitude</td><td>하중 스펙트럼 하의 유한수명 proof (11쪽). <b>2012판에서 신설</b></td></tr>
+      <tr><td>Beiblatt 1 / 2</td><td>Berechnungsbeispiele</td><td>계산예제 (Bbl.2 = Part-4 유한수명 예제)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>1.1 2012-12판의 변경점</h3>
+  <div class="two">
+    <div class="card">
+      <h4 style="margin-top:0">Part 1</h4>
+      <ul style="margin-bottom:0">
+        <li>Clause 5에서 <b>영구변형(Fließen) proof</b> 와 <b>경화층 균열발생(Anriss) proof</b> 를 분리 (이전에는 통합)</li>
+        <li>부품 균열발생 한계 산정 보완</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">Part 2 — 명시된 3가지</h4>
+      <ol style="margin-bottom:0">
+        <li>Clause 5.2 (Absatz mit Freistich, 언더컷 있는 단차) 개정</li>
+        <li>침탄강(Einsatzstähle)의 K₁ 감소를 <b>d<sub>eff</sub> ≤ 150 mm</b> 로 제한</li>
+        <li>조질강(Vergütungsstähle)의 <b>항복강도에 대한 K₁ 지침 신설</b> → 계수 A = 0.34 의 출처</li>
+      </ol>
+    </div>
+  </div>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>Part 3 — 2024-07 개정 (메인샤프트 직결)</div>
+    <ul style="margin:0">
+      <li><b>경도값으로부터 R<sub>m</sub> 및 σ<sub>W</sub> 산정</b> 추가</li>
+      <li><b>d &gt; 300 mm 단조품의 σ<sub>W</sub> 산정법 추가</b> ← 메인샤프트에 직접 관련</li>
+      <li>σ<sub>W</sub> 표 삭제 → 식 (1)~(3) 보편 적용</li>
+      <li>유효성: −40 °C … +150 °C, ≤ 100 Hz, <b>최대 10⁷ cycles</b></li>
+    </ul>
+  </div>
+
+  <h3>1.2 적용범위 한계 (743-1)</h3>
+  <ul>
+    <li>용접되지 않은 강제 축/차축</li>
+    <li><b>인장·압축 / 굽힘 / 비틀림만</b> — <b>횡전단응력(Querkraftschub)은 명시적 제외</b></li>
+    <li>−40 °C ≤ ϑ ≤ +150 °C, 비부식 환경</li>
+    <li><b>모든 응력 진폭이 동위상(synchron)이라고 가정</b> ← 풍력 메인샤프트에서 굽힘과 토크는 동위상이 아님. 보수측 가정으로 처리하거나 임계면법으로 보완 필요</li>
+  </ul>
+
+  <h2 id="s2"><span class="num">2</span>입력 데이터 체크리스트</h2>
+  <p>계산 시작 전 아래가 전부 확정되어야 합니다.</p>
+
+  <h3>2.1 재료 / 열처리</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>항목</th><th style="width:130px">기호</th><th>출처</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>재질 등급</td><td>—</td><td>도면 / 사양서</td><td>42CrMo4, 34CrNiMo6, 30CrNiMo8, EN-GJS-400-18U-LT</td></tr>
+      <tr><td>인장강도 @ 기준지름</td><td>R<sub>m</sub>(d<sub>B</sub>) = σ<sub>B</sub>(d<sub>B</sub>)</td><td>DIN 743-3 Table A.4</td><td>d<sub>B</sub> = 16 mm (조질강)</td></tr>
+      <tr><td>항복강도 @ 기준지름</td><td>R<sub>p0.2</sub>(d<sub>B</sub>) = σ<sub>S</sub>(d<sub>B</sub>)</td><td>동일</td><td></td></tr>
+      <tr style="background:var(--wash)"><td><b>열처리 시점 소재 지름</b></td><td><b>d<sub>eff</sub></b></td><td>단조 공정도</td><td><b>가공 후 지름이 아님.</b> 켄칭 시점의 소재 지름</td></tr>
+      <tr><td>재료군 분류</td><td>—</td><td>—</td><td>조질강 / 침탄강 / 질화강 / 비조질강</td></tr>
+      <tr><td>실측 물성</td><td>R<sub>m</sub>, R<sub>p0.2</sub>, KV</td><td>단조소재 prolongation / test ring 시험성적서</td><td><b>&gt;250 mm 는 EN 10083-3 외삽 금지 → SEW 550 + 실측</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>2.2 형상 / 표면</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>항목</th><th style="width:110px">기호</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>평가 단면 국부 지름</td><td>d</td><td>K₂(d), K₃(d) 계산용. d<sub>eff</sub>와 <b>별개</b></td></tr>
+      <tr><td>중공 내경</td><td>d<sub>i</sub></td><td>단면계수 W, W<sub>t</sub> 계산</td></tr>
+      <tr><td>노치 형상</td><td>—</td><td>단차(Absatz) / 원주홈(Umlaufnut) / 횡공(Querbohrung) / 압입(Pressverband) / 키홈 / 스플라인</td></tr>
+      <tr><td>노치 반경 · 큰 쪽 지름</td><td>r · D</td><td>단차: t = (D − d)/2</td></tr>
+      <tr style="background:var(--wash)"><td><b>표면조도</b></td><td><b>R<sub>z</sub></b> [µm]</td><td><b>R<sub>a</sub> 아님.</b> 필렛부·베어링 시트 도면 지정 + 검사 필요</td></tr>
+      <tr><td>표면처리</td><td>—</td><td>K<sub>V</sub> ← 메인샤프트에서는 <b>1.0 권장</b> (§4.4)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>2.3 하중</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:110px">구분</th><th>필요 형태</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td><b>극한하중</b></td><td>허브 좌표계 극한하중 표 (6성분 max/min + 동시발생값) + <b>합성모멘트 방위각 스윕</b> M<sub>res</sub>(θ)</td><td>DLC 1.3 / 2.3 / 6.1 / 6.2</td></tr>
+      <tr><td><b>피로하중</b></td><td>20년 하중 시계열 → 회전계 변환 → <b>Markov(from-to) 또는 range-mean 행렬</b></td><td>DLC 1.2, 2.4, 3.1, 4.1, 5.1, 6.4, 7.2 … Weibull 가중</td></tr>
+      <tr><td>부분안전계수</td><td>γ<sub>F</sub></td><td>IEC 61400-1 Table 3 / DNV-ST-0437 §4.3</td></tr>
+      <tr><td>회전수 이력</td><td>n(t) 또는 LRD</td><td>사이클 수 산정</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>range-only 스펙트럼은 무효</div>
+    <p>메인샤프트는 압입 후프응력 + 스러스트 + 토크 평균이 커서 <b>평균응력 민감도가 1차 항</b>입니다. 반드시 <b>평균응력 정보를 가진 행렬(Markov from-to 또는 range-mean)</b> 을 받으십시오.</p>
+  </div>
+
+  <h2 id="s3"><span class="num">3</span>재료 강도값 (DIN 743-3)</h2>
+  <h3>3.1 기준지름에서의 값</h3>
+  <div class="formula">σ_zdW(d_B) = 0.40 · σ_B(d_B)      (인장-압축, 완전교번)
+σ_bW (d_B) = 0.50 · σ_B(d_B)      (굽힘,     완전교번)
+τ_tW (d_B) = 0.30 · σ_B(d_B)      (비틀림,   완전교번)</div>
+  <p>τ<sub>tW</sub>/σ<sub>bW</sub> = 0.6 → DIN 743은 von Mises 비 1/√3 = 0.577 을 쓰지 않습니다.</p>
+
+  <h3>3.2 주요 재질 (d<sub>B</sub> = 16 mm, 단위 N/mm²)</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>등급</th><th>구분</th><th class="num">σ<sub>B</sub> = R<sub>m</sub></th><th class="num">σ<sub>S</sub> = R<sub>p0.2</sub></th><th class="num">σ<sub>bW</sub></th><th class="num">σ<sub>zdW</sub></th><th class="num">τ<sub>tW</sub></th></tr></thead>
+    <tbody>
+      <tr><td><b>42CrMo4</b> (1.7225)</td><td>조질</td><td class="num">1100</td><td class="num">900</td><td class="num">550</td><td class="num">440</td><td class="num">330</td></tr>
+      <tr><td><b>34CrNiMo6</b> (1.6582)</td><td>조질</td><td class="num">1200</td><td class="num">1000</td><td class="num">600</td><td class="num">480</td><td class="num">360</td></tr>
+      <tr><td><b>30CrNiMo8</b> (1.6580)</td><td>조질</td><td class="num">1250</td><td class="num">1050</td><td class="num">625</td><td class="num">500</td><td class="num">375</td></tr>
+      <tr><td><b>18CrNiMo7-6</b> (1.6587)</td><td>침탄</td><td class="num">1150</td><td class="num">830</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>최대 함정</div>
+    <p>이 16 mm 값을 그대로 쓰면 안 됩니다. 반드시 K₁(d<sub>eff</sub>)를 <b>먼저</b> 곱한 뒤 다른 모든 계산에 사용하십시오: <code>σ_B(d) = K₁(d_eff)·σ_B(d_B)</code></p>
+  </div>
+
+  <h3>3.3 EN 10083-3 ruling section (250 mm까지만)</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">d [mm]</th><th class="num">42CrMo4 R<sub>p0.2</sub> / R<sub>m</sub></th><th class="num">34CrNiMo6 R<sub>p0.2</sub> / R<sub>m</sub></th></tr></thead>
+    <tbody>
+      <tr><td class="num">≤ 16</td><td class="num">900 / 1100–1300</td><td class="num">1000 / 1200–1400</td></tr>
+      <tr><td class="num">16–40</td><td class="num">750 / 1000–1200</td><td class="num">900 / 1100–1300</td></tr>
+      <tr><td class="num">40–100</td><td class="num">650 / 900–1100</td><td class="num">800 / 1000–1200</td></tr>
+      <tr><td class="num">100–160</td><td class="num">550 / 800–950</td><td class="num">700 / 900–1100</td></tr>
+      <tr><td class="num">160–250</td><td class="num">500 / 750–900</td><td class="num">600 / 800–950</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>EN 10083-3은 250 mm에서 끝납니다.</b> 400–1000 mm 단조품은 <b>SEW 550 "Stähle für größere Schmiedestücke"</b> + 단조사 실측 데이터가 지배 문서입니다.</p>
+
+  <h3>3.4 메인샤프트 급 실측 참고값</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>재료</th><th class="num">R<sub>p0.2</sub></th><th class="num">R<sub>m</sub></th><th class="num">A</th></tr></thead>
+    <tbody>
+      <tr><td>42CrMo4 +QT (2.3 MW급 중공단조축)</td><td class="num">946 MPa</td><td class="num">1046 MPa</td><td class="num">14.2 %</td></tr>
+      <tr><td>AHD 강 (공랭경화, 1.5132계)</td><td class="num">895 MPa</td><td class="num">1290 MPa</td><td class="num">12 %</td></tr>
+      <tr><td>EN-GJS-400-18-LT (주조축)</td><td class="num">240 MPa</td><td class="num">400 MPa</td><td class="num">18 %</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>주조 대비 중공단조: 동일 사양에서 <b>16.2 t → 10.2 t (37 % 경량화)</b>. 단, 단조소재 22.4 t (가공 여유 160 %).</p>
+
+  <h2 id="s4"><span class="num">4</span>영향계수 (DIN 743-2)</h2>
+
+  <h3 id="s4-1">4.1 기술적 크기계수 K₁(d<sub>eff</sub>)</h3>
+  <div class="formula">K₁ = 1                              (d_eff ≤ d_B)
+K₁ = 1 − A · lg(d_eff / d_B)        (d_B < d_eff ≤ d_max)
+K₁ = K₁(d_max) = const              (d_eff > d_max)</div>
+
+  <figure>
+    <p class="fig-h">K₁(d<sub>eff</sub>) — 재료군별 기술적 크기계수</p>
+    <p class="fig-s">가로축 = 열처리 시점 소재 지름 d<sub>eff</sub> (mm, 로그 스케일). 300 mm 이후 규격은 값을 <b>고정</b>한다 — 물리적으로는 허구</p>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>조질강 · R<sub>m</sub> (A=0.26)</span>
+      <span><i style="background:var(--s2)"></i>조질강 · R<sub>p0.2</sub> (A=0.34)</span>
+      <span><i style="background:var(--s3)"></i>침탄강 (A=0.41)</span>
+      <span><i style="background:var(--s4)"></i>질화강·비조질 구조용강 (A=0.23)</span>
+    </div>
+    <div class="svgwrap" id="fig-k1"></div>
+    <figcaption>d<sub>eff</sub> = 500~900 mm 조질강 단조품이면 K₁은 하한에 걸립니다 → <b>R<sub>m</sub>의 67 %, R<sub>p0.2</sub>의 57 %</b>. 회색 영역(&gt;300 mm)에서 DIN의 K₁은 감소를 멈추지만 실제 크기효과는 계속 진행됩니다.</figcaption>
+  </figure>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>재료군</th><th>적용 대상</th><th class="num">d<sub>B</sub></th><th class="num">A</th><th class="num">d<sub>max</sub></th><th class="num">하한값</th></tr></thead>
+    <tbody>
+      <tr><td>비조질 구조용강·조질강·질화강</td><td>R<sub>m</sub> <b>및</b> R<sub>p0.2</sub></td><td class="num">100 mm</td><td class="num">0.23</td><td class="num">300 mm</td><td class="num"><b>0.89</b> (500까지)</td></tr>
+      <tr><td>비조질강</td><td>R<sub>p0.2</sub></td><td class="num">32 mm</td><td class="num">0.26</td><td class="num">300 mm</td><td class="num">0.75</td></tr>
+      <tr style="background:var(--wash)"><td><b>조질강 (Vergütungsstahl)</b></td><td><b>R<sub>m</sub></b></td><td class="num"><b>16 mm</b></td><td class="num"><b>0.26</b></td><td class="num">300 mm</td><td class="num"><b>0.67</b></td></tr>
+      <tr style="background:var(--wash)"><td><b>조질강</b></td><td><b>R<sub>p0.2</sub></b></td><td class="num"><b>16 mm</b></td><td class="num"><b>0.34</b></td><td class="num">300 mm</td><td class="num"><b>0.57</b></td></tr>
+      <tr><td>침탄강 (Einsatzstahl)</td><td>R<sub>m</sub>, R<sub>p0.2</sub></td><td class="num">16 mm</td><td class="num">0.41</td><td class="num"><b>150 mm</b></td><td class="num"><b>0.60</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>검산:</b> 1 − 0.26·lg(300/16) = 0.669 ≈ 0.67 ✓ / 1 − 0.34·lg(300/16) = 0.567 ≈ 0.57 ✓ / 1 − 0.41·lg(150/16) = 0.602 ≈ 0.60 ✓</p>
+
+  <h3 id="s4-2">4.2 기하학적 크기계수 K₂(d) <span style="font-weight:400;font-size:14px;color:var(--text-muted)">(d = 국부 지름, d<sub>eff</sub> 아님)</span></h3>
+  <div class="formula">인장/압축   :  K₂(d) = 1.0                                  (모든 d)
+
+굽힘, 비틀림:  K₂(d) = 1.0                                  (d < 7.5 mm)
+               K₂(d) = 1 − 0.2 · lg(d/7.5 mm) / lg(20)      (7.5 ≤ d < 150 mm)
+               K₂(d) = 0.8                                  (d ≥ 150 mm)</div>
+  <p>인장/압축에서 1.0인 이유는 단면 내 응력구배가 없기 때문입니다. <b>메인샤프트는 항상 K₂ = 0.8.</b></p>
+
+  <h3 id="s4-3">4.3 표면조도계수 K<sub>Fσ</sub>, K<sub>Fτ</sub> — R<sub>z</sub> 사용</h3>
+  <div class="formula">K_Fσ = 1 − 0.22 · lg(R_z/µm) · [ lg( σ_B(d) / 20 N/mm² ) − 1 ]     (σ_B ≤ 2000 N/mm²)
+
+K_Fτ = 0.575 · K_Fσ + 0.425
+
+  여기서  σ_B(d) = K₁(d_eff) · σ_B(d_B)   ← 크기보정된 인장강도</div>
+
+  <figure>
+    <p class="fig-h">표면조도 R<sub>z</sub> 가 피로강도에 미치는 영향</p>
+    <p class="fig-s">가로축 = R<sub>z</sub> (µm, 로그 스케일). 세로축 = K<sub>Fσ</sub>. 재료강도가 높을수록 조도 페널티가 크다</p>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>σ<sub>B</sub>(d) = 736 MPa (예제 42CrMo4, d<sub>eff</sub>=700)</span>
+      <span><i style="background:var(--s2)"></i>σ<sub>B</sub>(d) = 1100 MPa (소형 축)</span>
+      <span><i style="background:var(--s3)"></i>σ<sub>B</sub>(d) = 500 MPa</span>
+    </div>
+    <div class="svgwrap" id="fig-kf"></div>
+    <figcaption><b>필렛부와 베어링 시트 하부의 R<sub>z</sub>를 도면에 지정하고 검사</b>하는 것은 가장 저렴한 성능 확보 수단입니다. R<sub>z</sub> = 25 µm 선삭은 고강도강에서 피로강도 10–15 %를 잃습니다.</figcaption>
+  </figure>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">R<sub>z</sub> [µm]</th><th>가공</th><th class="num">K<sub>Fσ</sub> @ σ<sub>B</sub>(d)=736 MPa</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>폴리싱</td><td class="num">1.000</td></tr>
+      <tr><td class="num">4</td><td>연삭</td><td class="num">0.925</td></tr>
+      <tr style="background:var(--wash)"><td class="num">6.3</td><td>연삭</td><td class="num"><b>0.900</b></td></tr>
+      <tr><td class="num">12.5</td><td>정삭 선삭</td><td class="num">0.863</td></tr>
+      <tr><td class="num">25</td><td>선삭</td><td class="num">0.826</td></tr>
+      <tr><td class="num">100</td><td>흑피</td><td class="num">0.751</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="s4-4">4.4 표면경화계수 K<sub>V</sub></h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>공정</th><th class="num">d = 7–25 mm</th><th class="num">d = 25–40 mm</th></tr></thead>
+    <tbody>
+      <tr><td>질화 (Nitrieren)</td><td class="num">1.15 – 1.25</td><td class="num">1.10 – 1.15</td></tr>
+      <tr><td>침탄경화 (Einsatzhärten)</td><td class="num">1.20 – 2.10</td><td class="num">1.10 – 1.50</td></tr>
+      <tr><td>침탄질화</td><td class="num">1.10 – 1.90</td><td class="num">1.00 – 1.40</td></tr>
+      <tr><td>쇼트피닝</td><td class="num">1.10 – 1.30</td><td class="num">1.10 – 1.20</td></tr>
+      <tr><td>롤러버니싱</td><td class="num">1.20 – 1.40</td><td class="num">1.10 – 1.25</td></tr>
+      <tr><td>고주파/화염경화</td><td class="num">1.20 – 1.60</td><td class="num">1.10 – 1.40</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>표가 40 mm에서 끝난다</div>
+    <p>침탄경화만 봐도 25→40 mm 구간에서 2.10 → 1.50 으로 급락합니다. <b>600 mm 축에 K<sub>V</sub> &gt; 1.0 을 적용할 근거는 없고 인증기관도 받지 않습니다.</b></p>
+    <p><b>메인샤프트: K<sub>V</sub> = 1.0</b> (부품 단위 시험 데이터가 있는 경우만 예외). DIN 743 자체 예제도 전부 K<sub>V</sub> = 1.0 입니다.</p>
+  </div>
+
+  <h3 id="s4-5">4.5 노치효과계수 β<sub>σ</sub>, β<sub>τ</sub> — 2가지 경로</h3>
+
+  <h4>경로 A — 단차·홈·횡공 등 (형상계수 → 지지효과)</h4>
+  <div class="formula">β_σ = α_σ / n_χ(σ)          β_τ = α_τ / n_χ(τ)          단, n_χ ≤ α  (즉 β ≥ 1)
+
+지지계수 (Stützzahl):
+  G′ ≤ 0.1 mm⁻¹      : n_χ = 1 + (G′·mm)^1.00 · 10^−( 0.33 + σ_S(d)/712 N/mm² )
+  0.1 < G′ ≤ 1 mm⁻¹  : n_χ = 1 + (G′·mm)^0.50 · 10^−( 0.33 + σ_S(d)/712 N/mm² )
+  1 < G′ ≤ 100 mm⁻¹  : n_χ = 1 + (G′·mm)^0.25 · 10^−( 0.33 + σ_S(d)/712 N/mm² )
+
+  σ_S(d) = K₁(d_eff, R_p0.2) · σ_S(d_B)</div>
+
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>물리적 의미</div>
+    <p>항복강도가 높을수록 10<sup>−σ_S/712</sup> 항이 작아져 <b>지지효과가 줄어듭니다</b> = 고강도강일수록 노치민감. 34CrNiMo6는 넉넉한 필렛으로 얻는 이득이 S355보다 작습니다.</p>
+  </div>
+
+  <h4>상대응력구배 G′ (봉재)</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>노치형상</th><th>인장/압축</th><th>굽힘</th><th>비틀림</th></tr></thead>
+    <tbody>
+      <tr><td><b>Absatz</b> (단차)</td><td class="mono">2(1+φ)/r</td><td class="mono">2(1+φ)/r <b>+ 2/d</b></td><td class="mono">1/r</td></tr>
+      <tr><td><b>Umlaufnut</b> (원주홈)</td><td class="mono">2.3(1+φ)/r</td><td class="mono">2.3(1+φ)/r <b>+ 2/d</b></td><td class="mono">1.15/r</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="formula">φ = 1 / ( 4·√(t/r) + 2 )      (d/D > 0.67 이고 r > 0 일 때)
+φ = 0                          (그 외)
+t = (D − d)/2</div>
+  <p style="font-size:13px;color:var(--text-secondary)">⚠ 굽힘 행의 <code>+2/d</code> 항과 φ의 정확한 형태는 <b>인쇄본 DIN 743-2 Tabelle 2로 대조 확인 필요</b> (§14).</p>
+
+  <figure>
+    <p class="fig-h">지지계수 n<sub>χ</sub> — 축이 커지면 지지효과가 사라진다</p>
+    <p class="fig-s">단차 노치, 필렛 r = 25 mm, D/d = 1.12 고정. 가로축 = 국부 지름 d (mm)</p>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>n<sub>χ</sub> (굽힘)</span>
+      <span><i style="background:var(--s2)"></i>β<sub>σ</sub> = α<sub>σ</sub>/n<sub>χ</sub> (α<sub>σ</sub>=1.85 가정)</span>
+    </div>
+    <div class="svgwrap" id="fig-nchi"></div>
+    <figcaption>d가 커지면 G′ = 2(1+φ)/r + 2/d 의 두 항 모두 작아집니다. 결과적으로 <b>대형 축에서 n<sub>χ</sub> ≈ 1.00–1.01</b> — 지지효과가 사실상 사라지고 <b>형상계수가 그대로 노치효과계수가 됩니다</b> (β<sub>σ</sub> 가 α<sub>σ</sub> 보다 1 % 남짓 작을 뿐). 소형 축의 직관을 그대로 옮기면 안 됩니다.<br><br>d ≈ 340 mm 의 계단은 실물의 물리가 아니라 <b>규격 식 자체의 불연속</b>입니다 — G′ 가 0.1 mm⁻¹ 를 지나면서 n<sub>χ</sub> 지수가 0.5 → 1.0 으로 바뀝니다. 경계 근처 단면은 <b>양쪽 분기를 모두 계산해 보수측을 채택</b>하십시오.</figcaption>
+  </figure>
+
+  <h4>경로 B — 축-허브 결합 (압입, 키홈, 스플라인)</h4>
+  <p>DIN 743-2 <b>Tabelle 1</b>의 실험값을 <b>기준지름 d<sub>BK</sub> = 40 mm</b> 에서 직접 읽고 지름 환산합니다.</p>
+  <div class="formula">β(d) = β(d_BK) · K₃(d_BK) / K₃(d)
+
+K₃(d) = 1 − 0.2 · lg(α or β) · lg(d/7.5 mm) / lg(20)    (7.5 ≤ d < 150 mm)
+K₃(d) = 1 − 0.2 · lg(α or β)                            (d ≥ 150 mm)
+
+키홈(Passfedernut) 폐형식:
+  β_σ(d_BK) = 3.0 · ( σ_B(d) / 1000 N/mm² )^0.38
+  β_τ(d_BK) = 1.8 · ( σ_B(d) / 1000 N/mm² )^0.38     ( = 0.6 · β_σ )</div>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">σ<sub>B</sub>(d) [N/mm²]</th><th class="num">400</th><th class="num">500</th><th class="num">600</th><th class="num">700</th><th class="num">800</th><th class="num">900</th><th class="num">1000</th><th class="num">1100</th><th class="num">1200</th></tr></thead>
+    <tbody>
+      <tr><td>β<sub>σ</sub>(40 mm)</td><td class="num">2.1</td><td class="num">2.3</td><td class="num">2.5</td><td class="num">2.6</td><td class="num">2.8</td><td class="num">2.9</td><td class="num">3.0</td><td class="num">3.1</td><td class="num">3.2</td></tr>
+      <tr><td>β<sub>τ</sub>(40 mm)</td><td class="num">1.3</td><td class="num">1.4</td><td class="num">1.5</td><td class="num">1.6</td><td class="num">1.7</td><td class="num">1.8</td><td class="num">1.8</td><td class="num">1.9</td><td class="num">2.0</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <ul>
+    <li><b>동일 단면에 키홈 2개 → β에 1.15 곱함</b></li>
+    <li>압입(Pressverband) 및 스플라인(DIN 5480 등) 행의 수치는 본 문서에서 확인 불가 → <b>인쇄본 Tabelle 1 대조 필요</b> (§14). 실무 관측 범위는 굽힘 β<sub>σ</sub> ≈ 2.0–3.5</li>
+  </ul>
+
+  <h2 id="s5"><span class="num">5</span>정적 강도 검증 — 극한하중 (DIN 743-1)</h2>
+  <h3>5.1 안전율</h3>
+  <div class="formula">S = 1 / √[ ( σ_zdmax/σ_zdFK  +  σ_bmax/σ_bFK )²  +  ( τ_tmax/τ_tFK )² ]   ≥  S_min = 1.2</div>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>구조 주의</div>
+    <p>두 수직응력 항은 <b>먼저 더한 뒤 제곱</b>합니다 (같은 섬유에 작용). 전단 항만 별도 제곱. <b>세 항을 각각 제곱하는 형태는 오류</b>입니다. σ<sub>zdmax</sub>, σ<sub>bmax</sub>, τ<sub>tmax</sub> 는 <b>공칭 순단면 응력</b>이며 노치 첨두응력이 아닙니다.</p>
+  </div>
+
+  <h3>5.2 부품 항복한계 (Bauteilfließgrenze)</h3>
+  <div class="formula">σ_zdFK = K₁(d_eff) · K_2F,zd · γ_F · σ_S(d_B)
+σ_bFK  = K₁(d_eff) · K_2F,b  · γ_F · σ_S(d_B)
+τ_tFK  = K₁(d_eff) · K_2F,t  · γ_F · σ_S(d_B) / √3
+
+  K₁은 R_p0.2용 계수 (조질강 A = 0.34) 를 사용</div>
+
+  <h3>5.3 정적 지지계수 K<sub>2F</sub> (소성 단면계수)</h3>
+  <div class="two">
+    <div class="tw" style="margin:0">
+    <table>
+      <thead><tr><th colspan="3" style="background:var(--wash)">경화층 없음</th></tr><tr><th>하중</th><th class="num">중실축</th><th class="num">중공축</th></tr></thead>
+      <tbody>
+        <tr><td>인장/압축</td><td class="num">1.0</td><td class="num">1.0</td></tr>
+        <tr><td>굽힘</td><td class="num"><b>1.2</b></td><td class="num">1.1</td></tr>
+        <tr><td>비틀림</td><td class="num"><b>1.2</b></td><td class="num">1.0</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="tw" style="margin:0">
+    <table>
+      <thead><tr><th colspan="3" style="background:var(--wash)">경화층 있음 (침탄·질화·고주파/화염)</th></tr><tr><th>하중</th><th class="num">중실축</th><th class="num">중공축</th></tr></thead>
+      <tbody>
+        <tr><td>인장/압축</td><td class="num">1.0</td><td class="num">1.0</td></tr>
+        <tr><td>굽힘</td><td class="num">1.1</td><td class="num">1.0</td></tr>
+        <tr><td>비틀림</td><td class="num">1.1</td><td class="num">1.0</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)">⚠ 중공축 열과 비틀림 항목은 출처 간 불일치가 있습니다 → 인쇄본 Tabelle 3/4 대조 권장.</p>
+
+  <h3>5.4 항복강도 상승계수 γ<sub>F</sub></h3>
+  <p>원주노치 근방의 <b>다축 구속효과</b>로 거시적 항복 개시 응력이 상승하는 것을 반영합니다.</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>α<sub>σ</sub> (또는 β<sub>σ</sub>)</th><th class="num">인장/압축 · 굽힘</th><th class="num">비틀림</th></tr></thead>
+    <tbody>
+      <tr><td>α ≤ 1.5</td><td class="num"><b>1.00</b></td><td class="num">1.00</td></tr>
+      <tr><td>1.5 &lt; α ≤ 2.0</td><td class="num"><b>1.05</b></td><td class="num">1.00</td></tr>
+      <tr><td>2.0 &lt; α ≤ 3.0</td><td class="num"><b>1.10</b></td><td class="num">1.00</td></tr>
+      <tr><td>α &gt; 3.0</td><td class="num"><b>1.15</b></td><td class="num">1.00</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>범위 1.0 ~ 1.15. <b>비틀림은 항상 1.0. 경화층 있으면 1.0. 노치 없으면 1.0.</b> 원주노치(단차·홈)에만 적용하며 길이방향 노치에는 적용하지 않습니다.</p>
+
+  <h3>5.5 경화층 균열발생 proof (2012판 신설)</h3>
+  <p>경화층이 있으면 <b>국부(노치첨두) 응력</b>을 <b>법선응력가설(NH)</b> 로 표면층 강도 σ<sub>BRand</sub>와 비교하는 별도 검증이 추가됩니다.</p>
+  <div class="formula">S = 1 / { 0.5 · [ X + √( X² + (2·α_τ·τ_tmax/τ_tBRand)² ) ] }
+
+X = α_σzd·σ_zdmax/σ_zdBRand + α_σb·σ_bmax/σ_bBRand</div>
+
+  <h2 id="s6"><span class="num">6</span>피로 강도 검증 — 무한수명 (DIN 743-1)</h2>
+  <h3>6.1 안전율 (핵심 식)</h3>
+  <div class="formula">S = 1 / √[ ( σ_zda/σ_zdADK  +  σ_ba/σ_bADK )²  +  ( τ_ta/τ_tADK )² ]   ≥  S_min = 1.2</div>
+
+  <h3 id="s6-2">6.2 계산 순서 — 반드시 이 순서로</h3>
+  <div class="flow">
+    <div class="fstep"><div class="rail"><div class="bub">1</div><div class="ln"></div></div><div class="bd"><b>재료값 크기보정</b><div class="t"><code>σ_B(d) = K₁(d_eff,Rm)·σ_B(d_B)</code> &nbsp;·&nbsp; <code>σ_S(d) = K₁(d_eff,Rp)·σ_S(d_B)</code></div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">2</div><div class="ln"></div></div><div class="bd"><b>노치효과계수</b><div class="t">G′ → n<sub>χ</sub> → β<sub>σ</sub>, β<sub>τ</sub> &nbsp; (또는 Tabelle 1 + K₃ 환산)</div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">3</div><div class="ln"></div></div><div class="bd"><b>나머지 영향계수</b><div class="t">K₂(d), K<sub>Fσ</sub>(R<sub>z</sub>, σ<sub>B</sub>(d)), K<sub>Fτ</sub>, K<sub>V</sub></div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub alt">4</div><div class="ln"></div></div><div class="bd"><b>총 영향계수 조립 — 가법(additive)</b><div class="t"><code>K_σ = [ β_σ/K₂(d) + 1/K_Fσ − 1 ] / K_V</code><br><code>K_τ = [ β_τ/K₂(d) + 1/K_Fτ − 1 ] / K_V</code><br><span style="color:var(--crit)">각 효과가 1 위로 증분을 더하는 형태. 곱셈 조립은 흔한 구현 오류.</span></div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">5</div><div class="ln"></div></div><div class="bd"><b>부품 완전교번 피로한도</b><div class="t"><code>σ_bWK = σ_bW(d_B)·K₁ / K_σ</code> &nbsp;·&nbsp; <code>τ_tWK = τ_tW(d_B)·K₁ / K_τ</code></div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">6</div><div class="ln"></div></div><div class="bd"><b>평균응력 민감도</b><div class="t"><code>ψ_σK = σ_WK / ( 2·K₁·σ_B(d_B) − σ_WK )</code> &nbsp;(K₁은 R<sub>m</sub>용)<br><code>ψ_τK = τ_WK / ( 2·K₁·σ_B(d_B) − τ_WK )</code></div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">7</div><div class="ln"></div></div><div class="bd"><b>등가평균응력</b><div class="t"><code>σ_mv = √[ (σ_zdm + σ_bm)² + 3·τ_tm² ]</code> &nbsp;·&nbsp; <code>τ_mv = σ_mv / √3</code><br>세 응력 종류 모두에 <b>동일하게</b> 사용 — DIN 743의 다축 평균응력 처리 장치</div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub alt">8</div><div class="ln"></div></div><div class="bd"><b>Fall 선택 → σ<sub>ADK</sub>, τ<sub>tADK</sub></b><div class="t">§6.4 참조. 굽힘 Fall 1 / 비틀림 Fall 2, 양쪽 계산 후 최소값</div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub star">9</div><div class="ln"></div></div><div class="bd"><b>S 계산 및 병행 확인</b><div class="t">S ≥ 1.2 확인 <b>+</b> σ<sub>max</sub> ≤ σ<sub>FK</sub> (§5 정적 proof) 병행</div></div></div>
+  </div>
+
+  <figure>
+    <p class="fig-h">K<sub>σ</sub> 는 무엇이 만드는가 — 예제 단면의 기여 분해</p>
+    <p class="fig-s">K<sub>σ</sub> − 1 = (β<sub>σ</sub>/K₂ − 1) + (1/K<sub>Fσ</sub> − 1) 로 분해. 노치가 압도적</p>
+    <div class="legend">
+      <span><i class="sq" style="background:var(--s1)"></i>노치 + 기하학적 크기효과 (β<sub>σ</sub>/K₂ − 1)</span>
+      <span><i class="sq" style="background:var(--s2)"></i>표면조도 (1/K<sub>F</sub> − 1)</span>
+    </div>
+    <div class="svgwrap" id="fig-ksig"></div>
+    <figcaption>굽힘에서 K<sub>σ</sub> 증분의 <b>92 %가 노치·크기효과</b>에서 옵니다. 조도 개선(R<sub>z</sub> 6.3 → 1.0)으로 얻을 수 있는 이득은 전체의 8 % 수준 — 중요하지만 노치 형상 개선이 우선입니다.</figcaption>
+  </figure>
+
+  <h3>6.3 평균응력 민감도와 등가평균응력</h3>
+  <div class="formula">ψ_σK = σ_WK / ( 2·K₁(d_eff)·σ_B(d_B) − σ_WK )
+ψ_τK = τ_WK / ( 2·K₁(d_eff)·σ_B(d_B) − τ_WK )
+
+σ_mv = √[ (σ_zdm + σ_bm)² + 3·τ_tm² ]        τ_mv = σ_mv / √3</div>
+  <p><b>노치가 심한 부품일수록 σ<sub>WK</sub>가 작아 ψ가 작습니다</b> = 평균응력에 덜 민감. 직관과 반대이므로 주의하십시오.</p>
+
+  <h3 id="s6-4">6.4 하중경우 (Fall) — 메인샤프트에서 결정적</h3>
+
+  <figure>
+    <p class="fig-h">Haigh 선도 — Fall 1 vs Fall 2 vs 항복 지배 분기</p>
+    <p class="fig-s">가로축 = 등가평균응력 σ<sub>mv</sub>, 세로축 = 허용 진폭 σ<sub>a</sub>. 예제 단면 값 (σ<sub>bWK</sub> = 153.1, σ<sub>FK</sub> = 589.6, ψ = 0.1161)</p>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>Fall 1 · σ<sub>mv</sub> 일정</span>
+      <span><i style="background:var(--s2)"></i>Fall 2 · R 일정 (하중경로)</span>
+      <span><i style="background:var(--axis)"></i>항복선 σ<sub>a</sub> + σ<sub>mv</sub> = σ<sub>FK</sub></span>
+      <span><i class="sq" style="background:var(--s3)"></i>예제 운전점</span>
+    </div>
+    <div class="svgwrap" id="fig-haigh"></div>
+    <figcaption>Fall 1은 평균응력이 고정된 채 진폭만 커지는 경로(수평 이동), Fall 2는 평균과 진폭이 비례해 커지는 경로(원점에서의 방사선)입니다. <b>같은 운전점이라도 어느 경로로 한계에 도달하느냐에 따라 허용 진폭이 달라집니다.</b></figcaption>
+  </figure>
+
+  <h4>Fall 1 — σ<sub>mv</sub> = 일정 (평균응력 불변, 진폭만 증가)</h4>
+  <div class="formula">σ_zdADK = σ_zdWK − ψ_zdσK · σ_mv
+σ_bADK  = σ_bWK  − ψ_bσK  · σ_mv
+τ_tADK  = τ_tWK  − ψ_τK   · τ_mv</div>
+
+  <h4>Fall 2 — σ<sub>a</sub>/σ<sub>m</sub> = 일정 (응력비 R 불변, 비례 증가)</h4>
+  <div class="formula">σ_bADK = σ_bWK / [ 1 + ψ_bσK · (σ_mv/σ_ba) ]
+τ_tADK = τ_tWK / [ 1 + ψ_τK  · (τ_mv/τ_ta) ]</div>
+
+  <h4>항복 지배 분기 (Haigh 선도의 항복선이 지배할 때)</h4>
+  <div class="formula">Fall 1 :  σ_ADK = σ_FK − σ_mv
+Fall 2 :  σ_ADK = σ_FK / ( 1 + σ_mv/σ_a )</div>
+
+  <h4>어느 Fall을 쓸 것인가 — 메인샤프트</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>응력 성분</th><th>실제 거동</th><th style="width:130px">권장 Fall</th></tr></thead>
+    <tbody>
+      <tr><td><b>굽힘</b> (로터 모멘트)</td><td>회전에 의해 <b>완전교번</b>. σ<sub>bm</sub> ≈ 0</td><td><b>Fall 1</b><br><span style="font-size:12px;color:var(--text-muted)">σ<sub>mv</sub>는 스러스트·압입·자중에서만</span></td></tr>
+      <tr><td><b>비틀림</b> (토크)</td><td>큰 평균 + 진폭. 풍속에 비례해 함께 증감</td><td><b>Fall 2</b> 가 물리적</td></tr>
+      <tr><td><b>축력</b> (스러스트)</td><td>준정적 + 변동</td><td>Fall 1 또는 2</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>실무 권장</div>
+    <p>두 경계 경우를 <b>모두 계산하고 최소 안전율을 채택</b>하십시오.</p>
+    <ul style="margin-bottom:0">
+      <li>경계 ①: R<sub>t</sub> = 0 (토크가 0에서 최대까지 맥동)</li>
+      <li>경계 ②: R<sub>t</sub> ≈ 1/K<sub>A</sub> (토크가 거의 일정)</li>
+    </ul>
+    <p style="margin-bottom:0">운전 스펙트럼 전 구간에서 실제 응력비가 변하므로 단일 Fall 가정은 위험합니다.</p>
+  </div>
+
+  <h2 id="s7"><span class="num">7</span>유한수명 / 스펙트럼 — DIN 743-4</h2>
+  <h3>7.1 Wöhler 곡선 파라미터</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>파라미터</th><th class="num">값</th></tr></thead>
+    <tbody>
+      <tr><td>기울기 지수 <b>q</b> — 굽힘, 인장/압축</td><td class="num"><b>q = 5</b></td></tr>
+      <tr><td>기울기 지수 <b>q</b> — 비틀림</td><td class="num"><b>q = 8</b></td></tr>
+      <tr><td>무릎점 <b>N<sub>D</sub></b></td><td class="num"><b>10⁶</b></td></tr>
+      <tr><td>상부 무릎 (준정적 전이)</td><td class="num">N ≈ 10³ … 10⁴</td></tr>
+      <tr><td>허용 손상합 <b>D<sub>M</sub></b></td><td class="num"><b>0.3</b></td></tr>
+      <tr><td>Miner 변형</td><td class="num"><b>Miner-erweitert (Haibach)</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)">이 지수는 <b>노치 봉재</b> 기준입니다. 풍력 실무의 DEL 관례(m = 8~12)와 충돌하므로 §8.5를 반드시 확인하십시오.</p>
+
+  <h3>7.2 안전율</h3>
+  <div class="formula">Dauerfestigkeit 영역 (N ≥ N_D) :  S = σ_ADK / σ_a    ,  S = τ_tADK / τ_ta
+Zeitfestigkeit  영역 (N < N_D) :  S = σ_ANK / σ_a    ,  S = τ_tANK / τ_ta
+
+S ≥ S_min = 1.2      (굽힘+비틀림 조합은 §6.1의 2차식 조합 사용)</div>
+
+  <h3>7.3 손상등가 진폭</h3>
+  <p>DIN 743-4 식 (6): <code>σ_ba = σ_ba1 / K_Kσ</code> (σ<sub>ba1</sub> = 스펙트럼 최대진폭, K<sub>Kσ</sub> = Kollektivbeiwert)</p>
+  <div class="formula">물리적으로 명확한 등가 형태:
+
+σ_a,äq(N_ref) = [ Σ_i n_i · σ_ai^q  /  N_ref ]^(1/q)      , N_ref = D_M · N_D
+
+  σ_ADK 이하 진폭은 Haibach 수정에 따라 지수 (2q − 1) 적용
+  Beiblatt 2 참고 크기: K_Kσ = 1.90 (굽힘), K_Kτ = 1.53 (비틀림)</div>
+  <p style="font-size:13px;color:var(--text-secondary)">⚠ DIN 743-4 식 (7)(K<sub>K</sub> 폐형식)은 본 조사에서 원문 확인 불가 — 위 식은 <b>재구성본</b>입니다. 인쇄본 대조 필수 (§14).</p>
+
+  <h3>7.4 Miner 손상 계산 (권장 실행형)</h3>
+  <div class="formula">σ_a ≥ σ_ADK :  N_i = N_D · ( σ_ADK / σ_ai )^q
+σ_a < σ_ADK :  N_i = N_D · ( σ_ADK / σ_ai )^(2q−1)      [Miner-erweitert]
+
+D = Σ n_i / N_i   ≤   D_M = 0.3</div>
+
+  <figure>
+    <p class="fig-h">Wöhler 곡선 + Miner-erweitert 무릎 + 예제 스펙트럼</p>
+    <p class="fig-s">양 로그 스케일. σ<sub>ADK</sub> = 148 MPa, N<sub>D</sub> = 10⁶, q = 5 (굽힘). 아래 분기는 Haibach 수정 (2q−1 = 9)</p>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>Wöhler 곡선 (Zeitfestigkeit, q=5)</span>
+      <span><i style="background:var(--s1);opacity:.45"></i>Miner-erweitert 연장 (2q−1=9)</span>
+      <span><i class="sq" style="background:var(--s2)"></i>예제 스펙트럼 (n<sub>i</sub>, σ<sub>ai</sub>)</span>
+    </div>
+    <div class="svgwrap" id="fig-wohler"></div>
+    <figcaption>스펙트럼 점이 곡선 <b>왼쪽/아래</b>에 있으면 안전, <b>오른쪽/위</b>면 그 단계에서 손상이 발생합니다. 170 MPa · 2000 cycles 점 하나가 σ<sub>ADK</sub> 위에 있어 무한수명 판정을 탈락시키지만(§8.4), 사이클 수가 적어 Miner 손상 기여는 2.4 % 에 불과합니다.</figcaption>
+  </figure>
+
+  <h2 id="s8"><span class="num">8</span>극한하중 vs 피로하중 — 적용 전략</h2>
+  <h3>8.1 두 검증의 성격 비교</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:130px"></th><th>극한하중 (Ultimate / Extreme)</th><th>피로하중 (Fatigue)</th></tr></thead>
+    <tbody>
+      <tr><td><b>물리</b></td><td>단발 대하중 → 영구변형·파단</td><td>저진폭 반복 → 균열발생·성장</td></tr>
+      <tr><td><b>DIN 743 조항</b></td><td><b>Part 1 §5</b> 정적 proof</td><td><b>Part 1 §4</b> 피로 proof + <b>Part 4</b> 스펙트럼</td></tr>
+      <tr><td><b>강도 기준</b></td><td><b>R<sub>p0.2</sub></b> (항복) — R<sub>m</sub> 아님</td><td>σ<sub>ADK</sub> / σ<sub>ANK</sub> (Wöhler 기반)</td></tr>
+      <tr><td><b>하중 입력</b></td><td>극한하중 표 (6성분 max/min + 동시값), 방위각 스윕</td><td>20년 시계열 → Markov / rainflow</td></tr>
+      <tr><td><b>지배 DLC</b></td><td>1.3 (ETM), <b>2.3</b> (EOG+fault), <b>6.1</b> (EWM 50yr), <b>6.2</b> (EWM+계통상실, yaw free ±180°)</td><td>1.2, 2.4, 3.1, 4.1, 5.1, 6.4, 7.2 (Weibull 가중)</td></tr>
+      <tr><td><b>γ<sub>F</sub></b></td><td>1.35 (N) / 1.10 (A: DLC 2.x, 6.2) / 1.10 (중력)</td><td><b>1.0</b> (특성하중), 별도 γ<sub>f</sub> = 0.85~1.20 (하중 CoV)</td></tr>
+      <tr><td><b>사용 계수</b></td><td>K<sub>2F</sub>, γ<sub>F</sub>, K₁(R<sub>p0.2</sub>)</td><td>β, K₂, K<sub>F</sub>, K<sub>V</sub>, K₁(R<sub>m</sub>), ψ, σ<sub>mv</sub></td></tr>
+      <tr><td><b>관련 응력</b></td><td>σ<sub>max</sub>, τ<sub>max</sub> (첨두, 공칭)</td><td>σ<sub>a</sub>, τ<sub>a</sub> (진폭) + σ<sub>m</sub> (평균)</td></tr>
+      <tr style="background:var(--wash)"><td><b>노치 처리</b></td><td><b>노치 무시</b> (공칭응력 + K<sub>2F</sub>, γ<sub>F</sub>) — 국부소성 허용</td><td><b>노치 지배</b> (β<sub>σ</sub>가 결과의 절반 이상 결정)</td></tr>
+      <tr><td><b>표면조도</b></td><td><b>영향 없음</b></td><td><b>직접 영향</b> (K<sub>Fσ</sub>)</td></tr>
+      <tr><td><b>크기효과</b></td><td>K₁(R<sub>p0.2</sub>), A = 0.34 → 하한 0.57</td><td>K₁(R<sub>m</sub>), A = 0.26 → 하한 0.67 <b>+ K₂ = 0.8</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>8.2 핵심 통찰 — 두 검증은 서로 다른 단면을 지배한다</h3>
+  <div class="two">
+    <div class="card" style="border-top:3px solid var(--s2)">
+      <h4 style="margin-top:0">극한하중</h4>
+      <p style="font-size:13.5px;margin-bottom:0">노치가 무시되고 소성 재분배가 허용되므로, <b>최소 단면계수 위치</b>(보통 굽힘모멘트 최대점 = 로터측 플랜지/트럼펫 전이부)가 지배합니다.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--s1)">
+      <h4 style="margin-top:0">피로하중</h4>
+      <p style="font-size:13.5px;margin-bottom:0">β<sub>σ</sub>가 지배하므로 <b>모멘트가 최대가 아니어도 노치가 심한 곳</b>(압입 끝단, 리테이닝링 홈, 단차)이 지배합니다.</p>
+    </div>
+  </div>
+  <p><b>두 검증에서 임계 단면이 다른 것이 정상입니다.</b> 한쪽만 확인하고 넘어가면 안 됩니다.</p>
+
+  <h3 id="s8-3">8.3 시계열 → DIN 743 입력 변환 절차</h3>
+  <div class="flow">
+    <div class="fstep"><div class="rail"><div class="bub">1</div><div class="ln"></div></div><div class="bd"><b>20년 DLC 세트</b><div class="t">Bladed / OpenFAST / HAWC2 → 허브 좌표계 6성분 하중 시계열<br>Weibull 풍속확률 × DLC 발생빈도 가중 → 20년 등가</div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub star">2</div><div class="ln"></div></div><div class="bd"><b>★ 고정계 → 회전계 좌표변환</b><div class="t"><code>σ_b(t) = M_res(t)/W · cos(θ(t) − φ)</code> &nbsp; (로터 방위각 θ(t) 사용)<br><span style="color:var(--crit)">이 단계를 빠뜨리면 굽힘 사이클 수가 수십~수백 배 과소평가됩니다.</span></div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">3</div><div class="ln"></div></div><div class="bd"><b>국부 응력 전달</b><div class="t">(a) FEA 단위하중 6개 → 영향계수 행렬 → 응력 시계열 중첩 <b>(권장)</b><br>(b) 또는 공칭응력 + DIN 743 β<sub>σ</sub> (기계요소 검증용)</div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">4</div><div class="ln"></div></div><div class="bd"><b>회전계에서 rainflow counting</b><div class="t">ASTM E1049-85 → <b>Markov (from-to)</b> 또는 range-mean 행렬 · <b>평균응력 유지 필수</b></div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">5</div><div class="ln"></div></div><div class="bd"><b>각 (진폭, 평균) 셀 처리</b><div class="t">σ<sub>mv</sub> 계산 → Fall 선택 → σ<sub>ADK</sub></div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub alt">6</div><div class="ln"></div></div><div class="bd"><b>3중 판정</b><div class="t"><b>6-A 무한수명</b> S = σ<sub>ADK</sub> / σ<sub>a,max</sub> ≥ 1.2<br><b>6-B 손상 누적</b> D = Σ n<sub>i</sub>/N<sub>i</sub> ≤ D<sub>M</sub> = 0.3 [Miner-erweitert]<br><b>6-C 인증 proof</b> 국부응력 S/N (GL App.5.B / IEC 61400-8 §7.5) + Miner D ≤ 1.0</div></div></div>
+  </div>
+
+  <h3 id="s8-4">8.4 무한수명 판정을 쓸 것인가, Miner를 쓸 것인가</h3>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>정직한 답</div>
+    <p><b>메인샤프트 인증은 Miner가 표준이고, 무한수명은 보조 논증입니다.</b></p>
+  </div>
+  <ol>
+    <li><b>사이클 수.</b> 20년 × 1P (10–15 rpm) ≈ <b>1.3 × 10⁸ cycles</b>. 3P·난류 성분까지 더하면 10⁸~10⁹. DIN 743의 N<sub>D</sub> = 10⁶ 및 743-3 유효성 10⁷을 <b>1~2 자릿수 초과</b>합니다. 이 영역에서 진정한 내구한도가 존재한다고 볼 근거가 약합니다(VHCF).</li>
+    <li><b>엄격한 무한수명 설계는 축을 비현실적으로 무겁게 만듭니다.</b> DIN 743-4가 2012년에 신설된 것 자체가 "기본 규격의 무한수명 검증만으로는 부족하다"는 인정입니다.</li>
+    <li><b>인증규격이 구조적으로 S/N + Miner입니다.</b> GL App.5.B = "Calculation of Synthetic S/N curves", IEC 61400-8 §7.5.4 S/N curves + §7.5.7 Damage accumulation. <b>"내구한도 proof" 조항 자체가 없습니다.</b></li>
+    <li><b>스펙트럼 꼬리가 두껍습니다.</b> 극한난류·기동/정지 과도(DLC 3.1, 4.1, 5.1)가 어떤 내구한도보다도 높은 진폭 사이클을 만듭니다.</li>
+  </ol>
+
+  <figure>
+    <p class="fig-h">손상은 어디서 오는가 — 손상 기여 vs 사이클 비중</p>
+    <p class="fig-s">예제 스펙트럼(§10.5). 20년 총 1.345 × 10⁸ cycles, 총 손상 D = 0.166</p>
+    <div class="legend">
+      <span><i class="sq" style="background:var(--s1)"></i>손상 기여도 (D<sub>i</sub> / D<sub>total</sub>)</span>
+      <span><i class="sq" style="background:var(--s2)"></i>사이클 비중 (n<sub>i</sub> / n<sub>total</sub>)</span>
+    </div>
+    <div class="svgwrap" id="fig-damage"></div>
+    <figcaption>총 손상의 <b>67 %가 120 MPa 이상 구간</b>에서 발생하는데, 이 구간은 <b>총 사이클의 0.40 %</b>에 불과합니다. 반대로 사이클의 74 %를 차지하는 35 MPa 구간은 손상의 0.14 %만 기여합니다. → <b>고진폭 꼬리의 하중 정확도가 결정적</b>이므로 해당 DLC의 시드 수·극한 외삽법을 재확인해야 합니다.</figcaption>
+  </figure>
+
+  <h4>무한수명 검증을 반드시 병행해야 하는 이유</h4>
+  <ul>
+    <li>스펙트럼의 대부분(≥ 99 % 사이클)이 σ<sub>ADK</sub> <b>아래</b>에 있음을 보이면, 총 손상이 <b>소수의 고진폭 사이클에만 지배</b>된다는 강건성 논증이 성립합니다. Miner의 D ≤ 0.3 만으로는 얻을 수 없는 정보이며 인증 심사에서 강력한 근거가 됩니다.</li>
+    <li>반대로 스펙트럼 중간 대역이 σ<sub>ADK</sub> 위에 넓게 걸려 있으면, Miner 결과가 <b>q값 가정과 D<sub>M</sub> 선택에 극도로 민감</b>해집니다 → 재설계 신호.</li>
+  </ul>
+
+  <h4>권장 병행 체계</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:44px"></th><th>검증</th><th>목적</th><th>판정기준</th></tr></thead>
+    <tbody>
+      <tr><td class="mid"><b>A</b></td><td>무한수명 (최대진폭)</td><td>보수적 강건성 상한</td><td>S = σ<sub>ADK</sub>/σ<sub>a,max</sub> ≥ 1.2</td></tr>
+      <tr><td class="mid"><b>B</b></td><td>무한수명 (99 % 분위 진폭)</td><td>실질적 무한수명 논증</td><td>S ≥ 1.2 이고 σ<sub>ADK</sub> 초과 사이클 &lt; 총 사이클의 1 %</td></tr>
+      <tr><td class="mid"><b>C</b></td><td>DIN 743-4 손상등가</td><td>기계요소 규격 내 스펙트럼 처리</td><td>S = σ<sub>ADK</sub>/σ<sub>a,äq</sub> ≥ 1.2</td></tr>
+      <tr><td class="mid"><b>D</b></td><td>Miner-erweitert 누적손상</td><td>실제 수명 판정</td><td>D ≤ D<sub>M</sub> = 0.3</td></tr>
+      <tr style="background:var(--wash)"><td class="mid"><b>E</b></td><td>국부응력 S/N + Miner (FEA)</td><td><b>인증 proof</b></td><td>D ≤ 1.0, γ<sub>M</sub> 적용</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="s8-5">8.5 Wöhler 지수 m — 절대 틀리면 안 되는 부분</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>맥락</th><th class="num">m</th><th>상태</th></tr></thead>
+    <tbody>
+      <tr style="background:var(--wash)"><td><b>단조 로터축 DEL (10⁶ ref)</b></td><td class="num"><b>10.8</b></td><td>발표문헌 명시값 (2.3 MW 중공단조축)</td></tr>
+      <tr><td>DIN 743-4 굽힘·인장압축 (노치 봉재)</td><td class="num"><b>q = 5</b></td><td>규격값</td></tr>
+      <tr><td>DIN 743-4 비틀림</td><td class="num"><b>q = 8</b></td><td>규격값</td></tr>
+      <tr><td>DNV-RP-C203 B1/B2 (모재)</td><td class="num">4.0</td><td>규격값</td></tr>
+      <tr><td>DNV-RP-C203 C (주조/단조 노드, DFF&lt;10)</td><td class="num">3.0</td><td>규격값</td></tr>
+      <tr><td>GL 축-허브 <b>볼트</b> 결합</td><td class="num">3 / 5</td><td>N&lt;5×10⁶ / N&gt;5×10⁶</td></tr>
+      <tr><td>산업 DEL 관례</td><td class="num">3–4 / <b>8–12</b> / 10</td><td>용접·볼트 / <b>단조·주조 기계부품</b> / 복합재</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>m = 3~4 DEL 수용 금지</div>
+    <p>하중 공급처가 m = 4 DEL만 준다면 거부하고 <b>rainflow/Markov 행렬 원본</b>을 요구하십시오. m = 4는 용접상세 관례이며, 단조축에 쓰면 저진폭·고사이클 구간을 과대평가하여 <b>DLC 순위를 완전히 뒤집습니다</b>.</p>
+    <p style="margin-bottom:0">단조 34CrNiMo6/42CrMo4 메인샤프트는 <b>m ≈ 8–12</b> 가 옳은 범위이고, 10 이 합리적 기본값, 10.8은 인용 가능한 발표값입니다.</p>
+  </div>
+
+  <h2 id="s9"><span class="num">9</span>안전율 체계 조율 — S<sub>min</sub> = 1.2 vs γ<sub>F</sub> / γ<sub>M</sub></h2>
+  <h3>9.1 문제의 본질</h3>
+  <div class="two">
+    <div class="card">
+      <h4 style="margin-top:0">DIN 743의 S ≥ 1.2</h4>
+      <p style="font-size:13.5px"><b>특성하중(무가중)</b> 과 <b>특성재료값(최소보증값)</b> 에 대한 <b>단일 전역계수</b>. 부분계수가 아니고 목표 신뢰도가 명시돼 있지 않습니다.</p>
+      <p style="font-size:13.5px;margin-bottom:0">규격 원문: <i>"계산방법의 가정만으로도 최소안전율 S<sub>min</sub> = 1.2가 요구된다"</i> — 즉 <b>하중 불확실성은 포함하지 않습니다.</b></p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">풍력 규격</h4>
+      <p style="font-size:13.5px;margin-bottom:0">하중측 γ<sub>F</sub>, 저항측 γ<sub>M</sub> / γ<sub>Rd</sub>, 결과중대성 γ<sub>n</sub> 의 <b>부분계수(semi-probabilistic) 체계</b>.</p>
+    </div>
+  </div>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>핵심</div>
+    <p><b>두 체계는 서로 호환 단위가 아닙니다.</b> 곱하면 이중계상, 무시하면 과소계상입니다.</p>
+  </div>
+
+  <h3>9.2 IEC 61400-1 ed.4 부분안전계수 (교정 배경문서 기준)</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>항목</th><th class="num">값</th></tr></thead>
+    <tbody>
+      <tr><td>γ<sub>F</sub>, 풍하중, DLC 1.1/6.1 (정상, 극한)</td><td class="num"><b>1.35</b></td></tr>
+      <tr><td>γ<sub>F</sub>, 중력</td><td class="num"><b>1.10</b></td></tr>
+      <tr><td>γ<sub>F</sub>, DLC 2.1/2.2 고장</td><td class="num">1.35 (λ<sub>E</sub>&lt;10/yr) ~ 1.10 (λ<sub>E</sub>&gt;50/yr), 로그선형 보간</td></tr>
+      <tr><td>γ<sub>M</sub>, ULS 강도 파라미터</td><td class="num"><b>1.0</b> + 모델불확실계수 γ<sub>Rd</sub> = 1.15 ~ 1.45</td></tr>
+      <tr><td>γ<sub>m</sub>, 용접강 피로</td><td class="num">1.10 (damage tolerant) / 1.25 (safe life)</td></tr>
+      <tr><td>γ<sub>f</sub>, 피로 응력범위 계수</td><td class="num">0.85 ~ 1.20 (하중 CoV 0~30 %)</td></tr>
+      <tr><td><b>γ<sub>c</sub>, 결과중대성 (ed.4)</b></td><td class="num">class 1: 0.9 / class 2: 1.0 / class 3: <b>1.2</b> <span style="color:var(--text-muted)">(ed.3은 1.3)</span></td></tr>
+      <tr><td>목표 신뢰도</td><td class="num">β<sub>t</sub> = 3.3/yr ⇒ P<sub>f</sub> = 5 × 10⁻⁴/yr</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>IEC 61400-1에는 축·기계부품 전용 계수가 없습니다.</b> 배경문서가 명시하듯 타워 좌굴(Annex A), 콘크리트(B), 용접강 상세(C)만 다루며 <i>"회전축이나 기어박스 부품에 대한 차등계수는 제공하지 않는다"</i> 고 합니다. IEC 61400-8이 이 공백을 메우기 위해 제정되었습니다.</p>
+
+  <h3>9.3 실무에서 관측되는 3가지 조율 방식</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:200px">방식</th><th>내용</th><th style="width:150px">평가</th></tr></thead>
+    <tbody>
+      <tr style="background:var(--wash)"><td><b>① 풍력계수 지배<br>DIN 743은 저항모델</b></td><td>γ<sub>F</sub> 가중 설계하중 입력 + DIN 743 저항측(σ<sub>ADK</sub>, σ<sub>FK</sub>)을 γ<sub>M</sub> 으로 나눔 → 이용률 ≤ 1.0. <b>DIN의 1.2는 대체됨</b></td><td><span class="pill p-ok">권장</span> 내부 일관성 있음. IEC 61400-8의 "γ<sub>M</sub>을 S-N 생존확률에 연동" 구조가 함의하는 방식</td></tr>
+      <tr><td><b>② DIN 743 자체완결 proof</b></td><td>특성하중(γ<sub>F</sub> = 1.0) 입력, S ≥ 1.2 요구. 주 proof(FEA/S-N)와 <b>병행하는 보조 기계요소 검증</b></td><td><span class="pill p-n">보조용</span> 단독 인증 proof로는 부적합</td></tr>
+      <tr><td><b>③ 중첩</b></td><td>γ<sub>F</sub> 가중하중 <b>및</b> S ≥ 1.2</td><td><span class="pill p-no">비권장</span> 과도하게 보수적. 인증 실무가 아니라 보수적 구매사양에서 나타남</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>이 선택은 축 지름 10–15 %에 해당한다</div>
+    <p>독일 구조검증 실무에서 FKM 지침 적용 시 GL 경로 대비 <i>"상당히 축소된 축 지름"</i> 이 가능하다고 명시적으로 보고됩니다.</p>
+    <p style="margin-bottom:0"><b>권장:</b> 조율 방식을 <b>design basis 문서에 서면으로 명시하고 인증기관과 사전 합의</b>하십시오. 규격이 이 루프를 닫아주지 않으므로 사후 논쟁을 피할 유일한 방법입니다.</p>
+  </div>
+
+  <h3>9.4 DIN 743 S<sub>min</sub> 실무 가중 관례 (참고)</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>상황</th><th class="num">S<sub>min</sub></th></tr></thead>
+    <tbody>
+      <tr><td>DIN 743 규격 최소 (계산법 가정만 반영)</td><td class="num">1.2</td></tr>
+      <tr><td>일반 기계설계</td><td class="num">1.5</td></tr>
+      <tr><td>안전 중요 부품</td><td class="num">1.8 – 2.0</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>풍력에서는 이 관례 대신 γ<sub>F</sub> / γ<sub>M</sub> 체계를 쓰는 것이 정합적입니다.</p>
+
+  <h2 id="s10"><span class="num">10</span>예제 계산 (대표 단면)</h2>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>대표값</div>
+    <p>실제 도면·재질·하중이 확정되면 이 예제를 그대로 대체하십시오. 아래는 <b>방법 시연용 대표값</b>입니다.</p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi ok"><div class="l">정적 안전율 (극한하중)</div><div class="v">2.30</div><div class="d"><span class="pill p-ok">✓ ≥ 1.2</span> 여유 1.92배</div></div>
+    <div class="kpi ok"><div class="l">피로 안전율 (무한수명, 등가진폭)</div><div class="v">3.13</div><div class="d"><span class="pill p-ok">✓ ≥ 1.2</span> 여유 2.61배</div></div>
+    <div class="kpi ok"><div class="l">Miner 누적손상 D</div><div class="v">0.166</div><div class="d"><span class="pill p-ok">✓ ≤ 0.3</span> 여유 1.80배</div></div>
+    <div class="kpi no"><div class="l">무한수명 (최대진폭 170 MPa)</div><div class="v">0.87</div><div class="d"><span class="pill p-no">✗ &lt; 1.2</span> §8.4 참조</div></div>
+  </div>
+
+  <h3>10.1 입력</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:200px">항목</th><th>값</th></tr></thead>
+    <tbody>
+      <tr><td>재질</td><td>42CrMo4 +QT — σ<sub>B</sub>(d<sub>B</sub>) = 1100, σ<sub>S</sub>(d<sub>B</sub>) = 900 N/mm² (d<sub>B</sub> = 16 mm)</td></tr>
+      <tr><td>열처리 시 소재 지름</td><td>d<sub>eff</sub> = 700 mm</td></tr>
+      <tr><td>평가 단면</td><td>베어링 시트 인접 단차: d = 500 mm, D = 560 mm, r = 25 mm</td></tr>
+      <tr><td>표면</td><td>연삭, R<sub>z</sub> = 6.3 µm</td></tr>
+      <tr><td>표면처리</td><td>없음 → K<sub>V</sub> = 1.0</td></tr>
+      <tr><td>형상계수</td><td>α<sub>σb</sub> = 1.85, α<sub>τ</sub> = 1.35 (FEA / DIN 743-2)</td></tr>
+      <tr><td>중공 여부</td><td>중공축</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>10.2 재료·영향계수</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:130px">단계</th><th>계산</th><th class="num" style="width:150px">결과</th></tr></thead>
+    <tbody>
+      <tr><td>K₁(R<sub>m</sub>)</td><td class="mono">d_eff=700 &gt; 300 → 하한</td><td class="num"><b>0.669</b></td></tr>
+      <tr><td>K₁(R<sub>p0.2</sub>)</td><td class="mono">하한</td><td class="num"><b>0.567</b></td></tr>
+      <tr><td>σ<sub>B</sub>(d)</td><td class="mono">0.669 × 1100</td><td class="num"><b>735.9 N/mm²</b></td></tr>
+      <tr><td>σ<sub>S</sub>(d)</td><td class="mono">0.567 × 900</td><td class="num"><b>510.5 N/mm²</b></td></tr>
+      <tr><td>K₂(d)</td><td class="mono">d = 500 ≥ 150</td><td class="num"><b>0.800</b></td></tr>
+      <tr><td>K<sub>Fσ</sub></td><td class="mono">1 − 0.22·lg(6.3)·(lg(735.9/20)−1)</td><td class="num"><b>0.9005</b></td></tr>
+      <tr><td>K<sub>Fτ</sub></td><td class="mono">0.575×0.9005 + 0.425</td><td class="num"><b>0.9428</b></td></tr>
+      <tr><td>t, φ</td><td class="mono">t = 30, φ = 1/(4√1.2+2)</td><td class="num"><b>0.1567</b></td></tr>
+      <tr><td>G′<sub>b</sub></td><td class="mono">2(1+0.1567)/25 + 2/500</td><td class="num"><b>0.0965 mm⁻¹</b></td></tr>
+      <tr><td>G′<sub>t</sub></td><td class="mono">1/25</td><td class="num"><b>0.0400 mm⁻¹</b></td></tr>
+      <tr><td>n<sub>χ</sub>(σ)</td><td class="mono">1 + 0.0965¹·10^−(0.33+510.5/712)</td><td class="num"><b>1.0087</b></td></tr>
+      <tr><td>n<sub>χ</sub>(τ)</td><td class="mono">1 + 0.0400¹·10^−(…)</td><td class="num"><b>1.0036</b></td></tr>
+      <tr style="background:var(--wash)"><td>β<sub>σ</sub></td><td class="mono">1.85 / 1.0087</td><td class="num"><b>1.834</b></td></tr>
+      <tr style="background:var(--wash)"><td>β<sub>τ</sub></td><td class="mono">1.35 / 1.0036</td><td class="num"><b>1.345</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>주목:</b> n<sub>χ</sub> ≈ 1.01. 대형 축에서는 <b>지지효과가 사실상 없습니다</b> → β ≈ α.</p>
+
+  <h3>10.3 피로 (무한수명)</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:130px">단계</th><th>계산</th><th class="num" style="width:150px">결과</th></tr></thead>
+    <tbody>
+      <tr><td>K<sub>σ</sub></td><td class="mono">1.834/0.800 + 1/0.9005 − 1</td><td class="num"><b>2.403</b></td></tr>
+      <tr><td>K<sub>τ</sub></td><td class="mono">1.345/0.800 + 1/0.9428 − 1</td><td class="num"><b>1.742</b></td></tr>
+      <tr><td>σ<sub>bWK</sub></td><td class="mono">0.5×1100×0.669 / 2.403</td><td class="num"><b>153.1 N/mm²</b></td></tr>
+      <tr><td>τ<sub>tWK</sub></td><td class="mono">0.3×1100×0.669 / 1.742</td><td class="num"><b>126.7 N/mm²</b></td></tr>
+      <tr><td>ψ<sub>bσK</sub></td><td class="mono">153.1/(2×0.669×1100 − 153.1)</td><td class="num"><b>0.1161</b></td></tr>
+      <tr><td>ψ<sub>τK</sub></td><td class="mono">126.7/(1474 − 126.7)</td><td class="num"><b>0.0942</b></td></tr>
+      <tr><td>평균응력</td><td class="mono">σ_zdm=8, σ_bm=0, τ_tm=25 → σ_mv=√(8²+3·25²)</td><td class="num"><b>σ<sub>mv</sub>=44.0<br>τ<sub>mv</sub>=25.4</b></td></tr>
+      <tr style="background:var(--wash)"><td><b>σ<sub>bADK</sub></b> (Fall 1)</td><td class="mono">153.1 − 0.1161×44.0</td><td class="num"><b>148.0 N/mm²</b></td></tr>
+      <tr style="background:var(--wash)"><td><b>τ<sub>tADK</sub></b> (Fall 1)</td><td class="mono">126.7 − 0.0942×25.4</td><td class="num"><b>124.3 N/mm²</b></td></tr>
+      <tr><td>진폭 (등가)</td><td class="mono">σ_ba = 45, τ_ta = 12</td><td class="num">—</td></tr>
+      <tr style="background:var(--wash)"><td><b>S<sub>피로</sub></b></td><td class="mono">1/√[(45/148.0)² + (12/124.3)²]</td><td class="num"><b>3.13</b> <span class="tag-ok">≥ 1.2 ✓</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>10.4 정적 (극한하중)</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:130px">단계</th><th>계산</th><th class="num" style="width:150px">결과</th></tr></thead>
+    <tbody>
+      <tr><td>K<sub>2F</sub></td><td class="mono">중공축: 굽힘 1.1, 비틀림 1.0</td><td class="num">—</td></tr>
+      <tr><td>γ<sub>F</sub></td><td class="mono">α_σ = 1.85 → (1.5, 2.0] 구간</td><td class="num"><b>1.05</b> <span style="color:var(--text-muted)">(비틀림 1.0)</span></td></tr>
+      <tr><td>σ<sub>bFK</sub></td><td class="mono">0.567×900×1.1×1.05</td><td class="num"><b>589.6 N/mm²</b></td></tr>
+      <tr><td>σ<sub>zdFK</sub></td><td class="mono">0.567×900×1.0×1.05</td><td class="num"><b>536.0 N/mm²</b></td></tr>
+      <tr><td>τ<sub>tFK</sub></td><td class="mono">0.567×900×1.0×1.0/√3</td><td class="num"><b>294.7 N/mm²</b></td></tr>
+      <tr><td>극한응력 (γ<sub>F</sub> 가중 후)</td><td class="mono">σ_bmax=210, σ_zdmax=15, τ_tmax=60</td><td class="num">—</td></tr>
+      <tr style="background:var(--wash)"><td><b>S<sub>정적</sub></b></td><td class="mono">1/√[(15/536.0 + 210/589.6)² + (60/294.7)²]</td><td class="num"><b>2.30</b> <span class="tag-ok">≥ 1.2 ✓</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>10.5 스펙트럼 검증 (Miner-erweitert, q = 5, N<sub>D</sub> = 10⁶, D<sub>M</sub> = 0.3)</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">σ<sub>a</sub> [MPa]</th><th class="num">n<sub>i</sub></th><th class="num">N<sub>i</sub></th><th class="num">D<sub>i</sub></th><th class="num">손상 기여</th></tr></thead>
+    <tbody>
+      <tr><td class="num">170</td><td class="num">2.00×10³</td><td class="num">5.00×10⁵</td><td class="num">4.00×10⁻³</td><td class="num">2.4 %</td></tr>
+      <tr><td class="num">150</td><td class="num">3.00×10⁴</td><td class="num">9.35×10⁵</td><td class="num">3.21×10⁻²</td><td class="num">19.3 %</td></tr>
+      <tr style="background:var(--wash)"><td class="num">120</td><td class="num">5.00×10⁵</td><td class="num">6.60×10⁶</td><td class="num">7.57×10⁻²</td><td class="num"><b>45.5 %</b></td></tr>
+      <tr><td class="num">90</td><td class="num">4.00×10⁶</td><td class="num">8.79×10⁷</td><td class="num">4.55×10⁻²</td><td class="num">27.3 %</td></tr>
+      <tr><td class="num">60</td><td class="num">3.00×10⁷</td><td class="num">3.38×10⁹</td><td class="num">8.87×10⁻³</td><td class="num">5.3 %</td></tr>
+      <tr><td class="num">35</td><td class="num">1.00×10⁸</td><td class="num">4.32×10¹¹</td><td class="num">2.31×10⁻⁴</td><td class="num">0.1 %</td></tr>
+      <tr style="border-top:2px solid var(--axis)"><td class="num"><b>합계</b></td><td class="num"><b>1.345×10⁸</b></td><td class="num">—</td><td class="num"><b>0.166</b></td><td class="num"><b>100 %</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>대조 — 같은 스펙트럼의 세 가지 판정</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>판정법</th><th class="num">결과</th><th style="width:90px">판정</th></tr></thead>
+    <tbody>
+      <tr><td>최대진폭 무한수명</td><td class="num">S = 148.0/170 = <b>0.87</b></td><td><span class="pill p-no">✗ 탈락</span></td></tr>
+      <tr><td>손상등가 진폭 @ D<sub>M</sub>·N<sub>D</sub></td><td class="num">σ<sub>a,äq</sub> = 186 MPa → S = <b>0.79</b></td><td><span class="pill p-no">✗ 탈락</span></td></tr>
+      <tr style="background:var(--wash)"><td><b>Miner-erweitert 누적손상</b></td><td class="num"><b>D = 0.166</b> ≤ 0.3</td><td><span class="pill p-ok">✓ 통과</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>이 대비가 §8.4의 요점</div>
+    <p>동일 스펙트럼에서 <b>무한수명 판정은 탈락하고 Miner는 통과</b>합니다.</p>
+    <ul>
+      <li>무한수명 판정이 탈락한 것은 <b>170 MPa 진폭 2000 사이클</b>(20년 총 사이클의 0.0015 %) 때문입니다.</li>
+      <li>이 경우 옳은 결론은 "설계 부적합"이 아니라 <b>"무한수명 설계는 성립하지 않으며 유한수명(Miner) 근거로 인증해야 한다"</b> 입니다.</li>
+      <li>동시에 총 손상의 <b>67 %가 120 MPa 이상 구간</b>(총 사이클의 0.40 %)에서 발생하므로 <b>고진폭 꼬리의 하중 정확도가 결정적</b>임을 알 수 있습니다 → 해당 DLC의 시드 수·극한 외삽법을 재확인하십시오.</li>
+    </ul>
+  </div>
+
+  <h2 id="s11"><span class="num">11</span>권장값 요약표</h2>
+  <div class="tw">
+  <table>
+    <thead><tr><th>항목</th><th style="width:110px">기호</th><th style="width:200px">메인샤프트 권장값</th><th>근거 / 주의</th></tr></thead>
+    <tbody>
+      <tr><td>최소 안전율 (규격)</td><td>S<sub>min</sub></td><td class="num"><b>1.2</b></td><td>하중 불확실성 미포함</td></tr>
+      <tr><td>최소 안전율 (실무)</td><td>S<sub>min</sub></td><td class="num">1.5 (일반) / 1.8–2.0 (안전중요)</td><td>풍력에서는 γ 체계로 대체 권장</td></tr>
+      <tr><td>기술적 크기계수</td><td>K₁(R<sub>m</sub>)</td><td class="num"><b>0.67</b> (조질강, d<sub>eff</sub>&gt;300)</td><td>FVA 703 식 사용 권장</td></tr>
+      <tr><td>기술적 크기계수</td><td>K₁(R<sub>p0.2</sub>)</td><td class="num"><b>0.57</b> (조질강, d<sub>eff</sub>&gt;300)</td><td>정적 proof용</td></tr>
+      <tr><td>기하학적 크기계수</td><td>K₂(d)</td><td class="num"><b>0.80</b> (d ≥ 150)</td><td>인장/압축은 1.0</td></tr>
+      <tr><td>표면조도계수</td><td>K<sub>Fσ</sub></td><td class="num">0.90 (R<sub>z</sub> 6.3, 연삭)</td><td>필렛·시트부 R<sub>z</sub> 도면 지정 필수</td></tr>
+      <tr style="background:var(--wash)"><td><b>표면경화계수</b></td><td><b>K<sub>V</sub></b></td><td class="num"><b>1.0</b></td><td><b>표는 40 mm까지만. 초과 적용 불가</b></td></tr>
+      <tr><td>지지계수</td><td>n<sub>χ</sub></td><td class="num"><b>≈ 1.00–1.02</b></td><td>대형 축에서 지지효과 소멸 → β ≈ α</td></tr>
+      <tr><td>정적 지지계수</td><td>K<sub>2F</sub></td><td class="num">중공: 굽힘 1.1 / 비틀림 1.0</td><td>중실: 1.2 / 1.2</td></tr>
+      <tr><td>항복상승계수</td><td>γ<sub>F</sub></td><td class="num">1.05 (α 1.5–2.0)</td><td>비틀림 1.0, 경화층 있으면 1.0</td></tr>
+      <tr><td>Wöhler 지수 (DIN 743-4)</td><td>q</td><td class="num">굽힘 5 / 비틀림 8</td><td>노치 봉재 기준</td></tr>
+      <tr style="background:var(--wash)"><td><b>Wöhler 지수 (DEL 관례)</b></td><td>m</td><td class="num"><b>8–12 (기본 10)</b></td><td><b>m=3~4 DEL 수용 금지</b></td></tr>
+      <tr><td>무릎점</td><td>N<sub>D</sub></td><td class="num">10⁶</td><td>743-3 유효성 10⁷</td></tr>
+      <tr><td>허용 손상합</td><td>D<sub>M</sub></td><td class="num"><b>0.3</b> (DIN 743-4)</td><td>인증 S/N 경로는 통상 1.0</td></tr>
+      <tr><td>Miner 변형</td><td>—</td><td class="num"><b>Miner-erweitert (Haibach)</b></td><td>elementar·konsequent 아님</td></tr>
+      <tr><td>하중경우</td><td>Fall</td><td class="num">굽힘 Fall 1 / 비틀림 Fall 2</td><td><b>양쪽 계산 후 최소값</b></td></tr>
+      <tr><td>γ<sub>F</sub> (극한)</td><td>—</td><td class="num">1.35 (N) / 1.10 (A) / 1.10 (중력)</td><td>IEC 61400-1 ed.4</td></tr>
+      <tr><td>γ<sub>c</sub> (결과중대성)</td><td>—</td><td class="num">0.9 / 1.0 / <b>1.2</b></td><td>ed.4 (ed.3은 1.3)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="s12"><span class="num">12</span>메인샤프트 특유의 함정</h2>
+
+  <h3>12.1 ★ 베어링 시트 압입부 — 실제 1위 고장모드</h3>
+  <ul>
+    <li><b>압입 끝단은 심각하고 모델링이 부실한 노치</b>입니다. DIN 743-2의 압입 β<sub>σ</sub>는 굽힘에서 약 2.0–3.0 수준으로 날카로운 단차에 필적합니다. <b>그런데 단차와 달리 필렛으로 해결할 수 없습니다.</b></li>
+    <li><b>프레팅(Reibkorrosion)이 이 노치를 균열 핵으로 바꿉니다.</b> DIN 743도 FKM도 압입을 <b>정적 노치로만</b> 다루며, <b>프레팅 저감계수를 주는 설계코드는 존재하지 않습니다.</b> 진짜 규격 공백입니다.</li>
+    <li><b>중공축은 이를 악화시킵니다.</b> 강성 저하 → 접촉압 저하 → 내륜 크리프 위험 증가. 한 연구는 FE로 <b>슬라이딩 거리 29 µm (크리프 개시 임계 0.1 µm)</b> 를 산출하고, 최대 시험단계 하중의 <b>57 % 이상에서 프레팅 피로 발생</b>을 예측했습니다.</li>
+  </ul>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>설계 레버</div>
+    <p>접촉압 상승(단, 내경부 정적 후프응력 주의) · 고굽힘 구간 밖으로 압입 연장 · 압입 끝단 릴리프/단계화 · 노출된 압입 끝단 대신 숄더+스페이서 구성 · 시트 하부 표면처리</p>
+  </div>
+
+  <h3>12.2 로터측 플랜지 / 트럼펫 전이부</h3>
+  <ul>
+    <li><b>축 전체 최대 굽힘모멘트와 최대 형상전이가 같은 위치에서 겹칩니다.</b> 한 주조축 사례: 노치계수 <b>2.26</b>, 공칭 ~130 MPa에 대해 최대 주응력 <b>295 MPa</b> — EN-GJS-400-18-LT의 항복(240 MPa)과 피로강도를 <b>국부적으로 초과</b> → 명시적 국부소성/노치지지 논증 필요.</li>
+    <li>플랜지 볼트는 연성 문제입니다. 통상 <b>M42 2열 볼트원</b>, <b>VDI 2230</b> 검증. GL S/N 기울기 m = 3 (N&lt;5×10⁶) / 5 (N&gt;5×10⁶), Miner D ≤ 1.0, &gt;M30 볼트 예압 ≥ 550 kN.</li>
+  </ul>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>실제 파손 사례</div>
+    <p>850 kW, 1260 kg <b>34CrNiMo6</b> 축이 4년 만에 <b>가변 내경 전이 필렛</b>에서 파단. 수축링(bulging sleeve) 압력이 원인, 정격에서 441.3 MPa / 충격 시 <b>573.5 MPa</b>. 대책은 슬리브 접촉면적 증가 → 441.3 → 302.4 MPa (<b>31 % 저감</b>). 부수 원인: −20 °C 인증 축을 −40 °C 환경에 사용 (EN 10083-3 미달 저온충격치).</p>
+  </div>
+
+  <h3>12.3 중공 내경 (피치 관통홀)</h3>
+  <div class="two">
+    <div class="card" style="border-top:3px solid var(--good)">
+      <h4 style="margin-top:0">이득</h4>
+      <p style="font-size:13.5px;margin-bottom:0">S<sub>bending</sub> = (π/32)(D⁴−d<sub>i</sub>⁴)/D 는 면적보다 훨씬 느리게 감소 → <b>37 % 경량화</b> 달성 가능</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--crit)">
+      <h4 style="margin-top:0">페널티</h4>
+      <ol style="font-size:13.5px;margin-bottom:0;padding-left:18px">
+        <li>강성 저하 → 압입 접촉압 저하 → 크리프/프레팅 (§12.1)</li>
+        <li>내경면은 <b>비틀림 하에서 응력집중부</b>이며 검사·가공·표면처리가 가장 어려운 면</li>
+        <li>압축 잔류응력의 도움 없이 가공 흔적이 고응력 위치에 존재</li>
+      </ol>
+    </div>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)">⚠ DIN 743은 중공축 단면계수는 다루지만 <b>내경면 자체는 카탈로그된 노치 케이스가 아닙니다</b> → FEA + K<sub>Fσ</sub> 논증에 의존.</p>
+
+  <h3>12.4 열처리 잔류응력</h3>
+  <ul>
+    <li>⚠ <b>DIN 743도 풍력 인증규격도 켄칭 잔류응력을 명시적으로 반영하지 않습니다.</b> K₁(d<sub>eff</sub>)는 두꺼운 단면의 느린 냉각에 따른 <i>강도</i> 결과만 간접 반영할 뿐 <i>잔류응력장</i> 은 반영하지 않습니다.</li>
+    <li>물리는 실재합니다: ~850 °C에서 켄칭된 대형 단조품은 표면 압축 / 코어 인장 잔류응력을 갖고, <b>중공축의 내경은 응력제거를 하지 않으면 불리한 부호의 잔류응력을 갖는 내부 표면</b>입니다.</li>
+    <li><b>실무 처리:</b> 황삭 후 정삭 전 <b>응력제거 열처리 지정</b> / 단조사의 실제 켄칭 시뮬레이션으로 검증 / <b>지정 샘플링 깊이의 prolongation 시편</b>에서 경도·인장 요구 (표면 아님)</li>
+  </ul>
+
+  <h3>12.5 표면처리 크레딧</h3>
+  <ul>
+    <li><b>K<sub>V</sub> &gt; 1.0은 메인샤프트에서 쓰지 마십시오</b> (§4.4). MESYS 매뉴얼도 <i>"규격이 넓은 범위를 제시하므로 사용자가 정의해야 한다"</i> 며 소프트웨어에서 사용자 입력으로 남겨두고 있습니다.</li>
+    <li><b>조도(K<sub>Fσ</sub>)는 잘 정의되고 크레딧이 명확합니다.</b> R<sub>z</sub> = 25 µm 선삭은 고강도강에서 피로강도 10–15 %를 잃습니다. 필렛·시트부 R<sub>z</sub> 지정은 가장 값싼 성능 확보입니다.</li>
+  </ul>
+
+  <h3>12.6 주조 옵션 (EN-GJS-400-18U-LT)</h3>
+  <ul>
+    <li>"U" = <b>cast-on 시편</b> 기준 물성 = 두꺼운 단면에서 의미 있는 값. 일반 등급은 별주 시편을 허용해 두꺼운 벽을 과대평가합니다.</li>
+    <li>실용적 벽두께 상한 <b>~400 mm</b></li>
+    <li><b>칠 주조가 사형 주조 대비 피로강도 50–56 % 높습니다</b>: 10⁷ cycles에서 <b>212 MPa vs 136 MPa</b> (공칭)</li>
+    <li><b>고응력체적(HBV) 효과가 지배적:</b> 트럼펫부 HBV<sub>90%</sub> = 291,864 mm³ ≈ 시편 체적의 <b>48배</b>. 시편 S/N 데이터를 대형 주조품에 그대로 옮기는 것은 1차 오류입니다.</li>
+    <li>실물 시험: 208 MPa 최대주응력에서 <b>1,792,779 cycles 파손</b>, 균열발생 검출 ~1.5 M cycles. 균열면이 예측(축 숄더 평행)과 달리 <b>8.5° 기울어짐</b> → 실제 균열 구동력이 설계모델에 완전히 포착되지 않음.</li>
+  </ul>
+
+
+  <h2 id="s13"><span class="num">13</span>IEC 61400-8:2024 — 정적·피로 조항 상세</h2>
+
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>이 장의 근거와 신뢰도 — 먼저 읽으십시오</div>
+    <p>IEC 61400-8:2024는 유료 규격(CHF 380)이며 공식 미리보기는 <b>앞 12쪽(목차·용어·기호·인용규격)에서 끝납니다.</b> 본문은 다음 경로로 확보했습니다.</p>
+    <ul style="margin:8px 0">
+      <li><span class="ev ev-a">A</span> <b>IEC 88/1010/FDIS (2024-03)</b> — ARESCA(IEC TC 88 미국 TAG)가 공개. <b>발행본 서문이 "88/1010/FDIS, 88/1023/RVD"로 확정되었음을 명시</b>하므로 사실상 발행본 본문입니다. Clause 1 ~ 7.7 전문 확보.</li>
+      <li><span class="ev ev-a">A</span> <b>IEC 88/897/CDV (2022-09)</b> — 교차검증용 초기 초안.</li>
+      <li><span class="ev ev-a">A</span> 발행본 미리보기(iTeh) — 목차·표/그림 캡션·인용규격 전체.</li>
+    </ul>
+    <p><b>확보하지 못한 부분:</b> Clause 8 (시험 기반 재료데이터), Clause 9, <b>Annex A–F 본문 전체</b>. 추출 창이 대략 Clause 7.7에서 끊깁니다. 따라서 Annex C의 시편 수·통계처리, Annex D의 한계상태식·Table D.1, Annex F의 Haigh 구성은 <b>본 문서에 없습니다</b> — 추정으로 채우지 않았습니다.</p>
+    <p style="margin-bottom:0">본문 표기: <span class="ev ev-a">A</span> 문서에서 직접 읽음 · <span class="ev ev-b">B</span> 2차 출처 · <span class="ev ev-c">C</span> 필자 추론</p>
+  </div>
+
+  <h3 id="s13-1">13.1 규격 개요와 발행 상태</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:190px">항목</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td>정식 명칭</td><td><i>Wind energy generation systems — Part 8: Design of wind turbine structural components</i></td></tr>
+      <tr><td>발행</td><td><b>Ed. 1.0, 2024-07-03</b> · 133쪽 (영/불 병기) · ICS 27.180 · IEC TC 88 · CHF 380 · <b>stability date 2028</b></td></tr>
+      <tr><td>유럽 채택</td><td><b>EN IEC 61400-8:2024</b> — CENELEC <b>2024-08-07 무수정 채택</b> · <b>dop 2025-05-07</b> · <b>dow 2027-08-07</b> · Annex ZA 수록</td></tr>
+      <tr><td>영국</td><td>BS EN IEC 61400-8:2024 — 2024-08-29 발행, 72쪽 (영문 단독)</td></tr>
+      <tr><td>개정/정오표</td><td><b>없음</b> (IEC webstore 기준)</td></tr>
+      <tr><td>인증 스킴 반영</td><td><b>아직 없음.</b> DNV-ST-0361은 여전히 2016-09 + 2021-11 amendment. WindGuard Certification 인정범위 목록에도 미등재 <span class="ev ev-b">B</span></td></tr>
+      <tr><td>공개 2차 문헌</td><td><b>사실상 전무.</b> 영·독어로 학회·인증기관·저널을 광범위하게 검색했으나 이 규격의 방법론을 해설한 자료를 찾지 못했습니다. 위 1차 자료가 현재 유일한 무료 근거입니다</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Scope — 원문 <span class="ev ev-a">A</span></h4>
+  <div class="quote">
+    "This part of IEC 61400 outlines the minimum requirements for the design of wind turbine nacelle-based structures… This document focuses on the structural integrity of the structural components constituted within and in the vicinity of the nacelle, <b>including the hub, mainframe, main shaft, associated structures of direct-drives, gearbox structures, yaw structural connection, nacelle enclosure.</b>… The design of bolted and welded joints in the nacelle structures is included, as well as cast and forged components. Material testing requirements to use in the design process for nacelle structures are specified. <b>While the structural connections of the gearbox and the main shaft are in the scope, the design of the gears and bearings are not included.</b><br><br>
+    The safety level of the wind turbine designed according to this document <b>shall be at or exceed the level inherent in IEC 61400-1:2019.</b> Probabilistic methods to calibrate partial safety factors and for use in the design process are provided."
+  </div>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>부품</th><th style="width:120px">Scope</th><th>근거 / 해당 조항</th></tr></thead>
+    <tbody>
+      <tr style="background:var(--wash)"><td><b>메인샤프트</b></td><td><span class="pill p-ok">포함</span></td><td>Scope에 명기. 조항상으로는 <b>§5.6.3 Nacelle front structure</b>(허브→요 기구→타워 하중경로)에 속함</td></tr>
+      <tr><td>허브</td><td><span class="pill p-ok">포함</span></td><td>§5.6.2 Hub structure and bolts</td></tr>
+      <tr><td>메인프레임 / 베드플레이트</td><td><span class="pill p-ok">포함</span></td><td>§5.6.3 (front) / §5.6.6 (rear)</td></tr>
+      <tr><td>토크암</td><td><span class="pill p-ok">포함</span></td><td>§5.6.4 — "Interaction with nacelle front structure via torque arm and low-speed shaft"</td></tr>
+      <tr><td>기어박스 <b>구조체</b></td><td><span class="pill p-ok">포함</span></td><td>§5.6.4. 기어박스 <i>기구</i>는 IEC 61400-4</td></tr>
+      <tr><td>요 구조</td><td><span class="pill p-w">일부</span></td><td>§5.6.5 — <b>요 베어링 자체는 제외</b> (IEC 61400-1 / -6)</td></tr>
+      <tr><td>나셀 커버 / 스피너</td><td><span class="pill p-ok">포함</span></td><td>§5.6.7 (인장파괴·좌굴 검증 생략 가능)</td></tr>
+      <tr><td><b>기어, 베어링</b></td><td><span class="pill p-no">제외</span></td><td>명시적 제외 → IEC 61400-4</td></tr>
+      <tr><td>블레이드 / 타워·기초</td><td><span class="pill p-no">제외</span></td><td>IEC 61400-5 / -6</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)">참고 — <b>ISO 6336과 IEC 61400-22/-23은 이 규격 어디에도 인용되지 않습니다</b> <span class="ev ev-a">A</span>. 기어가 scope 밖인 것과 일관됩니다. IEC 61400-4는 CDV 인용규격 목록에는 있었으나 <b>발행본 Annex ZA 상호참조표에는 없습니다</b> — Bibliography로 강등된 것으로 보입니다 <span class="ev ev-c">C</span>.</p>
+
+  <h4>목차 (발행본, 쪽수 포함) <span class="ev ev-a">A</span></h4>
+  <div class="formula">1  Scope                                              8
+2  Normative references                               8
+3  Terms, definitions, symbols and abbreviated terms 10
+4  Reliability considerations                        14
+   4.1 Approaches to reliability based design        14
+   4.2 Models and basic variables for structural verification 16
+   4.3 Partial safety factors and reliability targets 16
+5  Application of loads and analysis models          17
+   5.1 Loads models · 5.2 Analysis model · 5.3 Modelling of nonlinear mechanical behaviour
+   5.4 Partial safety factors                        19
+   5.5 Partial safety factor for resistance          21
+   5.6 Nacelle and hub component considerations      22
+6  Deflection analysis                               24
+7  Strength verification                             25
+   7.1 General                                       25
+   7.2 Determination of stress and strain            25
+   7.3 Material properties  (7.3.1 Material data · 7.3.2 Influence of size)  25
+   7.4 Static strength assessment                    26
+       7.4.1 Assessment process
+       7.4.2 Cast, forged and steel components
+       7.4.3 Welded structures · 7.4.4 Bolted joints · 7.4.5 Fibre reinforced material
+   7.5 Fatigue strength assessment                   29
+       7.5.1 Fatigue strength methods
+       7.5.2 Determination of local stresses
+       7.5.3 Stress hypothesis for fatigue
+       7.5.4 S/N curves                              30
+       7.5.5 Influence on fatigue strength           30
+       7.5.6 Partial safety factors for fatigue      31
+       7.5.7 Damage accumulation                     32
+       7.5.8 Bolted joints · 7.5.9 Fibre reinforced material
+   7.6 Fracture mechanics assessment                 33
+   7.7 Fracture mechanics-based design               40
+8  Material data for design from testing             41
+9  Model verification and validation                 44
+Annex A (inf.) Model verification and validation methods            46
+Annex B (inf.) Welded joint stresses                                47
+Annex C (inf.) S-N curve determination by test, statistical
+               evaluation and influencing factors                   48
+Annex D (inf.) Limit state equations                                50
+Annex E (inf.) Load effect uncertainty computation                  58
+Annex F (inf.) Considerations for structural elements               60</div>
+  <p><b>Annex A–F는 전부 informative입니다.</b> 규범적 부록은 없습니다 <span class="ev ev-a">A</span>. 부품별 요구사항은 부록이 아니라 <b>본문 §5.6(규범적)</b>에 있습니다.</p>
+
+  <h3 id="s13-2">13.2 신뢰도 체계 (Clause 4)</h3>
+  <p>§4.1은 세 가지 설계 접근을 허용합니다 — <b>risk-informed / reliability-based(확률론) / semi-probabilistic(결정론)</b>.</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:110px">부품등급</th><th>정의 (IEC 61400-1:2019과 동일, Table 1)</th><th class="num">γ_n</th></tr></thead>
+    <tbody>
+      <tr><td><b>Class 1</b></td><td>"fail-safe" — 고장이 터빈 주요 고장으로 이어지지 않는 부품</td><td class="num">0.9</td></tr>
+      <tr style="background:var(--wash)"><td><b>Class 2</b></td><td>"safe-life" — 고장이 터빈 주요 고장으로 이어질 수 있는 부품 <b>← 메인샤프트</b></td><td class="num">1.0</td></tr>
+      <tr><td><b>Class 3</b></td><td>"safe-life" — 액추에이터·브레이크를 주구조에 연결하는 비중복 보호기구</td><td class="num">1.2</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>목표 신뢰도:</b> Class 2 기준 <b>연간 파괴확률 P_f = 5 × 10⁻⁴, 신뢰도지수 β = 3.3</b> (연간 기준, 수명 기준 아님) <span class="ev ev-a">A</span>. Class 1과 3은 ISO 2394:2015로 위임. <b>γ_n 값 자체는 61400-8이 재정의하지 않고 IEC 61400-1:2019에서 상속</b>합니다.</p>
+
+  <h3 id="s13-3">13.3 부분안전계수 체계 (§5.4, §5.5) — γ<sub>modelling</sub> 신설</h3>
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>이 규격의 최대 신설사항</div>
+    <p>단순화된 해석모델 사용을 허용하되, <b>상세모델 대비 편차를 정량화해 부분안전계수로 환산</b>하도록 요구합니다. GL 2010에도 DNV-ST-0361에도 IEC 61400-1에도 대응물이 없습니다.</p>
+  </div>
+  <div class="formula">γ_mt = γ_M · γ_modelling          (결합 재료 부분안전계수)
+
+Formula (4):   δ_mf = LRF_full / LRF_simplified
+
+  LRF_full        : 상세(검증) 모델의 Load Reserve Factor
+  LRF_simplified  : 단순 수치모델의 Load Reserve Factor
+  평가점 수 > 10, 특성조건 근방에서 취할 것
+  δ_mf 는 로그정규 가정 → 평균 M_δmf, 변동계수 V_δmf 산출
+  → Table 3 (항복) 또는 Table 4 (피로) 에서 γ_modelling 조회</div>
+  <p>단순모델이 IEC 61400-1 Ed.4 대비 연간 신뢰도를 낮추지 않음을 보이면 <b>γ<sub>modelling</sub> = 1</b> 사용 가능 <span class="ev ev-a">A</span>.</p>
+  <p><b>Table 2 — 모델링 편차의 원천 3범주</b> <span class="ev ev-a">A</span>: ① <i>외부하중</i> (하중성분 누락, 선형화, 방향 시뮬레이션, 스케일링, 하중조합법) ② <i>수치모델 정확도</i> (지지부품 효과, 응력 수렴, 구조모델 형식) ③ <i>파손해석법</i> (응력 시계열, 응력 스펙트럼, 등가 일정범위, 동시발생 하중성분).</p>
+
+  <figure>
+    <p class="fig-h">Table 3 / Table 4 — 모델링 부분안전계수 γ<sub>modelling</sub></p>
+    <p class="fig-s">행 = δ<sub>mf</sub> 평균 M<sub>δmf</sub> · 열 = δ<sub>mf</sub> 변동계수 V<sub>δmf</sub>. 값이 클수록 저항측 페널티가 큼</p>
+    <div class="svgwrap" id="fig-gmod"></div>
+    <figcaption><b>출처: 88/1010/FDIS <span class="ev ev-a">A</span> (1회 추출 — 중간 신뢰도).</b> 2022 CDV는 동일한 셀 값을 갖되 <b>행 구간이 1.05/1.10/1.15/1.20</b> 으로 다릅니다. FDIS 쪽(1.02/1.05/1.10/1.15)이 발행본에 가깝지만 <b>인쇄본 대조를 권합니다.</b><br><br>
+    두 표 모두 <b>연간 목표 신뢰도지수 3.3에 맞춰 교정</b>되었다고 명시됩니다. <b>V<sub>δmf</sub> &gt; 20 % 또는 M<sub>δmf</sub> &gt; 1.15 에 대한 지침은 없습니다</b> — 표가 그냥 끝납니다. 실제 갭입니다.</figcaption>
+  </figure>
+
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>왜 이 규격에는 메쉬 규정이 없는가</div>
+    <p>CDV/FDIS 본문에서 <code>singularity</code>, <code>mesh</code>, <code>element size</code>, <code>submodel</code>을 명시적으로 검색했으나 <b>메쉬 밀도·요소 형식·요소 차수·서브모델링 절차·특이점 처리 규칙이 본문에 전혀 없습니다</b> <span class="ev ev-a">A</span>. 유일한 관련 언급은 §5.4에서 "mesh convergence with the numerical models"를 <b>γ<sub>modelling</sub>이 흡수해야 할 편차 항목</b>으로 나열한 것입니다.</p>
+    <p style="margin-bottom:0">즉 <b>이 규격의 메쉬 불확실성 대응은 규범적 메쉬 규칙이 아니라 γ<sub>modelling</sub> 교정 절차</b>입니다. 의도적 설계 선택이며, DIN 743처럼 "정해진 공식에 넣으면 답이 나오는" 규격과 성격이 근본적으로 다릅니다.</p>
+  </div>
+
+  <h4>§5.5 저항 부분안전계수 — 정적 핵심 숫자</h4>
+  <div class="quote">
+    "Partial safety factors for resistances shall be selected following IEC 61400-1 Ed. 4. <b>For cases with ductile failure modes and yield strength lower than 90 % of the ultimate strength, the partial safety factor for resistance, γ_M, shall be not less than 1,1 with survival probabilities of 95 % and above.</b><br><br>
+    The required survival probabilities and confidence levels stated in this document are minimum values and shall be adapted in case the related applied design standard requires more conservative values."
+  </div>
+  <p><b>이 γ<sub>M</sub> ≥ 1.1 이 이 규격의 정적 측 가장 중요한 숫자</b>이며, 연성재 극한강도에 γ<sub>m</sub> = 1.0 을 허용하는 IEC 61400-1:2019 대비 실질적인 강화입니다.</p>
+
+  <figure>
+    <p class="fig-h">Tables 5 · 6 — S-N 곡선 생존확률에 연동된 최소 γ<sub>M</sub></p>
+    <p class="fig-s">시험에 투자해 높은 생존확률 곡선을 확보하면 γ<sub>M</sub>이 떨어지는 구조. 신뢰수준(CL) ≥ 75 % 전제</p>
+    <div class="legend">
+      <span><i class="sq" style="background:var(--s1)"></i>Table 5 · 용접강 (s<sub>logK</sub> = 0.2)</span>
+      <span><i class="sq" style="background:var(--s2)"></i>Table 6 · 주철·단조·강, 평균응력 영향 <b>미미</b> (R ≈ −1)</span>
+      <span><i class="sq" style="background:var(--s3)"></i>Table 6 · 평균응력 영향 <b>유의</b></span>
+    </div>
+    <div class="svgwrap" id="fig-gm"></div>
+    <figcaption>Table 6의 캡션이 <i>"if not utilizing relevant design standards such as EN 1993-1-9"</i> 이므로, Eurocode 상세범주를 쓰면 이 표는 적용되지 않습니다. 첫 블록 97.7 % 셀에는 각주가 붙습니다 — <b>"설계하중이 풍속 난류에 지배되지 않음을 보일 수 있으면 γ<sub>M</sub> = 1.25 가 허용된다"</b> (예: 난류입력 90 % vs 50 % 로 얻은 설계하중 차이가 허용치 미만임을 제시). 메인샤프트 굽힘은 통상 난류 지배이므로 이 크레딧은 적용하기 어렵습니다.</figcaption>
+  </figure>
+
+  <p style="font-size:13px;color:var(--text-secondary)">규격이 사용하는 생존확률은 <b>50 % / 95 % / 97.7 %</b>, 신뢰수준 <b>≥ 75 %</b> 입니다 (97.7 % ≈ 평균 − 2σ). 단, CDV §8.4.4에는 <i>"survival probability of at least 97.5 % and a confidence level of at least 75 %"</i> 라는 별도 문구가 있어 <b>97.5 %와 97.7 %가 문서 내에서 혼재</b>합니다 — 인쇄본 확인 필요.</p>
+
+  <h3 id="s13-5">13.5 §7.4 정적강도 평가 (Static strength assessment)</h3>
+
+  <h4>§7.1 General — 먼저 알아야 할 제외사항</h4>
+  <div class="quote">"The presented design methods <b>do not cover the effect of corrosion</b>; therefore, all components shall be protected adequately against corrosion." <span class="ev ev-a">A</span></div>
+
+  <h4>§7.2 응력·변형률 산정 — 매우 짧습니다</h4>
+  <div class="quote">"Component stress is affected by design and internal loads and by relative displacements of the interfaces. They can either be regarded as local stresses or global stresses."<br>"The stress and strain shall be calculated by using appropriate mathematical models or numerical analysis tools, such as FEA."</div>
+  <ul>
+    <li><b>Global stresses</b> (3.1.9) — "공칭응력으로서, 단면력으로부터 해석적으로 유도 가능한 단순 연속구조(보·쉘·판)에 적용". 비고: <i>"노치계수를 고려해야 할 수 있다."</i></li>
+    <li><b>Local stresses</b> (3.1.12) — "전역구조의 특정 영역(반경부·노치)에서 <b>노치 형상을 고려한</b> 국부 응력해석".</li>
+  </ul>
+  <p>즉 <b>기본 개념은 국부(노치)응력 + FEA</b>이며, 공칭응력/구조(핫스팟)응력/노치응력의 3단 위계는 <b>용접부에 한해</b> EN 1993-1-9 · IIW-Doc. 2259-15 (Hobbacher) · IIW-Doc. XIII-2240r2-08 (Fricke) 및 Annex B로 위임됩니다.</p>
+
+  <h4>§7.4.1 Assessment process</h4>
+  <div class="quote">"The determination of the reserve factor is a necessary step to avoid a major failure in the wind turbine."</div>
+  <p>평가 대상은 <b>선형탄성 거동에서 최고 국부응력</b>을 주는 하중조합, 또는 <b>소성을 고려해야 하는 경우 최고 국부변형률</b>을 주는 조합입니다. <i>"Nominal stresses may be used where applicable."</i> 전역/국부 파손 구분은 Annex F 참조.</p>
+  <div class="formula">LRF_u = σ_lim / ( σ_L · γ_r )  ≥  1        ← 선형탄성 계산에만 적용
+
+  σ_lim : 부품 capacity (항복 또는 인장강도) [MPa]
+  σ_L   : 부품 하중응력 (von Mises 응력 또는 제1주응력) [MPa]
+  γ_r   : 관련 부분안전계수들의 곱</div>
+  <p style="font-size:13px;color:var(--text-secondary)">§7.4.2는 <i>"in accordance with IEC 61400-1 Ed. 4 equation (32)"</i> 를 참조합니다. 해당 식의 원문은 다른 유료 규격에 있어 <b>확보하지 못했습니다</b>.</p>
+
+  <h4>§7.4.2 Cast, forged and steel components — 4개 하위조항</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:200px">재료군</th><th>정적 한계</th><th class="num" style="width:120px">γ<sub>M</sub></th></tr></thead>
+    <tbody>
+      <tr style="background:var(--wash)"><td><b>강 · 단조품 · 구상흑연(nodular)주철</b></td><td><b>항복강도(R<sub>e</sub> / R<sub>p0.2</sub>)</b>를 정적강도 기준으로 사용</td><td class="num">≥ 1.1 (§5.5)</td></tr>
+      <tr><td><b>회주철(lamellar/grey)</b></td><td>사용을 <b>기어박스 하우징 등 2차 구조로 제한.</b> 인장/압축 <b>극한강도</b>가 한계</td><td class="num"><b>1.3</b> (고정)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h5>§7.4.2 응력가설 <span class="ev ev-a">A</span></h5>
+  <div class="quote">
+    "The static strength assessment should be carried out using a stress hypothesis appropriate to the type of failure, considering the material behaviour as ductile or brittle."<br>
+    <b>취성재</b>: "described by the <b>maximum principal stress hypothesis</b>. <b>Both maximum and minimum principal stress should be considered</b> in the strength verification."<br>
+    <b>연성재</b>: "the <b>maximum shear strain energy hypothesis (e.g. von Mises)</b> or the <b>maximum shear stress hypothesis (e.g. Tresca)</b> describes the failure mechanism."
+  </div>
+  <p>대표 시편 시험으로 입증하면 다른 가설도 허용됩니다. <b>구상흑연주철은 연성 쪽(항복 + von Mises/Tresca)으로 취급</b>됩니다.</p>
+
+  <h5>§7.4.2 소성변형 — ε<sub>lim</sub> = 1 %</h5>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>이 규격의 정적 판정 핵심</div>
+    <p><b>"The general total strain limit is ε<sub>lim</sub> = 1 % for ductile materials."</b> <span class="ev ev-a">A</span></p>
+  </div>
+  <ul>
+    <li>대상: <b>극한하중에 의해 국부 노치에서 발생하는 소규모 소성</b>.</li>
+    <li>연신율 &gt; 8 % 재료는, <b>1 % 변형률에서의 응력이 극한강도 ÷ 1.3 미만</b>이거나 대표 시편 시험으로 입증된 경우에만 이 한계를 적용합니다.</li>
+    <li>예외: <b>rotor lock</b> 같은 극한사건이 지배하는 hotspot은 대표 시편 시험으로 입증하면 더 높은 총변형률 한계를 정의할 수 있습니다.</li>
+    <li>평가 방법: <b>"특성 탄소성 응력-변형률 곡선을 사용한 비선형 계산을 수행해야 한다."</b> 시험 기반 곡선이 없으면 Figure 2의 이상화 이중선형 곡선, 또는 <b>Ramberg-Osgood</b> 등 대안 허용.</li>
+    <li><b>노치에는 Neuber 개념 + section factor(국부파손용) 적용 가능.</b></li>
+    <li>잔류응력·응력 재분배는 <b>보수적으로</b> 고려. 유리한 효과는 안정성 입증 필요.</li>
+    <li>응력 시계열을 분석해 정적 항복 초과 조건 및 <b>역방향 소성(reversed plastification)</b> 발생 여부를 확인해야 하며, 검증되지 않았다면 회피할 것.</li>
+    <li>선형 손상누적 기반 응력 접근에서는 <b>피로 영역에서 항복한계를 넘는 하중사이클을 회피</b>해야 함 (검증된 경우 제외).</li>
+    <li>영구 연신이 발생하면 해당 부품 <b>및 인접 부품</b>의 작동성 입증 필요.</li>
+    <li><b>PSF 적용 위치:</b> "비선형 계산에서는 부분안전계수를 <b>하중측에 적용</b>해야 한다. 이중선형 재료곡선인 경우 R<sub>p0.2</sub> 값에 적용해도 된다."</li>
+  </ul>
+
+  <h4>§7.4.3 용접 · §7.4.4 볼트 · §7.4.5 FRP</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:130px">조항</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td><b>7.4.3</b> 용접</td><td>"stress calculation … shall be in accordance to the internationally recognized standards such as <b>Eurocode 3, IIW-Doc. 2259-15 and IIW-Doc. XIII-2240r2-08/XV-1289r2-08</b>." 자체 수치계수 없음</td></tr>
+      <tr><td><b>7.4.4</b> 볼트</td><td><b>VDI 2230, EN 1993-1-8</b> 기반. 기어박스 볼트는 IEC 61400-4 참조.<br>• 볼트 강성(축·굽힘)을 너트·머리·나사까지 포함해 적절히 모델링 (짧은 체결길이에서 특히)<br>• 예압은 체결공정에 의존하며 파손모드에 따라 <b>보수적으로</b> 설정 (전확률해석 시 예외)<br>• 파손모드: 마찰 / 형상구속 / 복합<br>• 검증점: 임계 볼트 단면(굽힘 포함), 응력유효 나사단면(넥다운 볼트는 최소단면), <b>나사 스트리핑</b>(최소 결합길이)<br>• 탄성설계: 볼트가 탄성 유지(예압 손실 없음), <b>비틀림 예응력 포함</b>하여 항복점과 비교<br>• 소성설계: 총변형률 <b>1 % 미만</b> + 예압손실 반영. <b>10.9급 초과 볼트는 시험 입증 없이 소성변형 금지</b><br>• <b>γ<sub>m</sub> ≥ 1.1</b> (하중측 또는 저항측 적용)</td></tr>
+      <tr><td><b>7.4.5</b> FRP</td><td><b>IEC 61400-5</b> 또는 동등 규격. 스피너·나셀커버는 인장파괴·좌굴 검증 <b>생략 가능</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Clause 6 Deflection analysis</h4>
+  <p>메인샤프트 변형, 직접구동 발전기 <b>공극(air gap)</b>, 메인프레임 변형이 명시적으로 거론되며, 기어박스·발전기의 설계제약을 만족하는지 확인하도록 요구합니다. 다만 <b>정량적 변형 한계값은 제시되지 않습니다</b>. 지침은 IEC 61400-1 Ed.4 §7.6.5로 위임.</p>
+
+  <h3 id="s13-6">13.6 §7.5 피로강도 평가 (Fatigue strength assessment)</h3>
+
+  <h4>§7.5.1 방법 · §7.5.2 국부응력 · §7.5.3 응력가설</h4>
+  <p><b>국부응력 기반 Miner 손상누적</b>으로 손상 D 와 Load Reserve Factor LRF<sub>f</sub> 를 산출합니다. 다른 국제적으로 인정된 해석코드(<b>EN 1993-1-9, IIW-Doc. 2259-15, IIW-Doc. XIII-2240r2-08, DNV-RP-C203</b>)도 적용 가능합니다.</p>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>사소해 보이지만 실무에서 중요한 요구</div>
+    <p><b>"It shall be stated explicitly in the calculation whether amplitude (semi-range) or range is used."</b> <span class="ev ev-a">A</span> — 진폭/범위 혼동은 2배 오차를 만듭니다. 계산서에 명시가 요구됩니다.</p>
+  </div>
+  <div class="quote">
+    <b>§7.5.3 Stress hypothesis for fatigue</b> — "The selection of the stress hypothesis depends on the loading and material type of the component. In general, <b>normal stress in critical plane approach shall be used for brittle material and cast iron</b>, other methods like maximum principal stress, normal stress, etc. may be applied where relevant. For ductile material, several different stress hypotheses are known."
+  </div>
+  <p><b>취성재·주철은 임계면 법선응력법이 "shall"</b>입니다. 연성재는 열거하지 않습니다. <b>비비례(non-proportional) 하중은 §7.5.3에서 다루지 않습니다</b> <span class="ev ev-a">A</span> — DIN 743의 동위상 가정과 마찬가지로 사용자가 별도 처리해야 합니다.</p>
+
+  <h4>§7.5.4 S/N curves — 곡선 카탈로그가 아니라 프레임워크 조항</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:44px"></th><th>허용되는 S/N 곡선 출처 (우선순위)</th></tr></thead>
+    <tbody>
+      <tr><td class="mid"><b>①</b></td><td><b>통계적으로 확보된(statistically assured) S/N 곡선</b> — 재료규격 또는 Clause 8에 따른 시험 데이터. <b>1순위</b></td></tr>
+      <tr><td class="mid"><b>②</b></td><td><b>합성(synthetic) S/N 곡선</b> — Haibach (2006), Gudehus &amp; Zenner (1999), Wegerdt et al. (2003) 에 따라 구성</td></tr>
+      <tr><td class="mid"><b>③</b></td><td>기타 개념 — <i>"if applicability is proven"</i></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="quote">"For stress cycle numbers <b>n &gt; N_D</b>, the S-N curves can be extended from <b>σ_A,R</b> with the inclination (slope) parameter <b>2m − 1</b>, <b>for variable loading</b>, where m is the inclination parameter of the fatigue strength line."</div>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>수치가 없다</div>
+    <ul style="margin:0">
+      <li><b>N<sub>D</sub> 값이 규정되지 않습니다</b> <span class="ev ev-a">A</span>. 2×10⁶ 도 5×10⁶ 도 10⁷ 도 없습니다.</li>
+      <li><b>컷오프 한계도 §7.5.4에 없습니다</b> <span class="ev ev-a">A</span>. 피로 조항 전체에서 컷오프 언급은 <b>§7.5.8 볼트 — "consideration of cut-off limits is not allowed"</b> 뿐입니다.</li>
+      <li><b>어떤 재료에 대해서도 σ<sub>A</sub>, N<sub>D</sub>, m 수치가 제시되지 않습니다</b> <span class="ev ev-a">A</span>.</li>
+      <li><b>EN 1993-1-9 상세범주는 §7.5.4에서 인용되지 않습니다</b> — 용접부(§7.4.3, §7.5.6)와 볼트(§7.5.8)에만 등장합니다.</li>
+    </ul>
+  </div>
+  <p>기본형은 <b>Basquin 멱법칙</b>입니다 — 용어 3.1.1이 <i>"Basquin equation: power law representation of S-N curves"</i> 로 정의하고, Tables 5·6의 행 표제에 쓰이는 <b>K</b> 가 "S-N curve material constant" 입니다. 즉 log N = log K − m·log σ <span class="ev ev-c">C</span> (대수식 자체는 인쇄본에 없음).</p>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>주목할 개명:</b> Figure 3 캡션이 CDV의 <i>"Synthetic S-N curve"</i> → 발행본 <i>"Representative S/N curve"</i>, Table 7 캡션도 <i>"…for <b>synthetic</b> S-N-curves of cast iron"</i> → <i>"…for S/N-curves of cast iron materials"</i> 로 바뀌었습니다 <span class="ev ev-a">A</span>. <b>GL 2010 App.5.B 식 합성곡선을 기본값에서 대안으로 강등하고, 시험 기반 통계곡선을 1순위로 올린 것</b>이 GL 대비 가장 큰 개념적 단절입니다 <span class="ev ev-c">C</span>.</p>
+
+  <h4>§7.5.5 Influence on fatigue strength — 체크리스트, 수치 없음</h4>
+  <div class="quote">
+    "The following influences on the fatigue strength and reduction factors represent additional factors for uncertainties and <b>should be considered</b> in the calculation of stress amplitude or stress range unless it can be verified, e.g. by tests, that the influence on the fatigue strength is negligible:<br>
+    • <b>mechanical stress influence and statistical size influence (stress gradient models and volumetric models)</b>,<br>
+    • surface roughness,<br>
+    • surface treatment,<br>
+    • mean stress influence,<br>
+    • size influence,<br>
+    • manufacturing quality (e.g. cast quality, weld quality, forging quality).<br>
+    The interaction of the individual influence factors may be considered by adequate methods if applicability is proven."
+  </div>
+  <div class="tw">
+  <table>
+    <thead><tr><th>영향인자</th><th style="width:110px">§7.5.5</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>표면조도</td><td><span class="pill p-ok">있음</span></td><td>수치·식 없음. DIN 743의 K<sub>Fσ</sub>가 여전히 유일한 실행 가능 도구</td></tr>
+      <tr><td>표면처리</td><td><span class="pill p-ok">있음</span></td><td>수치 없음</td></tr>
+      <tr><td>평균응력</td><td><span class="pill p-ok">있음</span></td><td>Annex D.3 / F.3의 Haigh 선도로 위임 (본문 미확보)</td></tr>
+      <tr><td>크기효과</td><td><span class="pill p-ok">2회 등장</span></td><td>"stress gradient models and volumetric models" + "size influence" — <b>모델 부류만 지명, 정의는 없음</b></td></tr>
+      <tr><td>제조품질 (주조·용접·단조)</td><td><span class="pill p-ok">있음</span></td><td>주철은 Table 7로 정량화</td></tr>
+      <tr><td><b>온도</b></td><td><span class="pill p-no">없음</span></td><td>§7.5.5 목록에 없음</td></tr>
+      <tr><td><b>노치</b></td><td><span class="pill p-no">별도 없음</span></td><td>국부응력 개념에 내재</td></tr>
+      <tr><td><b>잔류응력</b></td><td><span class="pill p-no">없음</span></td><td>§7.4.2 소성변형 항목에만 등장</td></tr>
+      <tr><td><b>부식</b></td><td><span class="pill p-no">명시적 제외</span></td><td>§7.1 — 방식 조치로 대응</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>§7.5.5는 수치도 식도 계수값도 주지 않습니다</b> <span class="ev ev-a">A</span>. 정량화는 외부 규격과 <b>Annex C.5 "Influencing factors of S-N curve"</b>로 위임되며, Annex C 본문은 확보하지 못했습니다.</p>
+
+  <h4>§7.5.6 피로 부분안전계수 — Table 7</h4>
+  <div class="quote">
+    "Design S-N-curves for metallic materials may be determined in accordance with 8.3 considering the partial safety factors in Clause 5, <b>Table 6</b> for the respective survival probability."<br><br>
+    "For cast iron, along with Table 6, <b>the casting flaws shall be accounted for</b> in the design process. The partial safety factor γ_M in <b>Table 7</b> should be applied for casting flaws depending on the required local cast quality for S/N-curves."
+  </div>
+  <p>대안으로 <b>내부 결함을 §7.6 파괴역학으로 평가</b>하면 Table 7 페널티를 대체할 수 있습니다 <span class="ev ev-a">A</span>.</p>
+
+  <figure>
+    <p class="fig-h">Table 7 — 주철 S/N 곡선의 부분안전계수 γ<sub>M</sub></p>
+    <p class="fig-s">열 = <b>EN 12680-3:2011</b> 주조 품질등급 (구상흑연주철 초음파검사) · 행 = 생존확률 P 와 평균응력 영향 조건. 모두 신뢰수준 ≥ 75 %</p>
+    <div class="svgwrap" id="fig-t7"></div>
+    <figcaption><b>신뢰도 높음.</b> FDIS에서 2회, CDV에서 1회 독립 추출해 모두 일치했고, 열 간 배율이 <b>등급 2 = 등급 01 × 1.176–1.185</b>, <b>등급 3 = 등급 01 × 1.382–1.386</b> 으로 일정한 곱셈 사다리를 이룹니다 — 확률적 오생성이 통과하기 어려운 내부 일관성입니다. 등급 01 열은 Table 6과 행 대 행으로 정확히 일치합니다(각주 a).<br><br>
+    부수 요구 <span class="ev ev-a">A</span>: <b>품질등급 01 또는 2 사용 시 100 % 검사</b>. UT/MT/PT 품질등급은 일반적으로 level 3 이내로 제한하며, UT level 3 영역은 MT/PT도 level 3, UT level 01·2 영역은 MT/PT를 level 2 로 제한. 가공면은 <b>EN 1369:1996</b>(자분) / <b>EN 1371-1:1997</b>(침투) 등급을 따르고, 신판 사용 시 해당 부록의 환산 적용. 중간 품질등급은 시험 등으로 개발해 관련 기관과 합의 가능. 이 계수들은 <b>표면 결함과 체적 결함을 모두 검사한다는 전제</b>입니다.</figcaption>
+  </figure>
+
+  <h4>§7.5.7 손상누적</h4>
+  <div class="quote">"The damage D shall be calculated according to the <b>modified Miner's rule (Haibach 2006)</b>. It shall be <b>less than or equal to unity</b> as per Formula (5) and IEC 61400-1:2019."</div>
+  <div class="formula">Formula (5):   D = Σ ( n_i / N_i )  ≤  1
+
+  n_i : bin i 의 사이클 수
+  N_i : bin i 의 응력진폭에 대응하는 S-N 곡선상 사이클 수 (Figure 3)</div>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:210px">항목</th><th>IEC 61400-8</th></tr></thead>
+    <tbody>
+      <tr><td>Miner 변형</td><td><b>수정 Miner (Haibach)</b> — 무릎 이하 2m−1 연장으로 구현</td></tr>
+      <tr style="background:var(--wash)"><td><b>허용 손상합</b></td><td><b>D ≤ 1.0</b>. 0.5도 0.3도 아님 — 안전여유는 γ<sub>M</sub>이 담당</td></tr>
+      <tr><td>무릎 이하 진폭</td><td>일반 컷오프 없음 → 2m−1 기울기로 <b>손상에 기여</b>. 볼트는 컷오프 금지</td></tr>
+      <tr><td>순서효과 (sequence)</td><td><b>다루지 않음</b> <span class="ev ev-a">A</span></td></tr>
+      <tr><td>기준 사이클 수</td><td><b>규정 없음</b> <span class="ev ev-a">A</span></td></tr>
+      <tr><td>절차 참조</td><td>IEC 61400-1:2019 <b>Annex H</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h5>하중 스펙트럼 요구 — §7.5.7이 아니라 §5.3.4에 있음</h5>
+  <p>피로 평가는 "모든 관련 하중성분을 사용하여 <b>다음 중 최소 하나</b>의 방법으로" 수행합니다 <span class="ev ev-a">A</span>:</p>
+  <ol>
+    <li>전영역 하중모델로부터의 <b>응력 시계열</b></li>
+    <li>하중-응력 관계 + 시뮬레이션 하중 시계열로 생성한 <b>응력 시계열</b></li>
+    <li>개별 하중성분 스펙트럼의 <b>rainflow 중첩</b>에 의한 응력 스펙트럼</li>
+    <li><b>등가피로하중(DEL)</b> — 해당 S-N 곡선에서 정한 기울기 사용. <b>선형 구조거동에 한정</b></li>
+  </ol>
+  <p>③에 대한 경고 <span class="ev ev-a">A</span>: 개별 하중성분 스펙트럼 중첩은 <i>"allows for simulating non-linear effects for individual load components <b>but not load component interaction</b>."</i></p>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>Markov 행렬은 언급되지 않습니다</b> <span class="ev ev-a">A</span>. rainflow는 Matsuishi/Endo로 Bibliography에서 참조됩니다. 손상누적은 "Palmgren-Miner 또는 균열성장에 대한 파괴역학 접근"을 응용에 따라 선택.</p>
+
+  <h5>평균응력 보정</h5>
+  <ul>
+    <li>기호 <b>M = "mean stress sensitivity"</b> 가 §3.2에 정의됨 <span class="ev ev-a">A</span> — Goodman/Gerber가 아니라 <b>FKM/Schütz 계열의 평균응력민감도</b>입니다.</li>
+    <li><b>Figure D.1</b> "Haigh diagram with R<sub>e</sub> as the yield stress and R<sub>m</sub> as the tensile limit" (p.53) 및 <b>Figure F.3</b> "Haigh-diagram for evaluation of mean stress influence" (p.61).</li>
+    <li>평균응력은 안전계수 체계의 1급 판별자입니다 — Tables 6·7이 <b>"평균응력 영향 미미(R ≈ −1)" vs "유의"</b> 로 행을 나누고, 유의한 경우 γ<sub>M</sub>에 약 +0.05 를 붙입니다.</li>
+    <li><b>실제 Haigh 구성식과 M 값은 Annex D.3 / F.3에 있으며 확보하지 못했습니다.</b> 추정하지 않았습니다.</li>
+  </ul>
+
+  <h4>§7.5.8 볼트 (피로)</h4>
+  <ul>
+    <li><b>공칭응력 접근을 사용해야 함</b> — 축응력과 굽힘응력 모두 포함</li>
+    <li>임계 위치는 통상 <b>첫 자유 나사산</b>. 볼트 양단 평가</li>
+    <li>예압은 <b>최소 가정값</b> 사용 — embedding, 체결방식, 회복손실, 소성 과신장 손실 반영</li>
+    <li>S/N 곡선은 <b>VDI 2230-1</b>, <b>EN 1993-1-9</b> 에서. 지름·코팅·제조공정(전조나사 등)에 의존</li>
+    <li>⚠ <b>"Care shall be taken if S-N curves for large bolt diameters (&gt; M39) are taken from guidelines, especially VDI 2230-1."</b></li>
+    <li>곡선은 변동진폭용으로 정식화하고 <b>"consideration of cut-off limits is not allowed"</b></li>
+    <li>시험으로 볼트 S/N을 도출할 경우 <b>ISO 3800</b>. γ<sub>M</sub> ≥ 1.1</li>
+  </ul>
+
+  <h3 id="s13-7">13.7 §7.3 재료물성과 §7.3.2 크기효과 — 정직한 결과</h3>
+  <div class="quote">
+    <b>§7.3.1 Material data</b> — "Material data shall be taken from internationally recognized standards or data from material tests according to Clause 8, considering the required survival probability and related safety factors."<br><br>
+    구상흑연주철: "at least <b>90 % of the graphite has been segregated in the spheroidal form V and VI</b> and in the <b>spheroidal size between 5 and 7</b> according to <b>ISO 945-1:2019</b>. For larger wall thicknesses, requirements may be specified as per 8.1. For the ferritic types, the <b>pearlite proportion</b> within the grain structure of the metallic base material <b>shall not exceed 10 %</b> following ISO 1083:2018."
+  </div>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>§7.3.2 Influence of size — 전문(全文)입니다</div>
+    <p style="font-size:14px"><i>"Mechanical properties are size dependent. When the size effect is not experimentally quantified, the influence of the size on the material strength is taken from internationally recognized standards, or determined by testing methods, see Clause 8."</i></p>
+    <p style="margin-bottom:0"><b>두 문장이 전부입니다.</b> <span class="ev ev-a">A</span></p>
+  </div>
+  <p>따라서 §0-2에서 제기한 <b>메인샤프트 치수 외삽 문제는 IEC 61400-8로 해소되지 않습니다.</b> 구체적으로 확인된 부재 사항 <span class="ev ev-a">A</span>:</p>
+  <ul>
+    <li>크기효과 메커니즘 분류(기술적/기하학적-응력구배/통계적-체적/표면) <b>없음</b>. 가장 근접한 것은 §7.5.5의 "stress gradient models and volumetric models" 라는 <b>모델 부류 지명</b>뿐</li>
+    <li>Weibull 최약연결 고응력체적 관계식 σ₂/σ₁ = (V₁/V₂)<sup>1/k</sup> <b>없음</b></li>
+    <li>Weibull 형상모수 권장값 <b>없음</b></li>
+    <li>벽두께 한계, 기준두께, <b>DNV-RP-C203의 두께보정 지수 k 에 해당하는 것 없음</b></li>
+    <li>대형 단조품·중량 주조품에 대한 별도 크기규칙 <b>없음</b></li>
+  </ul>
+  <p style="font-size:13px;color:var(--text-secondary)">단 <b>Clause 8 및 Annex C.5에 정량적 내용이 있을 가능성은 배제할 수 없습니다</b> — 두 곳 모두 확보하지 못했습니다. 확인된 것은 "§7.3.2 자체는 포인터 조항"이라는 사실입니다.</p>
+
+  <h3 id="s13-8">13.8 Annex C — 확보하지 못한 부분 (명확히)</h3>
+  <p>Annex C <i>"S-N curve determination by test, statistical evaluation and influencing factors"</i>(p.48, informative)의 <b>본문은 확보하지 못했습니다.</b> 구조만 확인됩니다:</p>
+  <div class="formula">C.1 General
+C.2 S-N curve
+C.3 Specimens
+C.4 Test procedure
+    C.4.1 General
+    C.4.2 Finite lifetime
+    C.4.3 Long life fatigue regime
+C.5 Influencing factors of S-N curve</div>
+  <p>따라서 <b>최소 시편 수, staircase(Treppenstufen)/pearl-string 방법 배정, 가정 분포, 산포대 T<sub>S</sub>·T<sub>N</sub> 값, 특성곡선 도출법, 신뢰구간 산정식, 시편→부품 전이</b> 는 <b>본 문서에 없으며 추정하지 않았습니다.</b></p>
+  <p style="font-size:13px;color:var(--text-secondary)">구조적 추론 <span class="ev ev-c">C</span>: C.4.2 "Finite lifetime" / C.4.3 "Long life fatigue regime" 분할은 <b>DIN 50100:2016</b>의 전형적 구분(유한수명 구간은 pearl-string/horizon 법, 장수명 구간은 staircase 법)과 일치하며, DIN 50100:2016 · ISO 12107:2012 · ISO 16269-6:2014 가 모두 인용규격입니다. 다만 <b>읽은 내용이 아니라 추론</b>이므로 규격의 내용으로 인용하지 마십시오.</p>
+
+  <h3 id="s13-9">13.9 §7.6 · §7.7 파괴역학 — 새로 정식 경로가 된 부분</h3>
+  <div class="quote">
+    <b>§7.6.1 취성 판정</b> — "<b>Brittle material shall be assumed when the rupture strain is less than 12 % at the lowest operational temperature</b> of the non-welded material and when the criteria according to <b>EN 1993-1-10</b> are not fulfilled for welded components."<br><br>
+    <b>탈출구</b> — "<b>For gearbox structures, the fracture mechanical verification may be omitted when an additional safety factor for static and fatigue strength is verified to be at least 1,5.</b>"
+  </div>
+  <ul>
+    <li>방법: LEFM, EPFM 또는 승인된 기타 개념. 근거규격 <b>BS 7910:2013</b>, <b>FKM Guideline "Fracture Mechanics Proof of Strength for Engineering Components" 2018 (FKM-RBM-04-18)</b>, <b>VDMA 23902:2014</b>(EN-GJS-700-2 유성캐리어)</li>
+    <li>목적 5가지(§7.6.2): 수명평가 · 허용결함 검증(EN 12680-3 품질등급 연계) · 검출/가정 결함의 손상허용 평가 · 균열성장 예측 · 품질관리 및 <b>검사주기 설정</b></li>
+    <li>재료물성(§7.6.3): <b>ISO 12108, ISO 12135</b> 또는 동등 규격, <b>평가 부품을 대표하는 시편</b> 사용. K<sub>IC</sub>, K<sub>mat</sub>, J-적분, Paris 상수 C·n·ΔK<sub>th</sub>. Charpy K<sub>v</sub>는 ISO 148-1:2016</li>
+    <li>수식: <b>(6) K<sub>I</sub> ≤ K<sub>mat</sub></b> · <b>(10) a(t) &lt; a<sub>crit</sub></b> · <b>(11) da/dN = C·(ΔK)<sup>n</sup></b> · <b>(12) ΔK ≤ ΔK<sub>th</sub> → da/dN = 0</b>. FAD(Figure 6)에 K<sub>r</sub>, L<sub>r</sub>, 소성 상호작용계수 ρ</li>
+    <li>하중(§7.6.6): <b>IEC 61400-1:2019의 γ<sub>f</sub> 를 포함</b>한 하중 적용. 단면 선형화 시 FKM 또는 BS 7910에 따라 보수적으로</li>
+  </ul>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>§7.7 Fracture mechanics-based design — 개념적으로 새로운 것</div>
+    <p><i>"The current practice of component design is to stay below the <b>safe life</b> boundary of the S/N-curve whereas the fracture mechanics approach allows the <b>utilization of the fail-safe region</b>."</i></p>
+    <p style="margin-bottom:0">단, <i>"this approach may be treated as a <b>supplemental verification and not supersede the static and fatigue strength assessment</b>."</i> — 보완검증이지 대체가 아닙니다.</p>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>C, n, ΔK<sub>th</sub> 의 수치값은 규격에 없습니다</b> <span class="ev ev-a">A</span>. 조사 중 "steels 5–7 MPa√m" 같은 그럴듯한 값이 한 번 생성되었으나 재확인 결과 <b>문서에 없음</b>으로 확인되어 폐기했습니다. 유료 규격 요약본에 이런 값이 섞여 들어가는 전형적 경로이니 주의하십시오. 검사주기 산정식이나 균열성장 수명에 대한 안전계수도 §7.6/7.7에 <b>없습니다</b>.</p>
+
+  <h3 id="s13-10">13.10 DIN 743 vs IEC 61400-8 — 정면 비교</h3>
+
+  <div class="arch">
+    <div class="col">
+      <h5>DIN 743:2012-12</h5>
+      <p class="cs">기계요소 규격 · 단일 전역 안전율</p>
+      <div class="lay non"><b>하중</b>특성하중 (무가중, γ_F = 1.0)</div>
+      <div class="lay acc"><b>저항 산정</b>K₁ · K₂ · K₃ · K_F · K_V · β · ψ · σ_mv → σ_ADK, σ_FK<br><span style="color:var(--text-muted)">모든 계수를 규격이 수치로 제공</span></div>
+      <div class="lay acc"><b>판정</b>S = 1 / √[ … ] ≥ <b>S_min = 1.2</b><br><span style="color:var(--text-muted)">하중 불확실성 미포함</span></div>
+      <div class="lay non"><b>스펙트럼</b>DIN 743-4 · Miner-erweitert · <b>D ≤ D_M = 0.3</b></div>
+      <div class="lay non"><b>모델 불확실성</b>다루지 않음</div>
+      <div class="lay non"><b>생존확률</b>명시 안 함 (최소보증 재료값)</div>
+    </div>
+    <div class="col">
+      <h5>IEC 61400-8:2024</h5>
+      <p class="cs">구조부품 설계 규격 · 부분계수 체계</p>
+      <div class="lay acc2"><b>하중</b>γ_f (IEC 61400-1) 가중 설계하중 + γ_n (부품등급 0.9 / 1.0 / 1.2)</div>
+      <div class="lay non"><b>저항 산정</b>규격이 계수를 <b>주지 않음</b> — FEA 국부응력 + 외부 규격(EN 1993-1-9, IIW, VDI 2230) 또는 시험</div>
+      <div class="lay new"><b>모델 불확실성 (신설)</b>δ_mf = LRF_full / LRF_simplified → Tables 3·4 → <b>γ_modelling</b><br>γ_mt = γ_M · γ_modelling</div>
+      <div class="lay acc2"><b>저항 계수</b>γ_M — <b>S-N 생존확률(50/95/97.7 %)에 연동</b> (Tables 5·6). 주철은 <b>주조품질등급</b>까지 연동 (Table 7)<br>정적 연성파손: <b>γ_M ≥ 1.1</b></div>
+      <div class="lay acc2"><b>판정 (정적)</b>LRF_u = σ_lim / (σ_L · γ_r) ≥ 1<br>+ <b>ε_lim = 1 % 총변형률</b> (비선형 FE)</div>
+      <div class="lay acc2"><b>판정 (피로)</b>수정 Miner (Haibach) · <b>D ≤ 1.0</b></div>
+      <div class="lay new"><b>파괴역학 (신설)</b>§7.6 평가 + §7.7 fail-safe 영역 활용 설계</div>
+    </div>
+  </div>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:170px">항목</th><th>DIN 743:2012-12</th><th>IEC 61400-8:2024</th></tr></thead>
+    <tbody>
+      <tr><td><b>성격</b></td><td>기계요소(축 전용) 계산규격</td><td>나셀 구조부품 설계규격</td></tr>
+      <tr style="background:var(--wash)"><td><b>메인샤프트</b></td><td>대상 아님 (IEC 61400-4를 통해 기어박스 축에만 인용)</td><td><b>Scope에 명시적 포함</b> (§5.6.3)</td></tr>
+      <tr><td><b>안전율 체계</b></td><td>단일 전역 <b>S ≥ 1.2</b></td><td><b>γ_f × γ_n × γ_M × γ_modelling</b> 부분계수</td></tr>
+      <tr><td><b>정적 강도기준</b></td><td>R<sub>p0.2</sub> (+ K<sub>2F</sub> 소성지지, γ<sub>F</sub> 구속상승)</td><td>R<sub>p0.2</sub> — 강·단조·구상흑연주철.<br>회주철만 R<sub>m</sub>, γ<sub>M</sub> = 1.3, 2차 구조 한정</td></tr>
+      <tr><td><b>정적 응력가설</b></td><td>공칭응력 2차식 조합 (수직항 합산 후 제곱)</td><td>연성 <b>von Mises / Tresca</b> · 취성 <b>최대주응력(최대·최소 모두)</b></td></tr>
+      <tr style="background:var(--wash)"><td><b>국부 소성</b></td><td>K<sub>2F</sub> (1.0–1.2) · γ<sub>F</sub> (1.0–1.15) 로 <b>간접 허용</b>, 선형계산 유지</td><td><b>ε<sub>lim</sub> = 1 % 총변형률 + 비선형 FE 필수</b>, Neuber, PSF는 <b>하중측</b> 적용</td></tr>
+      <tr><td><b>응력 개념</b></td><td>공칭응력 + β<sub>k</sub> 카탈로그</td><td><b>국부(노치)응력 + FEA</b>. 용접부만 3단 위계(EN 1993-1-9/IIW)</td></tr>
+      <tr><td><b>노치 처리</b></td><td>α, β, n<sub>χ</sub>, G′ <b>식·표 제공</b></td><td><b>제공 안 함</b> — FEA로 직접</td></tr>
+      <tr style="background:var(--wash)"><td><b>크기효과</b></td><td>K₁, K₂, K₃ <b>수치 제공</b> (단, 소형 축 교정)</td><td><b>수치 없음.</b> §7.3.2는 두 문장, 외부 규격·시험에 위임</td></tr>
+      <tr><td><b>표면조도</b></td><td>K<sub>Fσ</sub> <b>식 제공</b></td><td>영향인자 <b>목록에만</b> 등장, 수치 없음</td></tr>
+      <tr><td><b>표면경화</b></td><td>K<sub>V</sub> 표 (7–40 mm)</td><td>목록에만 등장</td></tr>
+      <tr><td><b>평균응력</b></td><td>ψ<sub>σK</sub> + σ<sub>mv</sub> + Fall 1/2 <b>식 제공</b></td><td>M = 평균응력민감도 + Haigh (Annex D.3/F.3).<br><b>γ<sub>M</sub> 행 자체가 평균응력 유의/미미로 갈림</b></td></tr>
+      <tr><td><b>피로 응력가설</b></td><td>동위상 가정, 2차식 조합</td><td><b>취성·주철 → 임계면 법선응력 (shall)</b></td></tr>
+      <tr><td><b>S-N 기울기</b></td><td><b>q = 5</b> (굽힘·인장압축) / <b>8</b> (비틀림) 고정</td><td><b>m 미규정</b> — 시험·재료규격에서 결정</td></tr>
+      <tr><td><b>무릎점 N<sub>D</sub></b></td><td><b>10⁶</b> 고정</td><td><b>미규정</b></td></tr>
+      <tr><td><b>무릎 이하</b></td><td>2q − 1 (Miner-erweitert)</td><td><b>2m − 1 (수정 Miner, Haibach)</b> ← 같은 사상</td></tr>
+      <tr style="background:var(--wash)"><td><b>허용 손상합</b></td><td><b>D<sub>M</sub> = 0.3</b></td><td><b>D ≤ 1.0</b> (안전여유는 γ<sub>M</sub> 1.25–2.35가 담당)</td></tr>
+      <tr><td><b>생존확률</b></td><td>명시 안 함</td><td><b>50 / 95 / 97.7 %, CL ≥ 75 % — γ<sub>M</sub>에 직접 연동</b></td></tr>
+      <tr><td><b>주조 품질</b></td><td>다루지 않음</td><td><b>EN 12680-3 등급 01/2/3 → γ<sub>M</sub></b> (Table 7), 01·2는 100 % 검사</td></tr>
+      <tr><td><b>파괴역학</b></td><td>없음</td><td><b>§7.6 평가 + §7.7 설계</b> (BS 7910, FKM-RBM-04-18, VDMA 23902)</td></tr>
+      <tr><td><b>부식</b></td><td>비부식 환경 가정</td><td><b>명시적 제외</b> — 방식 조치 요구</td></tr>
+      <tr><td><b>모델 불확실성</b></td><td>없음</td><td><b>γ<sub>modelling</sub> (Tables 3·4)</b> — 메쉬 규정을 대체</td></tr>
+      <tr><td><b>온도</b></td><td>−40 … +150 °C 명시</td><td>피로 영향인자 목록에 없음. 파괴역학 취성판정에서 <b>최저 운전온도</b> 사용</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>한 문장 요약</div>
+    <p style="margin-bottom:0"><b>DIN 743은 "저항값을 만드는 계산기"이고, IEC 61400-8은 "안전율 체계와 판정기준을 정하는 틀"입니다.</b> 두 규격은 경쟁 관계가 아니라 층위가 다릅니다 — 그래서 §9.3의 조율 방식 ①(풍력계수가 지배하고 DIN 743은 저항모델)이 이제 규격적 근거를 갖습니다.</p>
+  </div>
+
+  <h3 id="s13-11">13.11 메인샤프트 실무 함의 8가지</h3>
+  <ol>
+    <li><b>§9.3의 조율 문제가 상당 부분 해소됩니다.</b> IEC 61400-8이 나셀 구조부품의 부분계수 체계를 명시적으로 정의했으므로, 메인샤프트는 <b>γ<sub>f</sub> 가중 하중 + γ<sub>n</sub> + γ<sub>M</sub>(+γ<sub>modelling</sub>)</b> 체계로 검증하고, DIN 743은 노치 단면의 저항값 산출 도구로 그 안에 넣는 것이 정합적입니다. <b>DIN 743의 S ≥ 1.2 를 중첩하지 마십시오.</b></li>
+
+    <li><b>D<sub>M</sub> = 0.3 과 D ≤ 1.0 을 섞지 마십시오.</b> DIN 743-4의 0.3은 그 규격의 안전체계 안에서만 성립합니다. IEC 61400-8은 D ≤ 1.0 을 쓰되 저항측에 γ<sub>M</sub> 1.25–2.35 를 겁니다. 두 체계를 혼용하면 <b>이중계상 또는 과소계상</b>이 됩니다. 어느 체계로 갈지 design basis에서 먼저 정하십시오.</li>
+
+    <li><b>크기효과에서 IEC 61400-8은 도움을 주지 않습니다.</b> §7.3.2가 두 문장뿐이므로, §0-2에서 지적한 400–1000 mm 외삽 리스크는 그대로 남습니다. 답은 여전히 <b>FVA 703 I의 K₁ 식 · SEW 550 실측 · 부품 단위 시험</b>입니다. 다만 61400-8은 그 시험 결과를 <b>생존확률 연동 γ<sub>M</sub></b>로 보상하는 경로를 열어줍니다 (아래 4번).</li>
+
+    <li><b>S-N 시험 투자에 명확한 경제적 보상이 생겼습니다.</b> 대형 단조축의 S-N 곡선을 <b>97.7 % @ CL 75 %</b> 로 확보하면 γ<sub>M</sub> = 1.30 (평균응력 미미) 또는 1.35 (유의), <b>50 % 곡선만 있으면 1.70</b>. 즉 시험으로 <b>저항측 24 % 를 되찾을 수 있습니다.</b> 대형 단조품 시험 예산의 정당화 근거로 쓸 수 있는 숫자입니다.</li>
+
+    <li><b>난류 크레딧(γ<sub>M</sub> = 1.25)은 메인샤프트에 적용하기 어렵습니다.</b> 조건이 "설계하중이 풍속 난류에 지배되지 않을 것"인데, 메인샤프트의 지배 성분인 로터 굽힘모멘트는 정확히 난류 지배입니다. 토크 지배 단면이라면 검토 여지가 있습니다.</li>
+
+    <li><b>ε<sub>lim</sub> = 1 % 는 새 제약이며 DIN 743으로 대체되지 않습니다.</b> 트럼펫 전이부·플랜지 필렛처럼 국부 항복이 예상되는 곳(§12.2의 노치계수 2.26 사례)은 <b>특성 탄소성 곡선을 사용한 비선형 FE로 총변형률을 확인</b>해야 합니다. DIN 743의 K<sub>2F</sub>·γ<sub>F</sub> 소성지지 논리는 이 요구를 만족시키지 못합니다. 또한 <b>PSF를 하중측에 적용</b>해야 하므로 해석 셋업이 달라집니다.</li>
+
+    <li><b>M39 초과 볼트 경고는 메인샤프트-허브 플랜지에 정면으로 해당합니다.</b> §12.2에서 다룬 통상 M42 2열 볼트원이 바로 이 경우입니다. <b>VDI 2230-1의 S-N 곡선을 그대로 쓰지 말라</b>는 것이 규격의 명시적 주의사항입니다. 또한 볼트 피로에서 <b>컷오프 한계 사용이 금지</b>되므로, 저진폭 대사이클 구간을 잘라내던 관행은 불가합니다.</li>
+
+    <li><b>인증 실무에서는 아직 과도기입니다.</b> dow가 <b>2027-08-07</b>이고 DNV-ST-0361을 비롯한 인증 스킴에 아직 반영되지 않았습니다. 지금 진행 중인 프로젝트라면 <b>어느 규격 조합으로 검증할지 계약·design basis에 명시하고 인증기관과 사전 합의</b>하는 것이 여전히 필수입니다.</li>
+  </ol>
+
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>이 장을 사용하기 전 확인이 필요한 항목</div>
+    <ol style="margin-bottom:0">
+      <li><b>Tables 3·4의 행 구간</b> — FDIS(1.02/1.05/1.10/1.15) vs CDV(1.05/1.10/1.15/1.20) 불일치. 셀 값은 동일</li>
+      <li><b>Tables 3·4는 1회 추출</b> — 중간 신뢰도. Table 7은 3회 교차확인 (높은 신뢰도)</li>
+      <li><b>Table 6의 97.7 %/평균응력 미미 셀</b> — <b>1.30</b> + 각주 표시 <b>2</b> 로 읽었습니다. 직접 확인된 값이 아니라 추론입니다 <span class="ev ev-c">C</span></li>
+      <li><b>생존확률 97.5 % vs 97.7 %</b> — 문서 내 혼재. 인쇄본 확인 필요</li>
+      <li><b>Clause 8 · 9 및 Annex A–F 본문 전체</b> — 미확보. 특히 <b>Annex C</b>(S-N 시험 통계), <b>Annex D</b>(한계상태식, Table D.1), <b>Annex F.3</b>(Haigh 구성) 및 <b>cast-on 시편·샘플링 깊이·시편 수·충격시험 온도</b></li>
+      <li><b>수식 (8)·(9)</b> (FAD의 K<sub>r</sub>, L<sub>r</sub>) — 추출 손상. 관용형은 K<sub>r</sub> = K<sub>I</sub>/K<sub>mat</sub> + ρ, L<sub>r</sub> = σ<sub>ref</sub>/σ<sub>Y</sub> 이나 <b>확인되지 않았습니다</b></li>
+      <li><b>IEC 61400-1:2019 식 (32)</b> 원문 — 별도 유료 규격, 미확보</li>
+      <li><b>EN-GJS-400-18U-LT / EN-GJS-350-22U-LT 등급 표기가 규격에 등장하지 않습니다</b> — EN 1563도 인용규격에 없고, <b>ISO 1083 · ISO 945-1</b> 체계로 작성되었습니다 <span class="ev ev-a">A</span>. GL 2010이 EN-GJS 표기 중심이었던 것과 실질적 차이입니다</li>
+    </ol>
+  </div>
+
+  <h2 id="s14"><span class="num">14</span>검증 상태 — 원본 규격 대조가 필요한 항목</h2>
+  <p>본 문서의 수치·수식은 소프트웨어 벤더 계산근거(MESYS, KISSsoft), 대학 강의자료, FVA 지침, DIN Media 초록으로 구성했으며, 가능한 항목은 <b>DIN 743 Beiblatt 1 예제로 역산 검증</b>했습니다.</p>
+
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>수치 역산 검증됨 (최고 신뢰도)</div>
+    <p style="margin-bottom:0">K<sub>σ</sub> 조립식 · σ<sub>bWK</sub> · ψ<sub>bσK</sub> · σ<sub>bADK</sub>(Fall 1) · n<sub>χ</sub> 중간분기식(0.33/712) · K₁ 계수 0.26/0.34 · K₂(d) 식 · K<sub>Fσ</sub> 식(R<sub>z</sub> 및 σ<sub>B</sub>(d) 사용) · γ<sub>F</sub> 표 · σ<sub>bW</sub> = 0.5·R<sub>m</sub> · 키홈 β<sub>σ</sub> = 3.0·(σ<sub>B</sub>/1000)<sup>0.38</sup></p>
+  </div>
+
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>2개 이상 독립출처 일치</div>
+    <p style="margin-bottom:0">정적·피로 안전율 식 · S<sub>min</sub> = 1.2 · K<sub>V</sub> 표 · K<sub>2F</sub> 중실축 1.0/1.2/1.2 · Fall 1, 2 · σ<sub>mv</sub>, τ<sub>mv</sub> · K<sub>Fτ</sub> = 0.575K<sub>Fσ</sub>+0.425 · q = 5/8, N<sub>D</sub> = 10⁶, D<sub>M</sub> = 0.3 · 2012판 변경목록 · 키홈 2개 시 1.15 · 키홈 β 표 · IEC 61400-4의 DIN 743 인용 · IEC 61400-8의 메인샤프트 scope 포함</p>
+  </div>
+
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>인쇄본 대조 필요 — 인용 전 반드시 확인</div>
+    <ol style="margin-bottom:0">
+      <li><b>G′ 굽힘 행의 <code>+2/d</code> 항</b> 및 <b>φ의 정확한 형태</b> (출처 간 4가지 상충 형태 존재)</li>
+      <li><b>K<sub>2F</sub> 중공축 열 및 비틀림 항목</b> (1.1 vs 1.0 불일치)</li>
+      <li><b>DIN 743-4 식 (7)</b> Kollektivbeiwert 폐형식 — 본 문서의 식은 <b>재구성본</b></li>
+      <li><b>DIN 743-2 Tabelle 1의 압입(Pressverband) 및 스플라인 β 행</b></li>
+      <li><b>횡공(Querbohrung) α 계수 A/B/C</b></li>
+      <li><b>경화층 n<sub>χ</sub> 관계식</b> (10<sup>−0.7</sup> 형태)</li>
+      <li><b>항복지배 분기 전환조건</b> (743-1 식 18/19)</li>
+      <li><b>비균일 소재의 d<sub>eff</sub> 결정 규칙</b> (743-2 Clause 6)</li>
+      <li><b>GL 2010 수치 γ<sub>M</sub>, γ<sub>F</sub></b> — 널리 인용되는 1.35/1.1/1.5/1.0 및 1.1/1.265 는 <b>본 조사에서 검증 실패</b></li>
+      <li><b>DNV-ST-0361이 DIN 743을 인용하는지 여부</b> — 증거 없음 (참조목록에 부재)</li>
+      <li><b>IEC 61400-4 Table 9 / IEC 61400-8 Tables 3–7 수치</b> — 표 존재는 확인, 값은 미취득</li>
+      <li><b>30CrNiMo8 EN 10083-3 밴드값</b> — 단일출처</li>
+      <li><b>SEW 550 (&gt;250 mm 단조품) 표</b> — 미취득. <b>메인샤프트급 물성의 정본 출처이므로 구매 필요</b></li>
+    </ol>
+  </div>
+
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>IEC 61400-8:2024 (§13) — 인쇄본 대조 필요</div>
+    <ol style="margin-bottom:0">
+      <li><b>Tables 3·4 행 구간</b> — FDIS(1.02/1.05/1.10/1.15) vs CDV(1.05/1.10/1.15/1.20) 불일치. 셀 값은 일치. <b>1회 추출 = 중간 신뢰도</b></li>
+      <li><b>Table 6 의 97.7 % / 평균응력 미미 셀</b> — 1.30 + 각주표시 2 로 읽음. 추론</li>
+      <li><b>생존확률 97.5 % vs 97.7 %</b> — 문서 내 혼재</li>
+      <li><b>Clause 8 (시험 기반 재료데이터) · Clause 9 · Annex A–F 본문 전체</b> — 미확보. 특히 <b>Annex C</b>(S-N 시험 통계처리, 시편 수, 산포대), <b>Annex D</b>(한계상태식·Table D.1), <b>Annex F.3</b>(Haigh 구성·평균응력민감도 M 값)</li>
+      <li><b>cast-on 시편 vs 별주 시편 vs 부품 채취 시편 규칙, 샘플링 깊이·위치, 시편 수, 충격시험 온도</b> — Clause 8 소재. 미확보. <b>GL 2010 App.5.B가 매우 규정적이던 부분이라 갭이 큽니다</b></li>
+      <li><b>수식 (8)·(9)</b> (FAD 의 K<sub>r</sub>, L<sub>r</sub>) — 추출 손상</li>
+      <li><b>IEC 61400-1:2019 식 (32)</b> — 별도 유료 규격</li>
+      <li><b>발행본(2024) 표 수치가 FDIS(2024-03)와 완전히 동일한지</b> — 캡션 변경(<i>synthetic</i> 삭제)이 확인되므로 내용 변경 가능성 배제 불가</li>
+    </ol>
+  </div>
+
+  <h3>구매 우선순위</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:44px">순위</th><th>문서</th><th>해결되는 항목</th></tr></thead>
+    <tbody>
+      <tr><td class="mid"><b>1</b></td><td><b>DIN 743-1, -2 (2012-12) + Beiblatt 1</b></td><td>위 1~8번 (각 약 €130)</td></tr>
+      <tr><td class="mid"><b>2</b></td><td><b>DIN 743-3:2024-07</b></td><td>d &gt; 300 mm 단조품 σ<sub>W</sub> 산정법 (메인샤프트 직결)</td></tr>
+      <tr><td class="mid"><b>3</b></td><td>DIN 743-4 (2012-12) + Beiblatt 2</td><td>식 (7) 확정</td></tr>
+      <tr style="background:var(--wash)"><td class="mid"><b>4</b></td><td><b>IEC 61400-8:2024</b> (또는 BS EN IEC 61400-8:2024, 영문 72쪽)</td><td>메인샤프트 구조검증 정본. <b>Clause 8 및 Annex C·D·F</b>가 본 문서의 최대 공백 — 여기에만 있습니다</td></tr>
+      <tr><td class="mid"><b>5</b></td><td>DNV-ST-0361 (2021-11) Sec.4</td><td>DIN 743 인용 여부 확정</td></tr>
+      <tr><td class="mid"><b>6</b></td><td>SEW 550 + FVA 703 I 최종보고서</td><td>&gt;250 mm 단조 물성 / 700 mm까지 유효한 K₁ 식</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="s15"><span class="num">15</span>참고문헌</h2>
+  <div class="srcs">
+    <h4>규격 / 지침</h4>
+    <ul>
+      <li>DIN 743-1/-2/-3/-4:2012-12, Beiblatt 1/2 — <a href="https://www.dinmedia.de/en/standard/din-743-1/145165373">DIN Media</a></li>
+      <li>DIN 743-3:2024-07 (현행) — <a href="https://www.dinmedia.de/en/standard/din-743-3/380083597">DIN Media</a></li>
+      <li>IEC 61400-1:2019 ed.4 — <a href="https://cdn.standards.iteh.ai/samples/22475/fb5f2673997d41f7931fa5fc56a2e243/IEC-61400-1-2019.pdf">iTeh 샘플</a></li>
+      <li>IEC 61400-4:2012 / 2025 — <a href="https://webstore.ansi.org/preview-pages/ISO/preview_IEC+61400-4-2012.pdf">ANSI 프리뷰</a> · <a href="https://cdn.standards.iteh.ai/samples/iec/iec-61400-4-2025/225534d6197f4372bffbb99b7e08d4b7/iec-61400-4-2025.pdf">iTeh ed.2</a></li>
+      <li><b>IEC 61400-8:2024</b> — <a href="https://webstore.iec.ch/en/publication/61824">IEC webstore</a> · <a href="https://cdn.standards.iteh.ai/samples/101482/b13c7ebbc5e144708bd2dc53e0ef3464/IEC-61400-8-2024.pdf">발행본 미리보기 (앞 12쪽)</a> · <a href="https://www.en-standard.eu/bs-en-iec-61400-8-2024-wind-energy-generation-systems-design-of-wind-turbine-structural-components/">BS EN scope</a></li>
+      <li><b>IEC 88/1010/FDIS (2024-03)</b> — §13 본문의 주 근거. ARESCA 공개 — <a href="https://www.aresca.us/wp-content/uploads/2024/03/88_1010e_FDIS.pdf">PDF</a></li>
+      <li><b>IEC 88/897/CDV (2022-09)</b> — 교차검증용 — <a href="https://www.aresca.us/wp-content/uploads/2022/09/88_897e_CDV.pdf">PDF</a></li>
+      <li>oSIST prEN IEC 61400-8:2022 / SIST EN IEC 61400-8:2024 (Annex ZA) — <a href="https://cdn.standards.iteh.ai/samples/73376/d7a5100fc4b44a6fa7a0b18316a5f30f/oSIST-prEN-IEC-61400-8-2022.pdf">CDV 미리보기</a> · <a href="https://cdn.standards.iteh.ai/samples/73376/e4f3e219020e4d3494abbc976e023ab4/SIST-EN-IEC-61400-8-2024.pdf">EN 채택본 미리보기</a></li>
+      <li>GL Guideline for the Certification of (Offshore) Wind Turbines — <a href="https://pdfcoffee.com/gl-guideline-for-the-certification-of-offshore-wind-turbines-edition-2012-pdf-free.html">TOC</a> · <a href="https://wordpressstorageaccount.blob.core.windows.net/wp-media/wp-content/uploads/sites/649/2018/05/Session_3_-_Handout_3_-_GL_Guideline_for_the_Certification_of_Wind_Turbines.pdf">핸드아웃</a></li>
+      <li>DNV-ST-0361 Machinery for wind turbines — <a href="https://www.dnv.com/energy/standards-guidelines/dnv-st-0361-machinery-for-wind-turbines/">DNV</a></li>
+      <li>DNVGL-ST-0437 Loads and site conditions — <a href="https://documents.dps.ny.gov/public/Common/ViewDoc.aspx?DocRefId=%7BD6B401D1-D842-4E6E-A4DF-7528E7318856%7D">사본</a></li>
+      <li>DNVGL-RP-C203 / RP-0005:2014-06 — <a href="https://wiki.unece.org/download/attachments/26902968/R55_11_03-C203_DNVGL-RP-0005_2014-06.pdf?api=v2">UNECE 사본</a></li>
+      <li>FVA-Richtlinie R 743 (Miner 변형, Wöhler 지수) — <a href="https://fva-net.de/fileadmin/download/FVA%20R%20743_neu.pdf">PDF</a></li>
+    </ul>
+    <h4>DIN 743 계산근거</h4>
+    <ul>
+      <li>MESYS AG — DIN 743 Calculation Basis — <a href="https://www.mesys.ch/doc/DIN743_CalculationBasis.pdf">PDF</a> · <a href="https://www.mesys.ag/?p=1379">Stress ratio in shaft strength calculation</a></li>
+      <li>KISSsoft — Introduction to DIN 743 — <a href="https://pdf4pro.com/view/kisssoft-shaft-analysis-introduction-to-din-743-october-45b547.html">PDF</a></li>
+      <li>HS Anhalt — Achsen und Wellen: Tragfähigkeitsnachweis nach DIN 743 — <a href="https://www.hs-anhalt.de/fileadmin/Dateien/FB6/personen/voigt_st/Lehrunterlagen/01_ME/06_1_Achsen_und_Wellen_DIN_743.pdf">PDF</a></li>
+    </ul>
+    <h4>크기효과 연구</h4>
+    <ul>
+      <li>FVA 703 I / IGF 17731 BR — Größeneinfluss DIN 743 — <a href="https://fva-net.de/aktuelles/detail/groesseneinfluss-din-743-409">FVA</a> · <a href="https://tu-dresden.de/ing/maschinenwesen/imm/me/forschung/wellenberechnung-und-welle-nabe-verbindungen/Groesseneinfluss_DIN_743">TU Dresden</a></li>
+    </ul>
+    <h4>메인샤프트 문헌</h4>
+    <ul>
+      <li>Hollow-forged AHD rotor shafts, <i>Wind Energy Science</i> 11:89 (2026) — <a href="https://wes.copernicus.org/articles/11/89/2026/wes-11-89-2026.pdf">PDF</a></li>
+      <li>Cast hollow rotor shaft / inner-ring creep, <i>Forsch Ingenieurwes</i> (2021) — <a href="https://link.springer.com/article/10.1007/s10010-021-00458-x">Springer</a></li>
+      <li>Full-scale fatigue testing of cast-iron WT rotor shaft (2023) — <a href="https://link.springer.com/article/10.1007/s10010-023-00649-8">Springer</a></li>
+      <li>Rauert et al., Fretting fatigue induced surface cracks under shrink-fitted main bearings, <i>Procedia Struct. Integrity</i> 2 (2016) 3601–3609 — <a href="https://reposit.haw-hamburg.de/handle/20.500.12738/4197?locale=de">Repository</a></li>
+      <li>Main shaft fracture analysis, <i>Adv. Mech. Eng.</i> (2018) — <a href="https://journals.sagepub.com/doi/full/10.1177/1687814018769003">SAGE</a></li>
+      <li>Main shaft-to-hub bolted connection, <i>Energies</i> 12(1):7 — <a href="https://www.mdpi.com/1996-1073/12/1/7">MDPI</a></li>
+    </ul>
+    <h4>부분안전계수 배경 · 재료</h4>
+    <ul>
+      <li>Sørensen &amp; Toft, Safety Factors IEC 61400-1 ed.4 — background document — <a href="https://vbn.aau.dk/ws/files/559225421/Safety_Factors_IEC_61400-1_ed_4_-_background_document.pdf">Aalborg VBN</a></li>
+      <li>BWE Grundsätze für Weiterbetrieb V6.3 — <a href="https://www.wind-energie.de/fileadmin/redaktion/dokumente/publikationen-oeffentlich/arbeitskreise/weiterbetrieb/20170430_Grundsaetze_Weiterbetrieb_V63.pdf">PDF</a></li>
+      <li>Saarstahl 34CrNiMo6 데이터시트 — <a href="https://en.saarstahl.com/app/uploads/2024/03/20160401104400-6582_34CrNiMo6.pdf">PDF</a></li>
+      <li>SEW 550 Stähle für größere Schmiedestücke — <a href="https://shop.stahldaten.de/produkt/sew-550-08-76-staehle-fuer-groessere-schmiedestuecke-guetevorschriften">Stahldaten</a></li>
+    </ul>
+  </div>
+
+  <hr>
+  <p style="font-size:12.5px;color:var(--text-muted)">이 문서는 공개 2차 자료 기반이며 DIN 743 원문을 대체하지 않습니다. §14의 미확인 항목은 인쇄본 대조 후 사용하십시오. · 작성 2026-07-30</p>
+</main>
+</div>
+<div id="tip" style="position:fixed;pointer-events:none;opacity:0;transition:opacity .12s;background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:12.5px;line-height:1.55;box-shadow:0 4px 18px rgba(0,0,0,.14);z-index:99;max-width:260px"></div>
+<script>
+(function(){
+"use strict";
+var NS="http://www.w3.org/2000/svg", TIP=document.getElementById("tip");
+function E(n,a,s){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);if(s)e.setAttribute("style",s);return e;}
+function T(x,y,txt,st){var e=E("text",{x:x,y:y},"font-size:11.5px;font-family:inherit;"+(st||"fill:var(--text-muted)"));e.textContent=txt;return e;}
+function svg(id,w,h){var d=document.getElementById(id);if(!d)return null;
+  var s=E("svg",{viewBox:"0 0 "+w+" "+h,width:w,height:h,role:"img"},"width:100%;min-width:"+Math.min(w,620)+"px;height:auto");
+  d.appendChild(s);return s;}
+function lg(v){return Math.log10(v);}
+function mkLog(d0,d1,r0,r1){var a=lg(d0),b=lg(d1);return function(v){return r0+(lg(v)-a)/(b-a)*(r1-r0);};}
+function mkLin(d0,d1,r0,r1){return function(v){return r0+(v-d0)/(d1-d0)*(r1-r0);};}
+function path(pts,st){var d="";for(var i=0;i<pts.length;i++)d+=(i?"L":"M")+pts[i][0].toFixed(2)+" "+pts[i][1].toFixed(2);return E("path",{d:d,fill:"none","stroke-linejoin":"round","stroke-linecap":"round"},st);}
+function grid(g,x1,x2,y,lbl){g.appendChild(E("line",{x1:x1,x2:x2,y1:y,y2:y},"stroke:var(--grid);stroke-width:1"));}
+function hover(node,html){
+  node.style.cursor="default";
+  node.addEventListener("mousemove",function(ev){TIP.innerHTML=html;TIP.style.opacity=1;
+    var w=TIP.offsetWidth,h=TIP.offsetHeight,x=ev.clientX+14,y=ev.clientY-h-10;
+    if(x+w>window.innerWidth-8)x=ev.clientX-w-14; if(y<8)y=ev.clientY+16;
+    TIP.style.left=x+"px";TIP.style.top=y+"px";});
+  node.addEventListener("mouseleave",function(){TIP.style.opacity=0;});
+}
+var C={s1:"var(--s1)",s2:"var(--s2)",s3:"var(--s3)",s4:"var(--s4)",ax:"var(--axis)",gr:"var(--grid)",crit:"var(--crit)",sf:"var(--surface-1)"};
+
+/* ========== 1. 유효범위 갭 ========== */
+(function(){
+ var W=880,H=290,L=210,R=W-30,T0=54,B=H-46;
+ var s=svg("fig-range",W,H); if(!s)return;
+ var x=mkLog(5,1200,L,R);
+ var rows=[
+  {n:"K₁(d_eff) 기술적 크기계수",v:[16,300],p:[300,1200],note:"d_eff > 300 mm 에서 값 고정 (하한 0.67 / 0.57)"},
+  {n:"K₂(d) 기하학적 크기계수",v:[7.5,150],p:[150,1200],note:"d ≥ 150 mm 에서 0.8 고정"},
+  {n:"β (축-허브 결합, Tabelle 1)",v:[38,42],p:[42,1200],note:"기준지름 d_BK = 40 mm 실험값 1점 → K₃ 환산으로 외삽"},
+  {n:"K_V 표면경화계수",v:[7,40],p:null,note:"40 mm 초과 데이터 없음 → K_V = 1.0 강제"}
+ ];
+ // main shaft band
+ s.appendChild(E("rect",{x:x(400),y:T0-16,width:x(1000)-x(400),height:B-T0+18,rx:4},"fill:var(--crit);opacity:.10"));
+ s.appendChild(T((x(400)+x(1000))/2,T0-22,"메인샤프트 400–1000 mm","fill:var(--crit);font-weight:700;text-anchor:middle;font-size:11.5px"));
+ // x ticks
+ [5,10,20,40,100,150,300,500,1000].forEach(function(t){
+   s.appendChild(E("line",{x1:x(t),x2:x(t),y1:T0-16,y2:B},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(x(t),B+18,String(t),"fill:var(--text-muted);text-anchor:middle"));
+ });
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(R,B+36,"지름 [mm] · 로그 스케일","fill:var(--text-muted);text-anchor:end"));
+ var bh=17, gap=(B-T0)/rows.length;
+ rows.forEach(function(r,i){
+   var y=T0+gap*i+ (gap-bh)/2;
+   s.appendChild(T(L-12,y+bh-4,r.n,"fill:var(--text-secondary);text-anchor:end;font-size:12px"));
+   if(r.p){var pr=E("rect",{x:x(r.p[0])+2,y:y,width:Math.max(2,x(r.p[1])-x(r.p[0])-2),height:bh,rx:3},"fill:var(--axis);opacity:.55");
+     hover(pr,"<b>"+r.n+"</b><br>외삽 구간<br>"+r.note); s.appendChild(pr);}
+   var vr=E("rect",{x:x(r.v[0]),y:y,width:Math.max(4,x(r.v[1])-x(r.v[0])),height:bh,rx:3},"fill:var(--s1)");
+   hover(vr,"<b>"+r.n+"</b><br>교정된 유효범위: "+r.v[0]+" – "+r.v[1]+" mm<br>"+r.note); s.appendChild(vr);
+   if(!r.p){var xm=x(40)+8;
+     s.appendChild(T(xm,y+bh-4,"데이터 없음 →  K_V = 1.0","fill:var(--crit);font-size:11.5px;font-weight:700"));}
+ });
+})();
+
+/* ========== 2. 회전좌표계 ========== */
+(function(){
+ var W=880,H=250,s=svg("fig-rot",W,H); if(!s)return;
+ var pw=(W-110)/2, T0=44, B=H-44;
+ function M(t){return 1+0.13*Math.sin(2*Math.PI*t/37)+0.07*Math.sin(2*Math.PI*t/13+1.1)+0.04*Math.sin(2*Math.PI*t/5.5+.4);}
+ var panels=[
+  {L:40,ttl:"고정계 (허브 좌표계)",sub:"M_res(t) — 준정적",f:function(t){return M(t);},dom:[0,1.45],col:C.s1,mark:"평균 근처에서 완만하게 변동 · rainflow 하면 사이클 거의 없음"},
+  {L:40+pw+30,ttl:"회전계 (축 표면 재료점)",sub:"σ_b(t) = M_res(t)/W · cos(ωt)",f:function(t){return M(t)*Math.cos(2*Math.PI*0.2*t);},dom:[-1.45,1.45],col:C.s2,mark:"1P 완전교번 (R = −1) · 60초에 12 사이클"}
+ ];
+ panels.forEach(function(p){
+   var x=mkLin(0,60,p.L,p.L+pw), y=mkLin(p.dom[0],p.dom[1],B,T0);
+   s.appendChild(T(p.L,T0-24,p.ttl,"fill:var(--text-primary);font-weight:700;font-size:12.5px"));
+   s.appendChild(T(p.L,T0-9,p.sub,"fill:var(--text-muted);font-size:11px"));
+   s.appendChild(E("rect",{x:p.L,y:T0,width:pw,height:B-T0},"fill:none;stroke:var(--grid);stroke-width:1"));
+   if(p.dom[0]<0)s.appendChild(E("line",{x1:p.L,x2:p.L+pw,y1:y(0),y2:y(0)},"stroke:var(--axis);stroke-width:1"));
+   var pts=[];for(var t=0;t<=60;t+=0.15)pts.push([x(t),y(p.f(t))]);
+   s.appendChild(path(pts,"stroke:"+p.col+";stroke-width:2"));
+   s.appendChild(T(p.L,B+18,"0 s","fill:var(--text-muted)"));
+   s.appendChild(T(p.L+pw,B+18,"60 s","fill:var(--text-muted);text-anchor:end"));
+   s.appendChild(T(p.L,B+35,p.mark,"fill:var(--text-secondary);font-size:11px"));
+ });
+})();
+
+/* ========== 3. K₁ 곡선 ========== */
+(function(){
+ var W=880,H=330,L=64,R=W-140,T0=26,B=H-52;
+ var s=svg("fig-k1",W,H); if(!s)return;
+ var x=mkLog(10,1200,L,R), y=mkLin(0.5,1.02,B,T0);
+ s.appendChild(E("rect",{x:x(300),y:T0,width:R-x(300),height:B-T0},"fill:var(--axis);opacity:.10"));
+ s.appendChild(T(x(300)+8,T0+15,"규격이 값을 고정 (외삽 구간)","fill:var(--text-muted);font-size:11px"));
+ [0.5,0.6,0.7,0.8,0.9,1.0].forEach(function(v){
+   s.appendChild(E("line",{x1:L,x2:R,y1:y(v),y2:y(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L-9,y(v)+4,v.toFixed(1),"fill:var(--text-muted);text-anchor:end"));});
+ [10,16,32,100,150,300,500,1000].forEach(function(t){
+   s.appendChild(T(x(t),B+18,String(t),"fill:var(--text-muted);text-anchor:middle"));
+   s.appendChild(E("line",{x1:x(t),x2:x(t),y1:B,y2:B+5},"stroke:var(--axis);stroke-width:1"));});
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L,T0-10,"K₁","fill:var(--text-secondary);font-weight:700"));
+ s.appendChild(T(R,B+36,"d_eff [mm] · 로그 스케일","fill:var(--text-muted);text-anchor:end"));
+ var sets=[
+  {A:.26,dB:16,dm:300,c:C.s1,l:"조질강 R_m",f:"0.67"},
+  {A:.34,dB:16,dm:300,c:C.s2,l:"조질강 R_p0.2",f:"0.57"},
+  {A:.41,dB:16,dm:150,c:C.s3,l:"침탄강",f:"0.60"},
+  {A:.23,dB:100,dm:300,c:C.s4,l:"질화·비조질",f:"0.89"}];
+ sets.forEach(function(k){
+   var pts=[];for(var i=0;i<=260;i++){var d=Math.pow(10,lg(10)+(lg(1200)-lg(10))*i/260);
+     var de=Math.min(d,k.dm), v=de<=k.dB?1:1-k.A*lg(de/k.dB); pts.push([x(d),y(v)]);}
+   s.appendChild(path(pts,"stroke:"+k.c+";stroke-width:2"));
+   var vf=1-k.A*lg(k.dm/k.dB);
+   s.appendChild(E("circle",{cx:x(1200),cy:y(vf),r:4.5},"fill:"+k.c+";stroke:var(--surface-1);stroke-width:2"));
+   s.appendChild(T(R+12,y(vf)+4,k.l+"  "+k.f,"fill:var(--text-secondary);font-size:11.5px"));
+ });
+ var hz=E("rect",{x:x(400),y:T0,width:x(1000)-x(400),height:B-T0},"fill:var(--crit);opacity:.08");
+ hover(hz,"<b>메인샤프트 치수대 400–1000 mm</b><br>조질강 K₁ 은 이미 하한에 고정<br>R_m 0.67 · R_p0.2 0.57<br>→ FVA 703 식 사용 권장"); s.appendChild(hz);
+ s.appendChild(T((x(400)+x(1000))/2,B-8,"메인샤프트","fill:var(--crit);text-anchor:middle;font-weight:700;font-size:11px"));
+})();
+
+/* ========== 4. K_Fσ vs Rz ========== */
+(function(){
+ var W=880,H=300,L=64,R=W-160,T0=26,B=H-52;
+ var s=svg("fig-kf",W,H); if(!s)return;
+ var x=mkLog(1,100,L,R), y=mkLin(0.64,1.02,B,T0);
+ [0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0].forEach(function(v){
+   s.appendChild(E("line",{x1:L,x2:R,y1:y(v),y2:y(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L-9,y(v)+4,v.toFixed(2),"fill:var(--text-muted);text-anchor:end"));});
+ [[1,"1\n폴리싱"],[4,"4\n연삭"],[6.3,"6.3"],[12.5,"12.5\n정삭"],[25,"25\n선삭"],[100,"100\n흑피"]].forEach(function(t){
+   s.appendChild(T(x(t[0]),B+18,t[1].split("\n")[0],"fill:var(--text-muted);text-anchor:middle"));
+   var l2=t[1].split("\n")[1]; if(l2)s.appendChild(T(x(t[0]),B+32,l2,"fill:var(--text-muted);text-anchor:middle;font-size:10.5px"));
+   s.appendChild(E("line",{x1:x(t[0]),x2:x(t[0]),y1:B,y2:B+5},"stroke:var(--axis);stroke-width:1"));});
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L,T0-10,"K_Fσ","fill:var(--text-secondary);font-weight:700"));
+ s.appendChild(T(R,B+46,"R_z [µm] · 로그 스케일","fill:var(--text-muted);text-anchor:end"));
+ [{sb:736,c:C.s1,l:"736 MPa (예제)"},{sb:1100,c:C.s2,l:"1100 MPa"},{sb:500,c:C.s3,l:"500 MPa"}].forEach(function(k){
+   var f=function(rz){return 1-0.22*lg(rz)*(lg(k.sb/20)-1);};
+   var pts=[];for(var i=0;i<=200;i++){var rz=Math.pow(10,(lg(100))*i/200); pts.push([x(rz),y(f(rz))]);}
+   s.appendChild(path(pts,"stroke:"+k.c+";stroke-width:2"));
+   s.appendChild(E("circle",{cx:x(100),cy:y(f(100)),r:4.5},"fill:"+k.c+";stroke:var(--surface-1);stroke-width:2"));
+   s.appendChild(T(R+12,y(f(100))+4,k.l,"fill:var(--text-secondary);font-size:11.5px"));
+   [1,4,6.3,12.5,25,100].forEach(function(rz){
+     var c=E("circle",{cx:x(rz),cy:y(f(rz)),r:9},"fill:transparent");
+     hover(c,"σ_B(d) = "+k.sb+" MPa<br>R_z = "+rz+" µm<br><b>K_Fσ = "+f(rz).toFixed(3)+"</b><br>피로강도 손실 "+((1-f(rz))*100).toFixed(1)+" %"); s.appendChild(c);});
+ });
+})();
+
+/* ========== 5. β_σ vs d ========== */
+(function(){
+ var W=880,H=290,L=64,R=W-150,T0=30,B=H-52;
+ var s=svg("fig-nchi",W,H); if(!s)return;
+ var x=mkLin(20,1000,L,R), y=mkLin(1.755,1.875,B,T0);
+ [1.76,1.78,1.80,1.82,1.84,1.86].forEach(function(v){
+   s.appendChild(E("line",{x1:L,x2:R,y1:y(v),y2:y(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L-9,y(v)+4,v.toFixed(2),"fill:var(--text-muted);text-anchor:end"));});
+ [20,100,200,300,400,500,700,1000].forEach(function(t){
+   s.appendChild(T(x(t),B+18,String(t),"fill:var(--text-muted);text-anchor:middle"));
+   s.appendChild(E("line",{x1:x(t),x2:x(t),y1:B,y2:B+5},"stroke:var(--axis);stroke-width:1"));});
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L,T0-10,"β_σ","fill:var(--text-secondary);font-weight:700"));
+ s.appendChild(T(R,B+36,"국부 지름 d [mm]","fill:var(--text-muted);text-anchor:end"));
+ s.appendChild(E("line",{x1:L,x2:R,y1:y(1.85),y2:y(1.85)},"stroke:var(--axis);stroke-width:1.5"));
+ s.appendChild(T(R+10,y(1.85)+4,"α_σ = 1.85","fill:var(--text-secondary);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(R+10,y(1.85)+19,"지지효과 없을 때","fill:var(--text-muted);font-size:10.5px"));
+ function calc(d){var r=25,t=0.06*d,phi=1/(4*Math.sqrt(t/r)+2),G=2*(1+phi)/r+2/d;
+   var de=Math.min(d,300), K1=de<=16?1:1-0.34*lg(de/16), sS=K1*900;
+   var e=G<=0.1?1:(G<=1?0.5:0.25), n=1+Math.pow(G,e)*Math.pow(10,-(0.33+sS/712));
+   return {G:G,n:n,b:1.85/n};}
+ var pts=[];for(var d=20;d<=1000;d+=5)pts.push([x(d),y(calc(d).b)]);
+ s.appendChild(path(pts,"stroke:"+C.s1+";stroke-width:2"));
+ [20,50,100,200,300,500,700,1000].forEach(function(d){var v=calc(d);
+   var c=E("circle",{cx:x(d),cy:y(v.b),r:4},"fill:"+C.s1+";stroke:var(--surface-1);stroke-width:2");
+   var h=E("circle",{cx:x(d),cy:y(v.b),r:12},"fill:transparent");
+   hover(h,"d = "+d+" mm<br>G′ = "+v.G.toFixed(4)+" mm⁻¹<br>n_χ = <b>"+v.n.toFixed(4)+"</b><br>β_σ = <b>"+v.b.toFixed(3)+"</b><br>지지효과 이득 "+((1.85-v.b)/1.85*100).toFixed(1)+" %");
+   s.appendChild(c);s.appendChild(h);});
+ var v5=calc(500);
+ s.appendChild(T(x(700),y(1.812),"예제 d = 500 → β_σ = 1.834   (α_σ 대비 −0.9 %)","fill:var(--s1);text-anchor:middle;font-size:11.5px;font-weight:700"));
+ s.appendChild(T(x(360),y(1.862),"↑ G′ = 0.1 mm⁻¹ 분기 경계 — n_χ 식 자체의 불연속","fill:var(--text-muted);font-size:10.5px"));
+ s.appendChild(T(x(120),y(1.788),"d ≤ 300 : K₁ 감소로 σ_S(d)↓ → 지지효과 소폭 증가","fill:var(--text-muted);font-size:10.5px"));
+})();
+
+/* ========== 6. K_σ 기여 분해 ========== */
+(function(){
+ var W=880,H=195,L=150,R=W-120,T0=44,B=H-40;
+ var s=svg("fig-ksig",W,H); if(!s)return;
+ var rows=[{n:"K_σ (굽힘) = 2.403",a:1.2925,b:0.1105,la:"β_σ/K₂ − 1 = 1.293",lb:"1/K_Fσ − 1 = 0.111"},
+           {n:"K_τ (비틀림) = 1.742",a:0.6813,b:0.0607,la:"β_τ/K₂ − 1 = 0.681",lb:"1/K_Fτ − 1 = 0.061"}];
+ var mx=1.45, x=mkLin(0,mx,L,R), bh=24, gap=(B-T0)/rows.length;
+ [0,0.25,0.5,0.75,1.0,1.25].forEach(function(v){
+   s.appendChild(E("line",{x1:x(v),x2:x(v),y1:T0-6,y2:B},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(x(v),B+17,v.toFixed(2),"fill:var(--text-muted);text-anchor:middle"));});
+ s.appendChild(T(R,B+34,"K − 1  (1 위로 더해지는 증분)","fill:var(--text-muted);text-anchor:end"));
+ rows.forEach(function(r,i){
+   var y=T0+gap*i+(gap-bh)/2, tot=r.a+r.b;
+   s.appendChild(T(L-12,y+bh/2+4,r.n,"fill:var(--text-secondary);text-anchor:end;font-size:12px;font-weight:600"));
+   var w1=x(r.a)-x(0);
+   var r1=E("rect",{x:L,y:y,width:w1,height:bh,rx:3},"fill:"+C.s1);
+   hover(r1,"<b>노치 + 기하학적 크기효과</b><br>"+r.la+"<br>전체 증분의 "+(r.a/tot*100).toFixed(1)+" %");s.appendChild(r1);
+   var r2=E("rect",{x:L+w1+2,y:y,width:Math.max(3,x(r.b)-x(0)-2),height:bh,rx:3},"fill:"+C.s2);
+   hover(r2,"<b>표면조도</b><br>"+r.lb+"<br>전체 증분의 "+(r.b/tot*100).toFixed(1)+" %");s.appendChild(r2);
+   s.appendChild(T(L+x(tot)-x(0)+12,y+bh/2+4,(r.a/tot*100).toFixed(0)+" % 가 노치","fill:var(--text-secondary);font-size:11.5px"));
+ });
+})();
+
+/* ========== 7. Haigh 선도 ========== */
+(function(){
+ var W=880,H=380,L=64,R=W-190,T0=26,B=H-52;
+ var s=svg("fig-haigh",W,H); if(!s)return;
+ var x=mkLin(0,620,L,R), y=mkLin(0,620,B,T0);
+ var WK=153.1,PSI=0.1161,FK=589.6;
+ for(var v=0;v<=600;v+=100){
+   s.appendChild(E("line",{x1:L,x2:R,y1:y(v),y2:y(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(E("line",{x1:x(v),x2:x(v),y1:T0,y2:B},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L-9,y(v)+4,String(v),"fill:var(--text-muted);text-anchor:end"));
+   s.appendChild(T(x(v),B+18,String(v),"fill:var(--text-muted);text-anchor:middle"));}
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(E("line",{x1:L,x2:L,y1:T0,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L,T0-10,"σ_a [MPa]","fill:var(--text-secondary);font-weight:700"));
+ s.appendChild(T(R,B+36,"σ_mv [MPa]","fill:var(--text-muted);text-anchor:end"));
+ // yield line
+ s.appendChild(path([[x(0),y(FK)],[x(FK),y(0)]],"stroke:var(--axis);stroke-width:2"));
+ s.appendChild(T(x(450),y(190),"항복선 σ_a + σ_mv = σ_FK","fill:var(--text-muted);font-size:11px;text-anchor:middle"));
+ // envelope (min of goodman & yield)
+ var xc=(FK-WK)/(1-PSI), ep=[];
+ for(var m=0;m<=620;m+=4){var g=WK-PSI*m, yl=FK-m, vv=Math.min(g,yl); if(vv<0)break; ep.push([x(m),y(vv)]);}
+ s.appendChild(path(ep,"stroke:"+C.s1+";stroke-width:2.5"));
+ s.appendChild(T(x(330),y(WK-PSI*330)+22,"허용 진폭 포락선","fill:var(--s1);font-size:11.5px;font-weight:700;text-anchor:middle"));
+ // operating point
+ var OM=44.0,OA=45.0;
+ // Fall 2 ray
+ var k=OA/OM, xi=WK/(k+PSI), yi=k*xi;
+ s.appendChild(path([[x(0),y(0)],[x(xi),y(yi)]],"stroke:"+C.s2+";stroke-width:2"));
+ var p2=E("circle",{cx:x(xi),cy:y(yi),r:6},"fill:"+C.s2+";stroke:var(--surface-1);stroke-width:2");
+ hover(p2,"<b>Fall 2 한계</b> (R 일정 경로)<br>σ_mv = "+xi.toFixed(1)+" · σ_a = <b>"+yi.toFixed(1)+" MPa</b><br>S = "+(yi/OA).toFixed(2));s.appendChild(p2);
+ s.appendChild(T(x(xi)+14,y(yi)+32,"Fall 2 한계  σ_a = 137.5","fill:var(--s2);font-size:11.5px;font-weight:700"));
+ // Fall 1 vertical
+ var ya=WK-PSI*OM;
+ s.appendChild(path([[x(OM),y(OA)],[x(OM),y(ya)]],"stroke:"+C.s1+";stroke-width:2"));
+ var p1=E("circle",{cx:x(OM),cy:y(ya),r:6},"fill:"+C.s1+";stroke:var(--surface-1);stroke-width:2");
+ hover(p1,"<b>Fall 1 한계</b> (σ_mv 일정 경로)<br>σ_bADK = <b>"+ya.toFixed(1)+" MPa</b><br>S = "+(ya/OA).toFixed(2));s.appendChild(p1);
+ s.appendChild(T(x(OM)+16,y(ya)-13,"Fall 1 한계  σ_bADK = 148.0","fill:var(--s1);font-size:11.5px;font-weight:700"));
+ var op=E("circle",{cx:x(OM),cy:y(OA),r:6.5},"fill:"+C.s3+";stroke:var(--surface-1);stroke-width:2");
+ hover(op,"<b>예제 운전점</b><br>σ_mv = 44.0 MPa<br>σ_a = 45.0 MPa");s.appendChild(op);
+ s.appendChild(T(x(OM)+14,y(OA)+6,"운전점 (44, 45)","fill:var(--text-secondary);font-size:11.5px"));
+ s.appendChild(T(R+14,T0+16,"Fall 1 은 평균 고정·진폭만 증가","fill:var(--text-secondary);font-size:11px"));
+ s.appendChild(T(R+14,T0+32,"Fall 2 는 평균·진폭 비례 증가","fill:var(--text-secondary);font-size:11px"));
+ s.appendChild(T(R+14,T0+52,"→ 여기서는 Fall 2 가","fill:var(--s2);font-size:11px;font-weight:700"));
+ s.appendChild(T(R+14,T0+67,"   더 보수적 (137.5 < 148.0)","fill:var(--s2);font-size:11px;font-weight:700"));
+})();
+
+/* ========== 8. Wöhler + 스펙트럼 ========== */
+(function(){
+ var W=880,H=360,L=64,R=W-170,T0=26,B=H-54;
+ var s=svg("fig-wohler",W,H); if(!s)return;
+ var x=mkLog(1e3,1e10,L,R), y=mkLog(25,420,B,T0), AD=148,ND=1e6,q=5;
+ [30,50,100,150,200,300,400].forEach(function(v){
+   s.appendChild(E("line",{x1:L,x2:R,y1:y(v),y2:y(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L-9,y(v)+4,String(v),"fill:var(--text-muted);text-anchor:end"));});
+ for(var e=3;e<=10;e++){
+   s.appendChild(E("line",{x1:x(Math.pow(10,e)),x2:x(Math.pow(10,e)),y1:T0,y2:B},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(x(Math.pow(10,e)),B+18,"10"+String(e).replace(/[0-9]/g,function(d){return "⁰¹²³⁴⁵⁶⁷⁸⁹"[d];}),"fill:var(--text-muted);text-anchor:middle"));}
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L,T0-10,"σ_a [MPa]","fill:var(--text-secondary);font-weight:700"));
+ s.appendChild(T(R,B+36,"사이클 수 N","fill:var(--text-muted);text-anchor:end"));
+ s.appendChild(E("line",{x1:L,x2:R,y1:y(AD),y2:y(AD)},"stroke:var(--s1);stroke-width:1;opacity:.45"));
+ s.appendChild(T(R-4,y(AD)-8,"σ_ADK = 148 MPa (무한수명 한계)","fill:var(--s1);font-size:11px;font-weight:700;text-anchor:end"));
+ var a=[];for(var i=0;i<=80;i++){var N=Math.pow(10,4+(6-4)*i/80); a.push([x(N),y(AD*Math.pow(ND/N,1/q))]);}
+ s.appendChild(path(a,"stroke:"+C.s1+";stroke-width:2.5"));
+ var b=[];for(i=0;i<=80;i++){N=Math.pow(10,6+(10-6)*i/80); b.push([x(N),y(AD*Math.pow(ND/N,1/(2*q-1)))]);}
+ s.appendChild(path(b,"stroke:"+C.s1+";stroke-width:2.5;opacity:.45"));
+ var kn=E("circle",{cx:x(ND),cy:y(AD),r:5.5},"fill:"+C.s1+";stroke:var(--surface-1);stroke-width:2");
+ hover(kn,"<b>무릎점 N_D = 10⁶</b><br>σ_ADK = 148 MPa<br>좌: q = 5 · 우: Miner-erweitert 2q−1 = 9");s.appendChild(kn);
+ s.appendChild(T(x(6e8),y(AD*Math.pow(ND/6e8,1/9))+26,"Miner-erweitert 연장 (2q−1 = 9)","fill:var(--text-muted);font-size:11px;text-anchor:middle"));
+ var sp=[[170,2e3,"2.4"],[150,3e4,"19.3"],[120,5e5,"45.5"],[90,4e6,"27.3"],[60,3e7,"5.3"],[35,1e8,"0.1"]];
+ sp.forEach(function(p){
+   var cx=x(p[1]),cy=y(p[0]);
+   var r=E("rect",{x:cx-5,y:cy-5,width:10,height:10,rx:2.5},"fill:"+C.s2+";stroke:var(--surface-1);stroke-width:2");
+   var h=E("rect",{x:cx-13,y:cy-13,width:26,height:26},"fill:transparent");
+   hover(h,"σ_a = <b>"+p[0]+" MPa</b><br>n_i = "+p[1].toExponential(2)+" cycles<br>손상 기여 <b>"+p[2]+" %</b>"+(p[0]>AD?"<br><span style='color:var(--crit)'>σ_ADK 초과 → 무한수명 탈락 원인</span>":""));
+   s.appendChild(r);s.appendChild(h);});
+ s.appendChild(T(x(2e3)+12,y(170)-11,"170 MPa · 2×10³  → 무한수명 탈락 원인","fill:var(--s2);font-size:11px;font-weight:700"));
+ s.appendChild(T(R+14,T0+18,"점이 곡선 오른쪽/위 →","fill:var(--text-secondary);font-size:11px"));
+ s.appendChild(T(R+14,T0+33,"해당 단계에서 손상 발생","fill:var(--text-secondary);font-size:11px"));
+})();
+
+/* ========== 9. 손상 기여 vs 사이클 비중 ========== */
+(function(){
+ var W=880,H=330,L=92,R=W-56,T0=44,B=H-46;
+ var s=svg("fig-damage",W,H); if(!s)return;
+ var d=[{a:170,dm:2.4,cy:0.0015},{a:150,dm:19.3,cy:0.022},{a:120,dm:45.5,cy:0.372},
+        {a:90,dm:27.3,cy:2.97},{a:60,dm:5.3,cy:22.3},{a:35,dm:0.1,cy:74.3}];
+ var x=mkLin(0,80,L,R), gap=(B-T0)/d.length, bh=13;
+ [0,20,40,60,80].forEach(function(v){
+   s.appendChild(E("line",{x1:x(v),x2:x(v),y1:T0-10,y2:B},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(x(v),B+18,v+" %","fill:var(--text-muted);text-anchor:middle"));});
+ s.appendChild(E("line",{x1:L,x2:L,y1:T0-10,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L-12,T0-16,"σ_a [MPa]","fill:var(--text-muted);text-anchor:end;font-size:11px"));
+ d.forEach(function(r,i){
+   var y0=T0+gap*i+(gap-2*bh-4)/2;
+   s.appendChild(T(L-12,y0+bh+6,String(r.a),"fill:var(--text-secondary);text-anchor:end;font-size:12.5px;font-weight:600"));
+   var b1=E("rect",{x:L,y:y0,width:Math.max(2,x(r.dm)-L),height:bh,rx:3},"fill:"+C.s1);
+   hover(b1,"σ_a = "+r.a+" MPa<br><b>손상 기여 "+r.dm+" %</b><br>사이클 비중 "+r.cy+" %");s.appendChild(b1);
+   var b2=E("rect",{x:L,y:y0+bh+4,width:Math.max(2,x(r.cy)-L),height:bh,rx:3},"fill:"+C.s2);
+   hover(b2,"σ_a = "+r.a+" MPa<br>손상 기여 "+r.dm+" %<br><b>사이클 비중 "+r.cy+" %</b>");s.appendChild(b2);
+   s.appendChild(T(Math.max(x(r.dm),L)+8,y0+bh-2,r.dm+" %","fill:var(--text-secondary);font-size:11px"));
+   s.appendChild(T(Math.max(x(r.cy),L)+8,y0+2*bh+3,r.cy+" %","fill:var(--text-muted);font-size:11px"));
+ });
+ var yb=T0+gap*0+(gap-2*bh-4)/2-14;
+ s.appendChild(E("rect",{x:L,y:yb-8,width:R-L,height:gap*3-2,rx:5},"fill:var(--crit);opacity:.06"));
+ s.appendChild(T(R,yb-14,"≥120 MPa : 손상 67 % · 사이클 0.40 %","fill:var(--crit);text-anchor:end;font-size:11.5px;font-weight:700"));
+})();
+
+
+/* ========== 10. Table 7 — 주철 γ_M 히트맵 ========== */
+function heatColor(v,lo,hi){var t=(v-lo)/(hi-lo);
+  if(t<0.2)return["var(--h1)","var(--h1i)"]; if(t<0.4)return["var(--h2)","var(--h2i)"];
+  if(t<0.6)return["var(--h3)","var(--h3i)"]; if(t<0.8)return["var(--h4)","var(--h4i)"];
+  return["var(--h5)","var(--h5i)"];}
+function scaleLegend(s,x,y,lo,hi,label){
+  var w=26,h=11;
+  s.appendChild(T(x,y-6,label,"fill:var(--text-muted);font-size:10.5px"));
+  for(var i=0;i<5;i++){var c=heatColor(lo+(hi-lo)*(i*0.2+0.1),lo,hi);
+    s.appendChild(E("rect",{x:x+i*(w+2),y:y,width:w,height:h,rx:2},"fill:"+c[0]));}
+  s.appendChild(T(x,y+h+13,lo.toFixed(2),"fill:var(--text-muted);font-size:10.5px"));
+  s.appendChild(T(x+5*(w+2)-2,y+h+13,hi.toFixed(2),"fill:var(--text-muted);font-size:10.5px;text-anchor:end"));
+}
+(function(){
+ var W=880,H=372,L=330,T0=58,cw=112,ch=38;
+ var s=svg("fig-t7",W,H); if(!s)return;
+ var cols=["등급 01","등급 2","등급 3"];
+ var rows=[
+  {l:"P = 50 %",l2:"",v:[1.70,2.00,2.35]},
+  {l:"P = 95 %",l2:"평균응력 영향 미미 (R ≈ −1)",v:[1.35,1.60,1.87]},
+  {l:"P = 95 %",l2:"평균응력 영향 유의",v:[1.40,1.65,1.94]},
+  {l:"P ≥ 97.7 %",l2:"평균응력 영향 미미 (R ≈ −1)",v:[1.30,1.53,1.80]},
+  {l:"P ≥ 97.7 %",l2:"평균응력 영향 유의",v:[1.35,1.60,1.87]},
+  {l:"P ≥ 97.7 %",l2:"설계하중이 난류에 지배되지 않음",v:[1.25,1.47,1.73]}];
+ var lo=1.25,hi=2.35;
+ cols.forEach(function(c,j){
+   s.appendChild(T(L+j*(cw+3)+cw/2,T0-22,c,"fill:var(--text-secondary);text-anchor:middle;font-size:12.5px;font-weight:700"));});
+ s.appendChild(T(L+(3*(cw+3))/2,T0-40,"EN 12680-3:2011 주조 품질등급","fill:var(--text-muted);text-anchor:middle;font-size:11px"));
+ rows.forEach(function(r,i){
+   var y=T0+i*(ch+3);
+   s.appendChild(T(L-14,y+(r.l2?ch/2-2:ch/2+4),r.l,"fill:var(--text-primary);text-anchor:end;font-size:12px;font-weight:600"));
+   if(r.l2)s.appendChild(T(L-14,y+ch/2+12,r.l2,"fill:var(--text-muted);text-anchor:end;font-size:10.5px"));
+   r.v.forEach(function(v,j){
+     var c=heatColor(v,lo,hi), x=L+j*(cw+3);
+     var rc=E("rect",{x:x,y:y,width:cw,height:ch,rx:4},"fill:"+c[0]);
+     hover(rc,"<b>γ_M = "+v.toFixed(2)+"</b><br>"+cols[j]+"<br>"+r.l+(r.l2?" · "+r.l2:"")+"<br>등급 01 대비 ×"+(v/r.v[0]).toFixed(3));
+     s.appendChild(rc);
+     var tx=T(x+cw/2,y+ch/2+5,v.toFixed(2),"fill:"+c[1]+";text-anchor:middle;font-size:14px;font-weight:700");
+     tx.setAttribute("pointer-events","none"); s.appendChild(tx);});
+ });
+ scaleLegend(s,L,T0+6*(ch+3)+16,lo,hi,"γ_M");
+ s.appendChild(T(L+3*(cw+3)+4,T0+6*(ch+3)+16,"열 배율: 등급2 ≈ ×1.18 · 등급3 ≈ ×1.385","fill:var(--text-muted);font-size:10.5px;text-anchor:end"));
+})();
+
+/* ========== 11. Tables 3·4 — γ_modelling 히트맵 ========== */
+(function(){
+ var W=880,H=290,s=svg("fig-gmod",W,H); if(!s)return;
+ var cw=70,ch=34,lo=1.00,hi=1.46;
+ var cols=["≤5 %","5–10 %","10–15 %","15–20 %"];
+ var rowsL=["1.00–1.02","1.02–1.05","1.05–1.10","1.10–1.15"];
+ var t3=[[1.00,1.05,1.10,1.18],[1.05,1.08,1.13,1.20],[1.12,1.16,1.21,1.30],[1.26,1.30,1.36,1.46]];
+ var t4=[[1.00,1.03,1.08,1.15],[1.04,1.06,1.11,1.18],[1.08,1.11,1.16,1.22],[1.13,1.16,1.22,1.29]];
+ [{L:96,T:62,d:t3,ttl:"Table 3 — 항복 (yielding)",sub:"항복강도 변동계수 < 15 % 조건"},
+  {L:540,T:62,d:t4,ttl:"Table 4 — 피로 (용접상세·주철)",sub:""}].forEach(function(p){
+   s.appendChild(T(p.L-70,p.T-42,p.ttl,"fill:var(--text-primary);font-size:13px;font-weight:700"));
+   if(p.sub)s.appendChild(T(p.L-70,p.T-28,p.sub,"fill:var(--text-muted);font-size:10.5px"));
+   cols.forEach(function(c,j){s.appendChild(T(p.L+j*(cw+3)+cw/2,p.T-8,c,"fill:var(--text-muted);text-anchor:middle;font-size:10.5px"));});
+   s.appendChild(T(p.L+4*(cw+3)/2,p.T-24,"V_δmf →","fill:var(--text-secondary);text-anchor:middle;font-size:10.5px;font-weight:700"));
+   p.d.forEach(function(row,i){
+     var y=p.T+i*(ch+3);
+     s.appendChild(T(p.L-8,y+ch/2+4,rowsL[i],"fill:var(--text-secondary);text-anchor:end;font-size:11px"));
+     row.forEach(function(v,j){
+       var c=heatColor(v,lo,hi),x=p.L+j*(cw+3);
+       var rc=E("rect",{x:x,y:y,width:cw,height:ch,rx:4},"fill:"+c[0]);
+       hover(rc,"<b>γ_modelling = "+v.toFixed(2)+"</b><br>"+p.ttl.split("—")[1].trim()+"<br>M_δmf "+rowsL[i]+" · V_δmf "+cols[j]);
+       s.appendChild(rc);
+       var tx=T(x+cw/2,y+ch/2+5,v.toFixed(2),"fill:"+c[1]+";text-anchor:middle;font-size:12.5px;font-weight:700");
+       tx.setAttribute("pointer-events","none"); s.appendChild(tx);});
+   });
+   s.appendChild(T(p.L-78,p.T+4*(ch+3)+2,"M_δmf ↓","fill:var(--text-secondary);font-size:10.5px;font-weight:700"));
+ });
+ scaleLegend(s,96,H-42,lo,hi,"γ_modelling");
+})();
+
+/* ========== 12. Tables 5·6 — 생존확률별 γ_M ========== */
+(function(){
+ var W=880,H=300,L=70,R=W-260,T0=30,B=H-56;
+ var s=svg("fig-gm",W,H); if(!s)return;
+ var y=mkLin(1.0,1.8,B,T0);
+ var groups=[{k:"50 %",v:[1.70,1.70,1.70]},{k:"95 %",v:[1.35,1.35,1.40]},{k:"97.7 %",v:[1.25,1.30,1.35]}];
+ var names=["Table 5 · 용접강","Table 6 · 평균응력 미미 (R ≈ −1)","Table 6 · 평균응력 유의"];
+ var cols=[C.s1,C.s2,C.s3];
+ [1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8].forEach(function(v){
+   s.appendChild(E("line",{x1:L,x2:R,y1:y(v),y2:y(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L-9,y(v)+4,v.toFixed(1),"fill:var(--text-muted);text-anchor:end"));});
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L,T0-10,"최소 γ_M","fill:var(--text-secondary);font-weight:700"));
+ s.appendChild(T(R,B+40,"특성 S-N 곡선의 생존확률 (신뢰수준 ≥ 75 %)","fill:var(--text-muted);text-anchor:end"));
+ var gw=(R-L)/groups.length, bw=30, gp=10;
+ groups.forEach(function(g,i){
+   var cx=L+gw*i+gw/2;
+   s.appendChild(T(cx,B+20,g.k,"fill:var(--text-primary);text-anchor:middle;font-size:13px;font-weight:700"));
+   g.v.forEach(function(v,j){
+     var x=cx-(3*bw+2*gp)/2+j*(bw+gp);
+     var rc=E("rect",{x:x,y:y(v),width:bw,height:B-y(v),rx:4},"fill:"+cols[j]);
+     rc.setAttribute("clip-path","none");
+     hover(rc,"<b>γ_M = "+v.toFixed(2)+"</b><br>"+names[j]+"<br>생존확률 "+g.k);
+     s.appendChild(rc);
+     s.appendChild(E("rect",{x:x,y:B-4,width:bw,height:4},"fill:"+cols[j]));
+     s.appendChild(T(x+bw/2,y(v)-7,v.toFixed(2),"fill:var(--text-secondary);text-anchor:middle;font-size:11px;font-weight:700"));});
+ });
+ s.appendChild(T(R+16,T0+20,"50 % 곡선 → 1.70","fill:var(--text-secondary);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(R+16,T0+36,"97.7 % 곡선 → 1.30","fill:var(--text-secondary);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(R+16,T0+56,"시험 투자로 저항측","fill:var(--good);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(R+16,T0+72,"24 % 회복 가능","fill:var(--good);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(R+16,T0+96,"난류 비지배 입증 시","fill:var(--text-muted);font-size:11px"));
+ s.appendChild(T(R+16,T0+111,"1.25 까지 (Table 6 각주)","fill:var(--text-muted);font-size:11px"));
+})();
+
+/* ========== TOC scrollspy + theme ========== */
+var links=[].slice.call(document.querySelectorAll("#toc a[href^='#']"));
+var targets=links.map(function(a){return document.getElementById(a.getAttribute("href").slice(1));});
+function spy(){
+  var best=-1,bt=1e9;
+  for(var i=0;i<targets.length;i++){ if(!targets[i])continue;
+    var r=targets[i].getBoundingClientRect();
+    if(r.top<=140 && r.top>-1e8){ if(140-r.top<bt||r.top<=140){best=i;} } }
+  links.forEach(function(a,i){a.classList.toggle("active",i===best);});
+  if(best>=0 && window.innerWidth>1000){
+    var a=links[best],n=document.getElementById("toc"),ar=a.getBoundingClientRect(),nr=n.getBoundingClientRect();
+    if(ar.top<nr.top+30||ar.bottom>nr.bottom-30)n.scrollTop+=ar.top-nr.top-nr.height/2;}
+}
+var tick=false;
+window.addEventListener("scroll",function(){if(!tick){tick=true;requestAnimationFrame(function(){spy();tick=false;});}},{passive:true});
+spy();
+var btn=document.getElementById("themeBtn");
+btn.addEventListener("click",function(){
+  var d=document.documentElement.getAttribute("data-theme")==="dark";
+  document.documentElement.setAttribute("data-theme",d?"light":"dark");
+  btn.textContent=d?"◐ 다크모드":"◐ 라이트모드";
+});
+if(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches){
+  document.documentElement.setAttribute("data-theme","dark");btn.textContent="◐ 라이트모드";}
+})();
+</script>
+</body>
+</html>

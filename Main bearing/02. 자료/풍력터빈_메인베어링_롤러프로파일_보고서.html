@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>풍력터빈 메인베어링 롤러 프로파일 조사보고서</title>
+<style>
+:root{
+  --surface-1:#fcfcfb; --page:#f9f9f7;
+  --ink-1:#0b0b0b; --ink-2:#52514e; --ink-3:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --chip:#f0efec;
+}
+:root[data-theme="dark"]{
+  --surface-1:#1a1a19; --page:#0d0d0d;
+  --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-3:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+  --chip:#262624;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--page); color:var(--ink-1);
+  font-family:system-ui,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+  font-size:15px; line-height:1.7;
+}
+.layout{display:grid; grid-template-columns:290px 1fr; max-width:1500px; margin:0 auto; gap:0}
+/* ---------- TOC ---------- */
+nav.toc{
+  position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--border); padding:24px 18px 60px; background:var(--surface-1);
+}
+nav.toc h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
+nav.toc a{display:block;color:var(--ink-2);text-decoration:none;padding:4px 8px;border-radius:5px;font-size:13.5px;border-left:2px solid transparent}
+nav.toc a:hover{background:var(--chip);color:var(--ink-1)}
+nav.toc a.lv1{font-weight:650;color:var(--ink-1);margin-top:12px;font-size:14px}
+nav.toc a.lv2{padding-left:18px}
+nav.toc a.lv3{padding-left:30px;font-size:12.8px;color:var(--ink-3)}
+nav.toc a.active{border-left-color:var(--s1);background:var(--chip);color:var(--ink-1)}
+main{padding:40px 46px 120px; max-width:1080px; min-width:0}
+/* ---------- typography ---------- */
+h1{font-size:31px;line-height:1.3;margin:0 0 6px;letter-spacing:-.01em}
+h2{font-size:23px;margin:56px 0 14px;padding-top:14px;border-top:2px solid var(--ink-1);letter-spacing:-.01em}
+h3{font-size:18px;margin:34px 0 10px}
+h4{font-size:15.5px;margin:24px 0 8px;color:var(--ink-2)}
+p{margin:10px 0}
+.sub{color:var(--ink-2);font-size:14px;margin:0 0 4px}
+.meta{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 30px}
+.meta span{background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:4px 12px;font-size:12.5px;color:var(--ink-2)}
+code{background:var(--chip);padding:1px 5px;border-radius:4px;font-size:13px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+pre{background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.65}
+pre code{background:none;padding:0}
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;margin:16px 0;border:1px solid var(--border);border-radius:10px;background:var(--surface-1)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+th{background:var(--chip);font-weight:650;color:var(--ink-1);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* ---------- callouts ---------- */
+.box{border:1px solid var(--border);border-left:4px solid var(--s1);background:var(--surface-1);border-radius:0 10px 10px 0;padding:14px 18px;margin:18px 0}
+.box.key{border-left-color:var(--s1)}
+.box.warn{border-left-color:var(--warn)}
+.box.crit{border-left-color:var(--crit)}
+.box.ok{border-left-color:var(--good)}
+.box .lbl{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:5px}
+.box p:first-of-type{margin-top:0}.box p:last-child{margin-bottom:0}
+/* ---------- status marks ---------- */
+.mk{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.mk::before{font-size:13px}
+.mk.yes{color:var(--good)} .mk.yes::before{content:"\2714"}
+.mk.no{color:var(--crit)} .mk.no::before{content:"\2716"}
+.mk.part{color:var(--serious)} .mk.part::before{content:"\25D1"}
+.conf{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;border:1px solid var(--border);vertical-align:middle}
+.conf.a{color:var(--good)} .conf.b{color:var(--serious)} .conf.c{color:var(--crit)}
+/* ---------- figures ---------- */
+figure{margin:26px 0;background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:18px 20px 14px}
+figcaption{font-size:12.5px;color:var(--ink-2);margin-top:10px;padding-top:9px;border-top:1px solid var(--grid)}
+figcaption b{color:var(--ink-1)}
+.figtitle{font-size:15px;font-weight:650;margin:0 0 2px}
+.figsub{font-size:12.5px;color:var(--ink-3);margin:0 0 12px}
+svg{display:block;max-width:100%;height:auto;overflow:visible}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 2px;font-size:12.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px;margin:22px 0}
+.kpi{background:var(--surface-1);border:1px solid var(--border);border-radius:11px;padding:14px 16px}
+.kpi .v{font-size:27px;font-weight:680;letter-spacing:-.02em;line-height:1.15}
+.kpi .k{font-size:12px;color:var(--ink-3);margin-top:3px}
+.kpi .n{font-size:11.5px;color:var(--ink-2);margin-top:6px}
+/* ---------- timeline ---------- */
+.tl{position:relative;margin:24px 0 8px;padding-left:20px}
+.tl::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:var(--grid)}
+.tl .ev{position:relative;margin-bottom:16px}
+.tl .ev::before{content:"";position:absolute;left:-19px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--s1);box-shadow:0 0 0 2px var(--surface-1)}
+.tl .ev.hl::before{background:var(--s2)}
+.tl .yr{font-size:12px;font-weight:700;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.tl .ti{font-weight:650;font-size:14.5px}
+.tl .tx{font-size:13px;color:var(--ink-2)}
+/* ---------- flow ---------- */
+.flow{display:grid;gap:9px;margin:20px 0}
+.step{display:grid;grid-template-columns:34px 1fr;gap:13px;align-items:start;background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:12px 15px}
+.step .n{width:26px;height:26px;border-radius:7px;background:var(--s1);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}
+.step.acc .n{background:var(--s2)}
+.step .t{font-weight:650;font-size:14.5px;margin-bottom:2px}
+.step .d{font-size:13px;color:var(--ink-2)}
+.step .d ul{margin:5px 0 0;padding-left:17px}
+.step .d li{margin:2px 0}
+/* ---------- misc ---------- */
+.tog{position:fixed;top:14px;right:16px;z-index:50;background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12.5px;cursor:pointer;color:var(--ink-2);font-family:inherit}
+.tt{position:fixed;pointer-events:none;background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:12.5px;box-shadow:0 5px 18px rgba(0,0,0,.14);opacity:0;transition:opacity .1s;z-index:60;max-width:280px;line-height:1.5}
+.tt b{display:block;margin-bottom:3px}
+.ref{font-size:13px;color:var(--ink-2)}
+.ref li{margin:5px 0}
+details{background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:10px 15px;margin:14px 0}
+summary{cursor:pointer;font-weight:600;font-size:13.5px}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}nav.toc{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}main{padding:24px 18px 80px}}
+@media print{nav.toc,.tog{display:none}.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<button class="tog" id="tog">◐ 다크모드</button>
+<div class="tt" id="tt"></div>
+<div class="layout">
+<nav class="toc" id="toc">
+<h2>목차</h2>
+<a class="lv1" href="#summary">Executive Summary</a>
+<a class="lv1" href="#p1">제1부 · 프로파일 이론 및 수식</a>
+<a class="lv2" href="#s11">1.1 기호 정의</a>
+<a class="lv2" href="#s12">1.2 계보 및 비교표</a>
+<a class="lv2" href="#s13">1.3 수식 상세</a>
+<a class="lv3" href="#s13a">Lundberg (1939)</a>
+<a class="lv3" href="#s13b">Johns–Gohar (1981)</a>
+<a class="lv3" href="#s13c">Fujiwara–Kawase (2006)</a>
+<a class="lv3" href="#s13d">원호 · 다중원호</a>
+<a class="lv3" href="#s13e">ISO 16281 기준형</a>
+<a class="lv2" href="#s14">1.4 z<sub>m</sub> 결정 3경로</a>
+<a class="lv2" href="#s15">1.5 슬라이스법</a>
+<a class="lv2" href="#s16">1.6 엣지응력 · 설계기준</a>
+<a class="lv2" href="#s17">1.7 성능 비교 (정량)</a>
+<a class="lv1" href="#p2">제2부 · 풍력 특화 인자</a>
+<a class="lv2" href="#s21">2.1 배치 형식과 TRB</a>
+<a class="lv2" href="#s22">2.2 치수 · 하중 스펙트럼</a>
+<a class="lv2" href="#s23">2.3 미스얼라인먼트 ★</a>
+<a class="lv2" href="#s24">2.4 손상 모드 · 신뢰성</a>
+<a class="lv2" href="#s25">2.5 제조사 공개 정보</a>
+<a class="lv1" href="#p3">제3부 · TRB 고유 항목</a>
+<a class="lv2" href="#s32">3.2 크라우닝 분배</a>
+<a class="lv2" href="#s33">3.3 크라운 낙차 실무값</a>
+<a class="lv2" href="#s34">3.4 리브 접촉</a>
+<a class="lv2" href="#s35">3.5 비대칭 프로파일</a>
+<a class="lv1" href="#p4">제4부 · 규격 및 공차 체계</a>
+<a class="lv2" href="#s42">4.2 베어링 규격 일람</a>
+<a class="lv2" href="#s43">4.3 ISO 12297-1 ★</a>
+<a class="lv2" href="#s44">4.4 기어 규격 체계</a>
+<a class="lv2" href="#s45">4.5 갭 분석 ★★</a>
+<a class="lv2" href="#s46">4.6 실무 통제 방식</a>
+<a class="lv1" href="#p5">제5부 · 특허 동향</a>
+<a class="lv2" href="#s51">5.1 4가지 청구 축</a>
+<a class="lv2" href="#s52">5.2 주요 특허 상세</a>
+<a class="lv1" href="#p6">제6부 · 설계 절차 (권고)</a>
+<a class="lv1" href="#p7">제7부 · 미확인 사항</a>
+<a class="lv1" href="#refs">참고문헌</a>
+</nav>
+<main>
+<h1>풍력터빈 메인베어링 롤러 프로파일(크라우닝) 설계 및 관련 규격 조사보고서</h1>
+<p class="sub">원뿔롤러베어링(TRB, Tapered Roller Bearing) 중심</p>
+<div class="meta">
+  <span>작성일 2026-07-31</span>
+  <span>대상: TRB 메인베어링</span>
+  <span>수식 검산 완료</span>
+  <span><span class="conf a">✅</span> 1차 확인 · <span class="conf b">⚠️</span> 원문 대조 권장 · <span class="conf c">❌</span> 확인 실패</span>
+</div>
+<div class="box">
+<div class="lbl">본 보고서의 범위</div>
+<p>① 프로파일 형상 이론·수식 체계 · ② 파라미터 값 결정 방법 · ③ 풍력 메인베어링 특화 설계 인자 · ④ 베어링 프로파일 관련 규격·공차 체계와 <b>기어 규격과의 대비</b> · ⑤ 특허 동향</p>
+</div>
+<h2 id="summary">Executive Summary</h2>
+<div class="kpis">
+  <div class="kpi"><div class="v">0.35–4<span style="font-size:15px"> mrad</span></div><div class="k">풍력 메인 TRB 실제 미스얼라인먼트</div><div class="n">카탈로그 허용 2–4 arcmin(0.58–1.16 mrad)를 상회 → 크라우닝 필수</div></div>
+  <div class="kpi"><div class="v">8–20<span style="font-size:15px"> µm</span></div><div class="k">접촉영역 크라운 낙차</div><div class="n">총 크라우닝(롤러+양 궤도)은 50–100 µm — 구분 필수</div></div>
+  <div class="kpi"><div class="v">+51<span style="font-size:15px">%</span></div><div class="k">중하중+경사 조건 수명 개선</div><div class="n">3-파라미터 로그식 GA 최적화, Johns–Gohar 대비</div></div>
+  <div class="kpi"><div class="v" style="color:var(--crit)">없음</div><div class="k">롤러 프로파일 정밀도 등급 규격</div><div class="n">기어 ISO 1328에 대응하는 체계가 부재</div></div>
+</div>
+<ol style="font-size:14.5px">
+<li><b>프로파일 이론 계보</b> — Lundberg(1939) → Johns–Gohar(1981) → <b>Fujiwara–Kawase(2006) 3-파라미터 수정 로그식(K₁, K₂, z<sub>m</sub>)</b> → ThyssenKrupp(2018) 비대칭 구간별 로그식. 현 산업 표준은 <b>수정 로그 프로파일</b>이며, 풍력에서는 <b>비대칭·행별 차등 프로파일</b>이 최신 동향.</li>
+<li><b>파라미터 결정법</b> — <code>A = 2Q/(πL<sub>we</sub>E′)</code>를 기준 진폭으로 하고, 끝단 낙차 <code>z<sub>m</sub></code>은 ① Fujiwara 회귀식 ② ISO 16281 기준 <code>≈0.00035·D<sub>w</sub></code> ③ 미스얼라인먼트 조건 직접 최적화의 3경로로 결정. <b>풍력은 ③이 필수.</b></li>
+<li><b>풍력 특유 조건</b> — 실제 운전 미스얼라인먼트가 표준 TRB 카탈로그 허용치를 상회 → 크라우닝은 선택이 아니라 <b>필수 설계 항목</b>.</li>
+<li><b>규격 결론</b> — 베어링 롤러 프로파일에는 기어의 ISO 1328 같은 <b>번호화된 정밀도 등급 체계가 존재하지 않는다.</b> ISO 12297-1:2021이 표기법만 표준화하고 <b>수치는 "공급자–수요자 합의 사항"으로 명시적 위임</b>. 원뿔·구면롤러는 전동체 규격 자체가 부재.</li>
+<li><b>실무 통제 수단</b> — 제조사 사내 규격 + ISO 1101 "선의 윤곽도" 일반 GPS 공차 + 형상측정기 룩업테이블 대조. 즉 <b>개별 도면·개별 계약</b>으로 관리됨.</li>
+</ol>
+
+<figure>
+<p class="figtitle">그림 1. 롤러 프로파일 이론의 계보</p>
+<p class="figsub">각 단계가 앞 단계의 어떤 한계를 해결했는지 중심으로</p>
+<div class="tl">
+  <div class="ev"><div class="yr">1909</div><div class="ti">Kirner — 크라운 궤도 특허 (SKF)</div><div class="tx">"롤러 끝단의 유해한 엣지응력 회피" — 크라우닝 개념의 최초 특허화</div></div>
+  <div class="ev hl"><div class="yr">1939</div><div class="ti">Lundberg — 로그 프로파일 이론해</div><div class="tx">압력분포를 축방향으로 균일하게 만드는 프로파일의 역산해. <b>한계: 끝단에서 낙차가 무한대(특이점)</b></div></div>
+  <div class="ev"><div class="yr">1950s</div><div class="ti">SKF "B-roller"</div><div class="tx">Lundberg 이론 기반 직선부+단부 크라우닝. 이전에는 크라운 높이를 <i>추정</i>에 의존</div></div>
+  <div class="ev hl"><div class="yr">1981</div><div class="ti">Johns &amp; Gohar — 특이점 제거</div><div class="tx">Hertz 반폭 b로 절단하여 유한 낙차 z<sub>m</sub> 확보. <b>한계: 경사 시 여전히 엣지응력, 가공용 평탄부 생성 불가</b></div></div>
+  <div class="ev"><div class="yr">1984 / 1987</div><div class="ti">SKF 로그 프로파일 산업 적용 · Reusner</div><div class="tx">궤도륜에도 프로파일 부여. "미스얼라인먼트와 축 처짐이 있는 용도"를 명시적 타깃으로</div></div>
+  <div class="ev hl"><div class="yr">2006</div><div class="ti">Fujiwara &amp; Kawase — 수정 로그식 (K₁, K₂, z<sub>m</sub>)</div><div class="tx">경사 조건 최적화 + 가공용 직선부 확보. Rosenbrock 직접탐색 + multilevel 압력해석. <b>현 산업 표준</b></div></div>
+  <div class="ev"><div class="yr">2010</div><div class="ti">Fujiwara &amp; Yamauchi — 공차 설계 체계 고안</div><div class="tx">3개 지점 무차원 규정 + von Mises 응력 기준 합격판정. <b>표준이 없어 직접 만들어야 했다는 증거</b></div></div>
+  <div class="ev hl"><div class="yr">2018→2023</div><div class="ti">ThyssenKrupp — 비대칭 구간별 로그식 (풍력 전용)</div><div class="tx">EP3837450B1: c₁ ≠ c₂ 이고 c₁ 자체가 x의 함수. EP3870869B1: 스러스트 열별 차등 계수</div></div>
+</div>
+<figcaption><b>읽는 법</b> — 강조된 4개 노드가 수식이 실제로 바뀐 지점입니다. 나머지는 산업 적용·공차 체계 관련 이정표.</figcaption>
+</figure>
+<h2 id="p1">제1부 · 롤러 프로파일 이론 및 수식 체계</h2>
+
+<h3 id="s11">1.1 공통 기호 정의</h3>
+<div class="tw"><table>
+<thead><tr><th>기호</th><th>정의</th><th>단위</th></tr></thead>
+<tbody>
+<tr><td><code>Q</code></td><td>롤러 1개의 법선 하중</td><td>N</td></tr>
+<tr><td><code>Q′ = Q/L<sub>we</sub></code></td><td>단위길이당 하중</td><td>N/mm</td></tr>
+<tr><td><code>L<sub>we</sub></code></td><td>유효 접촉길이 (effective roller length)</td><td>mm</td></tr>
+<tr><td><code>L<sub>wu</sub></code></td><td>무수정 직선부 길이 (unmodified length)</td><td>mm</td></tr>
+<tr><td><code>D<sub>w</sub></code></td><td>롤러 직경 (TRB는 평균직경)</td><td>mm</td></tr>
+<tr><td><code>x, y</code></td><td>롤러 중심 기준 모선(bus-line) 방향 좌표</td><td>mm</td></tr>
+<tr><td><code>a = L<sub>we</sub>/2</code></td><td>유효 반길이</td><td>mm</td></tr>
+<tr><td><code>b</code></td><td>Hertz 선접촉 반폭</td><td>mm</td></tr>
+<tr><td><code>E′</code></td><td>등가탄성계수, <b><code>2/E′ = (1−ν₁²)/E₁ + (1−ν₂²)/E₂</code></b></td><td>MPa</td></tr>
+<tr><td><code>z(x), P(x)</code></td><td>crown drop (프로파일 낙차)</td><td>µm</td></tr>
+<tr><td><code>z<sub>m</sub>, P<sub>r</sub></code></td><td>유효길이 끝단에서의 crown drop</td><td>µm</td></tr>
+<tr><td><code>A</code></td><td>로그 프로파일 진폭계수 <code>A = 2Q/(π·L<sub>we</sub>·E′)</code></td><td>µm</td></tr>
+</tbody></table></div>
+<div class="box warn">
+<div class="lbl">⚠️ E′ 정의 주의</div>
+<p>위 정의(계수 2 포함)를 쓰면 강–강 접촉에서 <code>E′ ≈ 2.31×10⁵ MPa</code>. 일부 문헌은 <code>1/E′ = ½Σ(1−ν²)/E</code>(≈2.2×10⁵) 또는 <code>E*</code> 표기를 사용합니다. <b>계수 2의 유무로 crown drop이 2배 달라지므로</b> 보고서·도면에 반드시 정의를 병기해야 합니다.</p>
+</div>
+
+<h3 id="s12">1.2 프로파일 형상 계보 및 비교표</h3>
+<div class="tw"><table>
+<thead><tr><th>#</th><th>프로파일</th><th>제안자/연도</th><th>수식</th><th>자유 파라미터</th><th>특징</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>직선 (Straight)</td><td>—</td><td><code>z = 0</code></td><td>없음</td><td>끝단 응력 발산, p<sub>max</sub> ~10.7 GPa</td></tr>
+<tr><td>2</td><td>단순 원호</td><td>전통</td><td><code>z = R − √(R²−x²) ≈ x²/(2R)</code></td><td><code>R</code></td><td>가공·검사 용이, 중앙 응력 과다</td></tr>
+<tr><td>3</td><td>부분 크라운<br>(Straight + Arc)</td><td>전통</td><td>중앙 직선 + 양단 원호</td><td><code>L<sub>wu</sub>, R</code></td><td>실무 다수, 접합부 곡률 불연속 주의</td></tr>
+<tr><td>4</td><td><b>Lundberg 로그</b></td><td>Lundberg, 1939</td><td><code>z = A·ln[1/(1−(2x/L<sub>we</sub>)²)]</code></td><td>없음(하중으로 결정)</td><td>압력 균일화 이론해, <b>끝단 특이점</b></td></tr>
+<tr><td>5</td><td><b>Johns–Gohar</b></td><td>Johns &amp; Gohar, 1981</td><td><code>z = A·ln[1/(1−(1−e^(−z<sub>m</sub>/A))(2x/L<sub>we</sub>)²)]</code></td><td><code>z<sub>m</sub></code></td><td>특이점 제거, 경사 시 엣지로딩 잔존</td></tr>
+<tr><td>6</td><td>Reusner / 궤도 프로파일</td><td>Reusner, 1987 (SKF)</td><td>로그 프로파일을 <b>궤도륜에도</b> 부여</td><td>분배비</td><td>산업 적용의 전환점</td></tr>
+<tr><td>7</td><td><b>Fujiwara–Kawase<br>수정 로그</b></td><td>2006 (NSK/NTN)</td><td><code>z = A·K₁·ln[1/(1−(1−e^(−z<sub>m</sub>/(A·K₁)))(2y/(K₂L<sub>we</sub>))²)]</code></td><td><code>K₁, K₂, z<sub>m</sub></code></td><td>경사 대응 + 가공용 직선부. <b>현 산업 표준</b></td></tr>
+<tr><td>8</td><td>Cui–He 3-파라미터</td><td>Cui &amp; He, 2015</td><td>0.3033 상수형 + <code>k₁,k₂,k₃</code></td><td><code>k₁, k₂, k₃</code></td><td>GA 최적화, 중하중+경사 수명 +51%</td></tr>
+<tr><td>9</td><td><b>비대칭 구간별 로그</b></td><td>ThyssenKrupp, 2018</td><td><code>P(x)=c<sub>i</sub>·D<sub>we</sub>·log[1/(1−(2x/L<sub>we</sub>)²)]</code>, <code>c₁≠c₂</code></td><td><code>c₁(x), c₂, x<sub>grenz</sub></code></td><td><b>풍력 전용</b>, 대·소경측 비대칭</td></tr>
+<tr><td>10</td><td>ISO 16281 기준형</td><td>ISO/TS 16281</td><td><code>P=P<sub>r</sub>·ln[1/(1−((2|x|−L<sub>wu</sub>)/(L<sub>we</sub>−L<sub>wu</sub>))²)]</code></td><td><code>P<sub>r</sub>, L<sub>wu</sub></code></td><td>계산용 기준 기하</td></tr>
+</tbody></table></div>
+
+<figure>
+<p class="figtitle">그림 2. 주요 프로파일 형상의 직접 비교</p>
+<p class="figsub">L<sub>we</sub> = 160 mm, D<sub>w</sub> = 40 mm, A = 4 µm 기준으로 각 수식을 그대로 계산 · 세로축은 낙차(아래로 갈수록 깊음)</p>
+<div class="legend" id="lg-prof"></div>
+<div id="ch-prof"></div>
+<figcaption><b>읽는 법</b> — Lundberg(파랑)만 끝단에서 수직으로 발산합니다. 이것이 실물 적용이 불가능한 이유이며, 나머지 모든 곡선은 그 특이점을 서로 다른 방식으로 잘라낸 결과입니다. <b>Fujiwara K₁=2.78</b>(경사 최적화)이 <b>K₁=1.30</b>(무경사)보다 뚜렷하게 완만한 것이 미스얼라인먼트 대응의 기하학적 실체입니다. 마우스를 올리면 각 위치의 낙차를 볼 수 있습니다.</figcaption>
+</figure>
+<h3 id="s13">1.3 각 수식의 상세</h3>
+
+<h4 id="s13a">(1) Lundberg (1939) — 원형 로그 프로파일 <span class="conf b">⚠️</span></h4>
+<pre><code>z(x) = (2Q′)/(πE′) · ln[ 1 / (1 − (2x/L_we)²) ]
+     = A · ln[ 1 / (1 − (2x/L_we)²) ],     A = 2Q/(π·L_we·E′)</code></pre>
+<ul>
+<li><b>원리</b> — 반무한체 탄성접촉에서 접촉길이 전체의 압력분포를 축방향으로 <b>균일(rectangular)</b>하게 만드는 프로파일의 역산해. "uniform pressure ⇒ logarithmic profile"</li>
+<li><b>원 출처</b> — Lundberg, G., <i>Elastische Berührung zweier Halbräume</i>, Forschung auf dem Gebiet des Ingenieurwesens, <b>10(5), 201–211, 1939</b>. 독일어 원문 온라인 미확보, 후속 문헌 재현식은 다수 일치</li>
+<li><b>치명적 한계 — 특이점</b> — <code>x → L<sub>we</sub>/2</code>에서 <code>ln(1/0) → ∞</code>. ⑴ 가공 불가 ⑵ 유효 접촉길이 손실로 부하용량 저하 ⑶ <b>설계하중 1점에서만 최적</b> → 하중 스펙트럼이 넓은 풍력에 부적합</li>
+</ul>
+<p><b>실무 회피법 3가지</b> — ① 게이지 포인트 절단(<code>x/(L<sub>we</sub>/2)=0.999</code>, NASA/COBRA-AHS 방식) ② Hertz 반폭 <code>b</code>로 절단(→ Johns–Gohar) ③ 중앙 직선부 <code>L<sub>wu</sub></code> 도입(→ ISO 16281 구현형)</p>
+
+<h4 id="s13b">(2) Johns–Gohar (1981) <span class="conf a">✅</span></h4>
+<p><b>설계 파라미터형 (권장 표기)</b></p>
+<pre><code>z(x) = A · ln[ 1 / ( 1 − (1 − e^(−z_m/A)) · (2x/L_we)² ) ]
+A = 2Q/(π·L_we·E′)</code></pre>
+<div class="box crit">
+<div class="lbl">⚠️ 표기 오류 주의 — 실무에서 자주 발생</div>
+<p>지수를 <code>e^(−2z<sub>m</sub>/A)</code>로 쓴 자료가 유통되고 있으나 <b><code>e^(−z<sub>m</sub>/A)</code>가 맞습니다.</b></p>
+<p style="margin-top:8px">자기무모순 검증: <code>x = L<sub>we</sub>/2</code> 대입 → <code>1 − (1 − e^(−z<sub>m</sub>/A)) = e^(−z<sub>m</sub>/A)</code> → <code>z(L<sub>we</sub>/2) = A·ln(e^(z<sub>m</sub>/A)) = z<sub>m</sub></code> ✓</p>
+<p style="margin-top:6px"><code>−2z<sub>m</sub>/A</code>를 쓰면 <code>z(L<sub>we</sub>/2) = 2z<sub>m</sub></code>가 되어 정의와 모순됩니다. <b>수치 검산으로 확인 완료</b>(정본 25.000 µm vs 오류본 50.000 µm).</p>
+</div>
+<p><b>Hertz 반폭형 (원논문 형태)</b> <span class="conf b">⚠️</span> — NSK 특허 US6390685 식 (1) 재구성</p>
+<pre><code>δ(x) = −(w/(π·L_e))·[(1−ν₁²)/E₁ + (1−ν₂²)/E₂] · ln[ 1 − (1 − 0.3033·(2b/L_e))·(2x/L_e)² ]</code></pre>
+<p><code>δ</code> = <b>롤러 크라우닝 + 궤도륜 크라우닝의 합</b>(sum of crowning quantities) ← TRB 설계에서 매우 중요 (<a href="#s32">§3.2</a>)</p>
+<div class="box key">
+<div class="lbl">설계상 중요한 통찰 — 두 표기의 연결</div>
+<pre style="margin:6px 0"><code>e^(−z_m/A) = 0.3033·(2b/L_we)   ⇒   z_m = A · ln( L_we / (0.6066·b) )</code></pre>
+<p>원식은 <code>z<sub>m</sub></code>을 Hertz 반폭 <code>b</code>로부터 <b>자동 결정</b>하고, 설계파라미터형은 <code>z<sub>m</sub></code>을 <b>자유변수로 해방</b>시킨 것. 이것이 Fujiwara 식으로 가는 다리입니다.</p>
+</div>
+<p><b>한계</b> <span class="conf a">✅</span> (Fujiwara &amp; Kawase 2006 초록 직접 확인) — ① 롤러 tilt 발생 시 <b>여전히 edge loading</b> ② 가공에 필요한 <b>평탄부(flat region)를 만들 수 없음</b></p>
+
+<h4 id="s13c">(3) Fujiwara–Kawase (2006) 수정 로그 프로파일 ★ 핵심 <span class="conf a">✅</span></h4>
+<p><b>특허 표기</b> (편측, 원점=롤러 중심, <code>a = L/2</code>) — US8398312B2 / US20100027932A1 / EP2228556A1에서 동일 확인</p>
+<pre><code>z(y) = K₁·A · ln[ 1 / ( 1 − {1 − exp(−z_m/(K₁·A))} · ( (y−a)/(K₂·a) + 1 )² ) ]
+A = 2Q/(π·L·E′),   정의역: y &gt; a(1 − K₂)</code></pre>
+<p><b>등가 대칭표기</b></p>
+<pre><code>z(y) = A·K₁ · ln[ 1 / ( 1 − (1 − e^(−z_m/(A·K₁))) · (2y/(K₂·L_we))² ) ]</code></pre>
+<p>두 표기 모두 <code>y = K₂a</code>(크라운 시작점)에서 <code>z=0</code>, <code>y = a</code>에서 <code>z=z<sub>m</sub></code>을 만족 — <b>수치 검산 완료</b>.</p>
+<div class="tw"><table>
+<thead><tr><th>파라미터</th><th>의미</th><th>물리적 효과</th><th>전형 범위</th></tr></thead>
+<tbody>
+<tr><td><code>K₁</code></td><td>하중계수 (load coefficient) — 실효적으로 <code>A → K₁A</code></td><td>크라운부 <b>곡률의 완만함</b> 제어. K₁↑ ⇒ 완만</td><td class="num"><b>1.0 ~ 2.8</b></td></tr>
+<tr><td><code>K₂</code></td><td>크라운 길이 / 유효 반길이 비</td><td><code>K₂=1</code> ⇒ full crown, <code>K₂&lt;1</code> ⇒ 중앙 직선부 <code>L<sub>we</sub>(1−K₂)</code></td><td class="num">0.5 ~ 1.0</td></tr>
+<tr><td><code>z<sub>m</sub></code></td><td>유효길이 끝단 crown drop</td><td>전체 낙차 크기</td><td class="num"><a href="#s14">§1.4</a></td></tr>
+</tbody></table></div>
+<p>해석상 최적은 <code>K₂ = 1</code>(대부분 조건)이나, <b>가공성 확보를 위해 직선부 ≥ 전장의 50%(즉 K₂ ≤ 0.5)</b> 고정이 특허에 권장됩니다.</p>
+<p><b>최적화 방법</b> — 알고리즘 <b>Rosenbrock direct search</b>(프로파일→압력 사상이 수치해석이라 gradient 없음), 압력계산 <b>multilevel method</b>, 목적함수 <code>min(max p)</code> / <code>max(L10)</code> / <code>min(von Mises)</code>, 제약 시나리오는 무경사 및 <b>경사 0.001 rad</b> 각각에 대해 최적화</p>
+<div class="tw"><table>
+<thead><tr><th>Case</th><th>조건 / 목적</th><th>K₁</th><th>K₂</th><th>z<sub>m</sub></th></tr></thead>
+<tbody>
+<tr><td>1</td><td>tilt 0 rad, <code>min p<sub>max</sub></code></td><td class="num">1.295</td><td class="num">0.879</td><td class="num">12.68 µm</td></tr>
+<tr><td>2</td><td><b>tilt 0.001 rad, K₂=0.5 고정</b></td><td class="num"><b>2.779</b></td><td class="num">(0.5)</td><td class="num"><b>16.25 µm</b></td></tr>
+<tr><td>3</td><td>L10 최대화</td><td class="num">1.065</td><td class="num">0.982</td><td class="num">10.80 µm</td></tr>
+</tbody></table></div>
+<div class="box key"><div class="lbl">핵심 경향</div><p><b>경사를 고려하면 K₁이 2배 이상 커지고(더 완만), z<sub>m</sub>도 커진다.</b> → 미스얼라인먼트가 큰 풍력 메인베어링에서 결정적으로 중요. <span class="conf b">⚠️</span> 수치는 NTN Technical Review 재수록본 기준, 원문 대조 권장.</p></div>
+
+<h4 id="s13d">(4) 원호 및 다중원호</h4>
+<pre><code>z(x) = R − √(R² − x²) ≈ x²/(2R)
+z_m = R − √(R² − (L_we/2)²) ≈ L_we²/(8R)
+⇒ 설계식:  R ≈ L_we² / (8·z_m)</code></pre>
+<p class="ref">검산: <code>L<sub>we</sub>=160 mm, z<sub>m</sub>=20 µm</code> → <code>R ≈ 160 000 mm</code>, 정확식 낙차 20.00 µm (오차 &lt;0.01%). 실제 크라운 낙차 영역(µm 오더)에서 근사식은 충분히 정확하나, <code>R &lt; 10·L<sub>we</sub></code>인 경우에는 반드시 정확식을 사용하십시오.</p>
+<div class="tw"><table>
+<thead><tr><th>설정</th><th>결과</th></tr></thead>
+<tbody>
+<tr><td><code>R = 150·D<sub>w</sub></code> (full crown)</td><td><span class="mk yes">양호</span> edge loading 회피 + 중앙응력 과다 없음</td></tr>
+<tr><td><code>R = 100·D<sub>w</sub></code> (full crown)</td><td><span class="mk no">과크라우닝</span> 경하중에서 <b>수명 86% 감소</b></td></tr>
+<tr><td>Aerospace profile (부분 크라운)</td><td>중앙 평탄부 = 전장의 <b>61.5%</b>, 양단 원호 <code>R = 1300 mm</code></td></tr>
+<tr><td>Chamfered profile</td><td>중앙 평탄부 + 직선 릴리프 기울기 <code>D<sub>w</sub>/1500</code></td></tr>
+</tbody></table></div>
+<p>고하중에서 aerospace/chamfered 모두 flat 대비 <b>약 28% 응력 감소</b>, 다만 <b>중앙부 응력 균일도는 로그 프로파일이 최우수</b>. <b>다중원호(composite crowning)</b>는 중앙 장반경 + 양단 단반경 조합이며 Schaeffler US6267510B1이 <b>중앙:외곽 반경비 2:1 ~ 5:1</b>을 청구. <b>원호는 반드시 접선 연속</b>으로 접합해야 하며, 그렇지 않으면 접합부에서 2차 압력 피크가 발생합니다.</p>
+<div class="box warn"><div class="lbl">Reusner에 대한 주의</div><p>Reusner(1987) 원문(<i>The logarithmic roller profile…</i>, Ball Bearing Journal No.230)은 온라인 확인 실패 <span class="conf c">❌</span>. 문헌상 기여는 "로그 프로파일의 산업적 적용 + <b>궤도륜 프로파일링 도입</b>". 또한 "toroidal"은 Reusner가 아니라 SKF <b>CARB</b>(Kellström)와 연결되는 개념이니 혼동 주의.</p></div>
+
+<h4 id="s13e">(5) ISO 16281 기준 프로파일 (실무 계산 기본형) <span class="conf a">✅</span></h4>
+<pre><code>P(x) = P_r · ln[ 1 / ( 1 − ( (2|x| − L_wu)/(L_we − L_wu) )² ) ]</code></pre>
+<div class="tw"><table>
+<tbody>
+<tr><th>기본 진폭 (단열 원통롤러)</th><td><b><code>P<sub>r</sub> = 0.00035 · D<sub>w</sub></code></b> → 접촉응력 <b>약 3000 MPa</b>에 대응 <span class="conf a">✅</span></td></tr>
+<tr><th>장롤러(long roller) 기본값</th><td><code>P<sub>r</sub> = 0.0005·D<sub>w</sub></code>, <code>L<sub>wu</sub> = L<sub>we</sub> − 2.5·D<sub>w</sub></code> <span class="conf b">⚠️</span></td></tr>
+<tr><th>수치 예</th><td><code>D<sub>w</sub>=40 → 14 µm</code>, <code>D<sub>w</sub>=60 → 21 µm</code></td></tr>
+</tbody></table></div>
+<div class="box ok"><div class="lbl">설계 rule of thumb</div><p><b>로그 프로파일 진폭 ≈ 3.5×10⁻⁴ × 롤러직경.</b> 초기 설계값 및 타 방법 교차검증에 유용합니다.</p></div>
+<h3 id="s14">1.4 파라미터(z<sub>m</sub>) 결정 방법 — 3가지 경로</h3>
+<div class="tw"><table>
+<thead><tr><th>경로</th><th>방법</th><th>적용</th><th>신뢰도</th></tr></thead>
+<tbody>
+<tr><td><b>A. Fujiwara 회귀식</b></td><td><code>z<sub>m</sub> = (0.0051x + 0.2721)(d+L) + (0.0415x − 0.3443)</code> [µm]<br><code>x</code> = 설계하중/C × 100 [%], 권장 <b>x = 25~35%</b></td><td>원통롤러, <b>d ≤ 24 mm 검증</b></td><td><span class="conf a">✅</span> 특허 명시, R&gt;0.997</td></tr>
+<tr><td><b>B. ISO 16281 기본값</b></td><td><code>z<sub>m</sub> ≈ 0.00035 · D<sub>w</sub></code> (접촉영역 기준)</td><td>범용 초기값</td><td><span class="conf a">✅</span></td></tr>
+<tr><td><b>C. 직접 최적화</b></td><td>Rosenbrock / GA로 <code>min(max p)</code> 또는 <code>max L10</code>, <b>최대 경사각 조건 포함</b></td><td><b>풍력 필수</b></td><td><span class="conf a">✅</span></td></tr>
+</tbody></table></div>
+<p><b>경로 A의 실용 포락선</b></p>
+<pre><code>0.40·(d + L) + 0.66  ≤  z_m  ≤  0.46·(d + L) + 1.03   [µm]</code></pre>
+<p>이 부등식 자체가 <b>NTN 특허 US8398312B2의 청구 범위</b>입니다(설계 시 회피검토 필요). 수치 예: <code>d=20, L=20</code> → <code>z<sub>m</sub> ≈ 16.7~19.4 µm</code>; <code>d=40, L=45</code> → <code>z<sub>m</sub> ≈ 34.7~40.1 µm</code></p>
+<div class="box warn">
+<div class="lbl">⚠️ 검산 결과 주의 — 회귀식과 청구 포락선의 불일치</div>
+<p>회귀식에 x=25%, 35%를 직접 대입하면 <code>0.3996·(d+L) + 0.693</code> 및 <code>0.4506·(d+L) + 1.108</code>이 되어, 특허 청구 포락선(0.40/0.66, 0.46/1.03)과 <b>상수항이 정확히 일치하지 않습니다.</b> 즉 특허 포락선은 단순 대입값이 아니라 별도로 설정된 청구 범위로 보입니다. 실무에서는 <b>회귀식(설계값)과 청구 포락선(회피검토용)을 분리해서</b> 사용하십시오.</p>
+</div>
+<div class="box crit">
+<div class="lbl">⚠️ 중대한 적용 한계</div>
+<p>회귀식은 <b>롤러 직경 ≤ 24 mm인 64종</b>에서 도출되었습니다. 풍력 메인베어링 TRB(롤러 직경 30~60 mm급, 길이 140~160 mm)에는 <b>외삽</b>입니다. 반드시 경로 B로 교차검증하고 경로 C로 확정하십시오.</p>
+</div>
+
+<h3 id="s15">1.5 슬라이스(Laminum) 법 — 프로파일이 계산에 들어가는 메커니즘</h3>
+<p>ISO 16281의 핵심 계산 골격이며, <b>프로파일 설계의 검증 도구</b>입니다.</p>
+<pre><code>선접촉 하중–변형:   Q = c_L · δ^(10/9)          (δ ∝ Q^0.9)
+
+슬라이스 k의 변형량 — 프로파일이 여기 들어감:
+    δ_k = δ₀ + x_k·θ − z(x_k)
+    q_k = (c_L/n_s) · ⟨δ_k⟩^(10/9),   ⟨·⟩ = max(·, 0)
+
+슬라이스 좌표:  x_(r,j) = −L_w/2 + L_w/(2n_s) + (j−1)·L_w/n_s
+슬라이스 압력:  p_k = 2q_k/(π·b_k·w),   b_k = √(8 q_k′ R/(π E′))</code></pre>
+<p><code>δ₀</code> = 중앙 접근량, <code>θ</code> = 롤러–궤도 상대 경사각, <code>z(x<sub>k</sub>)</code> = crown drop. ⇒ <b>프로파일은 각 슬라이스의 간극을 직접 증가시켜</b> 끝단 슬라이스의 하중 분담을 낮춥니다. <code>δ<sub>k</sub> &lt; 0</code>이면 그 슬라이스는 <b>비접촉</b>.</p>
+
+<figure>
+<p class="figtitle">그림 3. 슬라이스법에서 프로파일·경사·간극의 관계 (개념도)</p>
+<p class="figsub">경사각 θ가 있는 상태에서 크라운 낙차 z(x)가 끝단 슬라이스의 접촉을 어떻게 완화하는가</p>
+<svg viewBox="0 0 720 300" role="img" aria-label="슬라이스법 개념도">
+  <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 z" fill="var(--ink-2)"/></marker></defs>
+  <!-- raceway -->
+  <line x1="60" y1="200" x2="660" y2="228" stroke="var(--ink-2)" stroke-width="2.5"/>
+  <text x="60" y="248" font-size="12" fill="var(--ink-3)">궤도면 (경사각 θ 만큼 기울어진 상태)</text>
+  <!-- roller body with crown -->
+  <path id="rollerTop" d="M60,110 Q360,88 660,110" fill="none" stroke="var(--s1)" stroke-width="2.5"/>
+  <path d="M60,110 Q360,88 660,110 L660,152 Q360,178 60,152 Z" fill="var(--s1)" opacity="0.10"/>
+  <path d="M60,152 Q360,178 660,152" fill="none" stroke="var(--s1)" stroke-width="2.5"/>
+  <text x="330" y="80" font-size="12.5" fill="var(--s1)" font-weight="650" text-anchor="middle">롤러 (크라운 프로파일 z(x))</text>
+  <!-- slices -->
+  <g stroke="var(--grid)" stroke-width="1">
+    <line x1="110" y1="152" x2="110" y2="205"/><line x1="170" y1="156" x2="170" y2="208"/>
+    <line x1="230" y1="160" x2="230" y2="211"/><line x1="290" y1="164" x2="290" y2="214"/>
+    <line x1="350" y1="167" x2="350" y2="216"/><line x1="410" y1="170" x2="410" y2="219"/>
+    <line x1="470" y1="172" x2="470" y2="222"/><line x1="530" y1="172" x2="530" y2="224"/>
+    <line x1="590" y1="169" x2="590" y2="226"/><line x1="640" y1="163" x2="640" y2="227"/>
+  </g>
+  <!-- gap fill highlight both ends -->
+  <path d="M60,152 Q120,160 170,156 L170,208 Q120,204 60,200 Z" fill="var(--s2)" opacity="0.22"/>
+  <path d="M590,169 Q625,166 660,152 L660,228 Q625,227 590,226 Z" fill="var(--s2)" opacity="0.22"/>
+  <text x="112" y="182" font-size="11.5" fill="var(--s2)" font-weight="700" text-anchor="middle">δ_k &lt; 0 (비접촉)</text>
+  <text x="624" y="192" font-size="11.5" fill="var(--s2)" font-weight="700" text-anchor="middle">δ_k &lt; 0</text>
+  <!-- crown drop annotation -->
+  <line x1="672" y1="110" x2="672" y2="92" stroke="var(--ink-2)" stroke-width="1.2" marker-end="url(#ar)"/>
+  <line x1="666" y1="92" x2="678" y2="92" stroke="var(--ink-2)" stroke-width="1.2"/>
+  <line x1="666" y1="110" x2="690" y2="110" stroke="var(--ink-2)" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="684" y="86" font-size="11.5" fill="var(--ink-2)">z_m</text>
+  <!-- theta -->
+  <line x1="200" y1="200" x2="470" y2="200" stroke="var(--axis)" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <path d="M460,200 A400,400 0 0,0 458,218.7" fill="none" stroke="var(--ink-2)" stroke-width="1.4"/>
+  <text x="474" y="214" font-size="13" fill="var(--ink-2)" font-style="italic" font-weight="650">θ</text>
+  <text x="474" y="228" font-size="10.5" fill="var(--ink-3)">경사각</text>
+  <!-- formula -->
+  <text x="60" y="282" font-size="12.5" fill="var(--ink-2)">δ_k = δ₀ + x_k·θ − z(x_k)  →  ⟨δ_k⟩ &gt; 0 인 슬라이스만 하중 분담</text>
+</svg>
+<figcaption><b>읽는 법</b> — 경사각 θ가 롤러를 한쪽으로 기울이면 반대쪽 끝이 궤도에서 들립니다. 크라운 낙차 <code>z(x)</code>는 <b>양단 모두에서 간극을 인위적으로 벌려</b> 접촉 하중이 끝단에 집중되는 것을 막습니다. 주황 영역은 <code>δ<sub>k</sub> &lt; 0</code>이 되어 하중을 분담하지 않는 슬라이스입니다.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>항목</th><th>권고</th></tr></thead>
+<tbody>
+<tr><td>슬라이스 두께</td><td>≤ 롤러 길이의 <b>1.25%</b> (즉 <code>n<sub>s</sub> ≥ 80</code>) <span class="conf a">✅</span> Li &amp; Gao 2022</td></tr>
+<tr><td>슬라이스 개수</td><td><b>30 초과, 홀수</b> (중앙 슬라이스 확보) <span class="conf b">⚠️</span> MESYS 구현 기준</td></tr>
+</tbody></table></div>
+<p><b>슬라이스화 L10 수명식</b> <span class="conf b">⚠️</span></p>
+<pre><code>L10 = [ Σ_j Σ_k (Q_ci/Q_ijk)^(−4.5) + Σ_j Σ_k (Q_co/Q_ojk)^(−4.5) ]^(−8/9)</code></pre>
+
+<h3 id="s16">1.6 엣지응력 및 설계 기준값</h3>
+<pre><code>p_Hertz = √( Q′E′/(2πR) ),   b = √(8Q′R/(πE′)),   p_max = 2Q′/(πb)
+1/R = 1/R₁ + 1/R₂</code></pre>
+<p><b>평가지표</b>: 압력비 <code>p<sub>max</sub>/p<sub>Hertz</sub></code> (엣지 응력 집중계수) — 이상적 프로파일 ≈ 1.0, Johns–Gohar 1.1~1.2, 무크라우닝 2~3 이상</p>
+
+<figure>
+<p class="figtitle">그림 4. 접촉응력 설계 기준값 — 실제 인용 가능한 값만</p>
+<p class="figsub">출처가 확인된 값만 표시. 업계에 유통되는 "메인베어링 3000 MPa 상한"은 공개 소스에서 확인되지 않아 제외</p>
+<div id="ch-stress"></div>
+<figcaption><b>읽는 법</b> — 색이 진할수록 높은 허용치입니다. 정상운전 설계는 1500–1650 MPa 대역, 극한하중 판정은 ISO 76의 4000 MPa를 씁니다. ISO 16281 기준 프로파일이 대응하는 3000 MPa는 <b>설계 상한이 아니라 "기본 프로파일이 상정하는 응력 수준"</b>이라는 점에 주의하십시오.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>기준</th><th>값</th><th>출처</th><th>신뢰도</th></tr></thead>
+<tbody>
+<tr><td>ISO 76 정적 정격 대응 접촉응력 (롤러)</td><td class="num"><b>4 000 MPa</b></td><td>ISO 76:2006 cl.3.2/3.3 (영구변형 1×10⁻⁴·D<sub>w</sub>)</td><td><span class="conf a">✅</span></td></tr>
+<tr><td>ISO 76 (볼 / 자동조심 볼)</td><td class="num">4 200 / 4 600 MPa</td><td>동일</td><td><span class="conf a">✅</span></td></tr>
+<tr><td><b>풍력 메인베어링 동적 설계한계</b></td><td class="num"><b>1 650 MPa</b></td><td>Timken TDI 백서 (verbatim)</td><td><span class="conf a">✅</span></td></tr>
+<tr><td>풍력 메인베어링 극한 설계한계</td><td class="num">4 000 MPa</td><td>Timken TDI 백서 (= ISO 76 값)</td><td><span class="conf a">✅</span></td></tr>
+<tr><td>학술 설계 상한</td><td class="num">1 500 MPa</td><td>Machines 11(7) 681 (2023), <code>τ<sub>max</sub>=0.25p<sub>max</sub>&lt;375 MPa</code></td><td><span class="conf a">✅</span></td></tr>
+<tr><td>ISO 16281 기준 프로파일 대응 응력</td><td class="num">3 000 MPa</td><td>MESYS (ISO 16281 구현) 기본값</td><td><span class="conf a">✅</span></td></tr>
+<tr><td>WEC 발생 임계 과도응력</td><td class="num">&gt; 3 100 MPa</td><td>SKF Evolution (과도 상태)</td><td><span class="conf a">✅</span></td></tr>
+<tr><td style="text-decoration:line-through;color:var(--ink-3)">DNV "3000 MPa 메인베어링 상한"</td><td class="num">—</td><td><b>공개 소스 확인 실패 — 인용 금지</b></td><td><span class="conf c">❌</span></td></tr>
+</tbody></table></div>
+<div class="box warn">
+<div class="lbl">표준의 엣지응력 처리 — 계산서 작성 시 필수 확인</div>
+<p>ISO 16281:2025에 <b>Annex C "Consideration of edge stress for roller bearings"</b>와 본문 <b>5.3.4 "Concentration of edge stress"</b>가 존재합니다. 단, <b>정적안전율을 '최대 전동체 하중' 기준으로 계산하면 엣지응력이 무시</b>됩니다(응력 기준으로 계산해야 반영). 보고서·계산서에 <b>안전율 정의 방식을 반드시 명기</b>하십시오.</p>
+</div>
+<h3 id="s17">1.7 프로파일 성능 비교 (문헌 정량 결과)</h3>
+
+<figure>
+<p class="figtitle">그림 5. 미스얼라인먼트 유무에 따른 최고 접촉압력</p>
+<p class="figsub">동일 하중 조건에서 프로파일만 바꿨을 때 · 상태(엣지로딩 심각 / 중간 / 없음)를 색과 라벨로 함께 표기</p>
+<div class="legend" id="lg-press"></div>
+<div id="ch-press"></div>
+<figcaption><b>읽는 법</b> — 크라우닝의 1차 효과는 무크라우닝 대비 압력을 1/3 이하로 낮추는 것이고, <b>2차 효과이자 풍력에서 진짜 중요한 것</b>은 경사가 붙었을 때 Johns–Gohar가 다시 상승하는 구간에서 Fujiwara(경사 최적화)만 압력을 억제한다는 점입니다. <span class="conf b">⚠️</span> 값은 NTN 재수록본 기준.</figcaption>
+</figure>
+
+<figure>
+<p class="figtitle">그림 6. 프로파일별 크라운 낙차 실측값</p>
+<p class="figsub">NASA/TM—2015-218895 · 무경사·강체·클리어런스 0 가정에서의 비교</p>
+<div id="ch-drop"></div>
+<figcaption><b>읽는 법</b> — 공개 문헌에서 확인 가능한 <b>유일한 프로파일별 낙차 실측 세트</b>입니다. 로그 프로파일이 가장 깊은 20 µm이고, 과도 크라우닝(<code>R=100d</code>, 16.2 µm)은 경하중에서 <b>수명 86% 손실</b>을 유발했습니다 — 낙차는 크다고 좋은 것이 아닙니다.</figcaption>
+</figure>
+
+<figure>
+<p class="figtitle">그림 7. 3-파라미터 로그식 GA 최적화의 수명 개선율</p>
+<p class="figsub">Cui &amp; He · Johns–Gohar 대비 수정 기준정격수명 증가율 · 하중과 경사가 커질수록 이득이 커짐</p>
+<div id="ch-ga"></div>
+<figcaption><b>읽는 법</b> — <b>하중과 경사가 커질수록 최적 k₁(크라우닝량)은 증가, k₂는 감소하며 최적화의 이득이 13% → 51%로 커집니다.</b> 이것이 정확히 풍력 메인베어링의 운전 영역이며, 프로파일 최적화 투자가 정당화되는 근거입니다. 접촉압력도 1 970 MPa(엣지응력 포함) → 1 780 MPa로 감소.</figcaption>
+</figure>
+
+<details>
+<summary>그림 5–7의 원자료 표 보기</summary>
+<div class="tw"><table>
+<thead><tr><th>프로파일</th><th>tilt</th><th>p<sub>max</sub></th><th>edge loading</th></tr></thead>
+<tbody>
+<tr><td>무크라우닝 (straight)</td><td class="num">0</td><td class="num">~10.7 GPa</td><td><span class="mk no">심각</span></td></tr>
+<tr><td>Johns–Gohar</td><td class="num">0</td><td class="num">~3.75 GPa</td><td><span class="mk part">중간</span></td></tr>
+<tr><td><b>Fujiwara Case 1</b></td><td class="num">0</td><td class="num"><b>~3.1 GPa</b></td><td><span class="mk yes">없음</span></td></tr>
+<tr><td>Johns–Gohar</td><td class="num">0.001 rad</td><td class="num">상승</td><td><span class="mk no">발생</span></td></tr>
+<tr><td><b>Fujiwara Case 2</b></td><td class="num">0.001 rad</td><td class="num">억제</td><td><span class="mk yes">제거</span></td></tr>
+</tbody></table></div>
+<div class="tw"><table>
+<thead><tr><th>프로파일</th><th>Crown drop</th><th>L–P 하중수명 지수 p</th></tr></thead>
+<tbody>
+<tr><td>Flat</td><td class="num">0</td><td class="num">4.0</td></tr>
+<tr><td>Chamfered</td><td class="num">8.677 µm</td><td class="num">—</td></tr>
+<tr><td>Aerospace profile</td><td class="num">10.064 µm</td><td class="num">3.5</td></tr>
+<tr><td>Full crown <code>R=150d</code></td><td class="num">10.812 µm</td><td class="num">3.2</td></tr>
+<tr><td>Full crown <code>R=100d</code></td><td class="num">16.218 µm</td><td class="num">—</td></tr>
+<tr><td><b>Logarithmic</b></td><td class="num"><b>20.000 µm</b></td><td class="num">—</td></tr>
+</tbody></table></div>
+<p class="ref">기준하중 29 190 N에서 최대 Hertz 응력: <b>2 102 MPa (flat) → 2 496 MPa (R=100d)</b></p>
+<div class="tw"><table>
+<thead><tr><th>조건</th><th>k₁</th><th>k₂</th><th>k₃</th><th>수명 개선</th></tr></thead>
+<tbody>
+<tr><td>3 kN, 경사 0</td><td class="num">1.35</td><td class="num">0.47</td><td class="num">1.49</td><td class="num"><b>+13%</b></td></tr>
+<tr><td>10 kN, 경사 0</td><td class="num">2.95</td><td class="num">0.39</td><td class="num">2.15</td><td class="num"><b>+39%</b> (6 217 → 8 615 h)</td></tr>
+<tr><td>3 kN, 5 Nm</td><td class="num">2.55</td><td class="num">0.36</td><td class="num">1.70</td><td class="num"><b>+32%</b></td></tr>
+<tr><td><b>10 kN, 5 Nm</b></td><td class="num"><b>3.70</b></td><td class="num"><b>0.34</b></td><td class="num"><b>2.55</b></td><td class="num"><b>+51%</b> (5 245 → 7 929 h)</td></tr>
+</tbody></table></div>
+</details>
+<h2 id="p2">제2부 · 풍력터빈 메인베어링 특화 설계 인자</h2>
+
+<h3 id="s21">2.1 메인베어링 배치 형식과 TRB 채택 이유</h3>
+<div class="tw"><table>
+<thead><tr><th>배치</th><th>설명</th><th>채택 사례</th></tr></thead>
+<tbody>
+<tr><td><b>3점 지지 (SMB)</b></td><td>메인베어링 1개 + 기어박스 토크암 2점</td><td>GE, Siemens, Nordex, Vestas (1.5–3 MW)</td></tr>
+<tr><td><b>4점 지지 (DMB)</b></td><td>메인베어링 2개 + 토크암 2점</td><td>Gamesa, Vestas, GE (2–2.5 MW)</td></tr>
+<tr><td>기어박스 일체형</td><td>메인샤프트 없음, MB 고장 시 나셀 전체 교체</td><td>Vestas 3MW, Areva 5MW</td></tr>
+<tr><td>Floating drivetrain</td><td>베드플레이트에 MB 2개, 토크는 탄성 커플링</td><td>Alstom, GE 6MW offshore DD</td></tr>
+<tr><td><b>모멘트 베어링</b></td><td>대형 복열 TRB 단일체(배면조합)가 전 하중 부담</td><td><b>SKF Nautilus</b></td></tr>
+</tbody></table></div>
+<p>3점 지지의 장점은 짧은 나셀·낮은 질량·높은 변형 수용력·성숙한 공급망이며, 단점은 <b>SRB 열 간 부등 하중분배</b>(축력 하에서 풍하측 열이 만재, 풍상측 열이 제하)입니다. 4점 지지는 강성이 높으나 미스얼라인먼트에 민감하고 공간·비용이 큽니다.</p>
+<div class="tw"><table>
+<thead><tr><th>전동체 형식</th><th>축력</th><th>모멘트 하중</th><th>자동조심</th><th>비고</th></tr></thead>
+<tbody>
+<tr><td>SRB (구면롤러)</td><td><span class="mk yes">가능</span></td><td><span class="mk no">불가</span></td><td><span class="mk yes">가능</span></td><td>역사적 주류</td></tr>
+<tr><td><b>TRB (원뿔롤러)</b></td><td><span class="mk yes">단열로 축+반경 동시</span></td><td><span class="mk yes">가능</span></td><td><span class="mk no">불가</span></td><td><b>현대 SMB 설계의 주류로 이동</b></td></tr>
+<tr><td>CRB (원통롤러)</td><td><span class="mk no">불가</span></td><td><span class="mk no">불가</span></td><td><span class="mk no">불가</span></td><td>저마찰·고반경, 스러스트 플랜지로 제한적 축력</td></tr>
+<tr><td>TorRB (CARB)</td><td><span class="mk part">제한적</span></td><td><span class="mk no">불가</span></td><td><span class="mk yes">가능</span></td><td>고반경 용량</td></tr>
+</tbody></table></div>
+<div class="box key"><div class="lbl">동향</div><p>과거 "로터측 DSRB + 발전기측 SRB/CRB/DTRB" → 현재 <b>로터측 예압 DTRB 또는 3열 CRB</b>로 이동 (Hart et al. 2020).</p></div>
+
+<h3 id="s22">2.2 치수 · 하중 스펙트럼</h3>
+<div class="tw"><table>
+<thead><tr><th>항목</th><th>값</th><th>출처</th></tr></thead>
+<tbody>
+<tr><td>메인베어링 내경</td><td><b>1 200–1 800 mm</b> 일반, OD 최대 ~3 m</td><td>SKF Evolution / Timken UltraWind</td></tr>
+<tr><td>8MW 기어형 (SRB/CARB)</td><td>CARB 내경 1 700–1 800, SRB 내경 1 200–1 300 mm</td><td>SKF</td></tr>
+<tr><td>6MW급 TRB 쌍 (모델)</td><td>전측 d=1500/D=1965, 롤러 52개·길이 160 mm<br>후측 d=1350/D=1740, 롤러 57개·길이 140 mm</td><td>WES preprint <span class="conf b">⚠️</span> reject됨, 치수만 인용</td></tr>
+<tr><td>Schaeffler 풍력 SRB 카탈로그</td><td>d = 320–1 180 mm (230/240/241계열)</td><td>TPI 251 <span class="conf a">✅</span></td></tr>
+<tr><td>5MW 메인샤프트</td><td>OD ≈ 3.2 m, 최대 ~20 rpm</td><td>Timken</td></tr>
+</tbody></table></div>
+<p><b>하중 특성</b> — 결정론적 하중은 허브에서 <b>3Ω, 6Ω, 9Ω</b> 성분(윈드시어·타워섀도·요 미스얼라인먼트)으로 나타나며, 3엽 로터에서 <b>허브 모멘트 변동 = 1.5 × 블레이드 루트 모멘트 변동폭</b>입니다.</p>
+<div class="tw"><table>
+<thead><tr><th>대표 하중 케이스 (6MW급)</th><th>M<sub>y</sub></th><th>M<sub>z</sub></th><th>F<sub>ax</sub></th><th>F<sub>z</sub></th></tr></thead>
+<tbody>
+<tr><td>LAC1</td><td class="num">−20 910 kNm</td><td class="num">217 kNm</td><td class="num">241 kN</td><td class="num">−1 711 kN</td></tr>
+<tr><td>LAC2</td><td class="num">−15 055 kNm</td><td class="num">16 546 kNm</td><td class="num">184 kN</td><td class="num">−1 723 kN</td></tr>
+</tbody></table></div>
+<div class="box key"><div class="lbl">프로파일 설계를 지배하는 특징</div><p><b>전복 모멘트(~2×10⁴ kNm)가 직접 하중을 압도</b>합니다. 축력/반경력 비는 설계 관행이 0.15–0.25이나 <b>실제 MW급에서 0.60까지</b>, 반경 하중 제거 이벤트 시 <code>F<sub>a</sub>/F<sub>r</sub> ≈ 8</code>까지 관측됩니다.</p></div>
+
+<h3 id="s23">2.3 ★ 미스얼라인먼트 — 프로파일 설계의 지배 인자</h3>
+<figure>
+<p class="figtitle">그림 8. 카탈로그 허용 미스얼라인먼트 vs 실제 운전 범위</p>
+<p class="figsub">가로축 = 각 미스얼라인먼트 [mrad] · 로그 프로파일 TRB의 카탈로그 허용대와 실측/해석 범위의 중첩 관계</p>
+<div class="legend" id="lg-mis"></div>
+<div id="ch-mis"></div>
+<figcaption><b>읽는 법</b> — 파란 막대(카탈로그 허용 0.58–1.16 mrad)를 실제 운전 범위(주황)가 <b>완전히 덮고 오른쪽으로 크게 넘어섭니다.</b> 즉 풍력 메인 TRB는 <b>표준 로그 프로파일 롤러의 허용 미스얼라인먼트를 상시 초과하는 조건</b>에서 운전됩니다. 이것이 크라우닝을 "옵션"이 아니라 "전용 설계 항목"으로 만드는 근거입니다.</figcaption>
+</figure>
+<div class="box crit">
+<div class="lbl">★ 설계 결론</div>
+<p>풍력 메인 TRB의 실제 운전 미스얼라인먼트는 <b>0.35–4 mrad (≈1–14 arcmin)</b>로, 로그 프로파일 TRB의 카탈로그 허용치(2–4 arcmin)와 <b>같거나 그 이상</b>입니다. → <b>크라우닝/로그 프로파일링은 필수 요건.</b></p>
+<p style="margin-top:8px"><b>정량 근거</b> — 4 mrad 미스얼라인먼트에서 롤러–궤도 접촉하중이 <b>1열 46.21 → 140 kN (약 3배)</b>, 2열 233.71 → 281.6 kN으로 증가. 원문: <i>"A slight angular misalignment easily produces a non-contact zone for the bearing raceway."</i></p>
+</div>
+
+<h3 id="s24">2.4 손상 모드 및 신뢰성 현황</h3>
+<div class="kpis">
+  <div class="kpi"><div class="v" style="color:var(--crit)">~30%</div><div class="k">3점지지 20년 고장률</div><div class="n">4점지지는 ~15% (Hart et al. 2019)</div></div>
+  <div class="kpi"><div class="v" style="color:var(--crit)">22–25%</div><div class="k">실제 20년 교체율</div><div class="n">ISO 281/IEC 61400-1 예측은 &lt;1–2%</div></div>
+  <div class="kpi"><div class="v">5–10%</div><div class="k">WEC 발생 시점 (계산수명 대비)</div><div class="n">1–3년 내, 주로 내륜, 기점 깊이 0–150 µm</div></div>
+  <div class="kpi"><div class="v">15 000<span style="font-size:15px">회/년</span></div><div class="k">중하중 이벤트 빈도</div><div class="n">발전기 해열 시 정격토크의 2.5–4배 스파이크</div></div>
+</div>
+<p><b>주요 손상 모드</b>(Timken 필드 데이터) — 마이크로피팅, <b>edge loading</b>, roller end thrust, 케이지 파손, 센터 가이드링 마모, 이물 손상. <b>근본 원인</b> — unseating, 열간 부등 하중분배, <b>롤러 스큐</b>, 케이지 응력, 발열, 저 λ 조건, Heathcote slip, roller smearing.</p>
+<div class="box crit">
+<div class="lbl">★ 이 조사의 정당화 근거 — Kenworthy et al. (2024)</div>
+<p><i>"Rating life assessment, as codified in IEC 61400-1 and ISO 281, does not account for the reported rates of main bearing failures in 1 to 3 MW wind turbines."</i></p>
+<p style="margin-top:8px">저자들은 ISO/TS 16281을 쓰지 못한 이유로 <i>"requires access to additional technical and/or in situ data, which are not readily available"</i>를 명시했습니다 — <b>즉 롤러 프로파일과 내부 기하가 바로 OEM이 공개하지 않는 그 데이터</b>입니다.</p>
+</div>
+
+<h3 id="s25">2.5 제조사 공개 정보 정리</h3>
+<div class="tw"><table>
+<thead><tr><th>제조사</th><th>공개 내용</th><th>수치 공개</th></tr></thead>
+<tbody>
+<tr><td><b>SKF</b></td><td>1909 Kirner 크라운 궤도 특허 → 1950s "B-roller"(Lundberg 이론 기반) → <b>1984 로그 프로파일 도입</b> → 2000s Explorer에서 "원통부→롤러단 낙차 천이" 정밀화. Nautilus = 복열 TRB 배면조합, <b>접촉각 45°</b>, PEEK 케이지, 로터경 180 m 대응</td><td><b>미스얼라인먼트 2–4 arcmin</b>만</td></tr>
+<tr><td><b>Schaeffler / FAG</b></td><td>비대칭 구면롤러(ASRB)에 <b>"logarithmic profiling"</b> 명시, Triondur® C 코팅, 축방향 강성 +50%. TPI 251: <b>"profiled rolling elements"</b>. 로터샤프트용 TRB 설계 키트(O배열, &gt;6MW). BEARINX-VIP만 프로파일 슬라이싱 입력 가능</td><td>프로파일 수치 <b>비공개</b></td></tr>
+<tr><td><b>Timken</b></td><td>UltraWind™ TRB (OD ~3m). <b>"raceway profiles designed to control maximum stress levels"</b>. TDI 백서: <b>동적 1650 / 극한 4000 MPa</b>, 0·1 mrad 케이스. 예압 TRB가 기어박스 축력 <b>67% 저감</b></td><td>응력 한계 공개, 형상 비공개</td></tr>
+<tr><td><b>NSK</b></td><td>2024년 <b>크라우닝 형상 최적화만으로</b> 차세대 고하중 TRB 개발</td><td><b>용량 +25%, 수명 2배↑, 중량 −30%</b><br><span class="conf b">⚠️</span> 15MW급 해상풍력 <b>기어박스</b>용 — 메인베어링 아님, 인용 주의</td></tr>
+<tr><td><b>NTN</b></td><td>ULTAGE TRB: 정격하중 1.3배, 수명 2.5배, <b>고 미스얼라인먼트 조건에서 수명 ~16배</b></td><td>개선율만 (자동차 e-drive 문맥)</td></tr>
+<tr><td><b>JTEKT / Koyo</b></td><td>카탈로그 공개 없음</td><td><b>특허로만 확인 가능</b></td></tr>
+</tbody></table></div>
+<div class="box crit">
+<div class="lbl">⚑ 결론</div>
+<p><b>어떤 제조사도 풍력 메인베어링의 실제 crown drop 값·프로파일 수식·프로파일 명칭을 공개하지 않습니다.</b> 정량값은 공개 문헌(NASA/TM, 학술논문)과 <b>특허 청구항</b>에서만 확보 가능합니다.</p>
+</div>
+<h2 id="p3">제3부 · 원뿔롤러(TRB) 고유 설계 항목</h2>
+
+<h3>3.1 테이퍼를 따른 크라우닝 정의</h3>
+<p>TRB 롤러는 절두원추이므로 crown drop <code>z</code>는 <b>모선(bus-line / generatrix)에 수직 방향</b>으로 정의합니다. 좌표 <code>y</code>는 모선을 따라 측정하며, 특허들이 <i>"drop amount at bus-line position y"</i>로 표현하는 이유입니다. 등가곡률반경 <code>R</code>이 모선 위치에 따라 변하지만, 실무 프로파일 식은 <b>원통용 식을 모선 좌표로 그대로 적용</b>하는 것이 표준 관행입니다 <span class="conf b">⚠️</span>. 엄밀 해석은 슬라이스법에서 <code>R(x<sub>k</sub>)</code> 변화를 반영합니다.</p>
+
+<h3 id="s32">3.2 ★ 크라우닝 분배 (Crowning Split) — TRB 고유 설계 변수</h3>
+<pre><code>총 크라우닝량 = (외륜 크라우닝) + (내륜 크라우닝) + 2 × (롤러 크라우닝)</code></pre>
+<div class="box key">
+<div class="lbl">왜 롤러에만 ×2 인가</div>
+<p>롤러는 내·외 양 궤도와 <b>모두</b> 접촉하므로 롤러 크라우닝이 두 접촉쌍 각각에 작용합니다. Johns–Gohar의 <code>δ</code>가 "sum of crowning quantities"인 것과 일관되며 — <b>프로파일 식이 주는 값은 '접촉쌍의 총 크라우닝'이지 개별 부품 값이 아닙니다.</b></p>
+</div>
+
+<figure>
+<p class="figtitle">그림 9. 크라우닝 분배 규정 (JTEKT US8641290B2 / EP1754900A1)</p>
+<p class="figsub">총 크라우닝량을 100%로 볼 때의 부품별 배분 제약 · 총량은 50–100 µm 범위</p>
+<div class="legend" id="lg-split"></div>
+<div id="ch-split"></div>
+<figcaption><b>읽는 법</b> — 회색 배경 막대가 특허가 허용하는 <b>범위</b>, 진한 막대가 <b>대표 준수 배분 예</b>입니다. 외륜 위주 배분(≥40%)은 점성저항 감소와 수명 유지를 동시에 노린 것이고, 내륜 ≥10%는 축방향 끝단 접촉하중 저감(엣지응력 방지)이 목적입니다. 롤러 ≤20% 상한은 <b>롤러 크라우닝이 ×2로 작용</b>하기 때문입니다.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>항목</th><th>규정값</th></tr></thead>
+<tbody>
+<tr><td><b>총 크라우닝량</b></td><td class="num"><b>50 µm ≤ 총량 ≤ 100 µm</b></td></tr>
+<tr><td>외륜 크라우닝 비율</td><td class="num"><b>≥ 40 %</b> (권장 ≤ 90%)</td></tr>
+<tr><td>내륜 크라우닝 비율</td><td class="num"><b>≥ 10 %</b> (권장 ≤ 60%)</td></tr>
+<tr><td>롤러 크라우닝 비율</td><td class="num"><b>≤ 20 %</b></td></tr>
+<tr><td>곡률비</td><td><code>R<sub>CO</sub>/L<sub>RO</sub> = 30–150</code> (외륜), <code>R<sub>CI</sub>/L<sub>RI</sub> = 50–260</code> (내륜)</td></tr>
+</tbody></table></div>
+<p><b>상한 100 µm의 이유</b> <span class="conf a">✅</span> — <i>"excessive crownings … leading to a risk that the tapered roller does not roll in a stable fashion"</i> (과크라우닝 시 스큐 증가·거동 불안정). 비크라운 대비 토크 약 <b>55% 저감</b>이 보고되었습니다.</p>
+
+<h3 id="s33">3.3 크라운 낙차 실무값 — 반드시 구분해야 할 두 스케일</h3>
+<figure>
+<p class="figtitle">그림 10. "접촉영역 크라우닝"과 "총 크라우닝"의 스케일 차이</p>
+<p class="figsub">동일한 선형 눈금 위에 놓고 비교 · 통념적으로 인용되는 "20–50 µm"가 어디에 해당하는지</p>
+<div class="legend" id="lg-scale"></div>
+<div id="ch-scale"></div>
+<figcaption><b>읽는 법</b> — 로그식이 지배하는 <b>접촉영역 크라우닝은 8–40 µm</b>이고, 비접촉 끝단 릴리프까지 포함한 <b>총 크라우닝은 50–100 µm</b>로 스케일이 다릅니다. 두 값을 섞어 쓰면 도면 검토 단계에서 2배 이상의 오차가 발생합니다.</figcaption>
+</figure>
+<div class="tw"><table>
+<thead><tr><th>구분</th><th>값</th><th>출처</th></tr></thead>
+<tbody>
+<tr><td><b>접촉영역 크라우닝</b> (로그식 적용부)</td><td class="num"><b>8 ~ 20 µm</b></td><td>NASA/TM—2015-218895 <span class="conf a">✅</span></td></tr>
+<tr><td>ISO 16281 기본값</td><td class="num">D<sub>w</sub>=40 → 14 µm, 60 → 21 µm</td><td><code>0.00035·D<sub>w</sub></code> <span class="conf a">✅</span></td></tr>
+<tr><td>Fujiwara 회귀 (외삽)</td><td class="num">d=40, L=45 → 35–40 µm</td><td><span class="conf b">⚠️</span> 검증범위 밖</td></tr>
+<tr><td>NSK 특허 — 전 로그설계 최대 낙차</td><td class="num">69 µm</td><td><span class="conf a">✅</span></td></tr>
+<tr><td>NSK 특허 — 비접촉부 직선 릴리프</td><td class="num">36 µm</td><td><span class="conf a">✅</span></td></tr>
+<tr><td>NSK 특허 — 비접촉부 원호 릴리프</td><td class="num">40 µm</td><td><span class="conf a">✅</span></td></tr>
+<tr><td><b>총 크라우닝</b> (롤러+양 궤도)</td><td class="num"><b>50 ~ 100 µm</b></td><td>JTEKT 특허 <span class="conf a">✅</span></td></tr>
+</tbody></table></div>
+
+<h3 id="s34">3.4 롤러 대단면–리브 접촉 (Roller Large End / Rib Contact)</h3>
+<p>TRB는 원추각 때문에 축력 성분이 롤러를 대단부로 밀어 <b>내륜 대리브(large flange)와 접촉</b>합니다. 크라우닝과 <b>별개의 접촉쌍</b>(구면–원환 점접촉)입니다.</p>
+<div class="tw"><table>
+<thead><tr><th>곡률비 <code>SR/ρ<sub>p</sub></code></th><th>특성</th></tr></thead>
+<tbody>
+<tr><td class="num"><b>0.85</b></td><td>마찰 최소 — 저마찰 용도</td></tr>
+<tr><td class="num"><b>0.90</b></td><td>마찰–정밀도 절충 <b>(권장 기본값)</b></td></tr>
+<tr><td class="num"><b>0.95</b></td><td>운전 정밀도 최우수</td></tr>
+</tbody></table></div>
+<p>NTN 특허(US7841773B2, US10830279B2)는 <code>R/R<sub>BASE</sub> = 0.75–0.87</code>을 청구합니다(종래기술 0.90–0.97 대비). 단부면 흔들림 ≤ 3 µm(권장 ≤1 µm), Ra ≤ 0.02 µm. 리브 접촉은 EHL 유막 형성이 어려운 미끄럼 접촉이므로 <b>별도의 스커핑·발열 검토가 필요</b>합니다.</p>
+
+<h3 id="s35">3.5 TRB 비대칭 프로파일 (EHL 근거)</h3>
+<div class="box key">
+<div class="lbl">Duan, Yu, Wang (2021), Industrial Lubrication and Tribology 73(5) <span class="conf a">✅</span></div>
+<p><b>원뿔롤러를 따라 유막두께와 압력분포가 비대칭 → 크라운 낙차는 소경측(small end)이 대경측(large end)보다 커야 한다.</b></p>
+<p style="margin-top:8px">이는 <b>TRB 고유 결론이며 CRB에는 적용되지 않습니다.</b> 특허 동향과도 일치합니다: NTN WO2007058112(정성적 비대칭, 2005) → ThyssenKrupp EP3837450B1(구간별 비대칭 로그, 2023 등록).</p>
+</div>
+
+<h3>3.6 궤도륜 프로파일링 (Both-crowned)</h3>
+<p>Reusner/SKF 이래 <b>궤도륜에도 프로파일 부여</b>가 표준이며, <a href="#s32">§3.2</a>의 분배(외륜 ≥40%)가 그 정량적 근거입니다. 롤러 연삭 부담이 줄고 궤도 호닝으로 로그 프로파일 생성이 가능합니다. 다만 <b>롤러 크라우닝은 두 궤도 접촉에 동시 작용(×2), 궤도 크라우닝은 해당 접촉쌍에만 작용</b>하므로, 내·외륜 접촉응력을 개별 튜닝하려면 <b>궤도 측을 조정</b>해야 합니다.</p>
+<h2 id="p4">제4부 · 규격 및 공차 체계 (★ 기어와의 대비)</h2>
+
+<div class="box crit">
+<div class="lbl">4.1 결론 요약</div>
+<p><b>베어링 롤러 프로파일에는 기어의 ISO 1328과 같은 번호화된 정밀도 등급 체계가 존재하지 않습니다.</b></p>
+<p style="margin-top:8px">가장 근접한 <b>ISO 12297-1:2021</b>조차 GPS 표기법(<code>pd</code>, <code>t<sub>PS</sub></code>, TED <code>X</code>, <code>U<sub>Z</sub></code>)만 표준화하고, 실제 수치는 <b>"customer and supplier 합의 사항"으로 명시적으로 위임</b>합니다. 게다가 <b>원뿔롤러·구면롤러는 전동체 규격 자체가 어떤 체계에도 존재하지 않습니다.</b></p>
+</div>
+
+<figure>
+<p class="figtitle">그림 11. 기어 vs 베어링 롤러 — 규격 커버리지 매트릭스</p>
+<p class="figsub">동일한 7개 항목에 대해 두 체계가 무엇을 규정하는가</p>
+<div class="tw"><table>
+<thead><tr><th style="width:34%">항목</th><th style="width:33%">기어</th><th style="width:33%">베어링 롤러</th></tr></thead>
+<tbody>
+<tr><td>등급 분류 체계</td><td><span class="mk yes">있음</span> ISO 1328-1 <b>등급 1–11</b>(√2 계단) / AGMA A2–A11 / DIN 1–12</td><td><span class="mk part">부분</span> ISO 12297-1·ISO 3096의 <code>G</code>+번호 — 단 <b>직경·진원도·런아웃·선별범위만</b></td></tr>
+<tr><td><b>프로파일 형상편차 등급별 공차</b></td><td><span class="mk yes">있음</span> <code>f<sub>fα</sub> = (0.55m<sub>n</sub> + 5)(√2)^(A−5)</code></td><td><span class="mk no">대응물 없음</span></td></tr>
+<tr><td><b>프로파일 경사/위치 등급별 공차</b></td><td><span class="mk yes">있음</span> <code>f<sub>Hα</sub></code></td><td><span class="mk no">없음</span> <code>t<sub>PS</sub></code> 기호는 있으나 <b>수치표 없음</b></td></tr>
+<tr><td>형상수정량의 용어 규격</td><td><span class="mk yes">있음</span> ISO 21771-1 Clause 8 (<code>C<sub>α</sub>, C<sub>β</sub>, C<sub>αa</sub>, C<sub>αf</sub></code>)</td><td><span class="mk part">부분</span> ISO 12297-1 <code>pd</code>, ISO 16281 <code>P(x)</code></td></tr>
+<tr><td>수정량 자체의 공차</td><td><span class="mk yes">있음</span> 설계 프로파일 대비 ISO 1328 밴드로 평가</td><td><span class="mk no">없음</span> <b>"공급자–수요자 합의"</b></td></tr>
+<tr><td>검사 실무 규격</td><td><span class="mk yes">있음</span> ISO/TR 10064-1/-2/-3/-4</td><td><span class="mk no">없음</span> ISO 1132-2는 링만 다룸</td></tr>
+<tr><td>원뿔/구면 형상 전동체 규격</td><td>(해당 없음)</td><td><span class="mk no">규격 자체가 없음</span></td></tr>
+</tbody></table></div>
+<figcaption><b>읽는 법</b> — 표시는 색이 아니라 <b>기호(✔ / ◑ / ✖)와 라벨</b>로 구분됩니다. 기어는 7개 항목 중 6개를 규정하고, 베어링 롤러는 <b>2개를 부분적으로</b> 규정할 뿐입니다. 특히 아래 두 줄이 결정적입니다 — 풍력 메인베어링에 쓰이는 원뿔·구면 롤러는 규격 체계 바깥에 있습니다.</figcaption>
+</figure>
+
+<h3 id="s42">4.2 베어링 측 규격 일람</h3>
+<div class="tw"><table>
+<thead><tr><th>규격</th><th>명칭</th><th>판</th><th>대상</th><th>프로파일 규정?</th></tr></thead>
+<tbody>
+<tr><td><b>ISO 492</b></td><td>Radial bearings — GPS and tolerance values</td><td>2023 (6판)</td><td>링/와셔 <b>인터페이스</b>. 등급 Normal/6X/6/5/4/2</td><td><span class="mk no">없음</span> scope에 전동체 언급 없음</td></tr>
+<tr><td><b>ISO 199</b></td><td>Thrust bearings — GPS and tolerance values</td><td>2023 (5판)</td><td>스러스트 인터페이스. 등급 Normal/6/5/4</td><td><span class="mk no">없음</span> 명시적 scope 외</td></tr>
+<tr><td>ISO 582</td><td>Chamfer dimensions — Maximum values</td><td>1995 (+A1:2013)</td><td>링 모따기 최대값</td><td><span class="mk no">없음</span></td></tr>
+<tr><td>ISO 1132-1 / -2</td><td>Tolerances — Terms / Measuring principles</td><td>2000 / 2001</td><td>용어 · 내외경·폭·런아웃·클리어런스 측정</td><td><span class="mk no">없음</span> 전동체 측정 조항 부재</td></tr>
+<tr><td><b>ISO 12297-1</b> ★</td><td><b>Cylindrical rollers — Part 1: Boundary dimensions, GPS and tolerance values for steel rollers</b></td><td><b>2021 (1판)</b></td><td><b>강제 원통롤러, 최대 직경 40 mm</b>. <code>D<sub>wmpx</sub>, V<sub>Dwmp</sub>, V<sub>DwL</sub>, R<sub>w</sub>, S<sub>Dw</sub></code>, 모따기, 경도. 등급 <code>G</code>+영숫자</td><td><span class="mk part">부분 — 핵심</span> <a href="#s43">§4.3</a></td></tr>
+<tr><td>ISO 12297-2</td><td>Cylindrical rollers — Part 2: ceramic rollers</td><td>2018</td><td><b>세라믹</b> 원통롤러 (원뿔롤러 아님)</td><td><span class="conf c">❌</span> 미확인(유료)</td></tr>
+<tr><td>ISO 3096</td><td>Needle rollers — Boundary dimensions, GPS…</td><td>2018 (3판)</td><td>니들롤러. 등급 <code>G</code>+숫자</td><td><span class="mk no">없음</span> profile/crowning 언급 전무</td></tr>
+<tr><td>ISO 3290-1/-2</td><td>Balls — steel / ceramic</td><td>2014</td><td>볼 등급 G20 등. <b>구형도 편차</b> 부속서 A 규범</td><td>(볼은 크라우닝 없음) — 단 <b>볼은 형상이 등급에 포함</b></td></tr>
+<tr><td><b>ISO 16281</b></td><td>Modified reference rating life 계산법</td><td><b>2025 (TS→IS 승격)</b></td><td>슬라이스법, <b>프로파일 함수 <code>P(x)</code></b>, Annex B "Reference geometries", <b>Annex C "Edge stress"</b>, 5.3.4</td><td><span class="mk part">프로파일을 '입력'으로 요구, '공차'는 규정 안 함</span></td></tr>
+<tr><td>ISO 281</td><td>Dynamic load ratings and rating life</td><td>2007</td><td><i>"basically of conventional design as regards the shape of rolling contact surfaces"</i> — 정성적 가정만</td><td><span class="mk no">없음</span> 볼 궤도 홈반경만 수치 규정</td></tr>
+<tr><td>ISO 76</td><td>Static load ratings</td><td>2006</td><td>정적 정격, 접촉응력 4000 MPa (롤러)</td><td><span class="mk no">없음</span></td></tr>
+<tr><td>DIN 620-1~4</td><td>게이징 / 반경·스러스트 공차 / 내부틈새</td><td>—</td><td>P0/P6/P5/P4/P2</td><td><span class="mk no">없음</span></td></tr>
+<tr><td>DIN 5402-1</td><td>Parts of rolling bearings — Cylindrical rollers</td><td>2014-05</td><td>치수·질량·기호</td><td><span class="mk no">없음</span></td></tr>
+<tr><td>ANSI/ABMA 4</td><td>Tolerance Definitions and Gauging Practices</td><td>1994(R2013)</td><td>정의·게이징</td><td><span class="mk no">없음</span></td></tr>
+<tr><td>ANSI/ABMA 19.1 / 19.2</td><td>Tapered Roller Bearings — Metric / Inch</td><td>2011(R2018) / 2013(R2020)</td><td>TRB 치수·공차</td><td><span class="mk no">없음</span></td></tr>
+<tr><td>ANSI/ABMA 20</td><td>Radial Bearings of Ball, Cylindrical &amp; Spherical Roller Types</td><td>2011(R2020)</td><td>베어링 공차</td><td><span class="mk no">없음</span></td></tr>
+<tr><td>JIS B 1506</td><td>Rolling bearings — Rollers</td><td>2005, 48p</td><td>일본 유일의 롤러 전동체 규격</td><td><span class="conf c">❌</span> <b>내용 확인 실패 — 입수 권장</b></td></tr>
+</tbody></table></div>
+<div class="box warn">
+<div class="lbl">⚠️ ABMA에 대한 흔한 오해 정정</div>
+<p>ABMA 18.1/18.2는 <i>"Rolling Elements — Rollers"</i>가 <b>아니라</b> <i>Needle Roller Bearings Radial (Metric/Inch Design)</i>입니다. <b>ABMA/ANSI 체계에는 원통·원뿔·구면 롤러를 전동체로 다루는 규격이 존재하지 않습니다.</b> 전동체 규격은 볼(ISO 3290-1/-2), 니들롤러(ISO 3096), 미연삭 볼(ABMA 10A)뿐입니다.</p>
+</div>
+
+<h3 id="s43">4.3 ★ ISO 12297-1:2021 — 유일하게 프로파일을 언급하는 규격</h3>
+<p><b>규정 내용</b> — <code>pd</code> = minimum profile drop(최소 프로파일 낙차) · <code>t<sub>PS</sub></code> = position tolerance of profile drop · TED <code>X</code> = 이론적 정확 치수 · <code>U<sub>Z</sub></code> = 공차역 오프셋 · Figure 1: a) crowned / b) straight profile</p>
+<div class="tw"><table>
+<thead><tr><th>NOTE</th><th>규격 본문 (원문)</th></tr></thead>
+<tbody>
+<tr><td>NOTE 1</td><td><i>"The middle part of the crowned roller is assumed to be cylindrical, which is essential to establish an axis."</i></td></tr>
+<tr><td><b>NOTE 2</b></td><td><b><i>"The TED X and pd and the tolerance t<sub>PS</sub> are subject to agreement between customer and supplier."</i></b> ← 수치는 표준화하지 않음</td></tr>
+<tr><td>NOTE 3</td><td><i>"The function of crowned profile is to avoid edge stress."</i></td></tr>
+<tr><td>NOTE 4</td><td><i>"The tolerance zone offset U<sub>Z</sub> is used to avoid a symmetrical tolerance zone around pd."</i></td></tr>
+</tbody></table></div>
+<div class="box crit">
+<div class="lbl">적용 한계 — 풍력에서 특히 치명적</div>
+<p><b>강제 원통롤러, 직경 ≤ 40 mm</b>로 제한 → 풍력 메인베어링 롤러(직경 30–60 mm, 길이 140–160 mm)는 <b>대부분 적용 범위 밖</b>. 게다가 <b>원뿔·구면롤러에는 대응 규격 자체가 없습니다.</b></p>
+<p style="margin-top:8px">ISO/TC 4/SC 5의 scope는 <i>"…including boundary dimensions and tolerances"</i>이며 작업그룹은 <b>WG 1 "Dimensions and tolerances" 단 하나</b>. 프로파일/크라우닝 관련 작업 항목은 발견되지 않았습니다.</p>
+</div>
+<h3 id="s44">4.4 기어 측 규격 체계 (대비 기준)</h3>
+<h4>ISO 1328-1:2013 — ISO system of flank tolerance classification</h4>
+<p>적용범위: 5 ≤ z ≤ 1000, 5 ≤ d ≤ 15 000 mm, 0.5 ≤ m<sub>n</sub> ≤ 70 mm, 4 ≤ b ≤ 1200 mm, β ≤ 45°. 규격 원문: <i>"Eleven flank tolerance classes are defined, numbered 1 to 11, in order of increasing tolerance."</i></p>
+<div class="tw"><table>
+<thead><tr><th>편차</th><th>공차식 [µm] (A = 등급번호)</th></tr></thead>
+<tbody>
+<tr><td>치형 경사 편차 <code>f<sub>HαT</sub></code></td><td><code>(0.4·m<sub>n</sub> + 0.001·d + 4) × (√2)^(A−5)</code> (±)</td></tr>
+<tr><td><b>치형 형상 편차 <code>f<sub>fαT</sub></code></b></td><td><b><code>(0.55·m<sub>n</sub> + 5) × (√2)^(A−5)</code></b></td></tr>
+<tr><td>전체 치형 편차 <code>F<sub>αT</sub></code></td><td><code>√(f<sub>HαT</sub>² + f<sub>fαT</sub>²)</code></td></tr>
+<tr><td>잇줄 경사 편차 <code>f<sub>HβT</sub></code></td><td><code>(0.05·d + 0.35·b + 4) × (√2)^(A−5)</code> (±)</td></tr>
+<tr><td>잇줄 형상 편차 <code>f<sub>fβT</sub></code></td><td><code>(0.07·d + 0.45·b + 4) × (√2)^(A−5)</code></td></tr>
+<tr><td>전체 잇줄 편차 <code>F<sub>βT</sub></code></td><td><code>√(f<sub>HβT</sub>² + f<sub>fβT</sub>²)</code></td></tr>
+</tbody></table></div>
+
+<figure>
+<p class="figtitle">그림 12. 기어에는 있고 베어링 롤러에는 없는 것 — 계산 가능한 등급별 공차</p>
+<p class="figsub">ISO 1328-1 치형 형상 편차 <code>f<sub>fαT</sub> = (0.55m<sub>n</sub>+5)·(√2)^(A−5)</code> · 등급 간 계단비 √2</p>
+<div class="legend" id="lg-gear"></div>
+<div id="ch-gear"></div>
+<figcaption><b>읽는 법</b> — 도면에 "ISO 1328-1 class 5"라고만 쓰면 <b>치형 형상 공차가 완전히 결정</b>됩니다(모듈과 직경의 함수로). 베어링 롤러의 크라우닝에는 이런 곡선 자체가 존재하지 않으며, 대응하는 값은 매 계약마다 협의로 정해집니다. 이것이 "갭"의 실체입니다.</figcaption>
+</figure>
+
+<div class="tw"><table>
+<thead><tr><th>규격</th><th>내용</th></tr></thead>
+<tbody>
+<tr><td>ISO 1328-2:2020</td><td>양치면 반경 복합 편차, 등급 <b>R30–R50</b>(21등급). <i>"There is no correlation … with ISO 1328-1"</i></td></tr>
+<tr><td><b>ISO 21771-1:2024</b></td><td>원통 인벌류트 기어 개념·기하. <b>Clause 8 = 치면 수정 전용</b>: 팁 릴리프 <code>C<sub>αa</sub></code>, 루트 릴리프 <code>C<sub>αf</sub></code>, <b>치형 크라우닝 <code>C<sub>α</sub></code>(8.3.4)</b>, <b>잇줄 크라우닝 <code>C<sub>β</sub></code>(8.4.3)</b>, 엔드 릴리프(8.4.1)</td></tr>
+<tr><td>ISO/TR 10064-1:2019</td><td>검사 실무 코드. <b>6.7.2 "Example evaluations of modified helices and profiles"</b>, 9.1.1 <i>"what is specified is the <b>design profile</b>"</i> — 수정된 치형의 검사 방법을 명문화</td></tr>
+<tr><td>DIN 3961/3962/3963/3964 (1978)</td><td>품질등급 <b>1–12</b> (1이 최정밀)</td></tr>
+<tr><td>ANSI/AGMA 2015-1-A01 (R2014)</td><td>접선 측정 기반 정밀도 등급 <b>A2–A11</b>, 공차식 clause 7.2</td></tr>
+<tr><td>ANSI/AGMA 2015-2-A06 (R2014)</td><td>반경 측정 기반</td></tr>
+<tr><td>(구) ANSI/AGMA 2000-A88</td><td>Q-number 체계. 신규격에서 <b>번호 방향 역전</b>, 런아웃 삭제 — 상호 비교 시 주의 경고 명시</td></tr>
+</tbody></table></div>
+
+<h3 id="s45">4.5 ★★ 갭 분석 — 응용 규격 내부에서도 확인되는 비대칭</h3>
+<div class="box crit">
+<div class="lbl">IEC 61400-4:2025 Ed.2 — 한 문서 안에서의 비대칭 <span class="conf a">✅</span></div>
+<p><b>기어</b> — clause 6.1.5 Accuracy: <i>"Accuracy requirements shall be <b>based on ISO 1328-1</b>"</i>, <b>Table 4 "Required gear accuracy"</b>에 요구 등급번호 명시</p>
+<p style="margin-top:6px"><b>베어링</b> — clause 6.2 Rolling bearings: ISO 281 선정, ISO 683-17 재료, ISO 16281:2025 수명, ISO 17956:2025 정적안전율. <b>롤러 프로파일 등급표 없음, 크라우닝 요구사항 없음</b></p>
+<p style="margin-top:8px"><span class="conf c">❌</span> <b>Table 7 "Guide values for maximum contact stress at Miner's sum dynamic equivalent bearing load"</b> — 표 제목은 프리뷰에서 확인되나 <b>수치는 유료 본문</b>(Ed.1 2012 p.49 / Ed.2 2025 p.46). Ed.1의 <b>Annex C (informative) "Bearing design considerations"</b>(pp.96–121)에 압력분포 관련 가이드(Fig. C.4 등)가 위치합니다.</p>
+</div>
+<div class="box warn">
+<div class="lbl">⚑ 범위 주의</div>
+<p><b>IEC 61400-4는 기어박스 규격입니다.</b> 메인베어링은 기어박스 일체형인 경우에만 범위에 들어갑니다. <b>풍력 메인베어링 전용 IEC 규격은 존재하지 않으며</b>, 이는 문헌상 명시된 갭입니다(Hart et al. 2020).</p>
+</div>
+
+<h3 id="s46">4.6 실무에서 롤러 프로파일이 통제되는 방식</h3>
+<p>규격이 없으므로 다음 4가지로 대체됩니다.</p>
+<div class="flow">
+<div class="step"><div class="n">1</div><div><div class="t">제조사 사내 규격 (설계 IP)</div><div class="d">NSK Fujiwara et al.(JAMDSM 2010)이 <b>직접 공차 체계를 고안</b>해야 했다는 사실 자체가 표준 부재의 증거입니다.
+<ul><li>롤러 반경 감소량을 <b>3개 지점에서 규정</b></li><li>기준점은 롤러 끝단이 아니라 <b>"크라우닝–모따기 교점"</b></li><li>무차원 표기</li><li>합격 기준: <b>von Mises 등가응력이 규정 한계를 초과하지 않을 것</b></li></ul></div></div></div>
+<div class="step"><div class="n">2</div><div><div class="t">도면상 "profile drop over gauge length" + 고객사 합의</div><div class="d">ISO 12297-1 NOTE 2가 예상한 바로 그 방식입니다.</div></div></div>
+<div class="step"><div class="n">3</div><div><div class="t">일반 GPS 공차</div><div class="d"><b>ISO 1101 "선의 윤곽도 / 면의 윤곽도"</b>로 지정, ISO 8015 원칙 적용. 보조: ISO 12181-1/-2(진원도), ISO 12180-1/-2(원통도), ISO 12780(직진도)</div></div></div>
+<div class="step"><div class="n">4</div><div><div class="t">형상측정기 룩업테이블 대조</div><div class="d">상용 SW(Digital Metrology <i>CrownView</i>) 설명: 크라운 형상은 <i>"generally defined by a lookup table of diameters at various axial positions"</i>, <i>"the crowned shape does not always have a uniform tolerance zone along its length"</i> → <b>길이 방향으로 비균일한, 도면별 공차대</b>. 등급 체계와 정반대의 접근입니다.</div></div></div>
+</div>
+<p class="ref">참고: MESYS는 프로파일 정의를 <b>11종</b>(ISO 16281 기본, 로그, Fujiwara 수정로그, 접선 크라우닝, 원호 크라우닝, 2접선반경, 지수형, 파일 임포트, 사용자 테이블, 사용자 수식 등) 제공합니다 — 단일 표준 정의가 없다는 또 하나의 방증입니다.</p>
+
+<h4>4.7 참고: 등급 상호 대조표 (링 인터페이스 공차)</h4>
+<div class="tw"><table>
+<thead><tr><th>ABEC</th><th>ISO 492</th><th>DIN 620</th></tr></thead>
+<tbody>
+<tr><td>ABEC 1</td><td>Normal</td><td>P0</td></tr>
+<tr><td>ABEC 3</td><td>6</td><td>P6</td></tr>
+<tr><td>ABEC 5</td><td>5</td><td>P5</td></tr>
+<tr><td>ABEC 7</td><td>4</td><td>P4</td></tr>
+<tr><td>ABEC 9</td><td>2</td><td>P2</td></tr>
+</tbody></table></div>
+<p class="ref">방향 역전 주의: <b>ABEC는 숫자가 클수록 정밀, ISO/DIN은 숫자가 클수록 느슨.</b> 그리고 이 모두는 <b>링 인터페이스</b>만 규정하며 전동체 기하와 무관합니다.</p>
+<h2 id="p5">제5부 · 특허 동향</h2>
+
+<h3 id="s51">5.1 특허의 4가지 청구 축 — 설계 회피 검토 시 필수</h3>
+<div class="box crit">
+<div class="lbl">실무 시사점</div>
+<p><b>프로파일 수식 특허와 크라우닝 분배 특허는 독립적으로 침해 가능합니다.</b> 설계 회피 검토 시 아래 4개 축을 <b>모두</b> 확인해야 합니다.</p>
+</div>
+<div class="tw"><table>
+<thead><tr><th>축</th><th>내용</th><th>대표 특허</th></tr></thead>
+<tbody>
+<tr><td><b>(a) 명시적 수식</b></td><td>프로파일 함수 자체를 청구</td><td>NTN US8858088B2 (Fujiwara식), <b>ThyssenKrupp EP3837450B1</b> (구간별 비대칭 로그)</td></tr>
+<tr><td><b>(b) 파라미터 범위 / 포락선</b></td><td>곡선이 아니라 <b>허용 범위</b>를 청구 — 검사 친화적이고 회피가 곤란</td><td><b>NTN US8398312B2</b> (<code>0.40(d+L)+0.66 ≤ z<sub>m</sub> ≤ 0.46(d+L)+1.03</code> + 무차원 검사표), NSK US6390685B1</td></tr>
+<tr><td><b>(c) 구간 길이 · 혼합 비율</b></td><td>직선부 비율, 원호:로그 비율, 반경비</td><td>NSK US12110925B2, NTN US10731703B2, SKF US12535104B2, Schaeffler US6267510B1</td></tr>
+<tr><td><b>(d) 크라우닝 분배</b></td><td>롤러 vs 내·외륜 배분</td><td><b>JTEKT US8641290B2</b> (총 ≥50µm, 외륜 ≥40%, 롤러 ≤20%, 내륜 ≥10%)</td></tr>
+</tbody></table></div>
+
+<h3 id="s52">5.2 주요 특허 상세</h3>
+<h4>★ 풍력 전용 프로파일 특허 — 가장 직접적으로 인용 가능</h4>
+<div class="tw"><table>
+<thead><tr><th>특허</th><th>출원인 / 등록</th><th>청구 핵심</th></tr></thead>
+<tbody>
+<tr><td><b>EP 3 837 450 B1</b></td><td>ThyssenKrupp Rothe Erde<br>2023-10-04 (존속)</td><td><b>구간별 비대칭 로그 프로파일</b><br><code>P(x)=c₁·D<sub>we</sub>·log[1/(1−(2x/L<sub>we</sub>)²)]</code> (x ≤ x<sub>grenz</sub>)<br><code>P(x)=c₂·D<sub>we</sub>·log[1/(1−(2x/L<sub>we</sub>)²)]</code> (x &gt; x<sub>grenz</sub>)<br><b>특징: c₁ ≠ c₂, 그리고 c₁ = c₁(x) 자체가 x의 함수</b><br>수치: <code>c₂ = 0.00005–0.0004</code>(권장 ~0.0002), <code>c<sub>basis</sub> = 0.0005–0.0009</code>(~0.0007), <code>k = 1.5–2.5</code>(~1.838239), <code>S<sub>k</sub> = 10–100</code>(~40), <code>a = 50–200 mm</code>(~101 mm)</td></tr>
+<tr><td><b>EP 3 870 869 B1</b></td><td>ThyssenKrupp Rothe Erde<br>2022-10-19 (존속)</td><td><b>3열 풍력 메인베어링(스러스트 2열 + 반경 1열)에서 두 스러스트 열에 서로 다른 로그 프로파일</b><br><code>P(x)=c·D<sub>we</sub>·log(L<sub>we</sub>/2x)</code>, <b>1열 c₁ ≈ 0.0001–0.0003</b>(정상운전 튜닝), <b>2열 c₂ ≈ 0.0004–0.0009</b>(극한하중 튜닝)<br>근거: 허브측·발전기측 부하 이력이 상이</td></tr>
+</tbody></table></div>
+
+<h4>명시적 수식 계열 (NTN / NSK)</h4>
+<div class="tw"><table>
+<thead><tr><th>특허</th><th>출원인</th><th>상태</th><th>핵심</th></tr></thead>
+<tbody>
+<tr><td>US 8,858,088 B2</td><td>NTN</td><td>존속(~2030)</td><td>TRB 크라우닝을 <b>접촉영역부 + 비접촉영역부</b>로 분리, 서로 다른 함수로 표현·평활 접합, 접합부 근방에서 비접촉부 곡률이 더 작음. <code>A = 2K₁Q/(πE′)</code>. 기준 베어링 30316, 반경하중 35% C<sub>r</sub>, 미스얼라인먼트 1/600, 최대 낙차 <b>69 µm</b></td></tr>
+<tr><td><b>US 8,398,312 B2</b><br>EP 2228556 B1</td><td>NTN (Fujiwara)</td><td>존속(~2028)</td><td><b>z<sub>m</sub> 포락선 청구</b> + 무차원 검사표: 위치 0.7 → 낙차 0–0.1 / 0.9 → 0.6–0.8 / 1.0 → 1.25–1.75</td></tr>
+<tr><td>US 10,731,703 B2</td><td>NTN</td><td>—</td><td><code>0.7 ≤ L<sub>W1</sub>/L<sub>G</sub> &lt; 0.95</code> (직선부/유효궤도폭), <code>0.003 ≤ (D<sub>r</sub>+D<sub>c</sub>)/D<sub>w</sub> ≤ 0.03</code> (롤러+궤도 총낙차/롤러직경)</td></tr>
+<tr><td>US 11,268,571 B2</td><td>NTN</td><td>존속(~2039)</td><td>궤도는 직선 유지, <b>크라우닝은 롤러 단부에만</b>. <code>D<sub>r</sub>/D<sub>w</sub> = 0.003–0.03</code>. <b>Rosenbrock법으로 von Mises 등가응력 최소화</b></td></tr>
+<tr><td>US 10,830,279 B2</td><td>NTN</td><td>존속(~2038)</td><td>로그 크라우닝 + <b>침탄질화층 ≥0.2 mm, N ≥0.1 mass% @0.05 mm, 구 오스테나이트 결정립도 ≥10 JIS</b> + 케이지 조합 청구</td></tr>
+<tr><td><b>US 12,110,925 B2</b></td><td>NSK</td><td>존속(~2041)</td><td><b>3구간 모선</b>: AS1 직선 + AS2 단일 원호 + AS3(원호+로그 복합곡선). 낙차 δ = <b>10–70 µm</b>(권장 ≥15), AS1 = <b>55–75%</b>, AS3 = <b>15–35%</b>, <b>원호:로그 = 20:80 ~ 50:50</b>(권장 30:70~50:50)</td></tr>
+<tr><td>US 6,390,685 B1</td><td>NSK</td><td>만료(2020)</td><td><code>x₁=0.425L<sub>e</sub>, x₂=0.5L<sub>e</sub></code> <b>두 지점</b>에서 낙차가 하중 0.4C·0.6C의 로그해 사이에 있을 것. 부분크라운 직선부 <b>0.5–0.9 L<sub>e</sub></b>(권장 0.6–0.8), 단부 원호 <b>R = 50–125 × L<sub>e</sub></b>. Reusner(1989)·Johns&amp;Gohar(1981) 인용</td></tr>
+</tbody></table></div>
+
+<h4>유럽 / 미국계 — 비율 · 수학적 성질 청구</h4>
+<div class="tw"><table>
+<thead><tr><th>특허</th><th>출원인</th><th>핵심</th></tr></thead>
+<tbody>
+<tr><td><b>US 12,535,104 B2</b><br>(US2023/0340991A1)</td><td>SKF</td><td>내륜 궤도 크라우닝 반경 <b><code>25·L²/D &lt; R &lt; 55·L²/D</code></b>. 각 미스얼라인먼트 <b>±0.5°~±1.0°</b> 대응, 롤러 충전율 &gt;80%(권장 &gt;87%). 롤러는 "preferably logarithmic"이나 <b>수식 없음 → 크라우닝을 궤도에 청구</b></td></tr>
+<tr><td>US 9,777,767 B2</td><td>Timken</td><td><b>롤러+궤도의 합성 릴리프 윤곽</b>을 청구. 기울기가 <b>변곡 영역(inflection region)</b>을 가지며, 중앙면에서 멀어질수록 <b>릴리프 거리가 감소하지 않을 것</b>. 수식이 아니라 <b>미분 성질</b>로 청구</td></tr>
+<tr><td>US 11,053,978 B2</td><td>Timken</td><td>롤러단–리브면의 <b>비타원 접촉 프로파일</b>, 3구간 접선 혼합, 로그 곡선 사용. 주구간 곡률중심 오프셋 <code>&lt; 0.5R</code>, 인접구간 <code>&gt; 0.5R</code></td></tr>
+<tr><td>US 6,267,510 B1</td><td>INA / Schaeffler</td><td>후육 외륜 <b>다중원호 윤곽</b> — 중앙 K₁, 외곽 K₂·K₃, <b>반경비 2:1 ~ 5:1</b></td></tr>
+<tr><td>US 8,641,290 B2<br>EP 1 754 900 A1</td><td>JTEKT</td><td><b>크라우닝 분배 청구</b> (<a href="#s32">§3.2</a>)</td></tr>
+</tbody></table></div>
+
+<details>
+<summary>롤러 단부면(End-face) 프로파일 — 병행 활성 패밀리</summary>
+<div class="tw"><table>
+<thead><tr><th>특허</th><th>출원인</th><th>핵심</th></tr></thead>
+<tbody>
+<tr><td>US 6,997,617 B2</td><td>NSK</td><td>단부면 외주가 <code>y = a·exp(−b·x)</code> (원호 대체)</td></tr>
+<tr><td>US 6,767,134 B2 (RE48,586E)</td><td>NSK</td><td><b>기하학적 창(window) 청구</b>: 0.65R, +0.20R, 축방향 0.0005R·0.003R 위치를 통과·경유</td></tr>
+<tr><td>US 11,746,826 B2</td><td>SKF</td><td>단부면 <b>비일정 곡률</b>(로그/토러스), <b>0.9R에서 각도 β = 0.15°–2.0°</b>, 프로파일 높이 <code>Y = 0.00007R–0.0020R</code></td></tr>
+<tr><td>US 7,841,773 B2</td><td>NTN</td><td><code>R/R<sub>BASE</sub> = 0.75–0.87</code>, 단면 흔들림 ≤3 µm, Ra ≤0.02 µm</td></tr>
+</tbody></table></div>
+</details>
+
+<h3>5.3 특허 동향 요약</h3>
+<ol style="font-size:14.5px">
+<li><b>"롤러+궤도 합성 크라우닝" 프레이밍이 지배적</b>으로 전환. 롤러만 청구하면 회피가 쉬움 → Timken은 <b>간극 함수</b>를, SKF는 <b>궤도 반경</b>을, NTN은 <b>합계 낙차 비율</b>을 청구합니다.</li>
+<li><b>비대칭 프로파일이 현재의 프론티어</b> — NTN WO2007058112(정성적, 2005, 소멸) → SKF US10385822(비대칭 구면롤러, 풍력) → <b>ThyssenKrupp EP3837450B1(구간별 비대칭 로그, 2023 등록)</b> → EP3870869B1(열별 차등 계수). 정성적 → 완전 파라미터화·등록으로의 진행이 명확합니다.</li>
+<li><b>롤러 단부면 / 리브 접촉 프로파일링은 별개의 활발한 패밀리</b> — 4대 제조사 중 3사가 수년 내 수렴.</li>
+<li><b>최근 청구는 프로파일 + 비기하 요소를 묶음</b>(열처리, 케이지) — 순수 기하 청구항이 포화되었기 때문입니다.</li>
+<li><b>풍력 전용은 24건 중 5건</b>, 그중 프로파일 수식을 청구한 것은 <b>ThyssenKrupp 2건뿐</b>. Timken은 풍력 메인샤프트 점유율이 높음에도 풍력 특정 프로파일 특허가 없고, 응용 중립적으로 작성했습니다.</li>
+<li><b>지역별 청구 스타일 차이</b> — 일본계(NTN/NSK/JTEKT) = <b>명시적 수식 + 무차원 수치 포락선</b> / 유럽계(SKF/Schaeffler/ThyssenKrupp) = <b>반경비·원호 개수·계수 밴드</b> / Timken(미국) = <b>윤곽의 수학적 성질</b>(변곡, 단조성).</li>
+</ol>
+<h2 id="p6">제6부 · 풍력 메인베어링 TRB 프로파일 설계 절차 (권고)</h2>
+<div class="flow">
+<div class="step"><div class="n">1</div><div><div class="t">하중 스펙트럼 확보</div><div class="d">DLC 전체에 대해 5-DOF 베어링 모델로 롤러별 하중 <code>Q<sub>j</sub></code> 및 경사각 <code>θ<sub>j</sub></code> 산출.
+<ul><li>★ <b>축계 구조 유연성(flexible shaft/housing) 반드시 포함</b></li><li>근거: 강체 가정 대비 최대 궤도하중이 <b>±25% 변동</b>(Gao et al.) — <i>"crowning optimized on a rigid model is wrong"</i>(Liu et al., Machines 11(1) 28)</li></ul></div></div></div>
+<div class="step"><div class="n">2</div><div><div class="t">z<sub>m</sub> 초기값 결정 — 3경로 교차검증</div><div class="d"><ul><li>A) <code>x = 설계하중/C × 100 [%]</code>를 25~35% 대역에서 선정 → Fujiwara 회귀식 <span class="conf b">⚠️</span> d ≤ 24 mm 검증범위이므로 풍력은 참고값으로만</li><li>B) <code>z<sub>m</sub> ≈ 0.00035 · D<sub>w</sub></code> (ISO 16281 기준형)</li><li>C) 두 값의 정합 여부 확인 → 불일치 시 <b>B 우선</b></li></ul></div></div></div>
+<div class="step"><div class="n">3</div><div><div class="t">K₂ 고정</div><div class="d">가공성 확보를 위해 <b>K₂ = 0.5</b>(직선부 ≥ 전장의 50%) 고정 권장. 해석 최적은 K₂ ≈ 1이나 연삭 기준면 확보가 불가합니다.</div></div></div>
+<div class="step acc"><div class="n">4</div><div><div class="t">K₁ 최적화 — ★ 반드시 '최대 경사각 조건'에서</div><div class="d"><ul><li>목적함수: <code>min(max p)</code> 또는 <code>max(L10)</code> 또는 <code>min(von Mises)</code></li><li>알고리즘: Rosenbrock direct search 또는 GA</li><li>예상: 무경사 K₁ ≈ 1.3 → <b>경사 0.001 rad 시 K₁ ≈ 2.8</b>로 증가</li></ul></div></div></div>
+<div class="step"><div class="n">5</div><div><div class="t">슬라이스법 검증</div><div class="d"><code>n<sub>s</sub> ≥ 80</code>(슬라이스 두께 ≤ 롤러길이 1.25%), 홀수. <code>δ<sub>k</sub> = δ₀ + x<sub>k</sub>·θ − z(x<sub>k</sub>)</code>, <code>q<sub>k</sub> = (c<sub>L</sub>/n<sub>s</sub>)·⟨δ<sub>k</sub>⟩^(10/9)</code> → <code>p<sub>k</sub>(x)</code> 분포 산출</div></div></div>
+<div class="step acc"><div class="n">6</div><div><div class="t">TRB 고유 항목</div><div class="d"><ul><li>비대칭 검토: <b>소경측 낙차 &gt; 대경측 낙차</b> (EHL 근거)</li><li>크라우닝 분배: 외륜 ≥40% / 내륜 ≥10% / 롤러 ≤20%(×2), 총 50~100 µm</li><li>롤러 대단면/리브 곡률비 <code>SR/ρ<sub>p</sub> = 0.85~0.95</code></li><li>리브 접촉 스커핑·발열 별도 검토</li></ul></div></div></div>
+<div class="step"><div class="n">7</div><div><div class="t">합격 판정</div><div class="d"><ul><li>① 전 하중 스펙트럼에서 <b>truncation 없음</b></li><li>② <code>p<sub>max</sub> ≤ 설계 한계</code> (동적 1650 / 학술 1500 / 극한 4000 MPa 중 택) — <b>정적안전율은 반드시 '응력 기준'으로 계산</b>(하중 기준이면 엣지응력 무시됨)</li><li>③ <code>p<sub>max</sub>/p<sub>Hertz</sub> ≈ 1.0~1.2</code></li><li>④ <b>경하중 조건에서 과크라우닝에 의한 수명저하 없음</b> (NASA: R=100d에서 경하중 수명 86% 손실)</li></ul></div></div></div>
+<div class="step acc"><div class="n">8</div><div><div class="t">도면화 및 검사 규정 — 규격 부재로 자체 정의 필요</div><div class="d"><ul><li>ISO 12297-1 표기(<code>pd, t<sub>PS</sub></code>, TED <code>X</code>, <code>U<sub>Z</sub></code>) 차용 — 단 <b>수치는 자체 결정</b></li><li><b>ISO 1101 "선의 윤곽도"</b>로 공차 지정, ISO 8015 원칙 명기</li><li>기준점: 롤러 끝단이 아니라 <b>'크라우닝–모따기 교점'</b> 권장 (Fujiwara 방식)</li><li><b>무차원 검사표</b>(위치/낙차 정규화) 작성 → 형상측정기 트레이스 대조</li><li>합격 기준을 기하 공차뿐 아니라 <b>'해당 형상에서의 von Mises 응력 한계'로도 이중 정의</b></li><li>특허 회피 검토: <b>4개 청구 축</b>(수식/포락선/구간비율/분배) 전부 확인</li></ul></div></div></div>
+</div>
+
+<h2 id="p7">제7부 · 미확인 사항 및 후속 조치</h2>
+<div class="tw"><table>
+<thead><tr><th>#</th><th>항목</th><th>상태</th><th>권고 조치</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Lundberg 1939 원문</td><td><span class="conf b">⚠️</span></td><td>후속 문헌 재현식 다수 일치 — 그대로 사용 가능. 독일어 저널 오프라인</td></tr>
+<tr><td>2</td><td>Johns–Gohar 원논문 및 상수 0.3033 유도</td><td><span class="conf b">⚠️</span></td><td>Tribology International 14(3) 원문 입수</td></tr>
+<tr><td>3</td><td>Reusner 1987 원문</td><td><span class="conf c">❌</span></td><td>SKF Ball Bearing Journal No.230 — 온라인 부재</td></tr>
+<tr><td>4</td><td>ISO 16281 Annex B 내 로그식 명문</td><td><span class="conf b">⚠️</span></td><td>유료 본문 확인 필요 (강한 간접 증거 존재)</td></tr>
+<tr><td><b>5</b></td><td><b>IEC 61400-4 Table 7 접촉응력 수치</b></td><td><span class="conf c">❌</span></td><td><b>유료 구매 필요</b> (Ed.2 2025 p.46) — 보고서 인용에 필수</td></tr>
+<tr><td><b>6</b></td><td><b>DNV-ST-0361 베어링 조항 및 수치</b></td><td><span class="conf c">❌</span></td><td>전면 유료·프리뷰 없음. <b>"3000 MPa" 통설은 확인 불가 → 인용 금지</b></td></tr>
+<tr><td>7</td><td>Fujiwara 최적화 결과값 (K₁=1.295 등)</td><td><span class="conf b">⚠️</span></td><td>Tribology Transactions 53(6) 원문 대조</td></tr>
+<tr><td>8</td><td>Fujiwara 공칭 프로파일표 vs 허용대표 불일치</td><td><span class="conf b">⚠️</span></td><td><b>JAMDSM 4(4) 무료 PDF로 반드시 대조</b> (정규화 기준 상이 추정)</td></tr>
+<tr><td>9</td><td>z<sub>m</sub> 회귀식의 대형롤러 적용성</td><td><span class="conf b">⚠️</span></td><td>d&gt;24mm는 외삽 — 직접 최적화 병행 필수</td></tr>
+<tr><td><b>10</b></td><td><b>JIS B 1506:2005 "Rolling bearings — Rollers"</b></td><td><span class="conf c">❌</span></td><td>48p, 내용 전혀 미확인. <b>유일하게 남은 국가 롤러 전동체 규격 — 입수 강력 권장</b></td></tr>
+<tr><td>11</td><td>ISO 12297-1 Table 2 (G 등급 지정) 및 clause 7 수치</td><td><span class="conf c">❌</span></td><td>유료</td></tr>
+<tr><td>12</td><td>프로파일 정량 비교 원논문 (Ju et al. 2000)</td><td><span class="conf b">⚠️</span></td><td>DOI 10.1243/1350650001543061 입수 권장</td></tr>
+</tbody></table></div>
+<div class="box key">
+<div class="lbl">우선 입수 권장 4건</div>
+<ol style="margin:6px 0 0">
+<li><b>Fujiwara &amp; Yamauchi (2010), JAMDSM 4(4), 728–738 — 무료 공개</b> → 항목 8 해결</li>
+<li><b>IEC 61400-4:2025 Ed.2</b> → 항목 5 (Table 7 접촉응력 한계)</li>
+<li><b>ISO 16281:2025</b> → 항목 4 (Annex B/C 원문)</li>
+<li><b>JIS B 1506:2005</b> → 항목 10 (롤러 전동체 규격의 마지막 미확인 영역)</li>
+</ol>
+</div>
+<h2 id="refs">참고문헌</h2>
+<h4>프로파일 이론 원전</h4>
+<ol class="ref">
+<li>Lundberg, G. (1939). <i>Elastische Berührung zweier Halbräume</i>. <b>Forschung auf dem Gebiet des Ingenieurwesens</b>, 10(5), 201–211. <span class="conf b">⚠️</span></li>
+<li>Johns, P. M., &amp; Gohar, R. (1981). <i>Roller bearings under radial and eccentric loads</i>. <b>Tribology International</b>, 14(3), 131–136. DOI: 10.1016/0301-679X(81)90058-X</li>
+<li>Reusner, H. (1987). <i>The logarithmic roller profile — the key to superior performance of cylindrical and taper roller bearings</i>. <b>Ball Bearing Journal (SKF)</b>, No. 230. <span class="conf c">❌</span></li>
+<li><b>Fujiwara, H., &amp; Kawase, T. (2006).</b> <i>Logarithmic Profile of Rollers in Roller Bearing and Optimization of the Profile</i>. <b>Trans. JSME Series C</b>, 72(721), 3022–3029. DOI: 10.1299/kikaic.72.3022</li>
+<li><b>Fujiwara, H., &amp; Yamauchi, K. (2010).</b> <i>Tolerance Design of Logarithmic Roller Profiles in Cylindrical Roller Bearings</i>. <b>JAMDSM</b>, 4(4), 728–738. DOI: 10.1299/jamdsm.4.728 — <b>무료 전문 공개</b></li>
+<li>Fujiwara, H., et al. (2010). <i>Optimized Logarithmic Roller Crowning Design of Cylindrical Roller Bearings and Its Experimental Demonstration</i>. <b>Tribology Transactions</b>, 53(6), 909–916. DOI: 10.1080/10402004.2010.510619</li>
+</ol>
+<h4>프로파일 최적화 · 해석</h4>
+<ol class="ref" start="7">
+<li><b>Tong, V.-C., &amp; Hong, S.-W. (2017).</b> <i>Optimization of partially crowned roller profiles for tapered roller bearings</i>. <b>JMST</b>, 31(2), 641–650. DOI: 10.1007/s12206-017-0117-1 <b>(국내 저자)</b></li>
+<li>Wu, Z., Xu, Y., Deng, S., &amp; Liu, K. (2020). <i>Study on Logarithmic Crowning of Tapered Roller Profile Considering Angular Misalignment</i>. <b>ASME J. Tribology</b>, 142(11), 111201. DOI: 10.1115/1.4047106</li>
+<li>He, P., et al. (2020). <i>Study on logarithmic crowning of cylindrical roller profile considering angular misalignment</i>. <b>JMST</b>. DOI: 10.1007/s12206-020-0130-7</li>
+<li>Ju, S. H., Horng, T. L., &amp; Cha, K. C. (2000). <i>Comparisons of contact pressures of crowned rollers</i>. <b>Proc. IMechE Part J</b>, 214(2). DOI: 10.1243/1350650001543061</li>
+<li>Cui, Y., &amp; He, L. <i>A new logarithmic profile model and optimization design of cylindrical roller bearing</i> (3-파라미터 + GA)</li>
+<li>Duan, H., Yu, Q., &amp; Wang, Z. (2021). <i>Design of logarithmic crowned roller for tapered roller bearings based on the EHL model</i>. <b>Industrial Lubrication and Tribology</b>, 73(5). DOI: 10.1108/ILT-08-2020-0315</li>
+<li>Cao, R., et al. (2023). <i>Mixed Lubrication Analysis of Tapered Roller Bearings and Crowning Profile Optimization Based on Numerical Running-In Method</i>. <b>Lubricants</b>, 11(3), 97</li>
+<li><i>Research Progress of Logarithmic Crown of Bearing Roller</i>. <b>E3S Web of Conferences</b>, 179, 01017 (2020) — 오픈액세스 리뷰</li>
+<li>Zhang, Y., &amp; Gohar, R. (1996). <i>Partial EHL analysis of rib-roller end contact in tapered roller bearings</i>. <b>Tribology International</b>. DOI: 10.1016/0301-679X(95)00059-D</li>
+<li><i>Effects of Roller End/Rib Curvature Ratio on Friction and Accuracy in Tapered Roller Bearings</i>. <b>Machines</b>, 13(10), 910 (2025). DOI: 10.3390/machines13100910</li>
+</ol>
+<h4>풍력 메인베어링</h4>
+<ol class="ref" start="17">
+<li><b>Hart, E., et al. (2020).</b> <i>A review of wind turbine main bearings: design, operation, modelling, damage mechanisms and fault detection</i>. <b>Wind Energy Science</b>, 5, 105–124. DOI: 10.5194/wes-5-105-2020 — <b>오픈액세스, 최우선 참고</b></li>
+<li><b>Kenworthy, J., et al. (2024).</b> <i>Wind turbine main bearing rating lives as determined by IEC 61400-1 and ISO 281: A critical review and exploratory case study</i>. <b>Wind Energy</b>, 27(2), 179–197. DOI: 10.1002/we.2883 — CC BY</li>
+<li><b>Liu, X., et al. (2023).</b> <i>Crowning Method on Bearing Supporting Large Wind Turbine Spindle Considering the Flexibility of Structure of Shaft System</i>. <b>Machines</b>, 11(1), 28. DOI: 10.3390/machines11010028 — <b>6.25MW 주축 TRB, 가장 직접적</b></li>
+<li>Li, Y., &amp; Gao, Y. (2022). <i>Internal load distribution of single-row tapered roller bearings doubly supporting main shaft of wind turbine</i>. <b>Advances in Mechanical Engineering</b>, 14(5). DOI: 10.1177/16878132221098895 — 슬라이스 1.25% 수렴 근거</li>
+<li>Zheng, J., Ji, J., Yin, S., &amp; Tong, V.-C. (2018). <i>The Load Distribution of the Main Shaft Bearing Considering Combined Load and Misalignment in a Floating Direct-Drive Wind Turbine</i>. <b>E3S Web of Conf.</b>, 64, 07009</li>
+<li>Zhao, et al. (2023). <i>Reliability Sensitivity Analysis of Main Shaft Bearings of Wind Turbines Subject to Subsurface Stress</i>. <b>Machines</b>, 11(7), 681</li>
+<li>Zou, Y., et al. (2025). <i>Research on the Calculation Method for the Contact Stress of Wind Turbine Main Shaft Bearings Based on FEA</i>. <b>Lubricants</b>, 13(5), 226. DOI: 10.3390/lubricants13050226</li>
+<li><i>From academic to industrial research: A comparative review of advances in rolling element bearings for wind turbine main shaft</i>. <b>Engineering Failure Analysis</b> (2024)</li>
+<li>Evans, M-H. (2016). <i>An updated review: White etching cracks (WECs) and axial cracks in wind turbine gearbox bearings</i>. <b>Materials Science and Technology</b>. DOI: 10.1080/02670836.2015.1133022</li>
+</ol>
+<h4>NREL / DOE 보고서</h4>
+<ol class="ref" start="26">
+<li><b>NREL/TP-5000-90476 (2024)</b> — Wind Turbine Main Bearing Reliability Analysis, O&amp;M Considerations</li>
+<li><b>NREL/TP-5000-86299 (2023) / NREL/TP-5000-86901 (2024)</b> — Wind Turbine Main Bearing Rating Lives</li>
+<li><b>NREL/CP-5000-85224</b> — A Revised International Standard for Gearboxes in Wind Turbine Systems</li>
+<li><b>NREL/TP-5000-67523 (2017)</b> — Investigation of Bearing Axial Cracking</li>
+<li><b>NREL/TP-5000-66593 (2016)</b> — Wind Turbine Drivetrain Reliability Collaborative Workshop: A Recap</li>
+<li><b>NREL/…-66336 (2016)</b> — High-Speed-Stage Bearing Skidding of Wind Turbine Gearboxes</li>
+<li><b>Oswald, F. B., Zaretsky, E. V., &amp; Poplawski, J. V. (2015).</b> <i>Effect of Roller Geometry on Roller Bearing Load–Life Relation</i>. <b>NASA/TM—2015-218895</b> — 크라운 낙차 실측 유일 공개값</li>
+</ol>
+<h4>규격</h4>
+<ol class="ref" start="33">
+<li><b>ISO 16281:2025</b> — Methods for calculating the modified reference rating life (구 ISO/TS 16281:2008). Annex B, Annex C, 5.3.4</li>
+<li><b>ISO 12297-1:2021</b> — Cylindrical rollers — Part 1: Boundary dimensions, GPS and tolerance values for steel rollers ★</li>
+<li>ISO 12297-2:2018 · ISO 3096:2018 · ISO 3290-1/-2:2014</li>
+<li>ISO 492:2023 / ISO 199:2023 · ISO 1132-1:2000 / -2:2001 · ISO 582:1995</li>
+<li>ISO 281:2007 · ISO 76:2006 · ISO 17956:2025</li>
+<li>ISO 1101:2017 · ISO 12181-1/-2 · ISO 12180-1/-2 · ISO 12780 · ISO 8015</li>
+<li>DIN 620-1~4 · DIN 5401:2002 · DIN 5402-1:2014</li>
+<li>ANSI/ABMA 4-1994(R2013), 19.1-2011(R2018), 19.2-2013(R2020), 20-2011(R2020)</li>
+<li>JIS B 1506:2005 (Rollers) · JIS B 1514-1:2006</li>
+</ol>
+<h4>기어 규격 (대비)</h4>
+<ol class="ref" start="42">
+<li><b>ISO 1328-1:2013</b> — ISO system of flank tolerance classification — Part 1 (등급 1–11, 공차식)</li>
+<li>ISO 1328-2:2020 — Part 2 (양치면 복합편차, R30–R50)</li>
+<li><b>ISO 21771-1:2024</b> — Cylindrical involute gears and gear pairs — Part 1 (Clause 8 치면 수정)</li>
+<li>ISO/TR 10064-1:2019 — Code of inspection practice — Part 1</li>
+<li>DIN 3960/3961/3962/3963/3964 (1978) — 품질등급 1–12</li>
+<li>ANSI/AGMA 2015-1-A01(R2014) / 2015-2-A06(R2014) — 정밀도 등급 A2–A11; (구) 2000-A88</li>
+<li><b>IEC 61400-4:2025 Ed.2</b> — Design requirements for wind turbine gearboxes (cl.6.1.5 / cl.6.2 / Table 7)</li>
+<li>IEC 61400-4:2012 Ed.1 — cl.7.3 Bearings, Annex C Bearing design considerations</li>
+<li>DNV-ST-0361 (2016, amd. 2021) — Machinery for wind turbines <span class="conf c">❌</span> 유료</li>
+</ol>
+<h4>주요 특허</h4>
+<ol class="ref" start="51">
+<li><b>EP 3 837 450 B1</b> — ThyssenKrupp Rothe Erde — 비대칭 롤러 프로파일 (풍력) ★</li>
+<li><b>EP 3 870 869 B1</b> — ThyssenKrupp Rothe Erde — 열별 차등 로그 프로파일 (풍력) ★</li>
+<li>US 8,858,088 B2 / WO2010122955A1 · <b>US 8,398,312 B2 / EP 2 228 556 B1</b> · US 10,731,703 B2 · US 11,268,571 B2 · US 10,830,279 B2 · US 7,841,773 B2 — NTN</li>
+<li><b>US 12,110,925 B2</b> · US 6,390,685 B1 · US 6,997,617 B2 · US 6,767,134 B2 (RE48,586E) — NSK</li>
+<li><b>US 12,535,104 B2</b> · US 11,746,826 B2 · US 10,385,822 B2 — SKF</li>
+<li>US 9,777,767 B2 · US 11,053,978 B2 — Timken</li>
+<li><b>US 8,641,290 B2 / EP 1 754 900 A1</b> · US 8,480,308 B2 — JTEKT</li>
+<li>US 6,267,510 B1 · US 9,046,128 B2 · DE 10 2012 222 530 A1 — Schaeffler / INA</li>
+<li>WO 2007/058112 A1 — NTN — 비대칭 크라우닝 초기 청구</li>
+</ol>
+<h4>제조사 기술문헌</h4>
+<ol class="ref" start="60">
+<li>SKF Evolution — 100 years evolution of cylindrical roller bearings / SKF Explorer taper roller bearings / 8-MW offshore rotor bearings / Premature bearing failures and WEC</li>
+<li>SKF — Tapered roller bearings, metric series (catalogue)</li>
+<li>Schaeffler <b>TPI 251</b> — Spherical Roller Bearings for rotor bearing arrangements in wind turbines</li>
+<li>Timken — <b>Improving Bearing Life in Wind Turbine Main Shafts and Gearboxes</b> (TDI white paper) ★ 수치 최다</li>
+<li>Timken — Wind Energy Solutions brochure / UltraWind product literature</li>
+<li>NSK — Next-Generation High-Load-Capacity Tapered Roller Bearings for Wind Turbines (2024)</li>
+<li>NTN Technical Review No. 89 — ULTAGE TRB</li>
+<li>MESYS AG — Rolling Bearing Calculation manual (ISO 16281 프로파일 구현)</li>
+</ol>
+<p class="ref" style="margin-top:26px;padding-top:14px;border-top:1px solid var(--grid)">본 보고서의 수치·수식은 공개 문헌 · 규격 프리뷰 · 특허 공보를 기반으로 하며, <span class="conf b">⚠️</span> / <span class="conf c">❌</span> 표기 항목은 원문 대조 또는 규격 구매 후 확정하시기 바랍니다.</p>
+</main>
+</div>
+<script>
+(function(){
+const NS="http://www.w3.org/2000/svg";
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const S=["--s1","--s2","--s3","--s4","--s5","--s6"];
+const tt=document.getElementById("tt");
+function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e}
+function txt(x,y,s,o){const t=el("text",Object.assign({x:x,y:y,"font-size":11.5,fill:css("--ink-3")},o||{}));t.textContent=s;return t}
+function svg(host,w,h){const s=el("svg",{viewBox:`0 0 ${w} ${h}`,role:"img"});host.innerHTML="";host.appendChild(s);return s}
+function hov(node,html){
+  node.style.cursor="default";
+  node.addEventListener("mousemove",e=>{tt.innerHTML=html;tt.style.opacity=1;
+    let x=e.clientX+14,y=e.clientY+14;
+    if(x+290>innerWidth)x=e.clientX-300; if(y+90>innerHeight)y=e.clientY-90;
+    tt.style.left=x+"px";tt.style.top=y+"px";});
+  node.addEventListener("mouseleave",()=>tt.style.opacity=0);
+}
+function legend(id,items){const h=document.getElementById(id);if(!h)return;
+  h.innerHTML=items.map(i=>`<span><i style="background:${i.c}"></i>${i.t}</span>`).join("");}
+// de-collide labels
+function spread(arr,minGap){arr.sort((a,b)=>a.y-b.y);
+  for(let i=1;i<arr.length;i++) if(arr[i].y-arr[i-1].y<minGap) arr[i].y=arr[i-1].y+minGap;
+  return arr;}
+
+/* ============ 1. PROFILE SHAPES ============ */
+function chProf(){
+  const host=document.getElementById("ch-prof"); if(!host)return;
+  const Lwe=160,a=Lwe/2,A=4,Dw=40;
+  const lund=x=>{const u=2*x/Lwe;return u*u>=0.999999?1e9:A*Math.log(1/(1-u*u))};
+  const jg=(x,zm)=>{const u=2*x/Lwe;return A*Math.log(1/(1-(1-Math.exp(-zm/A))*u*u))};
+  const fj=(x,K1,K2,zm)=>{const y=Math.abs(x);if(y<=a*(1-K2))return 0;
+    const t=(y-a)/(K2*a)+1;const v=1-(1-Math.exp(-zm/(A*K1)))*t*t;return v<=1e-9?1e9:A*K1*Math.log(1/v)};
+  const arc=x=>{const R=Lwe*Lwe/(8*0.020);return (R-Math.sqrt(Math.max(R*R-x*x,0)))*1000};
+  const part=x=>{const y=Math.abs(x);if(y<=0.5*a*1)return 0;const u=(y-40)/40;return 20*u*u};
+  const defs=[
+    {n:"Lundberg (1939)",f:lund,c:css(S[0]),dash:"7 4",note:"끝단 낙차 → ∞ (특이점)"},
+    {n:"Johns–Gohar (z_m=20)",f:x=>jg(x,20),c:css(S[1]),note:"특이점 제거, 유한 낙차"},
+    {n:"Fujiwara K₁=1.30 (무경사)",f:x=>fj(x,1.295,0.879,12.68),c:css(S[2]),note:"Case 1 · min p_max"},
+    {n:"Fujiwara K₁=2.78 (경사)",f:x=>fj(x,2.779,0.5,16.25),c:css(S[3]),note:"Case 2 · tilt 0.001 rad"},
+    {n:"원호 (끝단 20 µm 정합)",f:arc,c:css(S[4]),note:"R = L²/(8z_m) ≈ 160 000 mm"},
+    {n:"부분 크라운 (직선 50%)",f:part,c:css(S[5]),note:"중앙 직선 80 mm + 양단 원호, 끝단 20 µm"}
+  ];
+  const W=680,H=352,m={t:26,r:172,b:44,l:52},PW=W-m.l-m.r,PH=H-m.t-m.b,YMAX=45;
+  const sx=x=>m.l+(x+a)/Lwe*PW, sy=z=>m.t+z/YMAX*PH;
+  const s=svg(host,W,H);
+  s.appendChild(el("clipPath",{id:"cp1"})).appendChild(el("rect",{x:m.l,y:m.t,width:PW,height:PH}));
+  for(let g=0;g<=45;g+=15){s.appendChild(el("line",{x1:m.l,y1:sy(g),x2:m.l+PW,y2:sy(g),stroke:css("--grid"),"stroke-width":1}));
+    s.appendChild(txt(m.l-8,sy(g)+4,g,{ "text-anchor":"end"}));}
+  s.appendChild(txt(m.l-40,11,"낙차 [µm]",{fill:css("--ink-2")}));
+  for(let x=-80;x<=80;x+=40){s.appendChild(el("line",{x1:sx(x),y1:m.t,x2:sx(x),y2:m.t+PH,stroke:css("--grid"),"stroke-width":1,"stroke-dasharray":x===0?"":"3 3"}));
+    s.appendChild(txt(sx(x),m.t+PH+18,x,{ "text-anchor":"middle"}));}
+  s.appendChild(txt(m.l+PW/2,m.t+PH+38,"모선 방향 위치 x [mm]   (L_we = 160 mm)",{ "text-anchor":"middle",fill:css("--ink-2")}));
+  s.appendChild(el("line",{x1:m.l,y1:m.t,x2:m.l+PW,y2:m.t,stroke:css("--axis"),"stroke-width":1.5}));
+  const labels=[];
+  const N=600;
+  defs.slice().reverse().forEach(d=>{
+    let p="",started=false;
+    for(let i=0;i<=N;i++){const x=-a*Math.cos(Math.PI*i/N);const z=d.f(x);
+      if(!isFinite(z)||z>YMAX*3){started=false;continue}
+      p+=(started?" L":" M")+sx(x).toFixed(1)+","+sy(z).toFixed(1);started=true;}
+    const at={d:p.trim(),fill:"none",stroke:d.c,"stroke-width":2,"stroke-linejoin":"round","clip-path":"url(#cp1)"};
+    if(d.dash)at["stroke-dasharray"]=d.dash;
+    const path=el("path",at);
+    s.appendChild(path);
+    hov(path,`<b>${d.n}</b>${d.note}<br>끝단(x=+79.6mm) 낙차: ${d.f(79.6)>YMAX?"YMAX 초과 (발산)":d.f(79.6).toFixed(1)+" µm"}`);
+    const ze=d.f(79.6); labels.push({y:Math.max(m.t+10,Math.min(sy(ze),m.t+PH-4)),c:d.c,n:d.n});
+  });
+  spread(labels,15).forEach(L=>{
+    s.appendChild(el("line",{x1:m.l+PW,y1:L.y,x2:m.l+PW+8,y2:L.y,stroke:L.c,"stroke-width":2}));
+    const t=txt(m.l+PW+12,L.y+4,L.n,{fill:css("--ink-2"),"font-size":10.8,"font-weight":600});s.appendChild(t);});
+  s.appendChild(txt(sx(-72),m.t+PH-14,"↓ 발산 (특이점)",{fill:css(S[0]),"font-size":11,"font-weight":700}));
+  legend("lg-prof",defs.map(d=>({c:d.c,t:d.n+(d.dash?" — 점선":"")})));
+}
+
+/* ============ generic horizontal bar ============ */
+function hbar(hostId,rows,opt){
+  const host=document.getElementById(hostId); if(!host)return;
+  opt=opt||{};
+  const W=680,rh=opt.rh||30,m={t:8,r:78,b:34,l:opt.l||168},H=m.t+rows.length*rh+m.b,PW=W-m.l-m.r;
+  const max=opt.max||Math.max(...rows.map(r=>r.v))*1.08;
+  const s=svg(host,W,H);
+  const ticks=opt.ticks||4;
+  for(let i=0;i<=ticks;i++){const v=max*i/ticks,x=m.l+v/max*PW;
+    s.appendChild(el("line",{x1:x,y1:m.t,x2:x,y2:m.t+rows.length*rh,stroke:css("--grid"),"stroke-width":1}));
+    s.appendChild(txt(x,m.t+rows.length*rh+17,opt.fmt?opt.fmt(v):Math.round(v),{ "text-anchor":"middle"}));}
+  if(opt.axis)s.appendChild(txt(m.l+PW/2,m.t+rows.length*rh+33,opt.axis,{ "text-anchor":"middle",fill:css("--ink-2")}));
+  s.appendChild(el("line",{x1:m.l,y1:m.t,x2:m.l,y2:m.t+rows.length*rh,stroke:css("--axis"),"stroke-width":1.5}));
+  rows.forEach((r,i)=>{
+    const y=m.t+i*rh+5,h=rh-12,w=Math.max(r.v/max*PW,2);
+    const g=el("g",{});
+    g.appendChild(el("rect",{x:m.l,y:y,width:w,height:h,rx:4,fill:r.c||css("--s1")}));
+    g.appendChild(txt(m.l-10,y+h/2+4,r.n,{ "text-anchor":"end",fill:css("--ink-1"),"font-size":12,"font-weight":r.b?700:500}));
+    const vl=txt(m.l+w+8,y+h/2+4,r.lab||r.v,{fill:css("--ink-1"),"font-size":12,"font-weight":650});
+    g.appendChild(vl); s.appendChild(g);
+    hov(g,`<b>${r.n}</b>${r.lab||r.v}${r.note?"<br>"+r.note:""}`);
+  });
+}
+
+/* ============ range bars ============ */
+function rangeBar(hostId,rows,opt){
+  const host=document.getElementById(hostId); if(!host)return;
+  const W=680,rh=opt.rh||34,m={t:10,r:20,b:36,l:opt.l||206},H=m.t+rows.length*rh+m.b,PW=W-m.l-m.r;
+  const min=opt.min||0,max=opt.max;
+  const sx=v=>m.l+(v-min)/(max-min)*PW;
+  const s=svg(host,W,H);
+  (opt.ticksArr||[]).forEach(v=>{
+    s.appendChild(el("line",{x1:sx(v),y1:m.t,x2:sx(v),y2:m.t+rows.length*rh,stroke:css("--grid"),"stroke-width":1}));
+    s.appendChild(txt(sx(v),m.t+rows.length*rh+17,v,{ "text-anchor":"middle"}));});
+  if(opt.axis)s.appendChild(txt(m.l+PW/2,m.t+rows.length*rh+33,opt.axis,{ "text-anchor":"middle",fill:css("--ink-2")}));
+  s.appendChild(el("line",{x1:m.l,y1:m.t,x2:m.l,y2:m.t+rows.length*rh,stroke:css("--axis"),"stroke-width":1.5}));
+  rows.forEach((r,i)=>{
+    const y=m.t+i*rh+7,h=rh-16,g=el("g",{});
+    if(r.band)g.appendChild(el("rect",{x:sx(r.band[0]),y:y-2,width:Math.max(sx(r.band[1])-sx(r.band[0]),3),height:h+4,rx:4,fill:css("--ink-3"),opacity:.16}));
+    const w=Math.max(sx(r.hi)-sx(r.lo),4);
+    g.appendChild(el("rect",{x:sx(r.lo),y:y,width:w,height:h,rx:4,fill:r.c}));
+    g.appendChild(txt(m.l-10,y+h/2+4,r.n,{ "text-anchor":"end",fill:css("--ink-1"),"font-size":11.8,"font-weight":r.b?700:500}));
+    const lx=sx(r.hi)+8, lab=txt(lx,y+h/2+4,r.lab,{fill:css("--ink-1"),"font-size":11.5,"font-weight":650});
+    if(lx>W-70){lab.setAttribute("x",sx(r.lo)-8);lab.setAttribute("text-anchor","end");lab.setAttribute("fill",css("--ink-1"))}
+    g.appendChild(lab); s.appendChild(g);
+    hov(g,`<b>${r.n}</b>${r.lab}${r.note?"<br>"+r.note:""}`);
+  });
+}
+
+/* ============ log-axis multi-line (gear) ============ */
+function chGear(){
+  const host=document.getElementById("ch-gear"); if(!host)return;
+  const mods=[{m:5,c:css(S[0])},{m:20,c:css(S[1])},{m:50,c:css(S[2])}];
+  const f=(m,A)=>(0.55*m+5)*Math.pow(Math.SQRT2,A-5);
+  const W=680,H=322,mg={t:26,r:112,b:46,l:52},PW=W-mg.l-mg.r,PH=H-mg.t-mg.b;
+  const lo=1,hi=300,sy=v=>mg.t+PH-(Math.log10(v)-Math.log10(lo))/(Math.log10(hi)-Math.log10(lo))*PH;
+  const sx=A=>mg.l+(A-1)/10*PW;
+  const s=svg(host,W,H);
+  [1,3,10,30,100,300].forEach(v=>{s.appendChild(el("line",{x1:mg.l,y1:sy(v),x2:mg.l+PW,y2:sy(v),stroke:css("--grid"),"stroke-width":1}));
+    s.appendChild(txt(mg.l-8,sy(v)+4,v,{ "text-anchor":"end"}));});
+  s.appendChild(txt(mg.l-40,11,"f_fα [µm]",{fill:css("--ink-2")}));
+  for(let A=1;A<=11;A+=1){s.appendChild(el("line",{x1:sx(A),y1:mg.t,x2:sx(A),y2:mg.t+PH,stroke:css("--grid"),"stroke-width":A%2?1:0}));
+    if(A%2)s.appendChild(txt(sx(A),mg.t+PH+18,A,{ "text-anchor":"middle"}));}
+  s.appendChild(txt(mg.l+PW/2,mg.t+PH+38,"ISO 1328-1 등급 A  (1 = 최정밀 → 11 = 최이완)",{ "text-anchor":"middle",fill:css("--ink-2")}));
+  s.appendChild(el("line",{x1:mg.l,y1:mg.t+PH,x2:mg.l+PW,y2:mg.t+PH,stroke:css("--axis"),"stroke-width":1.5}));
+  const labs=[];
+  mods.forEach(d=>{
+    let p="";for(let A=1;A<=11;A++){p+=(A===1?"M":" L")+sx(A).toFixed(1)+","+sy(f(d.m,A)).toFixed(1)}
+    const path=el("path",{d:p,fill:"none",stroke:d.c,"stroke-width":2});s.appendChild(path);
+    for(let A=1;A<=11;A+=2){const c=el("circle",{cx:sx(A),cy:sy(f(d.m,A)),r:4,fill:d.c,stroke:css("--surface-1"),"stroke-width":2});
+      s.appendChild(c);hov(c,`<b>m_n = ${d.m} mm · 등급 ${A}</b>f_fα = ${f(d.m,A).toFixed(2)} µm`);}
+    labs.push({y:sy(f(d.m,11)),c:d.c,n:`m_n = ${d.m} mm`});
+  });
+  spread(labs,15).forEach(L=>{
+    s.appendChild(el("line",{x1:mg.l+PW,y1:L.y,x2:mg.l+PW+8,y2:L.y,stroke:L.c,"stroke-width":2}));
+    s.appendChild(txt(mg.l+PW+12,L.y+4,L.n,{fill:css("--ink-2"),"font-size":11,"font-weight":600}));});
+  legend("lg-gear",mods.map(d=>({c:d.c,t:`m_n = ${d.m} mm`})));
+}
+
+/* ============ render all ============ */
+function renderAll(){
+  chProf();
+  const seq=["#cde2fb","#9ec5f4","#5598e7","#2a78d6","#184f95","#0d366b"];
+  hbar("ch-stress",[
+    {n:"학술 설계 상한",v:1500,lab:"1 500 MPa",c:seq[1],note:"Machines 11(7) 681 (2023) · τ_max<375 MPa"},
+    {n:"풍력 동적 설계한계",v:1650,lab:"1 650 MPa",c:seq[2],b:1,note:"Timken TDI 백서 (verbatim)"},
+    {n:"ISO 16281 기준 프로파일 대응",v:3000,lab:"3 000 MPa",c:seq[3],note:"P_r=0.00035·D_w 가 상정하는 응력 수준"},
+    {n:"WEC 발생 임계 (과도)",v:3100,lab:"> 3 100 MPa",c:seq[4],note:"SKF Evolution · 과도 상태"},
+    {n:"ISO 76 정적 정격 (롤러)",v:4000,lab:"4 000 MPa",c:seq[5],b:1,note:"영구변형 1×10⁻⁴·D_w 기준 · Timken 극한한계와 동일"}
+  ],{max:4400,axis:"최대 접촉응력 [MPa]",fmt:v=>Math.round(v).toLocaleString(),l:206});
+  hbar("ch-press",[
+    {n:"무크라우닝 (straight)",v:10.7,lab:"~10.7 GPa",c:css("--crit"),note:"tilt 0 · edge loading 심각"},
+    {n:"Johns–Gohar",v:3.75,lab:"~3.75 GPa",c:css("--serious"),note:"tilt 0 · edge loading 중간, 경사 시 재상승"},
+    {n:"Fujiwara Case 1",v:3.1,lab:"~3.1 GPa",c:css("--good"),b:1,note:"tilt 0 · edge loading 없음"}
+  ],{max:11.5,axis:"최고 접촉압력 [GPa]  (tilt 0 rad 정량값)",fmt:v=>v.toFixed(0),l:168});
+  legend("lg-press",[{c:css("--crit"),t:"✖ 엣지로딩 심각"},{c:css("--serious"),t:"◑ 중간 — 경사 시 재상승"},{c:css("--good"),t:"✔ 엣지로딩 없음"}]);
+  hbar("ch-drop",[
+    {n:"Flat",v:0.001,lab:"0",c:seq[0]},
+    {n:"Chamfered",v:8.677,lab:"8.677 µm",c:seq[1]},
+    {n:"Aerospace profile",v:10.064,lab:"10.064 µm",c:seq[2],note:"L–P 하중수명지수 p = 3.5"},
+    {n:"Full crown R = 150d",v:10.812,lab:"10.812 µm",c:seq[3],note:"p = 3.2 · 양호 (edge loading 회피)"},
+    {n:"Full crown R = 100d",v:16.218,lab:"16.218 µm",c:seq[4],note:"과크라우닝 — 경하중 수명 86% 감소"},
+    {n:"Logarithmic",v:20.0,lab:"20.000 µm",c:seq[5],b:1,note:"중앙부 응력 균일도 최우수"}
+  ],{max:23,axis:"Crown drop [µm]  ·  NASA/TM—2015-218895",fmt:v=>v.toFixed(0),l:168});
+  hbar("ch-ga",[
+    {n:"3 kN · 경사 0",v:13,lab:"+13%",c:seq[1],note:"k₁=1.35, k₂=0.47, k₃=1.49"},
+    {n:"3 kN · 5 Nm",v:32,lab:"+32%",c:seq[2],note:"k₁=2.55, k₂=0.36, k₃=1.70"},
+    {n:"10 kN · 경사 0",v:39,lab:"+39%",c:seq[3],note:"k₁=2.95, k₂=0.39, k₃=2.15 · 6 217 → 8 615 h"},
+    {n:"10 kN · 5 Nm",v:51,lab:"+51%",c:seq[5],b:1,note:"k₁=3.70, k₂=0.34, k₃=2.55 · 5 245 → 7 929 h"}
+  ],{max:58,axis:"수정 기준정격수명 개선율 [%]  (Johns–Gohar 대비)",fmt:v=>Math.round(v)+"%",l:168});
+  rangeBar("ch-mis",[
+    {n:"SKF 카탈로그 허용 (로그 프로파일·중하중)",lo:0.58,hi:1.16,c:css(S[0]),lab:"0.58–1.16",b:1,note:"2–4 arcmin · 제조사 공개 유일 수치"},
+    {n:"Timken TDI 풍력 메인샤프트 FE 해석",lo:0,hi:1.0,c:css(S[1]),lab:"0–1.0"},
+    {n:"6MW급 1500mm TRB (LAC2 궤도 tilt)",lo:0.30,hi:0.40,c:css(S[1]),lab:"0.35 (0.02°)"},
+    {n:"5MW 부유식 DD TDIRB (Zheng et al.)",lo:1.0,hi:4.0,c:css(S[1]),lab:"1.0–4.0",b:1,note:"4 mrad에서 1열 접촉하중 46.21 → 140 kN (약 3배)"}
+  ],{max:4.5,ticksArr:[0,1,2,3,4],axis:"각 미스얼라인먼트 [mrad]",l:238});
+  legend("lg-mis",[{c:css(S[0]),t:"카탈로그 허용 범위"},{c:css(S[1]),t:"실제 운전 / 해석 범위"}]);
+  rangeBar("ch-split",[
+    {n:"외륜 크라우닝",band:[40,90],lo:40,hi:50,c:css(S[0]),lab:"≥40% (예 50%)",b:1,note:"점성저항 감소 + 수명 유지"},
+    {n:"내륜 크라우닝",band:[10,60],lo:10,hi:30,c:css(S[1]),lab:"≥10% (예 30%)",note:"축방향 끝단 접촉하중 저감"},
+    {n:"롤러 크라우닝 (×2 작용)",band:[0,20],lo:0,hi:20,c:css(S[2]),lab:"≤20%",b:1,note:"두 궤도 접촉에 동시 작용하므로 상한이 낮음"}
+  ],{max:100,ticksArr:[0,20,40,60,80,100],axis:"총 크라우닝량 대비 비율 [%]  ·  총량 50–100 µm",l:206,rh:38});
+  legend("lg-split",[{c:css("--ink-3"),t:"특허 허용 범위 (회색 배경)"},{c:css(S[0]),t:"외륜"},{c:css(S[1]),t:"내륜"},{c:css(S[2]),t:"롤러"}]);
+  rangeBar("ch-scale",[
+    {n:"접촉영역 크라우닝 (NASA 실측)",lo:8,hi:20,c:css(S[0]),lab:"8–20 µm",b:1},
+    {n:"ISO 16281 기본값 (D_w 40–60)",lo:14,hi:21,c:css(S[0]),lab:"14–21 µm"},
+    {n:"Fujiwara 회귀 외삽 (d40·L45)",lo:35,hi:40,c:css(S[0]),lab:"35–40 µm",note:"⚠️ 검증범위(d≤24mm) 밖"},
+    {n:"총 크라우닝 (롤러+양 궤도)",lo:50,hi:100,c:css(S[1]),lab:"50–100 µm",b:1,note:"JTEKT 특허 규정 · 비접촉 끝단 릴리프 포함"}
+  ],{max:110,ticksArr:[0,20,40,60,80,100],axis:"낙차 [µm]",l:206});
+  legend("lg-scale",[{c:css(S[0]),t:"접촉영역 크라우닝 (로그식 지배)"},{c:css(S[1]),t:"총 크라우닝 (릴리프 포함)"}]);
+  chGear();
+}
+renderAll();
+
+/* theme toggle */
+const tog=document.getElementById("tog");
+tog.addEventListener("click",()=>{
+  const d=document.documentElement.getAttribute("data-theme")==="dark";
+  document.documentElement.setAttribute("data-theme",d?"light":"dark");
+  tog.textContent=d?"◐ 다크모드":"◑ 라이트모드";
+  renderAll();
+});
+if(matchMedia("(prefers-color-scheme: dark)").matches){
+  document.documentElement.setAttribute("data-theme","dark");tog.textContent="◑ 라이트모드";renderAll();}
+
+/* TOC scrollspy */
+const links=[...document.querySelectorAll("nav.toc a")];
+const secs=links.map(a=>document.getElementById(a.getAttribute("href").slice(1))).filter(Boolean);
+const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{if(e.isIntersecting){
+    links.forEach(l=>l.classList.remove("active"));
+    const a=links.find(l=>l.getAttribute("href")==="#"+e.target.id);
+    if(a){a.classList.add("active");}
+  }});
+},{rootMargin:"-10% 0px -80% 0px"});
+secs.forEach(s=>io.observe(s));
+})();
+</script>
+</body>
+</html>
