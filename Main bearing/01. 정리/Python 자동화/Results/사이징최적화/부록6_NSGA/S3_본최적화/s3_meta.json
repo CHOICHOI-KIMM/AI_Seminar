@@ -1,0 +1,18 @@
+{
+ "pop": 224,
+ "gen": 150,
+ "seed": 1,
+ "dry": false,
+ "budget": 33600,
+ "masta": 32047,
+ "cache_hit": 1553,
+ "geom_out": 1,
+ "edge": 6,
+ "n_front": 111,
+ "elapsed_s": 9619.7,
+ "s_per_masta": 0.3,
+ "hv_ref": [
+  40.0,
+  250.0
+ ]
+}
