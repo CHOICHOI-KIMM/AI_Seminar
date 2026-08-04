@@ -17,9 +17,14 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.dirname(HERE)
 ROOT = os.path.dirname(RES)
-# argv[1] == "2" → P2 Phase 2 (24건, 기준선 없음) · 없으면 Phase 1 (12건 + 기준선)
-PH2 = len(sys.argv) > 1 and sys.argv[1] == "2"
-if PH2:
+# argv[1] "2" → Phase 2(24건) · "3" → Phase 3(6건 · 베어링질량 기준)
+# 없으면 Phase 1(12건 + 기준선)
+_PH = sys.argv[1] if len(sys.argv) > 1 else "1"
+PH2 = _PH in ("2", "3")          # 기준선 행을 붙이지 않는 단계
+if _PH == "3":
+    DIR = os.path.join(HERE, "P2_피로수명_Phase3")
+    SRCF, OUT = "p2c_targets.csv", os.path.join(DIR, "p2c_constants.csv")
+elif _PH == "2":
     DIR = os.path.join(HERE, "P2_피로수명_Phase2")
     SRCF, OUT = "p2b_targets.csv", os.path.join(DIR, "p2b_constants.csv")
 else:

@@ -25,9 +25,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.dirname(HERE)
 ROOT = os.path.dirname(RES)
 DLCDIR = os.path.join(RES, "DLC별해석")
-# argv[1] == "2" → P2 Phase 2 (24건) · 없으면 Phase 1 (13건)
-_PH2 = len(sys.argv) > 1 and sys.argv[1] == "2"
-if _PH2:
+# argv[1] "2" → Phase 2(24건) · "3" → Phase 3(6건) · 없으면 Phase 1(13건)
+_PH = sys.argv[1] if len(sys.argv) > 1 else "1"
+if _PH == "3":
+    OUTDIR = os.path.join(HERE, "P2_피로수명_Phase3")
+    CONST = os.path.join(OUTDIR, "p2c_constants.csv")
+elif _PH == "2":
     OUTDIR = os.path.join(HERE, "P2_피로수명_Phase2")
     CONST = os.path.join(OUTDIR, "p2b_constants.csv")
 else:
