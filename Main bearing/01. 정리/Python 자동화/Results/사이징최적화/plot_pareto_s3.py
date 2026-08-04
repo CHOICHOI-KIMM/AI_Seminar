@@ -41,9 +41,10 @@ SETS = (("z1>=1.0", "##### 6-11.5a", 1.0, "pareto_s3_z1_10",
 TOP = 10          # 문서 표에 싣는 건수 (전체는 s3_pareto.csv)
 DPI = 500
 
-# 편집기가 표를 정렬하면 `| # |` 이 `|  # |` 로 패딩된다 — 여백을 허용해야
-# 재실행이 깨지지 않는다(260804).
-PAT = r"^\|\s*#\s*\|\s*D_pw.*?(?=\n\n)"
+# 표 두 개(베어링 최경량 · 총질량 최경량)를 함께 갈아끼우므로, 표 하나만
+# 집던 방식 대신 **그림 줄 다음부터 다음 제목까지**를 통째로 교체한다.
+# (편집기가 표를 정렬해 `| # |` 이 `|  # |` 로 패딩돼도 영향을 받지 않는다)
+IMG = r"^!\[[^\]]*\]\([^)]*\)\n"
 HDR = ("| # | D_pw [mm] | d [mm] | D [mm] | T [mm] | B [mm] | C [mm] | "
        "α [°] | D_we [mm] | L_we [mm] | 세장비 | z1 [m] | z2 [m] | Z [개] | "
        "L_eff [m] | **베어링** [t] | 샤프트 [t] | **합계** [t] | σ_max [MPa] |")
@@ -146,10 +147,18 @@ def main():
         assert F[0] is min(sub, key=lambda r: float(r["mass_brg_kg"])), lab
         assert F[-1] is min(sub, key=lambda r: float(r["mass_total_kg"])), lab
         info[lab] = (len(sub), len(F), draw(sub, F, stem, title))
-        tbls[sect] = "\n".join(
-            [HDR, SEP] + [row(i, r) for i, r in enumerate(F[:TOP], 1)]
-            + ([f"| … | *(이하 {len(F)-TOP}건은 `s3_pareto.csv`)* |"
-                + " |" * 17] if len(F) > TOP else []))
+        # 프론트는 베어링 오름차순이므로 **꼬리가 총질량 최경량 구간**이다.
+        # 번호는 프론트 순번을 그대로 쓴다 — 그림·CSV 와 대조가 되어야 한다.
+        head = [row(i, r) for i, r in enumerate(F[:TOP], 1)]
+        tail = [row(i, r) for i, r in enumerate(F[-TOP:], len(F) - TOP + 1)]
+        tbls[sect] = "\n\n".join([
+            f"**베어링 최경량 {TOP}건** (프론트 #1 ~ #{TOP})",
+            "\n".join([HDR, SEP] + head),
+            f"**총질량 최경량 {TOP}건** (프론트 #{len(F)-TOP+1} ~ #{len(F)}) — "
+            f"프론트 꼬리다. 아래로 갈수록 총질량이 가벼워진다",
+            "\n".join([HDR, SEP] + tail),
+            f"*프론트 전체 {len(F)}건은 `부록6_NSGA/S3_본최적화/s3_pareto.csv`.*",
+        ])
         for i, r in enumerate(F, 1):
             dump.append(dict(subset=lab, rank_pareto=i, **r))
     with open(OUT, "w", newline="", encoding="utf-8-sig") as f:
@@ -161,10 +170,11 @@ def main():
     for sect in sorted(tbls, reverse=True):   # 뒤에서 앞으로 — 인덱스 밀림 방지
         base = s.index(sect)
         nxt = _next_head(s, base)
-        m = re.search(PAT, s[base:nxt], re.S | re.M)
+        m = re.search(IMG, s[base:nxt], re.M)   # 그림 줄을 기준점으로
         if not m:
-            raise RuntimeError(f"{sect} 표를 찾지 못했다 — 자리표 표가 있어야 한다")
-        s = s[:base + m.start()] + tbls[sect] + s[base + m.end():]
+            raise RuntimeError(f"{sect} 에 그림 줄이 없다 — 자리표가 있어야 한다")
+        cut = base + m.end()                    # 그림 다음부터 다음 제목까지 교체
+        s = s[:cut] + "\n" + tbls[sect] + "\n\n" + s[nxt:]
     io.open(DOC, "w", encoding="utf-8").write(s)
     return info
 
