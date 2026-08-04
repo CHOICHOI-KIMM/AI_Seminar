@@ -267,26 +267,80 @@ def dump_front(prob, algo, path):
     return rows
 
 
+# ── 사전 점검 — v1.3 기준선 재검증 ───────────────────────────────────
+# S1 자기검증(§6-10.1)과 **같은 1점**을 본런 직전에 다시 돌린다. 모델 파일이
+# 바뀌었거나 MASTA 설정이 달라졌으면 여기서 먼저 걸린다.
+BASE_PT = (0.5, 3.0, 3.3309, 19.0, 0.11051, 0.238048)
+BASE_EXP = dict(bore_mm=3055.0, D_mm=3600.0, T_mm=310.0, Z=87,
+                sigma_max_MPa=3424.2, mass_brg_kg=5600.5,
+                mass_shaft_kg=43225.8, L_eff_m=3.61666)
+BASE_TOL = dict(sigma_max_MPa=0.001, mass_brg_kg=0.002,      # 상대오차
+                mass_shaft_kg=0.002, L_eff_m=0.001)
+
+
+def baseline_check(ev):
+    """v1.3 기준선 1점을 재현하는지 확인한다 (약 0.3 s).
+
+    정수화는 **끈다** — §6-10.1 의 기댓값이 정수화 이전 기준이기 때문이다.
+    (`ID_shaft` 가 `floor` 냐 `round` 냐에서 1 mm 갈려 샤프트 질량이 달라진다.)
+    평가 후 원래 설정으로 되돌린다.
+    """
+    keep = ev.integerize
+    ev.integerize = False
+    try:
+        r = ev.evaluate([BASE_PT])[0]
+    finally:
+        ev.integerize = keep
+
+    ok, lines = True, []
+    for k in ("bore_mm", "D_mm", "T_mm", "Z"):                # 정확 일치
+        got, exp = float(r[k]), float(BASE_EXP[k])
+        hit = got == exp
+        ok &= hit
+        lines.append((k, got, exp, hit, ""))
+    for k, tol in BASE_TOL.items():                           # 상대오차
+        got, exp = float(r[k]), float(BASE_EXP[k])
+        e = abs(got - exp) / abs(exp)
+        hit = e <= tol
+        ok &= hit
+        lines.append((k, got, exp, hit, f"{100*e:.3f}%"))
+
+    print("\n[사전] v1.3 기준선 재검증")
+    for k, got, exp, hit, extra in lines:
+        print(f"  {'O' if hit else 'x'}  {k:14} {got:>12,.4g}  기대 {exp:>12,.4g}"
+              f"  {extra}")
+    print(f"  판정: {'일치' if ok else '불일치 — 본런 보류'}")
+    return ok
+
+
 # ── S3-b 드라이런 점검 (§6-9) ────────────────────────────────────────
 def dry_checks(prob, front, outdir):
-    """네 항목을 실측으로 확인하고 통과 여부를 돌려준다."""
+    """네 항목을 실측으로 확인하고 통과 여부를 돌려준다.
+
+    **기준선(v1.3) 은 점검 대상에서 뺀다** — `L_we` 238.048 mm 는 0.1 mm 격자에
+    없는 실측값이고, 최적화가 만든 설계가 아니라 사전 검증용으로 캐시에
+    들어간 것이기 때문이다(§6-11.1 재검증).
+    """
     print("\n[S3-b] 드라이런 점검")
     res = {}
+    base_key = ne.key_of(*BASE_PT)
+    pts = [r for k, r in prob.ev.cache.items() if k != base_key]
 
     seen = set()
     for x in CategorySeeding()._do(prob, POP):
         seen.add((x["z1"], x["z2"], x["alpha"]))
     res["시딩 커버리지"] = (len(seen) == N_CAT, f"{len(seen)}/{N_CAT}")
 
-    off = [r for r in prob.ev.cache.values()
+    off = [r for r in pts
            if abs(round(float(r["L_we_mm"]) * 10) - float(r["L_we_mm"]) * 10)
            > 1e-9]
     res["L_we 0.1 mm 격자"] = (not off,
-                               f"평가 {len(prob.ev.cache):,}점 중 이탈 {len(off)}")
+                               f"평가 {len(pts):,}점 중 이탈 {len(off)}"
+                               f" (기준선 1점 제외)")
 
-    sl = [float(r["slenderness"]) for r in prob.ev.cache.values()]
+    sl = [float(r["slenderness"]) for r in pts]
     ok_sl = all(1.5 - 1e-9 <= v <= 2.5 + 1e-9 for v in sl)
-    edge = sum(1 for v in sl if v <= 1.502 or v >= 2.498)
+    edge = sum(1 for v in sl if v <= 1.5005 or v >= 2.4995)
     res["세장비 밴드"] = (ok_sl, f"{min(sl):.4f} ~ {max(sl):.4f} · "
                                  f"경계집중 {100*edge/len(sl):.1f}%" if sl else "—")
 
@@ -320,6 +374,10 @@ def main():
     print(f"[S3{'-b 드라이런' if dry else ''}] {POP} × {gen} = "
           f"{POP*gen:,} 평가 · 조합 {2*7*16*1201*1201*3751:.2e} · "
           f"캐시 {len(ev.cache):,}점", flush=True)
+
+    if not baseline_check(ev):          # 사전 게이트 — 재시도 대상 아님
+        ev.close()
+        return 4
 
     algo = NSGA2(pop_size=POP,
                  sampling=CategorySeeding(),
@@ -356,7 +414,7 @@ def main():
             print(f"\n  본런 예산 추정: MASTA {ev.n_masta/gen*GEN:,.0f}회 × "
                   f"{dt/ev.n_masta:.3f} s ≈ "
                   f"{ev.n_masta/gen*GEN*(dt/ev.n_masta)/3600:.2f}시간")
-        return 0 if ok else 1
+        return 0 if ok else 3          # 3 = 게이트 불합격 (재시도 대상 아님)
     return 0
 
 
