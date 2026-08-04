@@ -27,7 +27,10 @@ ROOT = os.path.dirname(RES)
 DLCDIR = os.path.join(RES, "DLC별해석")
 # argv[1] "2" → Phase 2(24건) · "3" → Phase 3(6건) · 없으면 Phase 1(13건)
 _PH = sys.argv[1] if len(sys.argv) > 1 else "1"
-if _PH == "3":
+if _PH == "4":                       # S4 — 부록 6 S3-c 프론트 40건 (§6-11.5)
+    OUTDIR = os.path.join(HERE, "P2_피로수명_S4")
+    CONST = os.path.join(OUTDIR, "p2d_constants.csv")
+elif _PH == "3":
     OUTDIR = os.path.join(HERE, "P2_피로수명_Phase3")
     CONST = os.path.join(OUTDIR, "p2c_constants.csv")
 elif _PH == "2":

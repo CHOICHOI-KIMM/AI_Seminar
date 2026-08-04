@@ -1,5 +1,5 @@
 """
-P2 Phase 3 — 문서 §8-5.7.1(C) · §8-5.7.2(D) 표 자동 재생성
+P2 Phase 3 — 문서 §8-6.1(C) · §8-6.2(D) 표 자동 재생성
 ============================================================
 베어링 단독 질량 기준 최경량 6건(§8-4.4.1·§8-4.4.2 상위 3)의 피로 결과.
 fatigue_summary.csv 를 읽어 집합별 표를 다시 쓴다.
@@ -26,7 +26,7 @@ CONST = os.path.join(DIR, "p2c_constants.csv")
 TGT = os.path.join(DIR, "p2c_targets.csv")
 DOC = os.path.join(os.path.dirname(os.path.dirname(HERE)),
                    "DLC기반_피로해석_사이징_최적화.md")
-SECT = {"C": "##### 8-5.7.1", "D": "##### 8-5.7.2"}
+SECT = {"C": "#### 8-6.1", "D": "#### 8-6.2"}
 LIMIT = 0.5
 # 기준선 — P2 Phase 1 재사용. 제원은 v1.3, 질량은 §4-3 MASTA 실측.
 BASE = dict(D_pw_mm=3330.9, alpha=19.0, D_we_mm=110.51, L_we_mm=238.048,
@@ -45,7 +45,8 @@ def _next_head(s, base):
     m = re.search(r"^#{1,6} ", s[base + 5:], re.M)
     return base + 5 + m.start() if m else len(s)
 
-PAT = r"^\| # \| D_pw.*?(?=\n\n)"
+# 편집기가 표를 정렬하면 `| # |` 이 `|  # |` 로 패딩된다 — 여백 허용(260805)
+PAT = r"^\|\s*#\s*\|\s*D_pw.*?(?=\n\n)"
 
 
 def load(p):
@@ -128,7 +129,7 @@ def main():
         s = swap(s, SECT[tag], tbls[tag])
     txt = (f"*(수행 중 {done}/{total} — 설계 완료마다 자동 갱신)*" if done < total
            else f"*(완료 {total}/{total})*")
-    i = s.index("#### 8-5.7 추가 분석")
+    i = s.index("### 8-6. P2 —")
     s = s[:i] + re.sub(r"^\*\((대기|수행|완료)[^\n]*\)\*$", txt, s[i:], count=1,
                        flags=re.M)
     io.open(DOC, "w", encoding="utf-8").write(s)
@@ -137,4 +138,4 @@ def main():
 
 if __name__ == "__main__":
     d, t = main()
-    print(f"[문서 갱신] §8-5.7  {d}/{t} 완료")
+    print(f"[문서 갱신] §8-6  {d}/{t} 완료")
