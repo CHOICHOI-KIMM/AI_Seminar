@@ -42,11 +42,15 @@ def _next_head(s, base):
     m = re.search(r"^#{1,6} ", s[base + 5:], re.M)
     return base + 5 + m.start() if m else len(s)
 
-PAT = r"^\| # \| D_pw.*?(?=\n\n)"
-HDR = ("| # | D_pw [mm] | d [mm] | D [mm] | α [°] | D_we [mm] | L_we [mm] | "
-       "세장비 | z1 [m] | z2 [m] | Z [개] | L_eff [m] | **베어링** [t] | "
-       "샤프트 [t] | **합계** [t] | σ_max [MPa] |")
-SEP = "|--:" * 15 + "|--:|"
+# 편집기가 표를 정렬하면 `| # |` 이 `|  # |` 로 패딩된다 — 여백을 허용해야
+# 재실행이 깨지지 않는다(260804).
+PAT = r"^\|\s*#\s*\|\s*D_pw.*?(?=\n\n)"
+# 열 구성은 §6-11.5a·b(`plot_pareto_s3.py`)와 **같아야 한다** — 두 프론트를
+# 좌우로 대조하는 것이 부록 6 의 핵심이라 열이 어긋나면 비교가 안 된다.
+HDR = ("| # | D_pw [mm] | d [mm] | D [mm] | T [mm] | B [mm] | C [mm] | "
+       "α [°] | D_we [mm] | L_we [mm] | 세장비 | z1 [m] | z2 [m] | Z [개] | "
+       "L_eff [m] | **베어링** [t] | 샤프트 [t] | **합계** [t] | σ_max [MPa] |")
+SEP = "|--:" * 18 + "|--:|"
 
 plt.rcParams.update({"font.family": "Malgun Gothic", "axes.unicode_minus": False,
                      "font.size": 10.5})
@@ -153,7 +157,8 @@ def row(i, r):
     f = lambda k: float(r[k])                                   # noqa: E731
     mb, ms = f("mass_brg_kg") / 1000, f("mass_shaft_kg") / 1000
     return (f"| {i} | {f('D_pw_mm'):,.0f} | {f('bore_mm'):,.0f} | "
-            f"{f('D_mm'):,.0f} | {f('alpha'):.0f} | {f('D_we_mm'):.0f} | "
+            f"{f('D_mm'):,.0f} | {f('T_mm'):,.0f} | {f('B_mm'):,.0f} | "
+            f"{f('C_mm'):,.0f} | {f('alpha'):.0f} | {f('D_we_mm'):.0f} | "
             f"{f('L_we_mm'):.0f} | {f('L_we_mm')/f('D_we_mm'):.3f} | "
             f"{f('z1'):.1f} | {f('z2'):.1f} | {int(float(r['Z']))} | "
             f"{f('L_eff_m'):.3f} | **{mb:.2f}** | {ms:.1f} | "
