@@ -47,8 +47,20 @@ DPI = 500
 IMG = r"^!\[[^\]]*\]\([^)]*\)\n"
 HDR = ("| # | D_pw [mm] | d [mm] | D [mm] | T [mm] | B [mm] | C [mm] | "
        "α [°] | D_we [mm] | L_we [mm] | 세장비 | z1 [m] | z2 [m] | Z [개] | "
-       "L_eff [m] | **베어링** [t] | 샤프트 [t] | **합계** [t] | σ_max [MPa] |")
-SEP = "|--:" * 18 + "|--:|"
+       "L_eff [m] | **베어링** [t] | 샤프트 [t] | **합계** [t] | σ_max [MPa] | "
+       "**ΣD30_UW** | ΣD30_Sys | life_Sys [yr] | **판정** |")
+SEP = "|--:" * 22 + "|:-:|"
+
+# S4 피로 검토 결과 (§6-11.5 · 40건) — 있으면 표에 4열을 붙인다
+FAT = os.path.join(HERE, "P2_피로수명_S4", "fatigue_summary.csv")
+
+
+def fatigue_map():
+    """설계 태그(a01·b41 …) → 피로 결과. 아직 없으면 빈 dict."""
+    if not os.path.isfile(FAT):
+        return {}
+    with open(FAT, encoding="utf-8-sig") as f:
+        return {r["design"]: r for r in csv.DictReader(f)}
 
 plt.rcParams.update({"font.family": "Malgun Gothic",
                      "axes.unicode_minus": False, "font.size": 10.5})
@@ -125,22 +137,32 @@ def draw(sub, front, stem, title):
     return paths
 
 
-def row(i, r):
+def row(i, r, pre="", fat=None):
+    """프론트 1행. `pre`(a·b)가 주어지고 피로 결과가 있으면 4열을 덧붙인다."""
     f = lambda k: float(r[k])                                   # noqa: E731
     mb, ms = f("mass_brg_kg") / 1000, f("mass_shaft_kg") / 1000
-    return (f"| {i} | {f('D_pw_mm'):,.0f} | {f('bore_mm'):,.0f} | "
+    fr = (fat or {}).get(f"{pre}{i:02d}") if pre else None
+    tail = " — | — | — | — |"
+    if fr:
+        ok = fr["pass_UW"] == "1" and fr["pass_Sys"] == "1"
+        tail = (f" **{float(fr['D30_UW']):.4f}** | {float(fr['D30_Sys']):.4f} | "
+                f"{float(fr['life_Sys_yr']):,.0f} | "
+                f"{'**합격**' if ok else '**불합격**'} |")
+    return ((f"| {i} | {f('D_pw_mm'):,.0f} | {f('bore_mm'):,.0f} | "
             f"{f('D_mm'):,.0f} | {f('T_mm'):,.0f} | {f('B_mm'):,.0f} | "
             f"{f('C_mm'):,.0f} | {f('alpha'):.0f} | {f('D_we_mm'):.1f} | "
             f"{f('L_we_mm'):.1f} | {f('L_we_mm')/f('D_we_mm'):.3f} | "
             f"{f('z1'):.1f} | {f('z2'):.1f} | {int(float(r['Z']))} | "
             f"{f('L_eff_m'):.3f} | **{mb:.2f}** | {ms:.1f} | "
-            f"**{2*mb+ms:.1f}** | {f('sigma_max_MPa'):,.1f} |")
+            f"**{2*mb+ms:.1f}** | {f('sigma_max_MPa'):,.1f} |") + tail)
 
 
 def main():
     rows = load()
+    fat = fatigue_map()
     tbls, dump, info = {}, [], {}
     for lab, sect, zmin, stem, title in SETS:
+        pre = "a" if lab.endswith("1.0") else "b"
         sub = [r for r in rows if float(r["z1"]) >= zmin]
         F = pareto(sub)
         # 양 끝점 = 단일목적 최적해여야 한다 (§8-4.4.4 와 같은 검사)
@@ -149,15 +171,19 @@ def main():
         info[lab] = (len(sub), len(F), draw(sub, F, stem, title))
         # 프론트는 베어링 오름차순이므로 **꼬리가 총질량 최경량 구간**이다.
         # 번호는 프론트 순번을 그대로 쓴다 — 그림·CSV 와 대조가 되어야 한다.
-        head = [row(i, r) for i, r in enumerate(F[:TOP], 1)]
-        tail = [row(i, r) for i, r in enumerate(F[-TOP:], len(F) - TOP + 1)]
+        head = [row(i, r, pre, fat) for i, r in enumerate(F[:TOP], 1)]
+        tail = [row(i, r, pre, fat)
+                for i, r in enumerate(F[-TOP:], len(F) - TOP + 1)]
         tbls[sect] = "\n\n".join([
             f"**베어링 최경량 {TOP}건** (프론트 #1 ~ #{TOP})",
             "\n".join([HDR, SEP] + head),
             f"**총질량 최경량 {TOP}건** (프론트 #{len(F)-TOP+1} ~ #{len(F)}) — "
             f"프론트 꼬리다. 아래로 갈수록 총질량이 가벼워진다",
             "\n".join([HDR, SEP] + tail),
-            f"*프론트 전체 {len(F)}건은 `부록6_NSGA/S3_본최적화/s3_pareto.csv`.*",
+            f"*프론트 전체 {len(F)}건은 `부록6_NSGA/S3_본최적화/s3_pareto.csv`* · "
+            + (f"*피로는 위 20건만 검토했다(S4 · §6-11.6) — 태그 `{pre}01`~`{pre}10` · "
+               f"`{pre}{len(F)-TOP+1}`~`{pre}{len(F)}`.*" if fat else
+               "*피로 미검토.*"),
         ])
         for i, r in enumerate(F, 1):
             dump.append(dict(subset=lab, rank_pareto=i, **r))
