@@ -7,23 +7,27 @@ S3 는 그 격자를 벗어나 **1.21 × 10¹² 조합**을 탐색한다(§6-3).
 S2 와 달라지는 것 네 가지 — 전부 §6-8 에서 채택한 구성이다.
   ① 수치 3변수를 **스케일 `Integer`** 로 선언 (0.1 mm 단위 · §6-3.1)
   ② 종속변수 **정수화 켬** (`INTEGERIZE=True` · §6-4)
-  ③ 세장비 **수리 켬** — 경계를 0.1 mm 격자에 정렬 (§6-8.1.4 ⒜ · R14 항목 26)
+  ③ 세장비 **밴드 재매개화** — `L_we` 대신 밴드 내 상대위치 `u` (§6-11.3)
   ④ 초기집단 **범주 224 조합 전수 시딩** (§6-8.1.4 ⒝)
+
+③ 은 초안의 수리(clip)를 대체한 것이다. 클립은 개체의 51.6 ~ 70.8% 를
+세장비 경계선 위에 박아 넣어 `L_we` 를 사실상 종속변수로 만들었다(§6-11.2).
+재매개화는 제약을 **구조적으로** 만족시키면서 `L_we` 를 밴드 안에서
+자유롭게 둔다 — 경계에 닿는 것은 `u` 가 0 또는 U_MAX 일 때뿐이다.
 
 종료는 **세대수 150 고정**이다(미결 #3 종결 · R14 항목 24). 하이퍼볼륨은
 세대별로 기록만 하고 종료 판정에 쓰지 않는다 — 사후 수렴 확인용이다.
 
 중복 제거는 pymoo 에 맡기지 않는다(`eliminate_duplicates=None` · R14 항목 25).
-수리 후 같아지는 설계를 `x` 공간에서는 볼 수 없고, MASTA 절약은
-`eval_cache` 가 수리 **후** 키로 이미 수행한다.
+`u` 는 밴드 폭보다 촘촘해 여러 `u` 가 같은 `L_we` 로 떨어지는데, 이런
+중복은 `x` 공간에서 보이지 않는다. MASTA 절약은 `eval_cache` 가 담당한다.
 
 사용법
   python nsga_s3_run.py dry     드라이런 224×5 (약 6분) — S3-b 점검 4항목
-  python nsga_s3_run.py         본 최적화 224×150 (약 2.6시간)
+  python nsga_s3_run.py         본 최적화 224×150 (약 2.95시간)
 """
 import csv
 import json
-import math
 import os
 import sys
 import time
@@ -47,15 +51,16 @@ LIMIT = 2100.0                  # MPa (§6-5)
 POP, GEN, SEED = 224, 150, 1    # §6-8 — S2 에서 재현율 100% 의 최소 구성
 DRY_GEN = 5                     # S3-b 드라이런
 
-# ── 설계변수 (§6-3) ──────────────────────────────────────────────────
-# 수치 3변수는 **0.1 mm 정수 단위**로 다룬다. D_pw 만 1 mm 단위이므로
-# 10배 해서 같은 눈금에 올린다 — 이렇게 하면 수리 경계 정렬이 정수 연산이 된다.
+# ── 설계변수 (§6-3 · §6-11.3) ────────────────────────────────────────
+# 수치변수는 **0.1 mm 정수 단위**로 다룬다. D_pw 만 1 mm 단위이므로 10배
+# 해서 같은 눈금에 올린다 — 밴드 경계 산출이 전부 정수 연산이 된다.
 Z1_OPT = [1.0, 1.5]                                    # m
 Z2_OPT = [3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0]           # m
 AL_OPT = list(range(15, 31))                           # deg (1° 간격)
 DPW_LO, DPW_HI = 3300, 4500                            # mm (1 mm 단위)
 DWE_LO, DWE_HI = 1100, 2300                            # 0.1 mm 단위 → 110~230 mm
 LWE_LO, LWE_HI = 1750, 5500                            # 0.1 mm 단위 → 175~550 mm
+U_MAX = 10000                                          # 밴드 내 상대위치 눈금
 N_CAT = len(Z1_OPT) * len(Z2_OPT) * len(AL_OPT)        # 224
 
 # 하이퍼볼륨 기준점 [베어링 t · 총 t] — P1 Phase 3 최대(23 t / 195 t) 밖에 둔다.
@@ -63,20 +68,30 @@ N_CAT = len(Z1_OPT) * len(Z2_OPT) * len(AL_OPT)        # 224
 HV_REF = np.array([40.0, 250.0])
 
 
-# ── 세장비 수리 — 0.1 mm 격자 정렬 (§6-8.1.4 ⒜) ──────────────────────
-def repair_lwe(dwe_i, lwe_i):
-    """`L_we` 를 [1.5·D_we, 2.5·D_we] 로 클립하되 경계를 격자에 맞춘다.
+# ── 세장비 밴드 재매개화 (§6-11.3) ───────────────────────────────────
+def band(dwe_i):
+    """`D_we` 에 대응하는 `L_we` 허용 밴드를 0.1 mm 격자로 돌려준다.
 
     입력·출력 모두 **0.1 mm 정수 단위**다. 하한은 올림·상한은 내림이라
-    두 방향 모두 구간 안쪽이므로 세장비를 새로 위반시키지 않는다.
+    두 방향 모두 구간 안쪽이고, 따라서 세장비 1.5 ~ 2.5 를 벗어나지 않는다.
       lo = ceil (1.5·dwe_i) = (3·dwe_i + 1) // 2
       hi = floor(2.5·dwe_i) = (5·dwe_i) // 2
-    변수 경계를 벗어나면 경계로 자른다 — 그래도 세장비는 만족한다
-    (하한 절단은 D_we < 116.7 mm 일 때만, 상한 절단은 D_we > 220 mm 일 때만).
+    변수 범위 [175, 550] mm 를 넘으면 그쪽으로 자른다 — 그래도 세장비는
+    만족한다(하한 절단은 `D_we` < 116.7 mm, 상한 절단은 > 220 mm 일 때만).
     """
-    lo = max((3 * dwe_i + 1) // 2, LWE_LO)
-    hi = min((5 * dwe_i) // 2, LWE_HI)
-    return min(max(lwe_i, lo), hi)
+    return (max((3 * dwe_i + 1) // 2, LWE_LO),
+            min((5 * dwe_i) // 2, LWE_HI))
+
+
+def lwe_of(dwe_i, u):
+    """밴드 내 상대위치 `u` → `L_we` (0.1 mm 정수 단위)
+
+    `u` 는 0 ~ U_MAX 의 정수다. 밴드 폭이 1,100 ~ 1,200 스텝이므로 여러
+    `u` 가 같은 `L_we` 로 떨어진다(약 9:1) — 중복은 `eval_cache` 가 흡수한다.
+    경계값은 `u` 가 정확히 0 또는 U_MAX 일 때만 나온다.
+    """
+    lo, hi = band(dwe_i)
+    return lo + round(u * (hi - lo) / U_MAX)
 
 
 def to_si(z1, z2, dpw_mm, alpha, dwe_i, lwe_i):
@@ -95,8 +110,12 @@ class CategorySeeding(Sampling):
     `n_samples` 가 224 를 넘으면 조합을 순환시킨다(수치는 매번 새로 뽑음).
     """
 
+    def __init__(self, seed=SEED):
+        super().__init__()
+        self.seed = seed
+
     def _do(self, problem, n_samples, **kw):
-        rng = np.random.default_rng(kw.get("random_state", None) or SEED)
+        rng = np.random.default_rng(self.seed)
         cats = [(a, b, c) for a in Z1_OPT for b in Z2_OPT for c in AL_OPT]
         rng.shuffle(cats)
         out = []
@@ -105,7 +124,7 @@ class CategorySeeding(Sampling):
             out.append(dict(z1=z1, z2=z2, alpha=al,
                             D_pw=int(rng.integers(DPW_LO, DPW_HI + 1)),
                             D_we=int(rng.integers(DWE_LO, DWE_HI + 1)),
-                            L_we=int(rng.integers(LWE_LO, LWE_HI + 1))))
+                            u=int(rng.integers(0, U_MAX + 1))))
         return np.array(out, dtype=object)
 
 
@@ -113,36 +132,37 @@ class CategorySeeding(Sampling):
 class SizingS3(ElementwiseProblem):
     """2목적(베어링 질량 ↓ · 총질량 ↓) · 제약 2개
 
-    제약은 `z1 < z2` 를 빼고 둘만 둔다 — `z1 ∈ {1.0, 1.5}` · `z2 ≥ 3.0` 이라
-    범주 정의상 항상 만족한다(§6-5). 세장비도 수리로 구조적으로 만족한다.
+    제약은 둘만 둔다(§6-5).
       g1  기하 제약 위반 개수 (C2·C4~C9·C12 — `sizing_geom.constraints`)
       g2  응력 `(σ − 2,100) / 2,100`
+    `z1 < z2` 는 범주 정의상 항상 만족하고(`z1 ≤ 1.5` · `z2 ≥ 3.0`),
+    세장비는 재매개화로 구조적으로 만족한다.
     """
 
     def __init__(self, ev):
         self.ev = ev
         self.n_call = 0          # `_evaluate` 호출 총수 = 예산
         self.n_geom_out = 0      # 해석식 탈락 (MASTA 미호출)
-        self.n_repaired = 0      # 수리가 실제로 값을 바꾼 횟수
+        self.n_edge = 0          # 세장비 경계(u=0 또는 U_MAX)에 놓인 개체
         super().__init__(
             vars=dict(z1=Choice(options=Z1_OPT), z2=Choice(options=Z2_OPT),
                       alpha=Choice(options=AL_OPT),
                       D_pw=Integer(bounds=(DPW_LO, DPW_HI)),
                       D_we=Integer(bounds=(DWE_LO, DWE_HI)),
-                      L_we=Integer(bounds=(LWE_LO, LWE_HI))),
+                      u=Integer(bounds=(0, U_MAX))),
             n_obj=2, n_ieq_constr=2)
 
     def design_of(self, x):
-        """설계변수 dict → 수리 후 SI 설계점. 프론트 기록도 이걸 쓴다."""
-        lwe_i = repair_lwe(x["D_we"], x["L_we"])
+        """설계변수 dict → SI 설계점. 프론트 기록도 이걸 쓴다."""
+        lwe_i = lwe_of(x["D_we"], x["u"])
         return to_si(x["z1"], x["z2"], x["D_pw"], x["alpha"],
                      x["D_we"], lwe_i), lwe_i
 
     def _evaluate(self, x, out, *a, **kw):
         self.n_call += 1
-        pt, lwe_i = self.design_of(x)
-        if lwe_i != x["L_we"]:
-            self.n_repaired += 1
+        pt, _ = self.design_of(x)
+        if x["u"] in (0, U_MAX):
+            self.n_edge += 1
 
         g = ne.geom(*pt[2:], True)                 # 정수화 켬 (§6-4)
         try:
@@ -193,7 +213,7 @@ class GenLog(Callback):
                    masta=self.prob.ev.n_masta,
                    cache_hit=self.prob.ev.n_hit,
                    geom_out=self.prob.n_geom_out,
-                   repaired=self.prob.n_repaired,
+                   edge=self.prob.n_edge,
                    t_s=round(time.perf_counter() - self.t0, 1))
         self.rows.append(row)
         with open(self.logf, "w", newline="", encoding="utf-8-sig") as f:
@@ -208,16 +228,16 @@ class GenLog(Callback):
 
 
 FRONT_COLS = ["rank", "mass_brg_t", "mass_total_t", "z1", "z2", "D_pw_mm",
-              "alpha", "D_we_mm", "L_we_mm", "slenderness", "Z",
+              "alpha", "D_we_mm", "L_we_mm", "u", "slenderness", "Z",
               "sigma_max_MPa", "bore_mm", "D_mm", "T_mm", "B_mm", "C_mm",
-              "L_eff_m", "repaired"]
+              "L_eff_m"]
 
 
 def dump_front(prob, algo, path):
-    """비지배 집합을 CSV 로. **수리 후** 설계변수를 적는다(R14 항목 26).
+    """비지배 집합을 CSV 로. **`u` 에서 환산한 `L_we`** 를 적는다.
 
-    pymoo 가 반환하는 `x` 는 수리 전이라 그대로 적으면 실제 평가된 설계와
-    다른 값이 기록된다 — §6-3.1 이 `Real` 을 배제한 바로 그 문제다.
+    설계변수 `u` 자체는 도면 치수가 아니므로 환산값을 함께 남긴다 —
+    §6-3.1 이 요구한 "보고된 설계 = 실제 평가된 설계"를 지키기 위함이다.
     """
     F = np.atleast_2d(algo.opt.get("F"))
     X = algo.opt.get("X")
@@ -225,19 +245,18 @@ def dump_front(prob, algo, path):
     for f_, x_ in zip(F, X):
         if f_[0] >= 1e5:
             continue
-        pt, lwe_i = prob.design_of(x_)
+        pt, _ = prob.design_of(x_)
         r = prob.ev.cache.get(ne.key_of(*pt), {})
         rows.append(dict(mass_brg_t=round(f_[0], 4),
                          mass_total_t=round(f_[1], 4),
                          z1=pt[0], z2=pt[1], D_pw_mm=round(pt[2] * 1e3, 1),
                          alpha=pt[3], D_we_mm=round(pt[4] * 1e3, 2),
-                         L_we_mm=round(pt[5] * 1e3, 2),
+                         L_we_mm=round(pt[5] * 1e3, 2), u=int(x_["u"]),
                          slenderness=r.get("slenderness"), Z=r.get("Z"),
                          sigma_max_MPa=r.get("sigma_max_MPa"),
                          bore_mm=r.get("bore_mm"), D_mm=r.get("D_mm"),
                          T_mm=r.get("T_mm"), B_mm=r.get("B_mm"),
-                         C_mm=r.get("C_mm"), L_eff_m=r.get("L_eff_m"),
-                         repaired=int(lwe_i != x_["L_we"])))
+                         C_mm=r.get("C_mm"), L_eff_m=r.get("L_eff_m")))
     rows.sort(key=lambda r: r["mass_brg_t"])
     for i, r in enumerate(rows, 1):
         r["rank"] = i
@@ -249,7 +268,7 @@ def dump_front(prob, algo, path):
 
 
 # ── S3-b 드라이런 점검 (§6-9) ────────────────────────────────────────
-def dry_checks(prob, algo, front, outdir):
+def dry_checks(prob, front, outdir):
     """네 항목을 실측으로 확인하고 통과 여부를 돌려준다."""
     print("\n[S3-b] 드라이런 점검")
     res = {}
@@ -259,7 +278,7 @@ def dry_checks(prob, algo, front, outdir):
         seen.add((x["z1"], x["z2"], x["alpha"]))
     res["시딩 커버리지"] = (len(seen) == N_CAT, f"{len(seen)}/{N_CAT}")
 
-    off = [r["L_we_mm"] for r in prob.ev.cache.values()
+    off = [r for r in prob.ev.cache.values()
            if abs(round(float(r["L_we_mm"]) * 10) - float(r["L_we_mm"]) * 10)
            > 1e-9]
     res["L_we 0.1 mm 격자"] = (not off,
@@ -267,14 +286,15 @@ def dry_checks(prob, algo, front, outdir):
 
     sl = [float(r["slenderness"]) for r in prob.ev.cache.values()]
     ok_sl = all(1.5 - 1e-9 <= v <= 2.5 + 1e-9 for v in sl)
-    res["세장비 수리"] = (ok_sl, f"{min(sl):.4f} ~ {max(sl):.4f}" if sl else "—")
+    edge = sum(1 for v in sl if v <= 1.502 or v >= 2.498)
+    res["세장비 밴드"] = (ok_sl, f"{min(sl):.4f} ~ {max(sl):.4f} · "
+                                 f"경계집중 {100*edge/len(sl):.1f}%" if sl else "—")
 
     bad = [r for r in front
-           if r["repaired"] and abs(float(r["L_we_mm"]) * 10
-                                    - round(float(r["L_we_mm"]) * 10)) > 1e-9]
-    res["프론트 = 수리 후 값"] = (
-        not bad, f"프론트 {len(front)}건 · 수리된 개체 "
-                 f"{sum(r['repaired'] for r in front)}건 모두 격자 위")
+           if abs(float(r["L_we_mm"]) * 10 - round(float(r["L_we_mm"]) * 10))
+           > 1e-9 or not (1.5 - 1e-9 <= float(r["slenderness"]) <= 2.5 + 1e-9)]
+    res["프론트 환산값"] = (not bad,
+                            f"프론트 {len(front)}건 · 격자·밴드 이탈 {len(bad)}")
 
     ok_all = True
     for k, (ok, msg) in res.items():
@@ -316,7 +336,7 @@ def main():
                        os.path.join(outdir, "s3_front.csv"))
     meta = dict(pop=POP, gen=gen, seed=SEED, dry=dry,
                 budget=prob.n_call, masta=ev.n_masta, cache_hit=ev.n_hit,
-                geom_out=prob.n_geom_out, repaired=prob.n_repaired,
+                geom_out=prob.n_geom_out, edge=prob.n_edge,
                 n_front=len(front), elapsed_s=round(dt, 1),
                 s_per_masta=round(dt / ev.n_masta, 3) if ev.n_masta else None,
                 hv_ref=HV_REF.tolist())
@@ -324,18 +344,18 @@ def main():
 
     print(f"\n[결과] 프론트 {len(front)}건 · 예산 {prob.n_call:,} · "
           f"MASTA {ev.n_masta:,} · 캐시적중 {ev.n_hit:,} · "
-          f"해석식탈락 {prob.n_geom_out:,} · 수리 {prob.n_repaired:,}")
+          f"해석식탈락 {prob.n_geom_out:,} · 밴드경계 {prob.n_edge:,}")
     print(f"       소요 {dt/60:.1f}분"
           + (f" · {dt/ev.n_masta:.3f} s/MASTA" if ev.n_masta else ""))
     if front:
         print(f"       최경량 베어링 {front[0]['mass_brg_t']:.3f} t / "
               f"총 {front[0]['mass_total_t']:.3f} t")
     if dry:
-        ok = dry_checks(prob, res.algorithm, front, outdir)
-        print(f"\n  본런 예산 추정: MASTA {ev.n_masta/gen*GEN:,.0f}회 × "
-              f"{dt/ev.n_masta:.3f} s ≈ "
-              f"{ev.n_masta/gen*GEN*dt/ev.n_masta/3600:.2f}시간"
-              if ev.n_masta else "")
+        ok = dry_checks(prob, front, outdir)
+        if ev.n_masta:
+            print(f"\n  본런 예산 추정: MASTA {ev.n_masta/gen*GEN:,.0f}회 × "
+                  f"{dt/ev.n_masta:.3f} s ≈ "
+                  f"{ev.n_masta/gen*GEN*(dt/ev.n_masta)/3600:.2f}시간")
         return 0 if ok else 1
     return 0
 
