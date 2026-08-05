@@ -146,24 +146,68 @@ def main():
         for b, z in ((uw, z1), (dw, z2)):
             b.try_mount_on(sh, z)
 
-        dup = lc.duplicate(ds, f"w52_{i}")
-        duty = dp.add_duty_cycle(f"w52d_{i}")
-        duty.add_static_load(dup)
-        csd = duty.analysis_of(AnalysisType.SYSTEM_DEFLECTION)
-        csd.perform_analysis()
-        smax = 0.0
-        for b in (uw, dw):
-            for sub in list(list(csd.results_for(b))[0].component_analysis_cases):
-                v = sc(sub.component_detailed_analysis, "maximum_normal_stress")
-                if v and v / 1e6 > smax:
-                    smax = v / 1e6
-        mb = (sc(uw.detail, "mass") or 0.0) / 1e3
-        ms = (sc(sh, "mass_of_shaft_body") or 0.0) / 1e3
-        for x in (dup, duty):
+        def solve(tag):
+            """현재 샤프트 상태로 지배 LC 해석 → σ(두 베어링 최대)·UW 미스얼라인먼트"""
+            dup = lc.duplicate(ds, tag)
+            duty = dp.add_duty_cycle(f"{tag}d")
+            duty.add_static_load(dup)
+            csd = duty.analysis_of(AnalysisType.SYSTEM_DEFLECTION)
+            csd.perform_analysis()
+            smax, mis = 0.0, None
+            for b in (uw, dw):
+                for sub in list(
+                        list(csd.results_for(b))[0].component_analysis_cases):
+                    det = sub.component_detailed_analysis
+                    v = sc(det, "maximum_normal_stress")
+                    if v and v / 1e6 > smax:
+                        smax = v / 1e6
+                    if b is uw:
+                        # 상대 미스얼라인먼트 [rad] → mrad. 피로·응력 모두
+                        # UW 가 지배적이므로 UW 기준으로 통일한다
+                        m = sc(det, "relative_misalignment")
+                        if m is not None:
+                            mis = abs(m) * 1e3
+            ms_ = (sc(sh, "mass_of_shaft_body") or 0.0) / 1e3
+            for x in (dup, duty):
+                try:
+                    x.delete()
+                except Exception:
+                    pass
+            return smax, mis, ms_
+
+        # 현행 내경으로 한 번 — 미스얼라인먼트 기준값을 얻는다(기록이 없다)
+        id_old = math.floor(od * sg.ID_OVER_OD)
+        sh.remove_all_sections()
+        sh.add_section(0.0, z2 + sg.SHAFT_TAIL, od / 1e3, id_old / 1e3,
+                       od / 1e3, id_old / 1e3)
+        for b in bs:
             try:
-                x.delete()
+                if b.inner_connection is not None:
+                    b.inner_connection.delete()
             except Exception:
                 pass
+        for b in bs:
+            sg.apply_to_masta(b.detail, g)
+        for b, z in ((uw, z1), (dw, z2)):
+            b.try_mount_on(sh, z)
+        s_old, mis_old, _ = solve(f"w52o_{i}")
+
+        # 두께 규칙 내경으로 다시
+        for b in bs:
+            try:
+                if b.inner_connection is not None:
+                    b.inner_connection.delete()
+            except Exception:
+                pass
+        sh.remove_all_sections()
+        sh.add_section(0.0, z2 + sg.SHAFT_TAIL, od / 1e3, idm / 1e3,
+                       od / 1e3, idm / 1e3)
+        for b in bs:
+            sg.apply_to_masta(b.detail, g)
+        for b, z in ((uw, z1), (dw, z2)):
+            b.try_mount_on(sh, z)
+        smax, mis_new, ms = solve(f"w52_{i}")
+        mb = (sc(uw.detail, "mass") or 0.0) / 1e3
 
         rows.append(dict(
             rank=rank, OD_mm=od, ID_old_mm=math.floor(od * sg.ID_OVER_OD),
@@ -173,6 +217,9 @@ def main():
             mass_total_old_t=float(r["mass_total_kg"]) / 1e3,
             mass_total_t=round(2 * mb + ms, 4),
             sigma_old=float(r["sigma_max_MPa"]), sigma_new=round(smax, 1),
+            sigma_old_rerun=round(s_old, 1),
+            misalign_old_mrad=round(mis_old, 4) if mis_old else None,
+            misalign_new_mrad=round(mis_new, 4) if mis_new else None,
             feasible=int(0 < smax <= LIMIT)))
         if i % 8 == 0 or i == len(F):
             x = rows[-1]
@@ -248,8 +295,9 @@ def main():
     # ── 문서 표 (새 프론트) ────────────────────────────────────
     body = [f"σ 통과 **{len(ok)} / {len(rows)}건** · 한도 2,100 MPa", "",
             "| # | OD [mm] | 내경 [mm] | 두께 [mm] | **베어링** [t] | "
-            "샤프트 [t] | **총질량** [t] | Δ총질량 | σ [MPa] | 판정 |",
-            "|--:|--:|--:|--:|--:|--:|--:|--:|--:|:-:|"]
+            "샤프트 [t] | **총질량** [t] | Δ총질량 | σ [MPa] | "
+            "UW 미스얼라인먼트 [mrad] | 판정 |",
+            "|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:-:|"]
     for r in sorted(rows, key=lambda x: x["rank"]):
         body.append(
             f"| {r['rank']} | {r['OD_mm']:,.0f} | "
@@ -259,7 +307,10 @@ def main():
             f"**{r['mass_total_t']:.1f}** | "
             f"{r['mass_total_t']-r['mass_total_old_t']:+.1f} | "
             f"{r['sigma_old']:,.0f} → **{r['sigma_new']:,.0f}** | "
-            f"{'✅' if r['feasible'] else '❌'} |")
+            + (f"{r['misalign_old_mrad']:.3f} → "
+               f"**{r['misalign_new_mrad']:.3f}** | "
+               if r["misalign_new_mrad"] else "— | ")
+            + f"{'✅' if r['feasible'] else '❌'} |")
     s = io.open(DOC, encoding="utf-8").read()
     close = MARK.replace("<!-- ", "<!-- /")
     pat = re.compile(re.escape(MARK) + r"\n.*?\n" + re.escape(close), re.S)
