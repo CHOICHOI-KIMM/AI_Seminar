@@ -121,13 +121,14 @@ def main():
               "pass": pass_table(F)}
     s = io.open(DOC, encoding="utf-8").read()
     for key, mark in MARK.items():
-        # 마커 다음 줄부터 **다음 마커나 제목** 전까지를 교체한다.
-        # 첫 빈 줄까지만 잡으면 블록에 빈 줄이 생길 때 뒷부분이 남는다(260805).
-        pat = re.compile(re.escape(mark) + r"\n(?:.*?)(?=\n<!--|\n#{2,6} |\Z)",
-                         re.S)
+        # **짝 마커** 사이만 교체한다. 끝 표시가 없으면 경계를 추측해야 하고,
+        # 그러다 260805 에 두 번 사고가 났다 — 첫 빈 줄까지만 잡아 표가
+        # 중복되거나, 다음 제목까지 잡아 그 사이의 서술을 삼켰다.
+        close = mark.replace("<!-- ", "<!-- /")
+        pat = re.compile(re.escape(mark) + r"\n.*?\n" + re.escape(close), re.S)
         if not pat.search(s):
-            raise RuntimeError(f"{mark} 자리표를 찾지 못했다")
-        s = pat.sub(lambda m: mark + "\n" + blocks[key], s, count=1)
+            raise RuntimeError(f"{mark} … {close} 자리표를 찾지 못했다")
+        s = pat.sub(lambda m: f"{mark}\n{blocks[key]}\n{close}", s, count=1)
     io.open(DOC, "w", encoding="utf-8").write(s)
     n_pass = blocks["pass"].count("\n| ") if any(LIMITS.values()) else 0
     print(f"[§6-11.8] 프론트 {len(F)}건 · 상한 "

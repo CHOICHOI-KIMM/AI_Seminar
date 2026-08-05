@@ -116,15 +116,14 @@ def main():
 
     s = io.open(DOC, encoding="utf-8").read()
     for key, mark in MARK.items():
-        # 다음 **마커나 제목**까지를 통째로 교체한다. 첫 빈 줄까지만 잡으면
-        # 블록 안에 빈 줄이 생기는 순간(주석 + 표) 뒷부분이 남아 표가
-        # 중복된다 — 260805 실제로 발생.
-        pat = re.compile(re.escape(mark) + r"\n(?:.*?)(?=\n<!--|\n#{2,6} |\Z)",
-                         re.S)
+        # **짝 마커** 사이만 교체한다 — 경계를 추측하면 260805 처럼 표가
+        # 중복되거나(첫 빈 줄까지) 이웃 서술을 삼킨다(다음 제목까지).
+        close = mark.replace("<!-- ", "<!-- /")
+        pat = re.compile(re.escape(mark) + r"\n.*?\n" + re.escape(close), re.S)
         if not pat.search(s):
-            raise RuntimeError(f"{mark} 자리표를 찾지 못했다")
+            raise RuntimeError(f"{mark} … {close} 자리표를 찾지 못했다")
         blk = "\n".join(S if key == "summary" else T)
-        s = pat.sub(lambda m: mark + "\n" + blk, s, count=1)
+        s = pat.sub(lambda m: f"{mark}\n{blk}\n{close}", s, count=1)
     io.open(DOC, "w", encoding="utf-8").write(s)
 
     print(f"[§6-11.7] {len(keys)}건 대조 · 손상비 {ratio.min():.2f}~"
