@@ -29,6 +29,8 @@ TMP_CONST = os.path.join(DIR, "_save_constants.csv")
 BAK = os.path.join(DIR, "_fatigue_summary.bak.csv")
 SUMMARY = os.path.join(DIR, "fatigue_summary.csv")
 SCRIPT = os.path.join(HERE, "run_p2_fatigue.py")
+MARK = "S4_70C_"        # 파일명에 조건을 박는다 — 같은 태그가 50/70 °C 로
+                        # 각각 나올 수 있어 파일만 보고 구분되어야 한다
 
 
 def main(tags):
@@ -48,15 +50,16 @@ def main(tags):
 
     # run_p2_fatigue.py 5 를 상수 파일·저장 태그만 바꿔 호출
     env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1",
-               P2_CONST_OVERRIDE=TMP_CONST, P2_SAVE_TAGS=",".join(tags))
+               P2_CONST_OVERRIDE=TMP_CONST, P2_SAVE_TAGS=",".join(tags),
+               P2_SAVE_MARK=MARK)
     rc = subprocess.run([sys.executable, SCRIPT, "5"], cwd=HERE, env=env).returncode
 
     shutil.move(BAK, SUMMARY)           # 동일값이지만 행 순서를 보존한다
     os.remove(TMP_CONST)
     print(f"\n[저장] {os.path.join(DIR, 'MASTA')} · exit {rc}")
     for t in tags:
-        p = os.path.join(DIR, "MASTA", f"P2_design_{t}.masta")
-        print(f"  {'O' if os.path.isfile(p) else 'x'} P2_design_{t}.masta"
+        p = os.path.join(DIR, "MASTA", f"P2_design_{MARK}{t}.masta")
+        print(f"  {'O' if os.path.isfile(p) else 'x'} P2_design_{MARK}{t}.masta"
               + (f"  {os.path.getsize(p)/1e6:.1f} MB"
                  if os.path.isfile(p) else ""))
     return rc

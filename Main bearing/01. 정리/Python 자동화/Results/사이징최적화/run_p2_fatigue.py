@@ -281,7 +281,10 @@ def main():
               f"({(time.time()-t_d)/60:.1f}분)", flush=True)
 
         if tag in SAVE_TAGS:
-            p = os.path.join(SAVEDIR, f"P2_design_{tag}.masta")
+            # 조건이 여럿인 phase 는 이름에 조건을 넣는다 — 같은 태그(a01 …)가
+            # 50 °C·70 °C 로 각각 나올 수 있어 파일만 보고 구분되어야 한다.
+            mark = os.environ.get("P2_SAVE_MARK", "")
+            p = os.path.join(SAVEDIR, f"P2_design_{mark}{tag}.masta")
             try:
                 st = design.save(p, False)      # (file_name, save_results)
                 print(f"  [저장] {os.path.basename(p)}  {st}")
