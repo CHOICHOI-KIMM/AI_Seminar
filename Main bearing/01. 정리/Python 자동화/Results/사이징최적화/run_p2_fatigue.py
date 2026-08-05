@@ -57,7 +57,12 @@ MODEL = (r"D:\AI\AI_Seminar\Main bearing\02. 자료\MASTA"
          r"\26MW_메인베어링_기본설계_v1.4_샤프트 두께,형상 3안"
          r"_베어링 크기 확대_롤러 확대_온도_50도_260726.Masta")
 TEMP_BRG = 70.0                  # phase 5 에서만 적용 (§6-11.7)
-SAVE_TAGS = (set() if _PH in ("4", "5") else     # S4 는 40건이라 저장 생략
+# 일부 설계만 `.masta` 로 남길 때 쓴다 — `save_s4_70c_masta.py` 가 넘긴다.
+# 상수 파일도 함께 갈아끼워 지정 설계만 재구성한다(재해석은 없다).
+CONST = os.environ.get("P2_CONST_OVERRIDE") or CONST
+SAVE_TAGS = (set(filter(None, os.environ["P2_SAVE_TAGS"].split(",")))
+             if os.environ.get("P2_SAVE_TAGS") else
+             set() if _PH in ("4", "5") else     # S4 는 40건이라 저장 생략
              {"C1", "C2", "C3", "D1", "D2", "D3"} if _PH == "3" else
              {"A1", "A2", "A3", "B1", "B2", "B3"} if _PH == "2"
              else {"1", "base"})
@@ -282,9 +287,11 @@ def main():
                 print(f"  [저장] {os.path.basename(p)}  {st}")
             except Exception as e:
                 print(f"  !! MASTA 저장 실패: {str(e).splitlines()[0][:70]}")
-        if _PH == "4":
-            # S4 는 §6-11.5a·b 표에 열을 더하는 방식이라 갱신 주체가 다르다
-            # (`plot_pareto_s3.py` 가 피로 결과를 읽어 합친다). 여기서는 건드리지 않는다.
+        if _PH in ("4", "5"):
+            # S4(50 °C)·S4-70C 는 §6-11.5a·b / §6-11.7 표에 결과를 합치는
+            # 방식이라 갱신 주체가 다르다(`plot_pareto_s3.py`·`compare_70c.py`).
+            # 여기서 §8-3.6 갱신기를 부르면 Phase 1 표를 매 설계마다
+            # 재생성하게 된다 — 내용은 같지만 부를 이유가 없다.
             pass
         else:
             upd = (update_p2c_table if _PH == "3" else
