@@ -32,11 +32,15 @@ import sizing_geom as sg          # noqa: E402
 import run_p2_fatigue as p2       # noqa: E402
 import run_appendix7_shaft as a7  # noqa: E402
 
-TAG, NTOP = "a01", 10
+TAG = "a01"
 EXTREME_SF = 4.253                # §7-6.1 Myz_max 피로 안전율
-OUT = os.path.join(HERE, "부록7_샤프트", "top10_dlc.csv")
+# 인자 `all` → 111 DLC 전수(§7-6.6). 없으면 손상 상위 10건(§7-6.5).
+ALL = len(sys.argv) > 1 and sys.argv[1].lower().startswith("all")
+NTOP = 111 if ALL else 10
+OUT = os.path.join(HERE, "부록7_샤프트",
+                   "all111_dlc.csv" if ALL else "top10_dlc.csv")
 DOC = a7.DOC
-MARK = "<!-- A7:TOP10 -->"
+MARK = "<!-- A7:ALL111 -->" if ALL else "<!-- A7:TOP10 -->"
 HDR = ("| # | DLC | 베어링 ΣD30_UW | 비중 | `k` | 빈 | "
        "**무한수명 피로** | 영구변형 | 극한 LC 대비 |")
 SEP = "|--:|---|--:|--:|--:|--:|--:|--:|--:|"
@@ -53,16 +57,41 @@ def targets():
     return R[:NTOP], tot, spec
 
 
-def write_doc(rows, tot):
-    body = [HDR, SEP]
-    for i, r in enumerate(rows, 1):
-        body.append(
-            f"| {i} | `{r['DLC']}` | {r['D30_UW']:.5f} | "
+def line(i, r, tot):
+    return (f"| {i} | `{r['DLC']}` | {r['D30_UW']:.5f} | "
             f"{100*r['D30_UW']/tot:.1f}% | {r['k']:g} | {r['nbin']} | "
             f"**{r['fatigue_inf']:.3f}** | {r['static']:.3f} | "
             f"{r['fatigue_inf']/EXTREME_SF:.2f}배 |")
-    if len(rows) < NTOP:
-        body.append(f"| … | *(수행 중 {len(rows)}/{NTOP})* |" + " |" * 7)
+
+
+def write_doc(rows, tot):
+    if not ALL:
+        body = [HDR, SEP] + [line(i, r, tot) for i, r in enumerate(rows, 1)]
+        if len(rows) < NTOP:
+            body.append(f"| … | *(수행 중 {len(rows)}/{NTOP})* |" + " |" * 7)
+    else:
+        # 111행은 문서에 싣지 않는다 — 계열별 요약 + 최악 10건
+        fam = {}
+        for r in rows:
+            fam.setdefault(r["DLC"].split("-")[0], []).append(r)
+        body = ["**계열별 요약** (111 DLC · 2,646빈)", "",
+                "| 계열 | DLC 수 | 빈 | 베어링 손상 비중 | "
+                "**피로 안전율** | 영구변형 | 극한 LC 대비 |",
+                "|---|--:|--:|--:|---|---|---|"]
+        for k in sorted(fam):
+            g = fam[k]
+            f = [x["fatigue_inf"] for x in g]
+            st = [x["static"] for x in g]
+            body.append(
+                f"| `{k}` | {len(g)} | {sum(x['nbin'] for x in g):,} | "
+                f"{100*sum(x['D30_UW'] for x in g)/tot:.1f}% | "
+                f"**{min(f):.2f} ~ {max(f):.2f}** | "
+                f"{min(st):.1f} ~ {max(st):.1f} | "
+                f"{min(f)/EXTREME_SF:.2f} ~ {max(f)/EXTREME_SF:.2f}배 |")
+        worst = sorted(rows, key=lambda r: r["fatigue_inf"])[:10]
+        body += ["", "**샤프트 안전율 최악 10건**", "", HDR, SEP]
+        body += [line(i, r, tot) for i, r in enumerate(worst, 1)]
+        body += ["", f"*전 111건은 `부록7_샤프트/all111_dlc.csv`.*"]
     blk = "\n".join(body)
     close = MARK.replace("<!-- ", "<!-- /")
     s = io.open(DOC, encoding="utf-8").read()
@@ -143,22 +172,28 @@ def main():
                 pass
         rows.append(dict(DLC=name, D30_UW=float(r["D30_UW"]), k=k,
                          nbin=len(reps), **v))
-        # ── 매 건 갱신 ──
+        # ── CSV 는 매 건, 문서는 상위10 모드에서만 실시간 갱신 ──
         with open(OUT, "w", newline="", encoding="utf-8-sig") as f:
             w = csv.DictWriter(f, fieldnames=list(rows[0]))
             w.writeheader()
             w.writerows(rows)
-        write_doc(rows, tot)
+        if not ALL:
+            write_doc(rows, tot)
         print(f"  [{i}/{len(top)}] {name:20} 빈 {len(reps):3} · "
               f"피로 {v['fatigue_inf']:7.3f} · 정적 {v['static']:7.3f} "
               f"· 극한 대비 {v['fatigue_inf']/EXTREME_SF:.2f}배 "
               f"({time.perf_counter()-t0:.0f}s)", flush=True)
 
+    if ALL:
+        write_doc(rows, tot)          # 전수는 완료 후 한 번만 갱신
     f = [r["fatigue_inf"] for r in rows]
+    w = min(rows, key=lambda r: r["fatigue_inf"])
     print(f"\n[완료] {len(rows)}건 · {time.perf_counter()-t0:.0f}s · "
           f"피로 {min(f):.3f} ~ {max(f):.3f} · "
           f"극한 LC({EXTREME_SF}) 대비 {min(f)/EXTREME_SF:.2f} ~ "
           f"{max(f)/EXTREME_SF:.2f}배")
+    print(f"  최악 {w['DLC']} 피로 {w['fatigue_inf']:.3f} · "
+          f"정적 {w['static']:.3f}")
 
 
 if __name__ == "__main__":
