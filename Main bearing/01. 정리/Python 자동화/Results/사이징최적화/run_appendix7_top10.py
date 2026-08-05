@@ -1,0 +1,165 @@
+"""
+부록 7-6.5 — 베어링 손상 상위 10 DLC 의 샤프트 안전율 (`a01`)
+================================================================
+`a01` 의 베어링 30년 손상(ΣD30_UW) 기준 **상위 10 DLC** 를 `dt=20` · μ+kσ
+대표하중으로 바꿔 듀티사이클로 돌리고, 샤프트 DIN 743 두 안전율을 뽑는다.
+
+  · 대표하중 변환은 피로 해석과 **같은 `bin_reps()`** 를 쓰고 `k` 는
+    `screen_k.csv` 값을 그대로 쓴다 — 새로 만들지 않는다
+  · 듀티사이클 집계는 **최악 LC 기준**임이 §7-6.3 에서 확인됐으므로
+    표에는 그 최악값을 싣는다
+  · 비교 기준은 극한 LC `Myz_max` 의 **4.253**(§7-6.1)
+
+**DLC 하나가 끝날 때마다** CSV 와 문서 표를 갱신한다 — 중간에 끊겨도 거기까지
+남고, 진행 상황이 문서에서 바로 보인다.
+
+산출: 부록7_샤프트/top10_dlc.csv + 문서 §7-6.5 표
+"""
+import csv
+import io
+import os
+import re
+import sys
+import time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+RES = os.path.dirname(HERE)
+ROOT = os.path.dirname(RES)
+sys.path.insert(0, HERE)
+sys.path.insert(0, ROOT)
+
+import sizing_geom as sg          # noqa: E402
+import run_p2_fatigue as p2       # noqa: E402
+import run_appendix7_shaft as a7  # noqa: E402
+
+TAG, NTOP = "a01", 10
+EXTREME_SF = 4.253                # §7-6.1 Myz_max 피로 안전율
+OUT = os.path.join(HERE, "부록7_샤프트", "top10_dlc.csv")
+DOC = a7.DOC
+MARK = "<!-- A7:TOP10 -->"
+HDR = ("| # | DLC | 베어링 ΣD30_UW | 비중 | `k` | 빈 | "
+       "**무한수명 피로** | 영구변형 | 극한 LC 대비 |")
+SEP = "|--:|---|--:|--:|--:|--:|--:|--:|--:|"
+
+
+def targets():
+    d = os.path.join(HERE, "P2_피로수명_S4")
+    with open(os.path.join(d, "fatigue_per_dlc.csv"), encoding="utf-8-sig") as f:
+        R = [r for r in csv.DictReader(f) if r["design"] == TAG]
+    tot = sum(float(r["D30_UW"]) for r in R)
+    R.sort(key=lambda r: -float(r["D30_UW"]))
+    with open(os.path.join(d, "p2d_targets.csv"), encoding="utf-8-sig") as f:
+        spec = next(x for x in csv.DictReader(f) if x["rank_mass"] == TAG)
+    return R[:NTOP], tot, spec
+
+
+def write_doc(rows, tot):
+    body = [HDR, SEP]
+    for i, r in enumerate(rows, 1):
+        body.append(
+            f"| {i} | `{r['DLC']}` | {r['D30_UW']:.5f} | "
+            f"{100*r['D30_UW']/tot:.1f}% | {r['k']:g} | {r['nbin']} | "
+            f"**{r['fatigue_inf']:.3f}** | {r['static']:.3f} | "
+            f"{r['fatigue_inf']/EXTREME_SF:.2f}배 |")
+    if len(rows) < NTOP:
+        body.append(f"| … | *(수행 중 {len(rows)}/{NTOP})* |" + " |" * 7)
+    blk = "\n".join(body)
+    close = MARK.replace("<!-- ", "<!-- /")
+    s = io.open(DOC, encoding="utf-8").read()
+    pat = re.compile(re.escape(MARK) + r"\n.*?\n" + re.escape(close), re.S)
+    if not pat.search(s):
+        raise RuntimeError(f"{MARK} … {close} 자리표를 찾지 못했다")
+    io.open(DOC, "w", encoding="utf-8").write(
+        pat.sub(lambda m: f"{MARK}\n{blk}\n{close}", s, count=1))
+
+
+def main():
+    top, tot, spec = targets()
+    print(f"[{TAG}] 베어링 손상 상위 {len(top)} DLC · 총 ΣD30_UW {tot:.4f}")
+
+    import masta_clr_legacy  # noqa: F401
+    import mastapy
+    mastapy.init(r"C:\Program Files\SMT\MASTA 14.1.1")
+    import masta_fatigue as mf
+    from mastapy.system_model import Design
+    from mastapy.system_model.analyses_and_results.static_loads import (
+        AnalysisType)
+    from mastapy.bearings import RollerBearingProfileTypes as RP
+
+    d = Design.load(a7.MODEL)
+    asm = d.all_parts_of_type_root_assembly()[0]
+    sh = list(asm.all_parts_of_type_shaft())[0]
+    bs = list(asm.all_parts_of_type_bearing())
+    uw = [b for b in bs if "UW" in str(b)][0]
+    dw = [b for b in bs if "DW" in str(b)][0]
+    for b in bs:
+        b.detail.roller_profile_set.active_profile_type = RP.DIN_LUNDBERG
+    dp = asm.design_properties
+    pl = list(asm.all_parts_of_type_point_load())[0]
+    ipl = next(p for p in asm.all_parts_of_type_power_load()
+               if "input" in str(p).lower())
+    lc0 = next(c for c in dp.static_loads if c.name == "Load Case 1")
+    ds = lc0.design_state_load_case_group
+
+    g, s = a7.geom_of(spec)            # CSV 기록 제원 (정수화 포함)
+    z1, z2 = float(spec["z1"]), float(spec["z2"])
+    for b in bs:
+        try:
+            if b.inner_connection is not None:
+                b.inner_connection.delete()
+        except Exception:
+            pass
+    sh.remove_all_sections()
+    sh.add_section(0.0, s["length"], s["outer_diameter"], s["inner_diameter"],
+                   s["outer_diameter"], s["inner_diameter"])
+    for b in bs:
+        sg.apply_to_masta(b.detail, g)
+    for b, z in ((uw, z1), (dw, z2)):
+        b.try_mount_on(sh, z)
+    print(f"[설계] bore {g['bore']*1e3:,.0f} · 샤프트 OD "
+          f"{s['outer_diameter']*1e3:,.0f} / ID {s['inner_diameter']*1e3:,.0f}")
+
+    rows, t0 = [], time.perf_counter()
+    for i, r in enumerate(top, 1):
+        name, k = r["DLC"], float(r["k"])
+        reps = p2.bin_reps(p2.load_raw(name), k)
+        lcs = []
+        for cid, rev, rec in reps:
+            lc = lc0.duplicate(ds, f"t10_{i}_{cid}")
+            mf.set_loads(lc, pl, ipl, rec)
+            lcs.append(lc)
+        duty = dp.add_duty_cycle(f"t10_{i}")
+        for lc in lcs:
+            duty.add_static_load(lc)
+        csd = duty.analysis_of(AnalysisType.SYSTEM_DEFLECTION)
+        csd.perform_analysis()
+        comp = list(csd.results_for(sh))[0]
+        v = {("fatigue_inf" if "Infinite" in it.description else "static"):
+             float(it.safety_factor) for it in comp.safety_factors.items}
+        for x in lcs + [duty]:
+            try:
+                x.delete()
+            except Exception:
+                pass
+        rows.append(dict(DLC=name, D30_UW=float(r["D30_UW"]), k=k,
+                         nbin=len(reps), **v))
+        # ── 매 건 갱신 ──
+        with open(OUT, "w", newline="", encoding="utf-8-sig") as f:
+            w = csv.DictWriter(f, fieldnames=list(rows[0]))
+            w.writeheader()
+            w.writerows(rows)
+        write_doc(rows, tot)
+        print(f"  [{i}/{len(top)}] {name:20} 빈 {len(reps):3} · "
+              f"피로 {v['fatigue_inf']:7.3f} · 정적 {v['static']:7.3f} "
+              f"· 극한 대비 {v['fatigue_inf']/EXTREME_SF:.2f}배 "
+              f"({time.perf_counter()-t0:.0f}s)", flush=True)
+
+    f = [r["fatigue_inf"] for r in rows]
+    print(f"\n[완료] {len(rows)}건 · {time.perf_counter()-t0:.0f}s · "
+          f"피로 {min(f):.3f} ~ {max(f):.3f} · "
+          f"극한 LC({EXTREME_SF}) 대비 {min(f)/EXTREME_SF:.2f} ~ "
+          f"{max(f)/EXTREME_SF:.2f}배")
+
+
+if __name__ == "__main__":
+    main()
