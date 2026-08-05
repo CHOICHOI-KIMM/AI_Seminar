@@ -31,6 +31,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, ROOT)
 
 import sizing_geom as sg          # noqa: E402
+import nsga_eval as ne            # noqa: E402  (샤프트 내경 floor 규칙 §6-4.2)
 
 MODEL = (r"D:\AI\AI_Seminar\Main bearing\02. 자료\MASTA"
          r"\26MW_메인베어링_기본설계_v1.4_샤프트 두께,형상 3안"
@@ -93,6 +94,32 @@ def write_doc(specs, sfmap):
     io.open(DOC, "w", encoding="utf-8").write(s)
 
 
+def geom_of(r):
+    """설계 제원 — **`p2d_targets.csv` 에 기록된 값을 그대로 쓴다.**
+
+    자유변수에서 `sizing_geom` 으로 다시 계산하면 §6-4 의 정수화(`T`·`B`·`C`
+    `round` · 샤프트 내경 `floor`)가 빠져 프론트의 그 설계가 아니게 된다 —
+    260805 에 샤프트 내경이 최대 1.355 mm 어긋나 있는 것이 발견됐다.
+    기준선은 CSV 에 없으므로 그때만 계산한다(정수화 이전 기준이 맞다).
+    """
+    dpw, al = float(r["D_pw_mm"]) / 1e3, float(r["alpha"])
+    dwe, lwe = float(r["D_we_mm"]) / 1e3, float(r["L_we_mm"]) / 1e3
+    z2 = float(r["z2"])
+    if "bore_mm" not in r:                       # 기준선 (v1.3)
+        g = sg.bearing(dpw, al, dwe, lwe)
+        return g, sg.shaft(g["bore"], z2)
+    g = dict(D_pw=dpw, alpha_deg=al, D_we=dwe, L_we=lwe,
+             bore=float(r["bore_mm"]) / 1e3,
+             outer_diameter=float(r["D_mm"]) / 1e3,
+             width=float(r["T_mm"]) / 1e3,
+             inner_ring_width=float(r["B_mm"]) / 1e3,
+             outer_ring_width=float(r["C_mm"]) / 1e3,
+             number_of_elements=int(float(r["Z"])))
+    s = sg.shaft(g["bore"], z2)
+    s["inner_diameter"] = ne.shaft_of(g["bore"], z2, True)["inner_diameter"]
+    return g, s
+
+
 def spec_rows():
     """샤프트 사양 — MASTA 없이 계산한다"""
     with open(TGT, encoding="utf-8-sig") as f:
@@ -100,9 +127,7 @@ def spec_rows():
     out = []
     for r in rows:
         z2 = float(r["z2"])
-        g = sg.bearing(float(r["D_pw_mm"]) / 1e3, float(r["alpha"]),
-                       float(r["D_we_mm"]) / 1e3, float(r["L_we_mm"]) / 1e3)
-        s = sg.shaft(g["bore"], z2)
+        g, s = geom_of(r)
         od, idm = s["outer_diameter"] * 1e3, s["inner_diameter"] * 1e3
         t = (od - idm) / 2.0
         out.append(dict(tag=r["rank_mass"], set=r["set"], rank=r["rank"],
@@ -163,15 +188,13 @@ def main():
     for i, r in enumerate([BASE] + tg, 1):
         tag = r["rank_mass"]
         z1, z2 = float(r["z1"]), float(r["z2"])
-        g = sg.bearing(float(r["D_pw_mm"]) / 1e3, float(r["alpha"]),
-                       float(r["D_we_mm"]) / 1e3, float(r["L_we_mm"]) / 1e3)
+        g, s = geom_of(r)                 # CSV 기록 제원 그대로 (정수화 포함)
         for b in bs:
             try:
                 if b.inner_connection is not None:
                     b.inner_connection.delete()
             except Exception:
                 pass
-        s = sg.shaft(g["bore"], z2)
         sh.remove_all_sections()
         sh.add_section(0.0, s["length"], s["outer_diameter"],
                        s["inner_diameter"], s["outer_diameter"],
