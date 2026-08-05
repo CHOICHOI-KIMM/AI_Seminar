@@ -100,32 +100,47 @@ def main():
              f"(ΣD30_UW {d70.max():.4f} · life_Sys "
              f"{float(b[worst]['life_Sys_yr']):,.0f} yr).")
 
-    # ── 설계별 표 ──────────────────────────────────────────────────
-    T = [f"판정 기준: **ΣD30_UW ≤ {LIMIT} ∧ ΣD30_Sys ≤ {LIMIT}** (30년 손상)",
-         "",
-         "| 태그 | 프론트 # | 베어링 [t] | d [mm] | D [mm] | D_we [mm] | "
-         "L_we [mm] | 세장비 | Z [개] | ΣD30_UW 50 °C | ΣD30_UW 70 °C | "
-         "**손상비** | life_Sys 50 °C | life_Sys 70 °C | **판정 70 °C** |",
-         "|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:-:|",
-         # 기준선 — 50 °C 에서 이미 한도의 13.8배라 70 °C 는 돌리지 않았다
-         f"| {BASE['tag']} | {BASE['rank']} | {BASE['mass']:.2f} | "
-         f"{BASE['bore']:,} | {BASE['D']:,} | {BASE['D_we']:.1f} | "
-         f"{BASE['L_we']:.1f} | {BASE['sl']:.3f} | {BASE['Z']} | "
-         f"**{BASE['d50']:.4f}** | — | — | {BASE['life50']:.1f} | — | "
-         f"**불합격**(50 °C) |"]
-    for k in keys:
+    # ── 설계별 표 — a·b 를 나눈다 ──────────────────────────────────
+    HEAD = ("| 태그 | 프론트 # | 베어링 [t] | d [mm] | D [mm] | D_we [mm] | "
+            "L_we [mm] | 세장비 | Z [개] | ΣD30_UW 50 °C | ΣD30_UW 70 °C | "
+            "**손상비** | life_Sys 50 °C | life_Sys 70 °C | **판정 70 °C** |")
+    SEPR = "|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:-:|"
+    # 기준선 — 50 °C 에서 이미 한도의 13.8배라 70 °C 는 돌리지 않았다.
+    # 두 표 모두 최상단에 반복해 각 표를 단독으로 읽을 수 있게 한다.
+    BROW = (f"| {BASE['tag']} | {BASE['rank']} | {BASE['mass']:.2f} | "
+            f"{BASE['bore']:,} | {BASE['D']:,} | {BASE['D_we']:.1f} | "
+            f"{BASE['L_we']:.1f} | {BASE['sl']:.3f} | {BASE['Z']} | "
+            f"**{BASE['d50']:.4f}** | — | — | {BASE['life50']:.1f} | — | "
+            f"**불합격**(50 °C) |")
+    DIV = "| **— 총질량 최경량 —** |" + " |" * 14
+
+    def line(k):
         t, x, y = tg[k], a[k], b[k]
         ok = y["pass_UW"] == "1" and y["pass_Sys"] == "1"
-        T.append(
-            f"| `{k}` | {t['rank']} | {float(t['mass_brg_kg'])/1e3:.2f} | "
-            f"{float(t['bore_mm']):,.0f} | {float(t['D_mm']):,.0f} | "
-            f"{float(t['D_we_mm']):.1f} | {float(t['L_we_mm']):.1f} | "
-            f"{float(t['slenderness']):.3f} | {int(float(t['Z']))} | "
-            f"{float(x['D30_UW']):.4f} | "
-            f"**{float(y['D30_UW']):.4f}** | "
-            f"{float(y['D30_UW'])/float(x['D30_UW']):.2f} | "
-            f"{float(x['life_Sys_yr']):,.0f} | {float(y['life_Sys_yr']):,.0f} | "
-            f"{'합격' if ok else '**불합격**'} |")
+        return (f"| `{k}` | {t['rank']} | {float(t['mass_brg_kg'])/1e3:.2f} | "
+                f"{float(t['bore_mm']):,.0f} | {float(t['D_mm']):,.0f} | "
+                f"{float(t['D_we_mm']):.1f} | {float(t['L_we_mm']):.1f} | "
+                f"{float(t['slenderness']):.3f} | {int(float(t['Z']))} | "
+                f"{float(x['D30_UW']):.4f} | "
+                f"**{float(y['D30_UW']):.4f}** | "
+                f"{float(y['D30_UW'])/float(x['D30_UW']):.2f} | "
+                f"{float(x['life_Sys_yr']):,.0f} | "
+                f"{float(y['life_Sys_yr']):,.0f} | "
+                f"{'합격' if ok else '**불합격**'} |")
+
+    T = [f"판정 기준: **ΣD30_UW ≤ {LIMIT} ∧ ΣD30_Sys ≤ {LIMIT}** (30년 손상)"]
+    for pre, cap in (("a", "**a — `z1 ≥ 1.0` 프론트** (§6-11.5a)"),
+                     ("b", "**b — `z1 ≥ 1.5` 프론트** (§6-11.5b)")):
+        ks = [k for k in keys if k[0] == pre]
+        if not ks:
+            continue
+        rows = []
+        for i, k in enumerate(ks):
+            # 베어링 최경량(#1~10) 과 총질량 최경량 사이에 구분행을 끼운다
+            if i and int(ks[i - 1][1:]) <= 10 < int(k[1:]):
+                rows.append(DIV)
+            rows.append(line(k))
+        T += ["", cap, "", HEAD, SEPR, BROW] + rows
 
     s = io.open(DOC, encoding="utf-8").read()
     for key, mark in MARK.items():
