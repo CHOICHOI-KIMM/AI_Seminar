@@ -27,7 +27,11 @@ ROOT = os.path.dirname(RES)
 DLCDIR = os.path.join(RES, "DLC별해석")
 # argv[1] "2" → Phase 2(24건) · "3" → Phase 3(6건) · 없으면 Phase 1(13건)
 _PH = sys.argv[1] if len(sys.argv) > 1 else "1"
-if _PH == "4":                       # S4 — 부록 6 S3-c 프론트 40건 (§6-11.5)
+if _PH == "5":                       # S4-70C — 베어링 70 °C 재검토 (§6-11.7)
+    OUTDIR = os.path.join(HERE, "P2_피로수명_S4_70C")
+    # 상수(a·Y1·e·C·C_u)는 기하·정격이라 온도와 무관 — S4 것을 그대로 쓴다
+    CONST = os.path.join(HERE, "P2_피로수명_S4", "p2d_constants.csv")
+elif _PH == "4":                     # S4 — 부록 6 S3-c 프론트 40건 (§6-11.5)
     OUTDIR = os.path.join(HERE, "P2_피로수명_S4")
     CONST = os.path.join(OUTDIR, "p2d_constants.csv")
 elif _PH == "3":
@@ -41,6 +45,8 @@ else:
     CONST = os.path.join(HERE, "P1_극한응력_Phase2", "p2_constants.csv")
 
 NU50 = 294.637                 # Mobilith SHC 460 @ 50°C [mm²/s] — MASTA 실측 일치
+NU70 = 137.178                 # 동 @ 70°C — `probe_nu70.py` 실측 (−53.4%)
+NU = NU70 if _PH == "5" else NU50      # 온도 조건은 phase 로 갈린다 (§6-11.7)
 P_EXP = 10.0 / 3.0
 E_W = 9.0 / 8.0
 DT0, DT = 0.1, 20.0
@@ -77,8 +83,8 @@ class Design:
                                        "z1", "z2", "Z")}
 
     def kappa(self, rpm):
-        return NU50 / (45000.0 * np.maximum(np.abs(rpm), 1e-6) ** -0.83
-                       * self.Dpw ** -0.5)
+        return NU / (45000.0 * np.maximum(np.abs(rpm), 1e-6) ** -0.83
+                     * self.Dpw ** -0.5)
 
     def eC(self, kap):
         a = np.minimum(1.0, EC_K1 * kap ** 0.68 * self.Dpw ** 0.55)

@@ -27,7 +27,10 @@ DLCDIR = os.path.join(RES, "DLC별해석")
 # argv[1] "2" → Phase 2(24건 · A/B) · "3" → Phase 3(6건 · C/D,
 # 베어링 단독 질량 기준 §8-6) · 없으면 Phase 1(13건)
 _PH = sys.argv[1] if len(sys.argv) > 1 else "1"
-if _PH == "4":                       # S4 — 부록 6 S3-c 프론트 40건 (§6-11.5)
+if _PH == "5":                       # S4-70C — 베어링 70 °C 재검토 (§6-11.7)
+    DIR = os.path.join(HERE, "P2_피로수명_S4_70C")
+    CONST = os.path.join(HERE, "P2_피로수명_S4", "p2d_constants.csv")
+elif _PH == "4":                     # S4 — 부록 6 S3-c 프론트 40건 (§6-11.5)
     DIR = os.path.join(HERE, "P2_피로수명_S4")
     CONST = os.path.join(DIR, "p2d_constants.csv")
 elif _PH == "3":
@@ -53,7 +56,8 @@ import update_p2c_table           # noqa: E402
 MODEL = (r"D:\AI\AI_Seminar\Main bearing\02. 자료\MASTA"
          r"\26MW_메인베어링_기본설계_v1.4_샤프트 두께,형상 3안"
          r"_베어링 크기 확대_롤러 확대_온도_50도_260726.Masta")
-SAVE_TAGS = (set() if _PH == "4" else            # S4 는 40건이라 저장 생략
+TEMP_BRG = 70.0                  # phase 5 에서만 적용 (§6-11.7)
+SAVE_TAGS = (set() if _PH in ("4", "5") else     # S4 는 40건이라 저장 생략
              {"C1", "C2", "C3", "D1", "D2", "D3"} if _PH == "3" else
              {"A1", "A2", "A3", "B1", "B2", "B3"} if _PH == "2"
              else {"1", "base"})
@@ -140,6 +144,20 @@ def main():
     for b in bs:
         b.detail.roller_profile_set.active_profile_type = RP.DIN_LUNDBERG
     print(f"[모델] {os.path.basename(MODEL)}")
+
+    # ── 베어링 온도 (§6-11.7) ───────────────────────────────────────
+    # `Load Case 1` 은 use_default_temperatures=False 라 **자체 온도**를 쓰고,
+    # 아래에서 이 LC 를 복제해 111 DLC 를 만들므로 여기만 바꾸면 전파된다
+    # (`probe_nu70.py` 로 복제본 상속 확인). 설계 기본 온도(80 °C)를 고쳐도
+    # 이 LC 에는 반영되지 않는다.
+    tset = lc0.temperatures
+    if _PH == "5":
+        for a in ("rolling_bearing_element", "rolling_bearing_inner_race",
+                  "rolling_bearing_outer_race"):
+            setattr(tset, a, TEMP_BRG)
+    print(f"[온도] 베어링 {tset.rolling_bearing_element:.0f} °C · "
+          f"샤프트 {tset.shaft:.0f} °C · 하우징 {tset.housing:.0f} °C "
+          f"(use_default={lc0.use_default_temperatures})")
 
     new = not os.path.isfile(PERDLC)
     fh = open(PERDLC, "a", newline="", encoding="utf-8-sig")

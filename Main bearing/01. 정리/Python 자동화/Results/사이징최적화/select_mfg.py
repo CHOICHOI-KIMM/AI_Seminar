@@ -1,5 +1,5 @@
 """
-§6-11.7 — 제작 제약을 고려한 설계안 선정
+§6-11.8 — 제작 제약을 고려한 설계안 선정
 ===========================================
 S3-c 파레토 프론트(`z1 ≥ 1.0` · 64건)에 **제작 상한** 네 개를 걸어 제작
 가능 후보군을 추린다.
@@ -16,7 +16,7 @@ S3-c 파레토 프론트(`z1 ≥ 1.0` · 64건)에 **제작 상한** 네 개를 
 `z1 ≥ 1.5` 프론트는 대상에서 뺀다 — 같은 베어링 질량대에서 총질량이 약
 10 t 무거워 전 구간이 `z1 ≥ 1.0` 프론트에 지배된다(§6-11.5a·b).
 
-산출: 문서 §6-11.6 의 표 3개
+산출: 문서 §6-11.8 의 표 3개
 """
 import csv
 import io
@@ -128,7 +128,7 @@ def main():
         s = pat.sub(lambda m: mark + "\n" + blocks[key], s, count=1)
     io.open(DOC, "w", encoding="utf-8").write(s)
     n_pass = blocks["pass"].count("\n| ") if any(LIMITS.values()) else 0
-    print(f"[§6-11.6] 프론트 {len(F)}건 · 상한 "
+    print(f"[§6-11.8] 프론트 {len(F)}건 · 상한 "
           + " · ".join(f"{k}={v}" for k, v in LIMITS.items())
           + (f" → 통과 {n_pass}건" if any(LIMITS.values()) else " → 자리표 유지"))
 
