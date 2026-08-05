@@ -33,15 +33,24 @@ import sizing_geom as sg          # noqa: E402
 import run_p2_fatigue as p2       # noqa: E402
 import run_appendix7_shaft as a7  # noqa: E402
 
-TAG = "a01"
-EXTREME_SF = 4.253                # §7-6.1 Myz_max 피로 안전율
-# 인자 `all` → 111 DLC 전수(§7-6.6). 없으면 손상 상위 10건(§7-6.5).
-ALL = len(sys.argv) > 1 and sys.argv[1].lower().startswith("all")
-NTOP = 111 if ALL else 10
-OUT = os.path.join(HERE, "부록7_샤프트",
-                   "all111_dlc.csv" if ALL else "top10_dlc.csv")
+# 인자로 설계 태그를 받는다 — `python run_appendix7_dlcscan.py a62`
+TAG = (sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] not in ("all",)
+       else "a01")
+ALL, NTOP = True, 111
+OUT = os.path.join(HERE, "부록7_샤프트", f"all111_{TAG}.csv")
 DOC = a7.DOC
-MARK = "<!-- A7:ALL111 -->" if ALL else "<!-- A7:TOP10 -->"
+MARK = f"<!-- A7:ALL111_{TAG} -->"
+
+
+def extreme_sf(tag):
+    """비교 기준 = 그 설계 자신의 극한 LC(`Myz_max`) 피로 안전율 (§7-3)"""
+    with open(os.path.join(HERE, "부록7_샤프트", "din743.csv"),
+              encoding="utf-8-sig") as f:
+        return float(next(r for r in csv.DictReader(f)
+                          if r["tag"] == tag)["fatigue_inf"])
+
+
+EXTREME_SF = None                 # main() 에서 채운다
 HDR = ("| # | DLC | 베어링 ΣD30_UW | 비중 | `k` | 빈 | "
        "**무한수명 피로** | 영구변형 | 극한 LC 대비 |")
 SEP = "|--:|---|--:|--:|--:|--:|--:|--:|--:|"
@@ -104,8 +113,10 @@ def write_doc(rows, tot):
 
 
 def main():
+    global EXTREME_SF
+    EXTREME_SF = extreme_sf(TAG)
     top, tot, spec = targets()
-    print(f"[{TAG}] 베어링 손상 상위 {len(top)} DLC · 총 ΣD30_UW {tot:.4f}")
+    print(f"[{TAG}] {len(top)} DLC · 총 ΣD30_UW {tot:.4f} · 극한 LC 기준 {EXTREME_SF:.3f}")
 
     import masta_clr_legacy  # noqa: F401
     import mastapy
