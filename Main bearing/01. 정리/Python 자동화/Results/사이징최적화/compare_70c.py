@@ -94,15 +94,20 @@ def main():
              f"{float(b[worst]['life_Sys_yr']):,.0f} yr).")
 
     # ── 설계별 표 ──────────────────────────────────────────────────
-    T = ["| 태그 | 프론트 # | 베어링 [t] | D_we [mm] | ΣD30_UW 50 °C | "
-         "ΣD30_UW 70 °C | **손상비** | life_Sys 50 °C | life_Sys 70 °C | "
-         "**판정 70 °C** |", "|---|--:|--:|--:|--:|--:|--:|--:|--:|:-:|"]
+    T = [f"판정 기준: **ΣD30_UW ≤ {LIMIT} ∧ ΣD30_Sys ≤ {LIMIT}** (30년 손상)",
+         "",
+         "| 태그 | 프론트 # | 베어링 [t] | d [mm] | D [mm] | D_we [mm] | "
+         "L_we [mm] | ΣD30_UW 50 °C | ΣD30_UW 70 °C | **손상비** | "
+         "life_Sys 50 °C | life_Sys 70 °C | **판정 70 °C** |",
+         "|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:-:|"]
     for k in keys:
         t, x, y = tg[k], a[k], b[k]
         ok = y["pass_UW"] == "1" and y["pass_Sys"] == "1"
         T.append(
             f"| `{k}` | {t['rank']} | {float(t['mass_brg_kg'])/1e3:.2f} | "
-            f"{float(t['D_we_mm']):.1f} | {float(x['D30_UW']):.4f} | "
+            f"{float(t['bore_mm']):,.0f} | {float(t['D_mm']):,.0f} | "
+            f"{float(t['D_we_mm']):.1f} | {float(t['L_we_mm']):.1f} | "
+            f"{float(x['D30_UW']):.4f} | "
             f"**{float(y['D30_UW']):.4f}** | "
             f"{float(y['D30_UW'])/float(x['D30_UW']):.2f} | "
             f"{float(x['life_Sys_yr']):,.0f} | {float(y['life_Sys_yr']):,.0f} | "
