@@ -97,9 +97,9 @@ def main():
     T = [f"판정 기준: **ΣD30_UW ≤ {LIMIT} ∧ ΣD30_Sys ≤ {LIMIT}** (30년 손상)",
          "",
          "| 태그 | 프론트 # | 베어링 [t] | d [mm] | D [mm] | D_we [mm] | "
-         "L_we [mm] | ΣD30_UW 50 °C | ΣD30_UW 70 °C | **손상비** | "
-         "life_Sys 50 °C | life_Sys 70 °C | **판정 70 °C** |",
-         "|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:-:|"]
+         "L_we [mm] | 세장비 | Z [개] | ΣD30_UW 50 °C | ΣD30_UW 70 °C | "
+         "**손상비** | life_Sys 50 °C | life_Sys 70 °C | **판정 70 °C** |",
+         "|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:-:|"]
     for k in keys:
         t, x, y = tg[k], a[k], b[k]
         ok = y["pass_UW"] == "1" and y["pass_Sys"] == "1"
@@ -107,6 +107,7 @@ def main():
             f"| `{k}` | {t['rank']} | {float(t['mass_brg_kg'])/1e3:.2f} | "
             f"{float(t['bore_mm']):,.0f} | {float(t['D_mm']):,.0f} | "
             f"{float(t['D_we_mm']):.1f} | {float(t['L_we_mm']):.1f} | "
+            f"{float(t['slenderness']):.3f} | {int(float(t['Z']))} | "
             f"{float(x['D30_UW']):.4f} | "
             f"**{float(y['D30_UW']):.4f}** | "
             f"{float(y['D30_UW'])/float(x['D30_UW']):.2f} | "
@@ -115,7 +116,11 @@ def main():
 
     s = io.open(DOC, encoding="utf-8").read()
     for key, mark in MARK.items():
-        pat = re.compile(re.escape(mark) + r"\n(?:.*?)(?=\n\n)", re.S)
+        # 다음 **마커나 제목**까지를 통째로 교체한다. 첫 빈 줄까지만 잡으면
+        # 블록 안에 빈 줄이 생기는 순간(주석 + 표) 뒷부분이 남아 표가
+        # 중복된다 — 260805 실제로 발생.
+        pat = re.compile(re.escape(mark) + r"\n(?:.*?)(?=\n<!--|\n#{2,6} |\Z)",
+                         re.S)
         if not pat.search(s):
             raise RuntimeError(f"{mark} 자리표를 찾지 못했다")
         blk = "\n".join(S if key == "summary" else T)

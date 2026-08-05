@@ -121,8 +121,10 @@ def main():
               "pass": pass_table(F)}
     s = io.open(DOC, encoding="utf-8").read()
     for key, mark in MARK.items():
-        # 마커 다음 줄부터 다음 빈 줄+마커/제목 전까지를 교체한다
-        pat = re.compile(re.escape(mark) + r"\n(?:.*?)(?=\n\n)", re.S)
+        # 마커 다음 줄부터 **다음 마커나 제목** 전까지를 교체한다.
+        # 첫 빈 줄까지만 잡으면 블록에 빈 줄이 생길 때 뒷부분이 남는다(260805).
+        pat = re.compile(re.escape(mark) + r"\n(?:.*?)(?=\n<!--|\n#{2,6} |\Z)",
+                         re.S)
         if not pat.search(s):
             raise RuntimeError(f"{mark} 자리표를 찾지 못했다")
         s = pat.sub(lambda m: mark + "\n" + blocks[key], s, count=1)
