@@ -47,6 +47,51 @@ BASE = dict(rank_mass="base", set="—", rank="—", z1=0.5, z2=3.0,
 SPEC_COLS = ["tag", "set", "rank", "mass_shaft_kg", "OD_mm", "ID_mm",
              "t_mm", "OD_over_t", "length_mm", "z1_m", "z2_m"]
 
+DOC = os.path.join(os.path.dirname(os.path.dirname(HERE)),
+                   "DLC기반_피로해석_사이징_최적화.md")
+MARK = {"a": "<!-- A7:SPEC_A -->", "b": "<!-- A7:SPEC_B -->"}
+HDR = ("| 태그 | 프론트 # | 무게 [t] | 내경 [mm] | 외경 [mm] | 두께 [mm] | "
+       "외경/두께 | 길이 [mm] | z1 [m] | z2 [m] | **피로 안전율** |")
+SEP = "|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|"
+
+
+def spec_line(r, sf):
+    """사양 1행. `sf` 는 DIN 743 무한수명 피로 안전율(없으면 —)."""
+    f = lambda k: float(r[k])                                   # noqa: E731
+    return (f"| {r['tag']} | {r['rank']} | {f('mass_shaft_kg')/1e3:.1f} | "
+            f"{f('ID_mm'):,.0f} | {f('OD_mm'):,.0f} | {f('t_mm'):.1f} | "
+            f"{f('OD_over_t'):.2f} | {f('length_mm'):,.0f} | "
+            f"{f('z1_m'):.1f} | {f('z2_m'):.1f} | "
+            + (f"**{sf:.3f}**" if sf is not None else "—") + " |")
+
+
+def write_doc(specs, sfmap):
+    """§7-2 의 a·b 표를 짝 마커 사이에 채운다"""
+    import io
+    import re
+    by = {r["tag"]: r for r in specs}
+    base = by["base"]
+    s = io.open(DOC, encoding="utf-8").read()
+    for pre, mark in MARK.items():
+        rows, prev = [], None
+        for r in specs:
+            if r["tag"] == "base" or r["set"] != pre:
+                continue
+            n = int(r["rank"])
+            if prev is not None and prev <= 10 < n:
+                rows.append("| **— 총질량 최경량 —** |" + " |" * 10)
+            rows.append(spec_line(r, sfmap.get(r["tag"])))
+            prev = n
+        blk = "\n".join([HDR, SEP,
+                         spec_line(dict(base, tag="**기준선** (v1.3)",
+                                        rank="—"), sfmap.get("base"))] + rows)
+        close = mark.replace("<!-- ", "<!-- /")
+        pat = re.compile(re.escape(mark) + r"\n.*?\n" + re.escape(close), re.S)
+        if not pat.search(s):
+            raise RuntimeError(f"{mark} … {close} 자리표를 찾지 못했다")
+        s = pat.sub(lambda m: f"{mark}\n{blk}\n{close}", s, count=1)
+    io.open(DOC, "w", encoding="utf-8").write(s)
+
 
 def spec_rows():
     """샤프트 사양 — MASTA 없이 계산한다"""
@@ -168,6 +213,12 @@ def main():
     print(f"\n[DIN 743] {len(rows)}건 · {(time.perf_counter()-t_all)/60:.1f}분 "
           f"→ {os.path.basename(p)}")
     print("  항목: " + " / ".join(rows[0].get("descriptions", [])))
+
+    # ── 문서 §7-2 표 갱신 ──────────────────────────────────────────
+    sfmap = {r["tag"]: r.get("fatigue_inf") for r in rows}
+    write_doc(specs, sfmap)
+    na = sum(1 for r in specs if r["set"] == "a")
+    print(f"[문서] §7-2 a {na}행 · b {len(specs)-na-1}행 갱신")
 
 
 if __name__ == "__main__":
