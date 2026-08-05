@@ -38,3 +38,7 @@ Main bearing/01. 정리/Python 자동화/Results/**/*.log
 # MASTA 모델 파일 — 스크립트로 재생성 가능한 대용량 바이너리(파일당 8MB+), 커밋 제외
 **/MASTA/*.masta
 **/MASTA/*.lock
+
+# 스크리닝 ε 맵 — 설계 × DLC × k 301수준이라 파일당 60 MB 다 (260805)
+# 진단용 중간 산출이고 screen_k.csv 로 최종 k 가 남으므로 추적하지 않는다
+**/screen_eps_map.csv
