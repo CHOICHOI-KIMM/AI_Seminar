@@ -227,8 +227,9 @@ def main():
         "*UW 미스얼라인먼트는 지배 LC `Myz_max` 기준 · 축 피로 SF 는 "
         "`DLC1.2-k-s5` 최약 빈(#11) 대표하중 기준 DIN 743 무한수명 안전율 "
         "(§8-6.2).*")
-    io.open(DOC, "w", encoding="utf-8").write(
-        pat.sub(lambda m: a + blk2 + b, s, count=1))
+    blk = lambda m: a + blk2 + b
+    out = pat.sub(lambda _m: blk, s, count=1)
+    io.open(DOC, "w", encoding="utf-8").write(out)
     print(f"[문서] §8-6.3a 표 {len(rows)}행 갱신")
 
 

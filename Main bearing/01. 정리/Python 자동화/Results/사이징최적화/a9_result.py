@@ -223,8 +223,9 @@ def main():
     doc = io.open(DOC, encoding="utf-8").read()
     a, b_ = "<!-- A9:RES -->", "<!-- /A9:RES -->"
     pat = re.compile(re.escape(a) + r".*?" + re.escape(b_), re.S)
-    io.open(DOC, "w", encoding="utf-8").write(
-        pat.sub(a + "\n" + "\n".join(body) + "\n" + b_, doc, count=1))
+    blk = a + "\n" + "\n".join(body) + "\n" + b_
+    out = pat.sub(lambda _m: blk, doc, count=1)
+    io.open(DOC, "w", encoding="utf-8").write(out)
     print(f"[문서] §9-9.2 기입 · 프론트 {len(F)}행")
 
 

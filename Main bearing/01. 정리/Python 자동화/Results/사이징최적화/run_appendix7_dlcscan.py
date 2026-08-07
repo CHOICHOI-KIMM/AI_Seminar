@@ -108,8 +108,9 @@ def write_doc(rows, tot):
     pat = re.compile(re.escape(MARK) + r"\n.*?\n" + re.escape(close), re.S)
     if not pat.search(s):
         raise RuntimeError(f"{MARK} … {close} 자리표를 찾지 못했다")
-    io.open(DOC, "w", encoding="utf-8").write(
-        pat.sub(lambda m: f"{MARK}\n{blk}\n{close}", s, count=1))
+    blk = lambda m: f"{MARK}\n{blk}\n{close}"
+    out = pat.sub(lambda _m: blk, s, count=1)
+    io.open(DOC, "w", encoding="utf-8").write(out)
 
 
 def main():

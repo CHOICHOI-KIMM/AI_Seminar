@@ -79,8 +79,9 @@ def main():
     a_, b_ = f"<!-- {MARK} -->", f"<!-- /{MARK} -->"
     pat = re.compile(re.escape(a_) + r".*?" + re.escape(b_), re.S)
     if pat.search(s):
-        io.open(DOC, "w", encoding="utf-8").write(
-            pat.sub(a_ + "\n" + "\n".join(body) + "\n" + b_, s, count=1))
+        blk = a_ + "\n" + "\n".join(body) + "\n" + b_
+        out = pat.sub(lambda _m: blk, s, count=1)
+        io.open(DOC, "w", encoding="utf-8").write(out)
     return len(f50), len(f70)
 
 

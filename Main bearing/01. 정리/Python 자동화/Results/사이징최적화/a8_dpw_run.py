@@ -131,8 +131,9 @@ class Log(S3.GenLog):
             a, b = f"<!-- {MARK} -->", f"<!-- /{MARK} -->"
             pat = re.compile(re.escape(a) + r".*?" + re.escape(b), re.S)
             if pat.search(s):
-                io.open(DOC, "w", encoding="utf-8").write(
-                    pat.sub(a + "\n" + "\n".join(body) + "\n" + b, s, count=1))
+                blk = a + "\n" + "\n".join(body) + "\n" + b
+                out = pat.sub(lambda _m: blk, s, count=1)
+                io.open(DOC, "w", encoding="utf-8").write(out)
         except Exception as e:
             print(f"  [문서] 갱신 실패: {str(e).splitlines()[0][:60]}")
 

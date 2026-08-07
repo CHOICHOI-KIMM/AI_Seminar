@@ -68,8 +68,9 @@ def main():
     pat = re.compile(re.escape(MARK) + r"\n(?:.*?)(?=\n\n#)", re.S)
     if not pat.search(s):
         raise RuntimeError(f"{MARK} 자리표를 찾지 못했다")
-    io.open(DOC, "w", encoding="utf-8").write(
-        pat.sub(lambda m: MARK + "\n" + tbl, s, count=1))
+    blk = lambda m: MARK + "\n" + tbl
+    out = pat.sub(lambda _m: blk, s, count=1)
+    io.open(DOC, "w", encoding="utf-8").write(out)
     print(f"[§6-11.5] 150세대 → {len(rows)}행 (10세대 간격 + 변경점 {len(改)}개)")
 
 
