@@ -27,7 +27,16 @@ ROOT = os.path.dirname(RES)
 DLCDIR = os.path.join(RES, "DLC별해석")
 # argv[1] "2" → Phase 2(24건) · "3" → Phase 3(6건) · 없으면 Phase 1(13건)
 _PH = sys.argv[1] if len(sys.argv) > 1 else "1"
-if _PH == "5":                       # S4-70C — 베어링 70 °C 재검토 (§6-11.7)
+if _PH in ("8", "9"):                # S4-d(부록 9) — D 상한 3건 (§9-10)
+    OUTDIR = os.path.join(HERE, "P2_피로수명_A9"
+                          + ("_70C" if _PH == "9" else ""))
+    CONST = os.path.join(HERE, "P2_피로수명_A9", "p2f_constants.csv")
+elif _PH in ("6", "7"):              # S4-d — 부록 8 프론트 14건 (§8-7)
+    OUTDIR = os.path.join(HERE, "P2_피로수명_A8"
+                          + ("_70C" if _PH == "7" else ""))
+    # 상수는 기하·정격이라 온도와 무관 — 50 °C 단계 것을 두 온도가 함께 쓴다
+    CONST = os.path.join(HERE, "P2_피로수명_A8", "p2e_constants.csv")
+elif _PH == "5":                     # S4-70C — 베어링 70 °C 재검토 (§6-11.7)
     OUTDIR = os.path.join(HERE, "P2_피로수명_S4_70C")
     # 상수(a·Y1·e·C·C_u)는 기하·정격이라 온도와 무관 — S4 것을 그대로 쓴다
     CONST = os.path.join(HERE, "P2_피로수명_S4", "p2d_constants.csv")
@@ -46,7 +55,7 @@ else:
 
 NU50 = 294.637                 # Mobilith SHC 460 @ 50°C [mm²/s] — MASTA 실측 일치
 NU70 = 137.178                 # 동 @ 70°C — `probe_nu70.py` 실측 (−53.4%)
-NU = NU70 if _PH == "5" else NU50      # 온도 조건은 phase 로 갈린다 (§6-11.7)
+NU = NU70 if _PH in ("5", "7", "9") else NU50   # 온도 조건은 phase 로 갈린다 (§6-11.7)
 P_EXP = 10.0 / 3.0
 E_W = 9.0 / 8.0
 DT0, DT = 0.1, 20.0

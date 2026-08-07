@@ -27,7 +27,15 @@ DLCDIR = os.path.join(RES, "DLC별해석")
 # argv[1] "2" → Phase 2(24건 · A/B) · "3" → Phase 3(6건 · C/D,
 # 베어링 단독 질량 기준 §8-6) · 없으면 Phase 1(13건)
 _PH = sys.argv[1] if len(sys.argv) > 1 else "1"
-if _PH == "5":                       # S4-70C — 베어링 70 °C 재검토 (§6-11.7)
+if _PH in ("8", "9"):                # S4-d(부록 9) — D 상한 3건 (§9-10)
+    DIR = os.path.join(HERE, "P2_피로수명_A9"
+                       + ("_70C" if _PH == "9" else ""))
+    CONST = os.path.join(HERE, "P2_피로수명_A9", "p2f_constants.csv")
+elif _PH in ("6", "7"):              # S4-d — 부록 8 프론트 14건 (§8-7)
+    DIR = os.path.join(HERE, "P2_피로수명_A8"
+                       + ("_70C" if _PH == "7" else ""))
+    CONST = os.path.join(HERE, "P2_피로수명_A8", "p2e_constants.csv")
+elif _PH == "5":                     # S4-70C — 베어링 70 °C 재검토 (§6-11.7)
     DIR = os.path.join(HERE, "P2_피로수명_S4_70C")
     CONST = os.path.join(HERE, "P2_피로수명_S4", "p2d_constants.csv")
 elif _PH == "4":                     # S4 — 부록 6 S3-c 프론트 40건 (§6-11.5)
@@ -49,6 +57,8 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, ROOT)
 
 import sizing_geom as sg          # noqa: E402
+if _PH in ("6", "7", "8", "9"):  # 두께 규칙·코너 반경·정수화 (§8-3)
+    import a8_build                # noqa: F401,E402
 import update_p2_table            # noqa: E402
 import update_p2b_table           # noqa: E402
 import update_p2c_table           # noqa: E402
@@ -62,7 +72,7 @@ TEMP_BRG = 70.0                  # phase 5 에서만 적용 (§6-11.7)
 CONST = os.environ.get("P2_CONST_OVERRIDE") or CONST
 SAVE_TAGS = (set(filter(None, os.environ["P2_SAVE_TAGS"].split(",")))
              if os.environ.get("P2_SAVE_TAGS") else
-             set() if _PH in ("4", "5") else     # S4 는 40건이라 저장 생략
+             set() if _PH in ("4", "5", "6", "7", "8", "9") else   # 저장 생략
              {"C1", "C2", "C3", "D1", "D2", "D3"} if _PH == "3" else
              {"A1", "A2", "A3", "B1", "B2", "B3"} if _PH == "2"
              else {"1", "base"})
@@ -156,7 +166,7 @@ def main():
     # (`probe_nu70.py` 로 복제본 상속 확인). 설계 기본 온도(80 °C)를 고쳐도
     # 이 LC 에는 반영되지 않는다.
     tset = lc0.temperatures
-    if _PH == "5":
+    if _PH in ("5", "7", "9"):     # 베어링 3항만 70 °C (§6-11.7 과 동일 조건)
         for a in ("rolling_bearing_element", "rolling_bearing_inner_race",
                   "rolling_bearing_outer_race"):
             setattr(tset, a, TEMP_BRG)
@@ -290,8 +300,17 @@ def main():
                 print(f"  [저장] {os.path.basename(p)}  {st}")
             except Exception as e:
                 print(f"  !! MASTA 저장 실패: {str(e).splitlines()[0][:70]}")
-        if _PH in ("4", "5"):
-            # S4(50 °C)·S4-70C 는 §6-11.5a·b / §6-11.7 표에 결과를 합치는
+        if _PH in ("8", "9"):
+            # §9-10 은 설계 1건마다 표를 다시 쓴다 (끝난 것만 채운다)
+            try:
+                import a9_s4_table
+                n5, n7 = a9_s4_table.main()
+                print(f"  [문서] §9-10 갱신 50°C {n5}/3 · 70°C {n7}/3",
+                      flush=True)
+            except Exception as e:
+                print(f"  [문서] 갱신 실패 {str(e).splitlines()[0][:60]}")
+        elif _PH in ("4", "5", "6", "7"):
+            # S4(50 °C)·S4-70C·S4-d 는 §6-11.5a·b / §6-11.7 표에 결과를 합치는
             # 방식이라 갱신 주체가 다르다(`plot_pareto_s3.py`·`compare_70c.py`).
             # 여기서 §8-3.6 갱신기를 부르면 Phase 1 표를 매 설계마다
             # 재생성하게 된다 — 내용은 같지만 부를 이유가 없다.

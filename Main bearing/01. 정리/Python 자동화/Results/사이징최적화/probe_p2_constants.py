@@ -20,8 +20,14 @@ ROOT = os.path.dirname(RES)
 # argv[1] "2" → Phase 2(24건) · "3" → Phase 3(6건 · 베어링질량 기준)
 # 없으면 Phase 1(12건 + 기준선)
 _PH = sys.argv[1] if len(sys.argv) > 1 else "1"
-PH2 = _PH in ("2", "3", "4")     # 기준선 행을 붙이지 않는 단계
-if _PH == "4":                   # S4 — 부록 6 S3-c 프론트 40건 (§6-11.5)
+PH2 = _PH in ("2", "3", "4", "6", "8")   # 기준선 행을 붙이지 않는 단계
+if _PH == "8":                   # S4-d(부록 9) — D 상한 3건 (§9-10)
+    DIR = os.path.join(HERE, "P2_피로수명_A9")
+    SRCF, OUT = "p2f_targets.csv", os.path.join(DIR, "p2f_constants.csv")
+elif _PH == "6":                   # S4-d — 부록 8 S3-c 프론트 14건 (§8-7)
+    DIR = os.path.join(HERE, "P2_피로수명_A8")
+    SRCF, OUT = "p2e_targets.csv", os.path.join(DIR, "p2e_constants.csv")
+elif _PH == "4":                 # S4 — 부록 6 S3-c 프론트 40건 (§6-11.5)
     DIR = os.path.join(HERE, "P2_피로수명_S4")
     SRCF, OUT = "p2d_targets.csv", os.path.join(DIR, "p2d_constants.csv")
 elif _PH == "3":
@@ -37,6 +43,9 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, ROOT)
 
 import sizing_geom as sg   # noqa: E402
+
+if _PH in ("6", "8"):      # 두께 규칙·코너 반경·정수화 (§8-3)
+    import a8_build        # noqa: F401,E402
 
 MODEL = (r"D:\AI\AI_Seminar\Main bearing\02. 자료\MASTA"
          r"\26MW_메인베어링_기본설계_v1.4_샤프트 두께,형상 3안"

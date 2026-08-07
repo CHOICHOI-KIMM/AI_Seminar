@@ -98,6 +98,20 @@ def key_of(z1, z2, D_pw, alpha, D_we, L_we):
 class Evaluator:
     """MASTA 세션 1개를 유지하며 설계점을 평가한다."""
 
+    # ── 확장 지점 (부록 8 이 갈아끼운다) ────────────────────────────
+    FIELDS = FIELDS                  # 하위 클래스가 열을 더할 수 있게
+
+    def shaft_of(self, bore, z2, integerize):
+        """샤프트 종속제원 — 규칙을 바꾸려면 여기만 재정의한다"""
+        return shaft_of(bore, z2, integerize)
+
+    def tweak(self, detail):
+        """제원 주입 직후·마운트 직전에 detail 을 더 손볼 자리. 기본은 없음"""
+
+    def finish(self, row, detail):
+        """기록 직전 행을 손볼 자리 (열 개명·추가). 기본은 그대로"""
+        return row
+
     def __init__(self, outdir, integerize=True, verbose=True):
         self.outdir = outdir
         self.integerize = integerize
@@ -157,7 +171,7 @@ class Evaluator:
         if self._fh is None:
             new = not os.path.isfile(self.cachef)
             self._fh = open(self.cachef, "a", newline="", encoding="utf-8-sig")
-            self._w = csv.DictWriter(self._fh, fieldnames=FIELDS)
+            self._w = csv.DictWriter(self._fh, fieldnames=self.FIELDS)
             if new:
                 self._w.writeheader()
         return self._w
@@ -173,7 +187,7 @@ class Evaluator:
                     b.inner_connection.delete()
             except Exception as e:
                 warn.append(f"unmount:{str(e).splitlines()[0][:28]}")
-        s = shaft_of(g["bore"], z2, self.integerize)
+        s = self.shaft_of(g["bore"], z2, self.integerize)
         try:
             self.sh.remove_all_sections()
             self.sh.add_section(0.0, s["length"], s["outer_diameter"],
@@ -185,6 +199,7 @@ class Evaluator:
             bad = sg.apply_to_masta(b.detail, g)
             if bad:
                 warn.append("spec:" + bad[0])
+            self.tweak(b.detail)
         for b, z in ((self.uw, z1), (self.dw, z2)):
             try:
                 b.try_mount_on(self.sh, z)
@@ -221,7 +236,7 @@ class Evaluator:
             warn.append("sigma=0")
         mb = sc(self.uw.detail, "mass") or 0.0
         ms = sc(self.sh, "mass_of_shaft_body") or 0.0
-        return dict(
+        return self.finish(dict(
             key=key_of(z1, z2, D_pw, alpha, D_we, L_we),
             z1=z1, z2=z2, D_pw_mm=round(D_pw * 1e3, 1), alpha=alpha,
             D_we_mm=round(D_we * 1e3, 2), L_we_mm=round(L_we * 1e3, 2),
@@ -236,7 +251,7 @@ class Evaluator:
             sigma_max_MPa=round(best, 1),
             feasible=1 if (0 < best < LIMIT) else 0,
             warn="|".join(warn) if warn else "",
-            t_s=round(time.perf_counter() - t1, 2))
+            t_s=round(time.perf_counter() - t1, 2)), self.uw.detail)
 
     # ── 세대 단위 평가 ──────────────────────────────────────────────
     def evaluate(self, pts):

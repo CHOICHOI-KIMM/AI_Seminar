@@ -50,6 +50,8 @@ import sizing_geom as sg        # noqa: E402
 LIMIT = 2100.0                  # MPa (§6-5)
 POP, GEN, SEED = 224, 150, 1    # §6-8 — S2 에서 재현율 100% 의 최소 구성
 DRY_GEN = 5                     # S3-b 드라이런
+# 부록 8 이 평가기와 산출 폴더만 갈아끼워 이 스크립트를 재사용한다
+OUTROOT = "부록6_NSGA"
 
 # ── 설계변수 (§6-3 · §6-11.3) ────────────────────────────────────────
 # 수치변수는 **0.1 mm 정수 단위**로 다룬다. D_pw 만 1 mm 단위이므로 10배
@@ -247,7 +249,10 @@ def dump_front(prob, algo, path):
             continue
         pt, _ = prob.design_of(x_)
         r = prob.ev.cache.get(ne.key_of(*pt), {})
-        rows.append(dict(mass_brg_t=round(f_[0], 4),
+        # 평가기가 더 기록한 열이 있으면(부록 8 의 2β 등) 그대로 실어 준다
+        add = {k: r.get(k) for k in getattr(prob.ev, "FIELDS", [])
+               if k not in FRONT_COLS and k in r}
+        rows.append(dict(**add, mass_brg_t=round(f_[0], 4),
                          mass_total_t=round(f_[1], 4),
                          z1=pt[0], z2=pt[1], D_pw_mm=round(pt[2] * 1e3, 1),
                          alpha=pt[3], D_we_mm=round(pt[4] * 1e3, 2),
@@ -260,8 +265,10 @@ def dump_front(prob, algo, path):
     rows.sort(key=lambda r: r["mass_brg_t"])
     for i, r in enumerate(rows, 1):
         r["rank"] = i
+    cols = FRONT_COLS + [k for k in (rows[0] if rows else {})
+                         if k not in FRONT_COLS]
     with open(path, "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.DictWriter(f, fieldnames=FRONT_COLS)
+        w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()
         w.writerows(rows)
     return rows
@@ -365,7 +372,7 @@ def dry_checks(prob, front, outdir):
 def main():
     dry = len(sys.argv) > 1 and sys.argv[1].lower().startswith("dry")
     gen = DRY_GEN if dry else GEN
-    outdir = os.path.join(HERE, "부록6_NSGA",
+    outdir = os.path.join(HERE, OUTROOT,
                           "S3_드라이런" if dry else "S3_본최적화")
     os.makedirs(outdir, exist_ok=True)
 

@@ -1,0 +1,2 @@
+﻿key,z1,z2,D_pw_mm,alpha,D_we_mm,L_w_mm,slenderness,Z,bore_mm,D_mm,T_mm,B_mm,C_mm,L_eff_m,mass_brg_kg,mass_shaft_kg,mass_total_kg,sigma_max_MPa,feasible,warn,t_s,L_we_mm,taper_2beta_deg,cone_angle_deg
+0.50_3.00_3330.9_19_110.51_238.05,0.5,3.0,3330.9,19.0,110.51,238.05,2.1541,87,3055.0,3600.0,310.0,300.0,253.0,3.61666,5600.8,58384.5,69586.1,3407.9,0,,2.34,229.45,1.2,17.8
