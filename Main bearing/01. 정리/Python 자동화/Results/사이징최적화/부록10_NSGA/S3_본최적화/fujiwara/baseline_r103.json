@@ -1,0 +1,17 @@
+{
+ "103": {
+  "L_we_mm": 427.8,
+  "sigma_MPa": 2092.9,
+  "edge_row_MPa": 939.3,
+  "n_contact": 26,
+  "P_max_N": 3349504.7671038215,
+  "tilt_mrad": 0.5459,
+  "y_star_mm": -129.06,
+  "y_star_pct": 60.3,
+  "edge_L_MPa": 939.3,
+  "edge_R_MPa": 418.5,
+  "margin_L_mm": 1.41,
+  "margin_R_mm": 30.11,
+  "contact_mm": 396.3
+ }
+}
