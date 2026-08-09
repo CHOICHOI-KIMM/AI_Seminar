@@ -1,0 +1,41 @@
+{
+ "1": {
+  "sigma_MPa": 2096.9,
+  "end_L_MPa": 988.4,
+  "end_L_pct": 47.14,
+  "margin_L_pct": 0.581,
+  "margin_L_lam": 0.11,
+  "end_R_MPa": 162.9,
+  "end_R_pct": 7.77,
+  "margin_R_pct": 17.157,
+  "margin_R_lam": 3.26,
+  "y_star_mm": -175.64,
+  "y_star_pct": 65.84
+ },
+ "103": {
+  "sigma_MPa": 2092.9,
+  "end_L_MPa": 939.3,
+  "end_L_pct": 44.88,
+  "margin_L_pct": 0.659,
+  "margin_L_lam": 0.125,
+  "end_R_MPa": 418.5,
+  "end_R_pct": 20.0,
+  "margin_R_pct": 14.078,
+  "margin_R_lam": 2.675,
+  "y_star_mm": -129.06,
+  "y_star_pct": 60.34
+ },
+ "210": {
+  "sigma_MPa": 2099.8,
+  "end_L_MPa": 941.7,
+  "end_L_pct": 44.85,
+  "margin_L_pct": 0.634,
+  "margin_L_lam": 0.121,
+  "end_R_MPa": 521.2,
+  "end_R_pct": 24.82,
+  "margin_R_pct": 12.685,
+  "margin_R_lam": 2.41,
+  "y_star_mm": -104.39,
+  "y_star_pct": 60.06
+ }
+}
