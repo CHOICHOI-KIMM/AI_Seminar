@@ -181,14 +181,14 @@ class Rig(object):
             ps.active_profile_type = self.RP.DIN_LUNDBERG
             ps.active_profile.axial_offset = axial_offset
 
-    def set_user(self, zfun, n=61):
+    def set_user(self, zfun, n=61, targets=None):
         """낙차 함수 z(y[m]) → USERSPECIFIED 주입.
 
         위치를 직접 쓰면 이전 설계의 좌표와 순서가 엉켜 해석이 깨진다.
         `number_of_points` 를 흔들어 **현 롤러 길이에 맞게 재생성**시킨 뒤,
         MASTA 가 준 위치에서 수식을 평가해 낙차만 넣는다.
         """
-        for b in self.bs:
+        for b in (self.bs if targets is None else targets):
             ps = b.detail.roller_profile_set
             ps.active_profile_type = self.RP.USERSPECIFIED
             up = ps.active_profile
