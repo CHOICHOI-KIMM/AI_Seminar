@@ -19,6 +19,8 @@ import a10_asymdin2 as A2        # noqa: E402
 OUT = A2.OUT
 FUJI = os.path.join(HERE, "부록10_NSGA", "S3_본최적화", "fujiwara")
 FIG = os.path.join(HERE, "figures", "asymdin_a10.png")
+FIG2 = os.path.join(HERE, "figures", "asymdin_vs_din.png")
+SKIP2 = "Fujiwara 비대칭 (§10-12.6)"    # 2해법 그림에서 제외
 RANKS = A2.RANKS
 
 
@@ -83,7 +85,7 @@ def collect():
     return out
 
 
-def draw(D):
+def draw(D, only=None, path=None, title=None):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -103,6 +105,8 @@ def draw(D):
         a0, a1 = ax[0][j], ax[1][j]
         half = None
         for r in D[rk]:
+            if only and r["tag"] not in only:
+                continue
             c, ls, lw = STY.get(r["tag"], ("tab:blue", "-", 1.5))
             a0.plot([p[0] for p in r["prof"]], [p[1] for p in r["prof"]],
                     ls, color=c, lw=lw, label=r["tag"])
@@ -128,17 +132,21 @@ def draw(D):
         for a in (a0, a1):
             a.set_xlim(-half * 1.03, half * 1.03)
     ax[0][0].legend(fontsize=8, loc="lower center", framealpha=0.9)
-    fig.suptitle("세 프로파일 비교 — 형상(위)과 길이방향 응력분포(아래) · "
-                 "● = 최대응력 위치", fontsize=13)
+    fig.suptitle(title or ("세 프로파일 비교 — 형상(위)과 길이방향 "
+                          "응력분포(아래) · ● = 최대응력 위치"), fontsize=13)
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     os.makedirs(os.path.dirname(FIG), exist_ok=True)
-    fig.savefig(FIG, dpi=150)
-    print("[저장]", FIG)
+    out = path or FIG
+    fig.savefig(out, dpi=150)
+    print("[저장]", out)
 
 
 if __name__ == "__main__":
     p = os.path.join(OUT, "final_fig.json")
-    if "--redraw" in sys.argv and os.path.exists(p):
-        draw(json.load(open(p, encoding="utf-8")))
-    else:
-        draw(collect())
+    D = (json.load(open(p, encoding="utf-8"))
+         if ("--redraw" in sys.argv and os.path.exists(p)) else collect())
+    draw(D)
+    keep = ("현행 DIN Lundberg", "비대칭 DIN (§10-12.7)")
+    draw(D, only=keep, path=FIG2,
+         title="현행 DIN 대 비대칭 DIN — 형상(위)과 길이방향 응력분포(아래) "
+               "· ● = 최대응력 위치")
