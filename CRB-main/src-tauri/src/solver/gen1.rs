@@ -1,3 +1,8 @@
+// CRB (Phase 3): 이 모듈은 α = 0 (원통) 조건에서 호출됨.
+// commands.rs 에서 `cos_alpha_diff = 1.0` 을 인자로 전달 → dual-raceway 프로젝션이
+// `δ_available = δ_rigid − Δz_outer − Δz_inner` (동일 축) 로 자동 환원됨.
+// 알고리즘 자체 (독립 slice 비선형 spring, O(n)) 는 CRB/TRB 공용.
+
 use crate::error::SolverError;
 use crate::solver::hertz;
 use crate::solver::types::*;

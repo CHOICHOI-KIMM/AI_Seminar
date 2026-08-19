@@ -1,3 +1,12 @@
+// CRB (Phase 3): 이 모듈은 α = 0 (원통) 조건에서 호출됨.
+// commands.rs 에서 `cos_alpha_diff = 1.0` 인자 전달 → dual-raceway 프로젝션 자동 환원.
+// CRB 특성: r_roller = D_we/2 = const → beam.rs 의 I_k, A_k 자동으로 균일 →
+// [K_beam] 행렬이 element-wise 동일 (구조 대칭 개선). Newton-Raphson + active set
+// 알고리즘 자체 (O(n²)) 는 CRB/TRB 공용, 변경 없음.
+//
+// Level C (Phase 3): Gen1 (독립 slice) ↔ Gen3 (beam-coupled) 는 서로 다른 알고리즘 →
+// flat profile + zero misalignment 조건에서 두 결과 수렴해야 (진짜 독립 검증).
+
 use nalgebra::DVector;
 
 use crate::error::SolverError;
