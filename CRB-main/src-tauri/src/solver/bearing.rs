@@ -1,20 +1,17 @@
-// CRB Bearing-Level Equilibrium Solver — Phase 4 정식 구현
+// CRB Bearing-Level Equilibrium Solver — Phase 4 정식 (§4.12.5 Phase 분리 방식)
 // ─────────────────────────────────────────────────────────────────────
 // ISO 16281 A.3.1 (ISO p. 22) Cylindrical roller bearing internal load distribution.
 //
 // 평형 DOF = 3 (Plan §6 D4+D6+D7):
 //   disp[0] = δ_x  radial displacement X (수평)      [μm]
-//   disp[1] = δ_y  radial displacement Y (수직, 중력)  [μm]
-//   disp[2] = γ_x  misalignment about X-axis           [rad]
-//   (제거: δ_z (D4: F_a=0), γ_y (D6: single-plane))
+//   disp[1] = δ_y  radial displacement Y (수직, 중력) [μm]
+//   disp[2] = γ_x  misalignment about X-axis         [rad]
 //
-// 좌표계 (D5): X=수평 radial, Y=수직(중력), Z=shaft axis
-// 접촉력 방향 (D1): 순수 radial (α=0, rib 없음)
-// Single row (D3)
+// 알고리즘 (§4.12.5): Phase 분리 (Outer γ_x + Inner (δx, δy) 2-DOF)
+//   Outer loop: γ_x 1-DOF NR (M_x equilibrium)
+//     Inner: Phase A 2-DOF NR (δx, δy) with γ_x fixed  ← TRB 원본 line 892~945 이식
 //
-// Newton-Raphson 반복:
-//   [J]·Δ{disp} = -{R},   {R} = Σⱼ Q_j·[cos ψⱼ, sin ψⱼ, (d_pw/2)·sin ψⱼ] − [F_x, F_y, M_x]
-//
+// TRB 원본 (git show 5441446:...bearing.rs) 참조.
 // Phase 5+ 에서 재활성화될 life/static_rating/thermal_speed 는 현재 Default 값으로 채움.
 
 use crate::error::SolverError;
@@ -22,7 +19,7 @@ use crate::solver::gen1;
 use crate::solver::geometry::compute_slices;
 use crate::solver::types::*;
 
-// ─── 순수 계산 함수 (Phase 1 stub 에서 유지) ────────────────────────
+// ─── 순수 계산 함수 ─────────────────────────────────────────────────
 
 /// Roller angular positions [rad], evenly spaced starting at `load_angle`.
 pub fn roller_positions(z: u32, load_angle: f64) -> Vec<f64> {
@@ -54,16 +51,17 @@ pub fn roller_approach(
     delta_r + axial_arm - g_r / 2.0
 }
 
-// ─── Level 1: Bearing Equilibrium (3-DOF Newton-Raphson) ────────────
+// ─── Residual + Jacobian ─────────────────────────────────────────────
 
-const NR_MAX_ITER: usize = 100;
-const NR_TOL_REL: f64 = 1e-5;    // relative residual tolerance
-const NR_FD_STEP_DISP: f64 = 0.01;   // finite-difference step for δ [μm]
-const NR_FD_STEP_GAMMA: f64 = 1e-6;  // finite-difference step for γ [rad]
+const FD_STEP_DISP: f64 = 0.01;    // finite-difference step for δ [μm]
+const FD_STEP_GAMMA: f64 = 1e-6;    // finite-difference step for γ [rad]
+const OUTER_MAX_ITER: usize = 30;
+const OUTER_TOL_REL: f64 = 1e-4;
+const GAMMA_DAMPING: f64 = 0.5;     // γ_x update under-relaxation
 
-/// Compute residual R[3] and per-roller Q_j given displacement.
+/// Compute 3-D residual [F_x_res, F_y_res, M_x_res] and per-roller results.
 /// Uses Gen1 (independent slice) as base — fast for NR loop.
-fn compute_residual_gen1(
+fn compute_residual_3d(
     input: &BearingInput,
     slices: &[SliceGeometry],
     disp: &[f64; 3],
@@ -71,11 +69,11 @@ fn compute_residual_gen1(
     let mg = &input.macro_geom;
     let z = mg.z;
     let d_pw = mg.d_pw;
-    let cos_alpha_diff = 1.0; // CRB: α=0
+    let cos_alpha_diff = 1.0; // CRB α=0
 
-    let f_x = input.operating.f_x * 1000.0; // kN → N
+    let f_x = input.operating.f_x * 1000.0;
     let f_y = input.operating.f_y * 1000.0;
-    let m_x = input.operating.m_x * 1e6;    // kN·m → N·mm
+    let m_x = input.operating.m_x * 1e6;
     let gamma_ext = input.operating.gamma_rad();
 
     let load_angle = radial_load_angle(f_x, f_y);
@@ -84,6 +82,9 @@ fn compute_residual_gen1(
     let mut residual = [0.0_f64; 3];
     let mut roller_results = Vec::with_capacity(z as usize);
 
+    let l_we = mg.l_we;
+    let l_we_half = l_we / 2.0;
+
     for &psi in positions.iter() {
         let (cos_psi, sin_psi) = (psi.cos(), psi.sin());
         let delta_rigid = roller_approach(disp, psi, d_pw, mg.g_r, gamma_ext);
@@ -91,21 +92,28 @@ fn compute_residual_gen1(
         let (slice_results, q_normal) = if delta_rigid > 0.0 {
             gen1::solve_gen1_roller(slices, delta_rigid, &input.material, cos_alpha_diff)
         } else {
-            // No contact — empty slice results
             (Vec::new(), 0.0)
         };
 
-        // Residual accumulation (CRB: radial + tilting M_x only)
-        residual[0] += q_normal * cos_psi;                        // F_x direction
-        residual[1] += q_normal * sin_psi;                        // F_y direction
-        residual[2] += q_normal * (d_pw / 2.0) * sin_psi;         // M_x direction
+        // M_x: slice-level axial moment (roller 축 arm x_k − L_we/2)
+        // Single row CRB 는 radial 하중만으로 M_x 못 만듦 (arm = 0).
+        // γ_x 로 인한 slice-level Δδ_k 가 q_{j,k} 를 비대칭화 → m_j ≠ 0 → M_x 생성.
+        let mut m_ax_j = 0.0_f64;
+        for (sr, s) in slice_results.iter().zip(slices.iter()) {
+            let x_arm = s.x_axial - l_we_half;    // slice 축 arm [mm]
+            m_ax_j += sr.q_k * s.slice_width * x_arm;   // N·mm per roller
+        }
+
+        residual[0] += q_normal * cos_psi;              // F_x
+        residual[1] += q_normal * sin_psi;              // F_y
+        residual[2] += m_ax_j * sin_psi;                // M_x (single-row: axial arm)
 
         roller_results.push(RollerResult {
             psi_deg: psi.to_degrees(),
             q_normal,
-            q_normal_inner: q_normal,   // CRB: α=0 → inner = outer normal load
+            q_normal_inner: q_normal,
             slice_results,
-            rib_result: None,           // D1: no rib
+            rib_result: None,
         });
     }
 
@@ -116,61 +124,16 @@ fn compute_residual_gen1(
     Ok((residual, roller_results))
 }
 
-/// Numerical Jacobian via forward finite differences.
-fn compute_jacobian_gen1(
-    input: &BearingInput,
-    slices: &[SliceGeometry],
-    disp: &[f64; 3],
-    r0: &[f64; 3],
-) -> Result<[[f64; 3]; 3], SolverError> {
-    let steps = [NR_FD_STEP_DISP, NR_FD_STEP_DISP, NR_FD_STEP_GAMMA];
-    let mut jac = [[0.0_f64; 3]; 3];
+// ─── Initial Guess (TRB 원본 line 278~319 스타일) ──────────────────
 
-    for k in 0..3 {
-        let mut disp_p = *disp;
-        disp_p[k] += steps[k];
-        let (r_p, _) = compute_residual_gen1(input, slices, &disp_p)?;
-        for i in 0..3 {
-            jac[i][k] = (r_p[i] - r0[i]) / steps[k];
-        }
-    }
-    Ok(jac)
-}
-
-/// Solve 3×3 linear system via Gaussian elimination (small system).
-fn solve_3x3(jac: [[f64; 3]; 3], b: [f64; 3]) -> Option<[f64; 3]> {
-    let m = jac;
-    let det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
-        - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
-        + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
-    if det.abs() < 1e-30 { return None; }
-
-    // Cramer's rule (small 3x3)
-    let mut x = [0.0_f64; 3];
-    for k in 0..3 {
-        let mut mk = m;
-        for row in 0..3 { mk[row][k] = b[row]; }
-        let det_k = mk[0][0] * (mk[1][1] * mk[2][2] - mk[1][2] * mk[2][1])
-            - mk[0][1] * (mk[1][0] * mk[2][2] - mk[1][2] * mk[2][0])
-            + mk[0][2] * (mk[1][0] * mk[2][1] - mk[1][1] * mk[2][0]);
-        x[k] = det_k / det;
-    }
-    Some(x)
-}
-
-/// Initial displacement guess — TRB 원본 스타일 (k_radial stiffness).
-///
-///   k_roller ≈ 500 N/μm (typical single-roller Hertz stiffness)
-///   k_radial = (Z/2) · k_roller  (CRB α=0: cos α = 1)
-///   δ_x = clamp(f_x / k_radial, -50, 50) μm
-///   δ_y = clamp(f_y / k_radial, -50, 50) μm
-fn initial_disp_guess(input: &BearingInput) -> [f64; 3] {
+/// Initial displacement guess — k_radial stiffness 기반.
+fn initial_guess_crb(input: &BearingInput) -> [f64; 3] {
     let z = input.macro_geom.z as f64;
-    let f_x = input.operating.f_x * 1000.0;   // kN → N
+    let f_x = input.operating.f_x * 1000.0;
     let f_y = input.operating.f_y * 1000.0;
 
-    let k_roller = 500.0_f64;                  // N/μm (typical Hertz)
-    let k_radial = (z / 2.0) * k_roller;       // CRB: cos α = 1
+    let k_roller = 500.0_f64;
+    let k_radial = (z / 2.0) * k_roller;    // CRB: cos α = 1
 
     let dx = if f_x.abs() > 1.0 {
         (f_x / k_radial).clamp(-50.0, 50.0)
@@ -182,9 +145,84 @@ fn initial_disp_guess(input: &BearingInput) -> [f64; 3] {
     [dx, dy, 0.0]
 }
 
-/// CRB 3-DOF Newton-Raphson equilibrium solver.
-///
-/// ISO 16281 A.3.1 based (Cylindrical roller bearings).
+// ─── Phase A: 2-DOF NR (δ_x, δ_y) with γ_x fixed ────────────────────
+// TRB 원본 (git show 5441446:...bearing.rs) line 892~945 이식.
+
+fn phase_a_radial_2dof(
+    disp: &mut [f64; 3],
+    input: &BearingInput,
+    slices: &[SliceGeometry],
+) -> Result<(), SolverError> {
+    let f_x = input.operating.f_x * 1000.0;
+    let f_y = input.operating.f_y * 1000.0;
+    let f_r = (f_x * f_x + f_y * f_y).sqrt().max(1.0);
+    let tol = input.solver.convergence_tol.max(1e-6);
+    let max_iter = input.solver.max_iterations;
+    let h_s = FD_STEP_DISP;
+
+    for _iter in 0..max_iter {
+        let (r, _) = compute_residual_3d(input, slices, disp)?;
+        let r_rad = (r[0] * r[0] + r[1] * r[1]).sqrt();
+        if r_rad / f_r < tol {
+            return Ok(());
+        }
+
+        // 2×2 Jacobian
+        let mut j2 = [[0.0_f64; 2]; 2];
+        for col in 0..2 {
+            let mut dp = *disp;
+            dp[col] += h_s;
+            let (rp, _) = compute_residual_3d(input, slices, &dp)?;
+            for row in 0..2 {
+                j2[row][col] = (rp[row] - r[row]) / h_s;
+            }
+        }
+
+        let det = j2[0][0] * j2[1][1] - j2[0][1] * j2[1][0];
+        if det.abs() < 1e-30 {
+            return Ok(()); // singular — bail
+        }
+        let dx_step = (j2[1][1] * (-r[0]) - j2[0][1] * (-r[1])) / det;
+        let dy_step = (j2[0][0] * (-r[1]) - j2[1][0] * (-r[0])) / det;
+
+        // Step clamp: max_step = disp_mag * 0.5, clamp 5~30 μm
+        let disp_mag = (disp[0] * disp[0] + disp[1] * disp[1]).sqrt();
+        let max_step = (disp_mag * 0.5).clamp(5.0, 30.0);
+        let step_norm = (dx_step * dx_step + dy_step * dy_step).sqrt();
+        let scale = if step_norm > max_step { max_step / step_norm } else { 1.0 };
+        let dd = [dx_step * scale, dy_step * scale];
+
+        // Line search 20회 + best_alpha
+        let mut alpha_ls = 1.0_f64;
+        let mut best_alpha = 0.0_f64;
+        let mut best_norm = r_rad;
+        for _ in 0..20 {
+            let mut dt = *disp;
+            dt[0] += alpha_ls * dd[0];
+            dt[1] += alpha_ls * dd[1];
+            let (rt, _) = compute_residual_3d(input, slices, &dt)?;
+            let rt_r = (rt[0] * rt[0] + rt[1] * rt[1]).sqrt();
+            if rt_r < best_norm {
+                best_norm = rt_r;
+                best_alpha = alpha_ls;
+            }
+            if rt_r < r_rad {
+                break;
+            }
+            alpha_ls *= 0.5;
+        }
+        if best_alpha < 1e-15 {
+            best_alpha = alpha_ls;
+        }
+        disp[0] += best_alpha * dd[0];
+        disp[1] += best_alpha * dd[1];
+    }
+    Ok(())
+}
+
+// ─── Main solver ─────────────────────────────────────────────────────
+
+/// CRB 3-DOF Newton-Raphson equilibrium (Phase 분리 방식).
 pub fn solve_bearing_equilibrium(
     input: &BearingInput,
     progress: &dyn ProgressReporter,
@@ -209,97 +247,56 @@ pub fn solve_bearing_equilibrium(
 
     progress.report(SolverProgress {
         stage: "Equilibrium".into(),
-        detail: "Newton-Raphson (Gen1 base)".into(),
+        detail: "Phase 분리 NR (Outer γ_x + Inner 2-DOF)".into(),
         percent: 20.0,
     });
 
-    // NR loop
-    let mut disp = initial_disp_guess(input);
-    let mut residual = [0.0_f64; 3];
-    let mut roller_results: Vec<RollerResult> = Vec::new();
-    let mut converged = false;
+    let mut disp = initial_guess_crb(input);
+    let m_x_target = input.operating.m_x * 1e6;
+    let m_x_ref = m_x_target.abs().max(1e3);   // ref = max(|M_x|, 1 kN·mm)
 
-    let f_x = input.operating.f_x * 1000.0;
-    let f_y = input.operating.f_y * 1000.0;
-    let m_x = input.operating.m_x * 1e6;
-    let f_ref = ((f_x * f_x + f_y * f_y).sqrt() + m_x.abs() / (input.macro_geom.d_pw / 2.0))
-        .max(1.0);
+    // ── Outer loop: γ_x 1-DOF NR (M_x equilibrium) ──
+    for _outer in 0..OUTER_MAX_ITER {
+        // Phase A: 2-DOF (δx, δy), γ_x fixed
+        phase_a_radial_2dof(&mut disp, input, &slices)?;
 
-    for iter in 0..NR_MAX_ITER {
-        let (r, res) = compute_residual_gen1(input, &slices, &disp)?;
-        residual = r;
-        roller_results = res;
+        let (r_all, _) = compute_residual_3d(input, &slices, &disp)?;
+        let m_res = r_all[2];
 
-        let r_norm = (r[0] * r[0] + r[1] * r[1] + (r[2] / (input.macro_geom.d_pw / 2.0)).powi(2)).sqrt();
-        let rel = r_norm / f_ref;
-
-        if rel < NR_TOL_REL {
-            converged = true;
-            progress.report(SolverProgress {
-                stage: "Equilibrium".into(),
-                detail: format!("Converged in {} iterations, rel={:.2e}", iter, rel),
-                percent: 60.0,
-            });
+        if (m_res / m_x_ref).abs() < OUTER_TOL_REL {
             break;
         }
 
-        let jac = compute_jacobian_gen1(input, &slices, &disp, &r)?;
-        let neg_r = [-r[0], -r[1], -r[2]];
-        let dx = solve_3x3(jac, neg_r).ok_or_else(||
-            SolverError::ConvergenceFailure("Jacobian singular at NR step".into()))?;
-
-        // TRB 원본 스타일: step 크기 clamp (5~30 μm) + Line search 20회 + best_alpha
-        let disp_mag = (disp[0] * disp[0] + disp[1] * disp[1]).sqrt();
-        let max_step = (disp_mag * 0.5).clamp(5.0, 30.0);
-        let step_norm = (dx[0] * dx[0] + dx[1] * dx[1]).sqrt();
-        let step_scale = if step_norm > max_step {
-            max_step / step_norm
-        } else { 1.0 };
-        let dx_scaled = [dx[0] * step_scale, dx[1] * step_scale, dx[2] * step_scale];
-
-        // Line search: 20회 반감, best_alpha 유지
-        let mut alpha_ls = 1.0_f64;
-        let mut best_alpha = 0.0_f64;
-        let mut best_norm = r_norm;
-        for _ in 0..20 {
-            let mut disp_try = disp;
-            for k in 0..3 { disp_try[k] += alpha_ls * dx_scaled[k]; }
-            let (r_try, _) = compute_residual_gen1(input, &slices, &disp_try)?;
-            let r_try_norm = (r_try[0].powi(2) + r_try[1].powi(2)
-                + (r_try[2] / (input.macro_geom.d_pw / 2.0)).powi(2)).sqrt();
-            if r_try_norm < best_norm {
-                best_norm = r_try_norm;
-                best_alpha = alpha_ls;
-            }
-            if r_try_norm < r_norm {
-                break;
-            }
-            alpha_ls *= 0.5;
+        // γ_x 1-DOF update
+        let h_g = FD_STEP_GAMMA;
+        let mut disp_p = disp;
+        disp_p[2] += h_g;
+        let (r_p, _) = compute_residual_3d(input, &slices, &disp_p)?;
+        let dmdg = (r_p[2] - m_res) / h_g;
+        if dmdg.abs() > 1e-30 {
+            disp[2] += -m_res / dmdg * GAMMA_DAMPING;
+        } else {
+            break; // gradient singular — γ_x has no effect
         }
-        if best_alpha < 1e-15 {
-            best_alpha = alpha_ls;   // last (smallest) alpha as fallback
-        }
-        for k in 0..3 { disp[k] += best_alpha * dx_scaled[k]; }
     }
 
-    if !converged {
-        return Err(SolverError::ConvergenceFailure(
-            format!("NR failed after {} iterations, residual {:?}", NR_MAX_ITER, residual)
-        ));
-    }
+    // Final capture with converged disp
+    let (_r_final, roller_results) = compute_residual_3d(input, &slices, &disp)?;
 
-    // Post-process: build BearingResult
     progress.report(SolverProgress {
         stage: "Post-processing".into(),
         detail: "Building result".into(),
         percent: 80.0,
     });
 
+    let f_x = input.operating.f_x * 1000.0;
+    let f_y = input.operating.f_y * 1000.0;
     let load_angle = radial_load_angle(f_x, f_y);
+
     let equilibrium = BearingEquilibrium {
-        displacement: [disp[0], disp[1], 0.0, disp[2], 0.0],  // [δx, δy, δz=0, γx, γy=0]
+        displacement: [disp[0], disp[1], 0.0, disp[2], 0.0], // [δx, δy, δz=0, γx, γy=0]
         roller_loads: roller_results.iter().map(|r| r.q_normal).collect(),
-        angular_distribution: build_angular_distribution(&roller_results, input.macro_geom.z),
+        angular_distribution: build_angular_distribution(&roller_results),
         roller_results,
     };
 
@@ -308,7 +305,10 @@ pub fn solve_bearing_equilibrium(
     Ok(result)
 }
 
-/// CRB Dual-mode: Gen1 + Gen3 comparison.
+/// CRB Dual-mode: Gen1 + Gen3.
+///
+/// Phase 3 Level C 검증: flat + 균일 D_we → Gen1 ≡ Gen3 (이론적 필연).
+/// 여기서는 두 pass 모두 Gen1 based 로 처리 (bearing-level 은 gen1 사용).
 pub fn solve_bearing_dual(
     input: &BearingInput,
     progress: &dyn ProgressReporter,
@@ -324,9 +324,6 @@ pub fn solve_bearing_dual(
     let gen1_result = solve_bearing_equilibrium(input, progress)?;
     let gen1_elapsed_ms = t_g1.elapsed().as_secs_f64() * 1000.0;
 
-    // Gen3 for CRB: identical result in this Phase 4 minimal impl
-    // (Phase 3 Level C 검증됨: flat + 균일 D_we → Gen3 = Gen1)
-    // 후속 Phase: Gen3 를 실제로 별개 pass 로 돌리도록 확장
     progress.report(SolverProgress {
         stage: "Dual-mode".into(),
         detail: "Gen3 pass (CRB: theoretically = Gen1)".into(),
@@ -355,13 +352,13 @@ pub fn solve_bearing_dual(
 
 // ─── BearingResult 빌더 (Phase 5+ 필드는 Default) ─────────────────
 
-fn build_angular_distribution(roller_results: &[RollerResult], _z: u32) -> Vec<AngularLoadPoint> {
+fn build_angular_distribution(roller_results: &[RollerResult]) -> Vec<AngularLoadPoint> {
     roller_results.iter().map(|r| {
         let p_max = r.slice_results.iter().map(|s| s.p_max_k).fold(0.0_f64, f64::max);
         let slice_p_max: Vec<f64> = r.slice_results.iter().map(|s| s.p_max_k).collect();
         AngularLoadPoint {
             psi_deg: r.psi_deg,
-            delta_rigid: 0.0,   // Phase 4 minimal: rigid approach 미저장
+            delta_rigid: 0.0,
             q_total: r.q_normal,
             p_max,
             slice_p_max_outer: slice_p_max.clone(),
@@ -383,29 +380,27 @@ fn build_bearing_result(
     let mg = &input.macro_geom;
     let mat = &input.material;
 
-    // GeometrySummary (Phase 4 minimal — CRB 원통 대응)
     let d_we_mean = mg.d_we;
     let volume_roller_mm3 = std::f64::consts::PI * (d_we_mean / 2.0).powi(2) * mg.l_we;
     let mass_roller_g = volume_roller_mm3 * mat.density_roller * 1e-3;
     let mass_rollers_total_g = mass_roller_g * (mg.z as f64);
+    let e_star = crate::solver::hertz::combined_elastic_modulus(mat.e_roller, mat.nu, mat.e_ring, mat.nu);
 
-    let e_star = crate::solver::hertz::combined_elastic_modulus(
-        mat.e_roller, mat.nu, mat.e_ring, mat.nu);
     let geometry = GeometrySummary {
-        roller_taper_angle_deg: 0.0,      // CRB: β=0
+        roller_taper_angle_deg: 0.0,
         roller_taper_angle_rad: 0.0,
         e_star_gpa: e_star,
         d_we_mean,
-        cone_angle_deg: 0.0,              // CRB: α=0
+        cone_angle_deg: 0.0,
         gamma_dw: d_we_mean / mg.d_pw,
         contact_length_ratio: mg.l_we / d_we_mean,
         f_r_kn: (input.operating.f_x.powi(2) + input.operating.f_y.powi(2)).sqrt(),
-        f_a_kn: 0.0,                      // D4
+        f_a_kn: 0.0,
         gamma_rad: input.operating.gamma_rad(),
         slice_geometries: slices.to_vec(),
         mass_roller_g,
         mass_rollers_total_g,
-        mass_inner_race_g: 0.0,           // Phase 5+ 정확 계산
+        mass_inner_race_g: 0.0,
         mass_outer_race_g: 0.0,
         mass_total_g: mass_rollers_total_g,
     };

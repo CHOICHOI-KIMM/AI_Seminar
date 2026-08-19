@@ -1093,7 +1093,116 @@ S_0,eff = q_0 / q_max
 
 진입 시점에 상세화. 핵심: ISO 16281 5.3 + ISO 281 C_R (CRB) + ISO 76 C_0r.
 
-### Phase 6 — Frontend UI 변경 (placeholder)
+### Phase 6 — Frontend UI 변경 (상세 계획, 2026-08-19 병렬 작성)
+
+> Phase 1.4 에서 13 개 Frontend 컴포넌트에 `// @ts-nocheck` 임시 지시자 추가.
+> Phase 6 는 이 stub 을 실제 CRB UI 로 정식 재작성 + 원통 3D 렌더링.
+
+#### 6.1 목표
+- Phase 1.4 의 `@ts-nocheck` 13 파일을 CRB 데이터 모델 (types/bearing.ts, defaults.ts) 에 맞게 정식 재작성
+- BearingView3D: TRB 원추 → CRB 원통 렌더링 (Three.js `CylinderGeometry`)
+- InputPanel: α/β/D_we_max/min/rib 필드 UI 제거, CRB 필드만 노출
+- GeometryView, SectionView2D: 원통 단면도
+- ResultsCard, LifeChart, LoadDistChart: Phase 4~5 결과 표시
+- End-to-end 동작 확인 (`npm run tauri dev` → 완전 렌더링 + solve → 결과 표시)
+
+#### 6.2 작업 대상 파일 (13 개 @ts-nocheck + 신규)
+
+| 컴포넌트 | 변경 강도 | 주요 작업 |
+|----------|---------|---------|
+| `BearingView3D/index.tsx` | 🔴 대규모 | TRB `LatheGeometry` → CRB `CylinderGeometry`, α=0 → roller z축 정렬, 원통 raceway |
+| `GeometryView/index.tsx` | 🔴 대규모 | α_i/α_o 표기 제거, D_we 단일, dub 대칭 |
+| `SectionView2D/index.tsx` | 🔴 대규모 | 원통 단면 (TRB 사다리꼴 → 직사각형) |
+| `InputPanel/index.tsx` | 🔴 대규모 | α/D_we_max/min/rib UI 제거, CRB 필드 group 재구성 |
+| `ProfileView/index.tsx` | 🟡 중간 | dub-off 대칭 표기 |
+| `ResultsCard/index.tsx` | 🟡 중간 | preload_mode/f_a 필드 UI 제거 |
+| `LubricationView/index.tsx` | 🟡 중간 | (Phase 7 재활성화 대상, 지금은 minor) |
+| `TransientView/TransientTimeChart.tsx` | 🟢 minor | LoadTimePoint f_a/m_y 컬럼 제거 |
+| `LifeChart.tsx`, `LoadDistChart.tsx` | 🟡 중간 | f_a 참조 제거 |
+| `RibContactDetailChart.tsx` | 🟢 삭제 or 감춤 | D1: rib 없음 → 컴포넌트 자체 제거 or feature flag |
+| `RollerComparisonChart.tsx`, `RollerDetailChart.tsx` | 🟢 minor | TRB 잔재 unused var 정리 |
+
+#### 6.3 BearingView3D 원통 렌더링 상세
+
+**TRB 방식** (Phase 0 원본):
+```typescript
+// LatheGeometry (2D profile revolve → 3D 원추/사다리꼴)
+const innerPts = [new THREE.Vector2(rBore, -halfT), ...];
+const innerRingGeo = new THREE.LatheGeometry(innerPts, 64, 0, Math.PI * 2);
+```
+
+**CRB 방식** (Phase 6 재작성):
+```typescript
+// 원통 = 단순 CylinderGeometry (radius uniform)
+const rollerGeo = new THREE.CylinderGeometry(
+  D_we / 2,   // radiusTop
+  D_we / 2,   // radiusBottom (uniform = 원통)
+  L_we,       // height
+  32          // radialSegments
+);
+// 회전 축을 shaft 축 (Z) 으로 맞춤: RotateX(-π/2)
+```
+
+#### 6.4 InputPanel 구조
+
+**제거**: α, β, D_we_max, D_we_min, h_rib, α_rib, R_sph, dub_l/s, f_a, m_y, preload_mode
+
+**유지 그룹**:
+- Macro Geometry: d, D, T, Z, **D_we (단일)**, L_we, D_pw, G_r
+- Raceway Geometry: r_i, r_o, d_uc, l_uc
+- Roller Profile: crown_type, δ_c, **δ_dub (대칭)**, **L_dub (대칭)**, sigma_roller
+- Operating: F_x, F_y, **M_x (만)**, γ, n_rpm, T_op, ν_40, ν_100 (F_a, M_y 제거)
+- Material, Lubrication, Solver 는 그대로
+
+#### 6.5 통과 기준
+
+- [ ] `npm run build` 0 TS errors (모든 @ts-nocheck 제거)
+- [ ] `npm run tauri dev` WebView 창 정상 팝업 + **UI 완전 렌더링** (Phase 1 의 blank 문제 해결)
+- [ ] Solve 실행 시 결과 (Q_j polar, load distribution) 정상 표시
+- [ ] Phase 4~5 결과 (life, static rating) 표시 정확
+
+#### 6.6 예상 시간
+
+- **4 ~ 5 day** (13 파일 대규모 재작성 + Three.js 원통 지오메트리)
+- 세부: BearingView3D (8h) + GeometryView/SectionView2D (6h) + InputPanel (5h) + 나머지 8개 (6h) + 통합 테스트 (4h) + Action.md (2h)
+
+#### 6.7 잠재 이슈 / 대응
+
+| 이슈 | 대응 |
+|------|------|
+| Three.js LatheGeometry vs CylinderGeometry 스케일링 차이 | 원통은 훨씬 단순 — 오히려 코드 축소 |
+| InputPanel 필드 제거 시 preset JSON 하위호환 | serde default 로 이미 처리, TS 는 optional 필드 |
+| Rib chart 완전 삭제 vs feature flag | 완전 삭제 (D1: 영구 제거) |
+| Frontend 컴포넌트 간 shared type 참조 오류 | bearing.ts 단일 source of truth |
+| 3D 렌더링 성능 (100+ roller × 30+ slice) | Three.js instancing 검토 (Phase 6 후반) |
+
+#### 6.8 검증 절차
+
+1. `@ts-nocheck` 제거 (파일별) → tsc 에러 확인 → 필드 참조 수정
+2. `npm run build` 점진적 통과
+3. `npm run tauri dev` → WebView 팝업 + UI 렌더링 육안 확인
+4. NU 240 default 로 `Solve Bearing` 클릭 → 결과 표시 확인
+5. `Save Project` / `Load Project` (.crb.json) 동작 확인
+6. `Action.md` Phase 6 섹션 (스크린샷 포함)
+
+#### 6.9 산출물
+
+- 13 개 컴포넌트 재작성 (TS 정식)
+- (선택) 신규 컴포넌트: `CylinderView` etc.
+- `reports/phase6/*.png` (Before/After UI 스크린샷)
+- `Action.md` Phase 6 섹션
+
+#### 6.10 Phase 7 진입 조건
+
+- ✅ Phase 6 통과 기준 (§6.5) 모두 만족
+- ✅ End-to-end UI 정상 동작
+- ✅ Frontend 가 Phase 7 (Lubrication/Transient) 재활성화 시 준비 완료
+
+#### 6.11 우선순위 로드맵
+
+1. **Priority A** (핵심): BearingView3D + InputPanel — 이 둘만으로도 사용자 경험 크게 개선
+2. **Priority B** (중요): GeometryView + SectionView2D + ResultsCard
+3. **Priority C** (부수): 5개 chart 컴포넌트 minor 수정
 
 진입 시점에 상세화. 핵심: InputPanel 필드 정리, BearingView3D 원통 렌더링.
 
