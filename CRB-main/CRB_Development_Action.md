@@ -243,17 +243,109 @@ Phase 1 4대 규약 그대로 채택: Hybrid 자율성 + 논리적 그룹 병렬
 
 ### 2-B 작업 내역   (Level A 테스트 신규)
 
-- **신규 파일**: `src-tauri/tests/geometry_level_a.rs` (289 라인)
-- **테스트 8개** (모두 통과):
-  1. `level_a_hertz_half_width_matches_analytical` — b 계산 vs Palmgren 해석해
-  2. `level_a_hertz_max_pressure_matches_analytical` — p_max 계산 vs 해석해
-  3. `level_a_combined_elastic_modulus` — E* 계산 검증
-  4. `level_a_compute_slices_uniform_roller_radius` — 원통 roller 반경 균일성
-  5. `level_a_compute_slices_uniform_slice_width` — slice 폭 균등 + 총합 = L_we
-  6. `level_a_compute_slices_x_axial_symmetric` — slice 중심 좌표 대칭성
-  7. `level_a_compute_slices_r_eq_crb_orbital` — CRB γ 궤도 곡률 (D_we/D_pw)
-  8. `level_a_end_to_end_slice_hertz_matches_analytical` — 전체 파이프라인
-- **통과 기준**: 상대 오차 `TOL_REL = 1e-3` (Plan §2.6 0.1%)
+- **신규 파일**: `src-tauri/tests/geometry_level_a.rs` (289 라인, Rust integration test)
+- **재현 스크립트**: `python-prototype/phase2_level_a_report.py` (Python, 동일 계산 재현 + PNG 시각화)
+- **통과 기준**: 상대 오차 `TOL_REL = 1e-3` (Plan §2.6 = 0.1%)
+
+#### 입력 파라미터 (NU 240 CRB 기준)
+
+| 파라미터 | 값 | 단위 | 비고 |
+|----------|-----|------|------|
+| E (Young's modulus) | 210 | GPa | SUJ2 bearing steel |
+| ν (Poisson's ratio) | 0.3 | — | — |
+| E* (combined) | 115.385 | GPa | 두 body 동일 재질: E/(2·(1−ν²)) |
+| D_we (roller 직경) | 44.0 | mm | 균일 (원통) |
+| L_we | 42.0 | mm | roller 축 따라 (부록 A.2) |
+| D_pw (pitch 직경) | 280.0 | mm | — |
+| γ (D_we/D_pw) | 0.1571 | — | α = 0 대입 |
+| R_eq_inner | 18.5428 | mm | (D_we/2)·(1 − γ) |
+| R_eq_outer | 25.4571 | mm | (D_we/2)·(1 + γ) |
+| n_slices | 30 | — | 균등 분할 |
+| q (test load) | 500 | N/mm | line load per slice |
+| R (single-slice test) | 22.0 | mm | = D_we/2 |
+
+#### 8 tests 상세 결과 표
+
+| # | 테스트 이름 | 검증 항목 | 기대값 (해석해) | Solver 값 | 상대오차 | 판정 |
+|---|-------------|-----------|--------------|----------|---------|------|
+| 1 | `level_a_hertz_half_width_matches_analytical` | 접촉 반폭 b [mm] | 0.087856 | 0.087856 | **0.00e+00** | ✅ |
+| 2 | `level_a_hertz_max_pressure_matches_analytical` | 최대 접촉 응력 p_max [MPa] | 3623.8 | 3623.8 | **1.24e-16** | ✅ |
+| 3 | `level_a_combined_elastic_modulus` | 등가 탄성계수 E* [GPa] | 115.385 | 115.385 | **0.00e+00** | ✅ |
+| 4 | `level_a_compute_slices_uniform_roller_radius` | 30 slice r_roller 균일 (최대 편차) | 22.000 | 22.000 | **0.00e+00** | ✅ |
+| 5 | `level_a_compute_slices_uniform_slice_width` | Σ(slice_width) = L_we [mm] | 42.000 | 42.000 | **0.00e+00** | ✅ |
+| 6 | `level_a_compute_slices_x_axial_symmetric` | x_axial 대칭성 편차 [mm] | 0 | 7.1e-15 | **1.69e-16** | ✅ |
+| 7 | `level_a_compute_slices_r_eq_crb_orbital` | R_eq (inner / outer) [mm] | 18.5428 / 25.4571 | 동일 | **0.00e+00** | ✅ |
+| 8 | `level_a_end_to_end_slice_hertz_matches_analytical` | 30 slices × (b, p_max) 최대 오차 | < 0.1% | b:0, p:1.14e-16 | **1.14e-16** | ✅ |
+
+**결과 요약**: 8/8 pass, 최대 상대오차 **1.69 × 10⁻¹⁶** (IEEE 754 double precision rounding 수준). Plan §2.6 통과 기준 (0.1%) 대비 **약 10¹⁴ 배 안전 마진**.
+
+#### 시각화 자료 (matplotlib PNG, `reports/phase2/`)
+
+<table width="100%">
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase2/fig1_errors_bar.png">
+        <img src="reports/phase2/fig1_errors_bar.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 1">
+      </a>
+      <br>
+      <b>Fig 1</b> — 8 tests 상대오차 bar chart
+      <br>
+      <sub>log scale · 0.1% 허용 오차 선 · 모든 test 통과 (오차 &lt; 1e-15)</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase2/fig2_req_distribution.png">
+        <img src="reports/phase2/fig2_req_distribution.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 2">
+      </a>
+      <br>
+      <b>Fig 2</b> — 30 slice R_eq 분포
+      <br>
+      <sub>내륜 18.54 mm · 외륜 25.46 mm · D_we/2 참조선 (γ = D_we/D_pw = 0.157)</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase2/fig3_scatter.png">
+        <img src="reports/phase2/fig3_scatter.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 3">
+      </a>
+      <br>
+      <b>Fig 3</b> — 해석해 vs Solver 산점도
+      <br>
+      <sub>b, p_max × q ∈ [100, 2000] N/mm · 30 samples · 완벽 일치 (y = x 위)</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase2/fig4_hertz_profile.png">
+        <img src="reports/phase2/fig4_hertz_profile.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 4">
+      </a>
+      <br>
+      <b>Fig 4</b> — Hertz 반타원 압력 분포
+      <br>
+      <sub>4 하중 케이스 (q = 200/500/1000/2000 N/mm) + q vs (b, p_max) 곡선</sub>
+    </td>
+  </tr>
+</table>
+
+**썸네일 클릭 시 원본 PNG 새 창 (또는 GitHub blob view) 로 열림**. Raw data JSON: [reports/phase2/results.json](reports/phase2/results.json)
+
+#### 재현 방법
+
+```powershell
+cd d:\AI\AI_Seminar_CRB\CRB-main
+
+# (1) Rust integration test
+cd src-tauri
+cargo test --test geometry_level_a
+# → 8/8 pass, 0.00s
+
+# (2) Python 상세 리포트 + PNG 재생성
+cd ..
+$env:PYTHONIOENCODING = "utf-8"
+python python-prototype/phase2_level_a_report.py
+# → 8/8 pass, PNG 4장 + JSON 저장
+```
 
 ### 2-C 작업 내역   (통과 검증 + 부수 수정)
 
