@@ -1,0 +1,721 @@
+<title>마이크로피팅 연구 계보도 (1870–2011)</title>
+
+<style>
+  :root{
+    --bg:#f6f7f9; --fg:#14171a; --muted:#5f676e; --line:#dbdfe4; --panel:#ffffff;
+    --l1:#7d8590; --l2:#2f6fb5; --l3:#12897c; --l4:#8a5ec9; --l5:#c4523c; --l6:#a8791f; --l7:#5c8a2e;
+    --accent:#14171a; --shadow:0 1px 3px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1214; --fg:#e7eaec; --muted:#8d949b; --line:#282d31; --panel:#171b1e;
+      --l1:#9aa3ae; --l2:#5fa3e8; --l3:#3fc4b3; --l4:#b48ae8; --l5:#e8836b; --l6:#d9ac52; --l7:#8fbf5c;
+      --accent:#e7eaec; --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f6f7f9; --fg:#14171a; --muted:#5f676e; --line:#dbdfe4; --panel:#ffffff;
+    --l1:#7d8590; --l2:#2f6fb5; --l3:#12897c; --l4:#8a5ec9; --l5:#c4523c; --l6:#a8791f; --l7:#5c8a2e;
+    --accent:#14171a; --shadow:0 1px 3px rgba(0,0,0,.07),0 8px 24px rgba(0,0,0,.06);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1214; --fg:#e7eaec; --muted:#8d949b; --line:#282d31; --panel:#171b1e;
+    --l1:#9aa3ae; --l2:#5fa3e8; --l3:#3fc4b3; --l4:#b48ae8; --l5:#e8836b; --l6:#d9ac52; --l7:#8fbf5c;
+    --accent:#e7eaec; --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+
+  body{
+    background:var(--bg); color:var(--fg);
+    font-family:-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",Roboto,sans-serif;
+    line-height:1.72; margin:0; padding:0 20px 96px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+  .mono{font-family:ui-monospace,'Cascadia Mono',Consolas,'DejaVu Sans Mono',monospace}
+  .node:focus-visible circle{stroke:var(--fg);stroke-width:2.5}
+  .node:focus{outline:none}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+  header{padding:64px 0 40px;border-bottom:1px solid var(--line)}
+  h1{font-size:clamp(26px,3.6vw,40px);line-height:1.24;margin:0 0 14px;letter-spacing:-.02em;font-weight:650}
+  .sub{color:var(--muted);font-size:15px;max-width:66ch;margin:0}
+  .meta{margin-top:22px;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px 22px}
+
+  h2{font-size:21px;margin:64px 0 6px;letter-spacing:-.01em;font-weight:640}
+  .lede{color:var(--muted);font-size:14px;margin:0 0 22px}
+  p{margin:0 0 16px;max-width:74ch}
+
+  /* ── diagram ── */
+  .figwrap{margin:38px 0 0;overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+  figure{margin:0;padding:18px 14px 6px}
+  svg{display:block;min-width:1180px;width:100%;height:auto}
+  figcaption{padding:6px 18px 18px;font-size:13px;color:var(--muted);max-width:80ch}
+
+  .node{cursor:pointer}
+  .node circle{transition:r .12s ease}
+  .node text{font-size:9.5px;fill:var(--fg);pointer-events:none;font-weight:500}
+  .node:hover circle,.node.sel circle{r:8.5}
+  .node.dim{opacity:.2}
+  .edge{fill:none;stroke:var(--fg);stroke-opacity:.16;stroke-width:1}
+  .edge.hot{stroke:var(--fg);stroke-opacity:1;stroke-width:2}
+  .edge.dim{stroke-opacity:.04}
+  .lanelab{font-size:11px;fill:var(--muted);font-weight:600}
+  .lanesub{font-size:9px;fill:var(--muted)}
+  .axis{font-family:ui-monospace,Consolas,monospace;font-size:10px;fill:var(--muted);font-variant-numeric:tabular-nums}
+  .gridline{stroke:var(--line);stroke-width:1}
+  .hint{font-size:12px;color:var(--muted);padding:0 18px 14px;margin:0}
+
+  /* ── card ── */
+  #card{
+    position:sticky;bottom:16px;margin:20px 0 0;background:var(--panel);
+    border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);
+    padding:22px 24px;display:none
+  }
+  #card.on{display:block}
+  #card .ct{font-size:18px;font-weight:640;margin:0 0 3px;letter-spacing:-.01em}
+  #card .cv{font-size:12.5px;color:var(--muted);margin:0 0 16px}
+  #card dl{margin:0;display:grid;grid-template-columns:112px 1fr;gap:11px 18px}
+  #card dt{font-size:12px;color:var(--muted);font-weight:600;padding-top:2px}
+  #card dd{margin:0;font-size:14px}
+  #card .eq{font-family:ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:12px;line-height:1.6;color:var(--muted);border-left:2px solid var(--line);padding-left:11px;margin-top:16px;overflow-x:auto}
+  #card .ev{font-size:11.5px;color:var(--muted);margin-top:12px}
+  #card .close{float:right;border:1px solid var(--line);background:none;color:var(--muted);
+    border-radius:6px;cursor:pointer;font-size:12px;padding:3px 10px;font-family:inherit}
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:99px;
+    border:1px solid currentColor;margin-left:8px;vertical-align:2px}
+  .nosrc{color:var(--muted);font-size:11.5px;border:1px dashed var(--line);border-radius:6px;
+    padding:2px 8px;display:inline-block;margin-bottom:12px}
+
+  /* ── chapters ── */
+  .era{border-left:2px solid var(--line);padding-left:22px;margin:0 0 8px}
+  .era h3{font-size:16.5px;margin:38px 0 4px;font-weight:640}
+  .era .yr{font-family:ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+  .pull{border-left:2px solid var(--fg);padding:2px 0 2px 18px;margin:22px 0;
+    font-size:15px;max-width:72ch}
+
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:8px 0 0}
+  th,td{text-align:left;padding:9px 12px 9px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-weight:600;color:var(--muted);font-size:12px}
+  .tw{overflow-x:auto}
+  code{font-size:12.5px;background:color-mix(in srgb,var(--fg) 7%,transparent);padding:1px 5px;border-radius:4px}
+  footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+  footer p{max-width:78ch}
+</style>
+
+<div class="wrap">
+
+<header>
+  <h1>마이크로피팅은 어떻게 계산 가능한 것이 되었나</h1>
+  <p class="sub">1935년 Way가 “디스크를 연마하면 손상이 준다”고 적은 관찰에서, 2011년 SKF가 접촉·윤활·응력·피로·마모를 하나의 수치모델로 묶기까지 — 마이크로피팅 연구 41편의 계보.</p>
+  <div class="meta">
+    <span>문헌 41편 · 원문 정독 29편</span>
+    <span>인용 엣지는 원문 인용 기록으로만 확정</span>
+    <span>수렴점: Morales-Espejel &amp; Brizmer (2011)</span>
+  </div>
+</header>
+
+<h2>계보 지도</h2>
+<p class="lede">가로축은 연도, 가로 띠 하나가 하나의 기술 계열입니다. 노드를 누르면 그 문헌의 문제의식과 계승 관계가 펼쳐집니다.</p>
+
+<div class="figwrap">
+<figure>
+  <svg id="tree" viewBox="0 0 1400 836" role="img"
+       aria-label="1870년부터 2011년까지 마이크로피팅 관련 문헌 41편을 7개 기술 계열의 가로 띠 위에 연도순으로 배치하고, 원문에서 확인된 인용 관계를 선으로 이은 계보도. 모든 계열이 오른쪽 끝 2011년 Morales-Espejel과 Brizmer 논문으로 수렴한다."></svg>
+  </figure>
+  <p class="hint">노드 클릭 = 카드 열기 · 다시 클릭하면 닫힘 · 굵은 주황선 = 선택한 문헌의 인용 관계</p>
+</div>
+
+<div id="card" aria-live="polite"></div>
+
+<h2>다섯 시대</h2>
+<p class="lede">계보도의 가로축을 다섯 마디로 끊어 읽습니다.</p>
+
+<div class="era">
+  <h3>현상의 발견 — 조도가 문제라는 직감</h3>
+  <div class="yr">1870 – 1935</div>
+  <p>Wöhler가 철과 강의 반복하중 시험에서 S–N 곡선을 얻고, Palmgren이 볼베어링에도 피로한계가 있으리라 제안한 것이 출발점입니다. 다만 Palmgren 자신이 1936년에 이 생각을 철회했다는 사실은 오래 잊혔습니다 — SKF 시험실 데이터에서 하중을 낮출수록 수명이 계속 늘어날 뿐 한계가 나타나지 않았기 때문입니다. 구름접촉 표면에 생기는 미세 피팅 자체를 정면으로 다룬 것은 1935년 Way였고, 그가 발견한 것은 지극히 단순했습니다: 디스크를 연마하면 손상이 크게 준다. 왜 그런지는 설명하지 못했지만, <strong>표면 조도가 이 손상의 인자</strong>라는 사실이 이때 기록에 남습니다.</p>
+</div>
+
+<div class="era">
+  <h3>계산 가능해지다 — 마모와 접촉이 식이 되다</h3>
+  <div class="yr">1953 – 1977</div>
+  <p>Archard가 1953년에 마모율이 하중에 비례하고 겉보기 면적과 무관하다는 것을 증명합니다. 논증이 우아합니다 — 접촉 하나의 마모체적은 반경의 세제곱, 미끄럼 거리는 반경에 비례하니 단위 거리당 기여는 반경의 제곱, 그런데 그 접촉이 지지하는 하중도 반경의 제곱. 그래서 표면을 어떤 모델로 그리든 총 마모율은 총 하중에 비례합니다.</p>
+  <p>같은 시기 Dawson은 마이크로피팅을 pitting fatigue라 명명하며 결정적인 한 걸음을 내딛습니다. 그는 <code>D = 두 디스크의 초기 조도 합 / 유막두께</code>를 정의하고 D가 커질수록 피팅까지의 회전수가 준다는 것을 실험으로 보였습니다. 이 D는 오늘날 우리가 쓰는 <strong>Λ비의 역수</strong>입니다 — 윤활 상태를 손상에 잇는 최초의 무차원 지표가 1962년에 이미 나와 있었습니다.</p>
+  <p>1972년 Johnson·Greenwood·Poon은 유막과 돌기가 하중을 나눠 지는 상황을 두 개의 병렬 스프링으로 모형화해, 유막 스프링이 훨씬 뻣뻣하므로 두 거친 면의 평균 간극이 같은 조건의 매끈면 유막두께와 거의 같다는 결론을 얻습니다. 하중이 늘면 그 증가분은 거의 전부 유체가 받고 돌기 압력은 하중에 둔감하다는 것 — 건접촉 이론과 정반대의 결론이었고, 오늘날 하중분담 모델의 원점입니다. 그리고 1977년 Kalker가 접촉 문제를 여에너지 최소화로 다시 씀으로써, <strong>접촉 영역이 어디인지를 미리 몰라도 계산의 부산물로 얻어지는</strong> 길이 열립니다.</p>
+</div>
+
+<div class="era">
+  <h3>거칠기를 푸리에로 분해하다</h3>
+  <div class="yr">1985 – 2000</div>
+  <p>Johnson·Greenwood·Higginson이 1985년에 이중 정현파 표면의 3차원 접촉을 Kalker의 변분원리와 이중 푸리에 급수로 풀어냅니다. 여기서 나온 “정현파 압력이 만드는 표면 변위” 해가 이후 모든 FFT 접촉 계산의 커널이 됩니다.</p>
+  <p class="pull">1994년 Greenwood와 Morales-Espejel이 던진 질문 하나가 계보의 방향을 바꿉니다 — 왜 유막 변동은 윤활유 평균속도로 흐르고 압력 변동은 거친 면의 속도로 흐르는가?</p>
+  <p>답은 해를 두 조각으로 쪼개는 것이었습니다. 거친 면과 함께 이동하는 <strong>특수해</strong>와, 입구에서 거칠기가 부분적으로 눌린 채 유입되며 생겨나 평균 유속으로 하류로 전파·감쇠하는 <strong>상보파</strong>. 이 2성분 분해가 마이크로피팅 모델의 윤활 서브모델 전체를 지탱하게 됩니다. 1997년 Venner 등이 그 상보파의 진폭 감소를 무차원 파장 하나의 함수로 정리한 마스터 커브를 얻었고 — 정작 본인들은 “관측 거동을 지배하는 물리 메커니즘은 여전히 어둠 속”이라고 정직하게 적었습니다.</p>
+  <p>같은 해 Stanley와 Kato는 Westergaard의 정현파 해와 FFT를 결합해 탄성 변위를 요소별 곱셈 한 번으로 계산하는 방법을 제시합니다. 계산량이 N²에서 N log N으로 떨어졌고, 접촉 영역을 추측할 필요 없이 하중이 늘면서 고립된 접촉이 큰 영역으로 합쳐지는 과정이 그대로 보였습니다. Tian과 Bhushan이 여기에 “압력 상한을 경도로 제한한다”는 한 줄의 제약으로 완전소성을 넣습니다.</p>
+</div>
+
+<div class="era">
+  <h3>손상 판정기준의 이식 — 철도에서 베어링으로</h3>
+  <div class="yr">1989 – 2010</div>
+  <p>다축 피로 판정은 전혀 다른 곳에서 자랍니다. Dang Van은 피로한계 근방에서 재료가 탄성 셰이크다운에 도달한다고 보고, 거시 응력에 시간에 무관한 미시 잔류응력을 더해 결정립 규모의 응력을 평가하는 매크로–마이크로 접근을 세웁니다. 판정은 한 줄입니다 — 안정화 사이클 중 어느 한 순간이라도 <code>τ̂(t) + α·p̂(t) &gt; β</code>이면 균열이 발생한다. 흥미롭게도 1989년 논문의 검증 사례 자체가 <strong>SKF France의 볼베어링 링 시험</strong>이었습니다. 이 기준은 처음부터 베어링과 접점이 있었습니다.</p>
+  <p>2003년 Dang Van과 Maitournam이 이 기준을 철도 차륜–레일로 가져갑니다. 이동하중 문제를 하중과 함께 움직이는 좌표계의 정상 문제로 바꾸는 알고리즘을 만들어 안정화 응력 사이클을 얻고, 거기에 판정기준을 얹었습니다. 이동을 고려하지 않으면 잔류응력 분포 자체가 달라진다는 것 — 구름접촉에 이 기준을 쓰려면 무엇이 필요한지가 여기서 정리됩니다.</p>
+  <p>그리고 반박이 따라옵니다. 2006년 Desimone과 Bernasconi가 각각 다른 실험으로 같은 결론에 도달합니다 — Dang Van 기준은 압축(음의 정수압) 영역에서 허용 전단이 계속 늘어난다고 예측하지만, 실제 시험은 평탄하거나 오히려 감소한다. 2011년 논문이 서론에서 “아직 뜨거운 논쟁 중”이라 적은 것이 정확히 이 지점입니다. 한편 Shimizu 등은 150개 시편의 교번 비틀림 시험으로 <strong>SUJ2/52100 베어링강에 관측 가능한 피로한계는 없다</strong>고 결론지었고, 2011 모델의 Wöhler 상수는 이 데이터 위에 얹힙니다.</p>
+</div>
+
+<div class="era">
+  <h3>수렴 — 그리고 통념의 반전</h3>
+  <div class="yr">2003 – 2011</div>
+  <p>2003년 SKF·Twente 진영이 두 편을 동시에 내놓습니다. 하나는 실측 조도를 푸리에 분해해 압력 리플을 얻는 반해석 파이프라인이고, 다른 하나는 그 압력에서 표면하 응력장을 뽑아내는 주파수응답함수입니다. 후자가 밝힌 사실이 중요합니다 — 조도가 있으면 <strong>최대 응력의 깊이가 조도 파장 규모(수 µm)로 올라온다</strong>. 하중이나 거시 접촉 크기와 무관하게. 마이크로피팅이 왜 표면에서 시작하는지가 여기서 계산으로 설명됩니다.</p>
+  <p>Hooke가 미끄럼이 있는 비뉴턴 조건으로 상보파 이론을 확장하고, 2010년 Morales-Espejel·Wemekamp·Félix-Quiñonez가 건접촉(Kalker→Stanley&amp;Kato→Tian&amp;Bhushan)·윤활(Greenwood–Morales-Espejel→Hooke)·하중분담(Johnson 1972)의 세 갈래를 하나의 스킴으로 묶습니다. 이 논문이 인용한 11편이 앞선 세 계열 전체입니다. 남은 것은 하나 — 압력과 하중분담을 <em>손상</em>으로 옮기는 일.</p>
+  <p>같은 시기 포르투 진영(Brandão 등)이 독립적으로 같은 문제를 풉니다. 혼합윤활 접촉해 + Dang Van 기준으로 기어 치면의 질량손실을 예측했고, 실측과 잘 맞았습니다. 평행 진영이 존재했다는 사실 자체가 2011년의 조합이 임의적이지 않았음을 말해줍니다.</p>
+  <p>2011년 Morales-Espejel과 Brizmer가 마지막 연결을 만듭니다. 부분윤활 압력·트랙션 → 표면하 응력장 → Dang Van 손상 → Palmgren–Miner 누적, 그리고 여기에 Archard 마모를 병렬로 걸어 <strong>피로층이 마모로 깎여나가면서 손상이 지연되는 경쟁</strong>을 넣었습니다. 이 경쟁 구조는 Lainé와 Olver의 실험 관찰에서 온 것입니다 — 내마모 첨가제가 길들이기 마모를 막으면 조도가 남고, 그래서 마이크로피팅이 오히려 심해진다.</p>
+  <p class="pull">그리고 이 모델은 통념 하나를 뒤집습니다. 미끄럼이 늘면 마이크로피팅이 는다는 것이 균열전파 관점의 정설이었지만, 모델과 실험 모두 <strong>S ≈ 0.01에서 손상이 최대이고 그 이상에서는 오히려 줄어든다</strong>고 말합니다. 미끄럼이 늘면 마모가 피로층을 걷어내고, 마찰은 미끄럼에 비례해 늘지 않기 때문입니다. 계보의 마지막 마디는 수렴이자 반전입니다.</p>
+</div>
+
+<h2>일곱 계열이 2011에 남긴 것</h2>
+<p class="lede">각 계열이 최종 모델의 어느 부품이 되었는가.</p>
+<div class="tw">
+<table>
+  <tr><th style="width:150px">계열</th><th style="width:180px">최종 기여</th><th>계승 사슬</th></tr>
+  <tr><td>현상·정의</td><td>문제 정의와 Λ비의 원형</td><td>Way 1935 → Dawson 1962–66 (D 파라미터) → ISO 15243 · Olver 2005</td></tr>
+  <tr><td>접촉역학 (M1)</td><td>건접촉 탄소성 FFT 솔버</td><td>Kalker 1977 → Johnson 1985 → Stanley&amp;Kato 1997 (+ Tian&amp;Bhushan 소성)</td></tr>
+  <tr><td>EHL·거칠기 (M2·M6)</td><td>상보파 분해와 하중분담</td><td>JGP 1972 → GW–ME 1994 → Venner 1997 → Hooke 2006·2007</td></tr>
+  <tr><td>표면하응력 (M3)</td><td>조도 유래 응력장 계산</td><td>Johnson 1985 → MEB 2003 · Tripp 2003 (주파수응답함수)</td></tr>
+  <tr><td>다축피로 (M4)</td><td>손상 판정과 수명 적산</td><td>Dang Van 1989·1993 → 철도 2003 → Desimone·Bernasconi 2006 (비판) + Shimizu 2009 (재료)</td></tr>
+  <tr><td>마모 (M5)</td><td>피로와 경쟁하는 표면 제거</td><td>Archard 1953 → Williams 1999 (k 범위) → Lainé&amp;Olver 2007</td></tr>
+  <tr><td>실험·벤치마크</td><td>검증 대상과 평행 진영</td><td>Webster 1995 · Kim&amp;Olver 1998 · Oila&amp;Bull 2005 · Lainé 2008–09 · Brandão 2010</td></tr>
+</table>
+</div>
+
+<footer>
+  <p><strong>근거 원칙.</strong> 각 문헌 카드의 여섯 항목은 해당 원문의 초록·서론·결론을 정독해 작성했고, 계보의 화살표는 그 문헌이 실제로 인용한 기록이 확인된 경우에만 그렸습니다. 주제상 명백해 보여도 인용 기록이 없으면 선을 잇지 않았습니다 — 예컨대 Dang Van &amp; Maitournam 2003이 Kalker의 방법을 본문에서 언급하지만 참고문헌 목록에서 확인되지 않아 엣지에서 제외했습니다.</p>
+  <p><strong>원문 미확보.</strong> Tier D 배경문헌 12편은 원문을 확보하지 않았습니다. 이들 카드는 서지와, 2011년 논문이 해당 문헌을 언급한 문장에서 확인되는 범위만 담았고 나머지는 “미확인”으로 두었습니다.</p>
+  <p><strong>OCR 주의.</strong> 원문은 MinerU로 추출한 마크다운이라 수식·숫자가 손상된 곳이 있습니다. 단일 출처 수치는 카드에 넣지 않거나 표기했습니다. Archard 식(17)의 분모는 OCR에서 <code>3a</code>로 깨져 있었으나 원문 Table IV의 이론값을 역산해 <code>3·p<sub>m</sub></code>임을 확인했습니다.</p>
+</footer>
+
+</div>
+
+<script>
+const L = [
+  {k:'현상·정의',  s:'무엇이 문제인가',      c:'--l1', y: 74},
+  {k:'접촉역학',   s:'M1 · 건접촉',          c:'--l2', y:174},
+  {k:'EHL·거칠기', s:'M2 상보파 · M6 분담',  c:'--l3', y:274},
+  {k:'표면하응력', s:'M3',                   c:'--l4', y:374},
+  {k:'다축피로',   s:'M4',                   c:'--l5', y:474},
+  {k:'마모',       s:'M5',                   c:'--l6', y:574},
+  {k:'실험·검증',  s:'벤치마크',             c:'--l7', y:674}
+];
+
+// x = f(year), 눈금은 아래 TICKS 와 동일 규칙
+const X = y => y<=1935 ? 175+(y-1870)*1.05 : 243+(y-1935)*11.2;
+const TICKS = [1870,1900,1935,1950,1960,1970,1980,1990,2000,2010];
+
+const N = [
+/* ── 1 현상·정의 ─────────────────────────────── */
+{id:'way',l:0,y:1935,dy:0,lab:'Way 35',t:'(2) Way, S. (1935)',v:'Pitting Due to Rolling Contact · J. Appl. Mech. 57',tier:'D',src:0,
+ pr:'미확인 — 원문 미확보.',
+ gp:'미확인.',
+ me:'미확인. 2011년 논문의 서술에 따르면 접촉 디스크를 이용한 실험이었다.',
+ re:'접촉하는 디스크를 연마하면 마이크로피팅에 대한 저항성이 크게 증가한다는 것을 관찰했다.',
+ lg:'표면 조도가 이 손상의 인자임을 최초로 기록에 남겼다. 이후 Dawson이 이를 조도/유막두께 비로 정량화한다.',
+ r11:'2011 논문 서론이 “윤활 접촉에서의 마이크로피팅 연구는 Way까지 거슬러 올라간다”고 계보의 기점으로 인용한다.',
+ eq:'', ev:'근거: 2011 원문 서론 — “In his experiments he observed that polishing of the contacting discs substantially increased their resistance to micropitting.”', ci:[]},
+
+{id:'daw',l:0,y:1963,dy:0,lab:'Dawson 62–66',t:'(3)–(5) Dawson, P. H. (1962 · 1964 · 1965–66)',v:'JMES 4(1) · IMechE Fatigue in Rolling Contact · Proc. IMechE 180',tier:'D',src:0,
+ pr:'피팅이 표면 조도의 영향을 받는다는 것은 알려져 있었으나, 그것이 유막을 통한 금속 돌기 접촉 때문이라면 피팅은 유막두께에도 의존해야 한다는 가설을 세웠다.',
+ gp:'미확인.',
+ me:'윤활 디스크 시험에서 조도와 유막두께를 함께 변화시키며 피팅 발생까지의 회전수를 측정했다.',
+ re:'이 현상을 pitting fatigue라 명명하고, D = (두 디스크의 초기 조도 합)/(유막두께) 를 정의해 D가 커지면 피팅까지의 회전수가 감소함을 보였다.',
+ lg:'D는 오늘날의 Λ비의 역수다. 윤활 상태를 표면 손상에 직접 잇는 최초의 무차원 지표가 1962년에 이미 제시되어 있었다.',
+ r11:'2011 논문 서론이 Dawson의 문장을 원문 그대로 인용하며, D가 현대 Λ값의 역수임을 명시한다.',
+ eq:'D = (두 디스크 초기 조도 합) / (유막두께)  →  1/Λ',
+ ev:'근거: 2011 원문 서론 verbatim 인용 및 D 정의식. 세 편은 2011 논문이 (3)–(5)로 묶어 인용하므로 한 노드로 표시.', ci:[]},
+
+{id:'iso',l:0,y:2004,dy:-22,lab:'ISO 15243',t:'(1) ISO 15243 (2004)',v:'Rolling bearings — Damage and failures',tier:'D',src:0,
+ pr:'미확인.', gp:'미확인.', me:'미확인.',
+ re:'이 손상을 surface distress 또는 표면개시 피로로 규정하고, 윤활이 부족하고 미끄럼이 일정 비율 존재할 때 돌기가 파손되며 (1) 광택역, (2) 돌기 미세균열, (3) 돌기 미세박리가 형성된다고 기술한다.',
+ lg:'“마이크로피팅”이라는 기어업계 용어와 베어링업계의 표면개시 피로를 하나의 정의로 묶었다.',
+ r11:'2011 논문이 첫 문단에서 용어 정의의 근거로 인용하며, 이후 논문 전체를 “micropitting”이라는 용어로 통일한다고 밝힌다.',
+ eq:'', ev:'근거: 2011 원문 서론 1문단 verbatim.', ci:[]},
+
+{id:'olv',l:0,y:2005,dy:20,lab:'Olver 05',t:'(6) Olver, A. V. (2005)',v:'The Mechanism of Rolling Contact Fatigue — An Update · Proc. IMechE Part J 219',tier:'D',src:0,
+ pr:'미확인.', gp:'미확인.', me:'미확인.',
+ re:'구름접촉피로 메커니즘을 종합하며, 마이크로피팅이 불량한 윤활 조건에서 비롯되는 표면 피로 현상임을 확립하는 근거로 인용된다.',
+ lg:'미확인 — 원문 미확보.',
+ r11:'2011 논문이 ISO 15243과 나란히 “마이크로피팅은 실제로 불량 윤활 조건과 결부된 표면 피로 현상”이라는 현재의 합의를 인용하는 근거.',
+ eq:'', ev:'근거: 2011 원문 서론 — “It is now recognized that micropitting is indeed a surface fatigue phenomenon associated with poor lubrication conditions ((1); Olver (6)).”', ci:[]},
+
+{id:'kot',l:0,y:2010,dy:-24,lab:'Kotzalas 10',t:'(41) Kotzalas, M. N. & Doll, G. (2010)',v:'Tribological Advancements for Reliable Wind Turbine Performance · Phil. Trans. R. Soc. A 368',tier:'D',src:0,
+ pr:'미확인.', gp:'미확인.', me:'미확인.',
+ re:'풍력 터빈 신뢰성 맥락에서 미끄럼과 마이크로피팅의 관계를 다룬다.',
+ lg:'미확인 — 원문 미확보.',
+ r11:'2011 논문이 “미끄럼이 늘면 마이크로피팅이 는다”는 균열전파 기반 통념의 대표 사례로 인용하고, 자기 모델과 실험으로 반박한다. 미끄럼 방향(정/부)의 영향을 논한 문헌으로도 인용된다.',
+ eq:'', ev:'근거: 2011 원문 결과 절 — 미끄럼 효과 논의 및 “In the literature (39), (7), (41), the direction of sliding … has been mentioned often”.', ci:[]},
+
+/* ── 2 접촉역학 M1 ───────────────────────────── */
+{id:'kal',l:1,y:1977,dy:0,lab:'Kalker 77',t:'(24) Kalker, J. J. (1977)',v:'Variational Principles of Contact Elastostatics · J. Inst. Math. Appl. 20',tier:'A',src:1,
+ pr:'고전 해석기법으로는 접촉문제가 2차원이나 축대칭 형상으로 제한되어 접촉역학 전 영역을 다룰 수 없었다. 접촉영역과 점착/미끄럼 영역의 위치를 미리 알지 못한 채 풀 수 있는 정식화가 필요했다.',
+ gp:'프랑스·이탈리아 학파는 함수해석학으로 존재·유일성 정리에만 치중해 수치해석으로 직결되지 않았고, 반대로 수치해에 성공한 변분 정식화들은 대부분 임기응변이어서 일반 원리로서의 기반이 약했다.',
+ me:'가상일 원리를 법선접촉과 마찰접촉으로 확장해 접촉 성립 여부를 사전에 알 필요가 없게 만들고, 최소 포텐셜에너지 원리에서 Reissner 원리를 거쳐 최소 여에너지 원리를 유도했다.',
+ re:'이산화하면 제약 하의 2차계획법 문제가 되며, 접촉영역과 점착·미끄럼 영역의 위치가 계산의 부산물로 자동으로 얻어진다. 최소 여에너지 형식은 미분 불가능 항이 없어 수치구현의 기반으로 가장 유용하다고 명시했다.',
+ lg:'존재성의 엄밀한 함수해석적 증명은 의도적으로 포기했고, 정상 롤링 상태는 이 시간적분형 원리로 다루기 부적합하다고 스스로 남겼다.',
+ r11:'2011 모델이 쓰는 건접촉 알고리즘의 이론적 토대. 압력 비음 제약과 하중 제약 하의 여에너지 최소화라는 반복 구조가 여기서 온다.',
+ eq:'min C = ∫ {½ π·η + π_N·h/|h_x|} dS,  π_N ≥ 0   (반무한체 법선접촉)',
+ ev:'근거: 원문 Abstract · Introduction 1–3문단 · Section 7 Remark 1 · Eq.(72).', ci:[]},
+
+{id:'j85',l:1,y:1985,dy:0,lab:'Johnson 85',t:'(26) Johnson, K. L., Greenwood, J. A. & Higginson, J. G. (1985)',v:'The Contact of Elastic Regular Wavy Surfaces · Int. J. Mech. Sci. 27(6)',tier:'A',src:1,
+ pr:'1차원 파상면과 평면의 탄성접촉은 Westergaard가 닫힌 형태로 풀었으나, 2차원 이중 정현파 표면은 응력장이 3차원이 되어 미해결로 남아 있었다. 핵심 난점은 하중에 따라 접촉반점이 원형→사각형→(비접촉역만 원형)으로 변해 접촉영역의 형상을 사전에 알 수 없다는 것이었다.',
+ gp:'Westergaard의 복소변수법과 Kuznetsov의 복소포텐셜법은 본질적으로 2차원에 국한되고, Dundurs 등의 접근은 3차원 확장이 자명하지 않았다. 2차원에서 통하던 “접촉폭을 주고 역전시키는” 수법도 3차원에서는 형상 자체를 예측할 수 없어 쓸 수 없었다.',
+ me:'접촉압력의 평균 편차를 이중 푸리에 코사인 급수로 전개하고, Kalker의 최소 여에너지 원리를 압력 비음 제약 하의 2차계획법으로 풀어 계수를 구했다. 경하중과 완전접촉 근방의 점근 닫힌해를 유도하고 퍼스펙스·실리콘고무 실험으로 검증했다.',
+ re:'완전접촉에 필요한 평균압력 p* = √2·πE*Δ/λ 를 얻었고, 이중 정현파 압력이 만드는 표면 법선변위 해를 명시적으로 제시했다. 이 변위해가 이후 모든 FFT 접촉 계산의 커널이 된다.',
+ lg:'푸리에 급수 절단 때문에 접촉단 부근을 정확히 표현하지 못해 접촉면적 경계를 임의 기준선으로 추정해야 했고, 규칙적 정현파 면에 국한되어 무작위 거친면으로의 확장은 후속 과제로 남았다.',
+ r11:'2011 모델에서 주파수응답 행렬 w의 근거. 탄성변위를 u(p) = IFFT{w·FFT(p)} 로 계산하는 그 w가 이 논문의 해다.',
+ eq:'u_z = [2p*(1−ν²)/E·(α²+β²)^½]·cos αx·cos βy ;  p* = √2·πE*Δ/λ',
+ ev:'근거: 원문 Summary · Introduction 1–4문단 · Conclusions · Appendix 1 Eq.(A.2). 참고문헌 [4] = Kalker 1977.', ci:['kal']},
+
+{id:'tia',l:1,y:1996,dy:-24,lab:'Tian 96',t:'(25) Tian, X. & Bhushan, B. (1996)',v:'A Numerical Three-Dimensional Model for the Contact of Rough Surfaces by Variational Principle · J. Trib. 118',tier:'A',src:1,
+ pr:'실제 거친 표면 두 개의 실접촉면적과 압력 분포를 예측하는 3차원 모델이 필요했으나, 접촉점 수가 커지면 기존 방법이 실용성을 잃었다. 측정되거나 컴퓨터로 생성된 3D 거칠기를 직접 입력으로 쓰고 탄성-완전소성까지 다루는 것이 목표였다.',
+ gp:'통계적 돌기 모델은 형상 가정이 비현실적이고 거칠기 파라미터가 측정 분해능에 의존하며 돌기 간 상호작용을 무시한다. 유한요소법은 돌기가 많아지면 비현실적이고, 영향행렬 반복법은 접촉점이 늘면 행렬이 거대해지고 ill-posed가 되어 수렴에 실패한다.',
+ me:'총 여에너지를 최소화하는 변분 정식화를 채택하고, 반복적 행렬역산 대신 직접 2차 수리계획법으로 최소화했다. 소성은 접촉압력의 상한을 연한 재료의 경도로 제한하는 추가 제약으로 도입했다.',
+ re:'변분 접근이 해의 유일성을 보장하고 계산시간을 크게 줄여 접촉점이 매우 많은 3D 문제를 실행 가능하게 만들었다. 행렬역산법이 수렴에 실패한 구-평면 사례에서도 해를 얻었다.',
+ lg:'소성 처리가 “소성 영역이 매우 작아 탄성 변형 형상을 크게 바꾸지 않는다”는 단순 가정에 의존하며, 소성 소산 에너지가 크지 않을 때만 변분원리가 유효하다는 제한을 남겼다.',
+ r11:'2011 모델이 건접촉에 완전소성을 넣는 방식의 출처. 국부압력이 항복압력 p_lim을 넘으면 소성으로 처리하고, 소성변형이 작을 때 변분원리가 여전히 성립한다는 논리를 그대로 계승한다.',
+ eq:'min V* = ½ Σ p_l (Σ C_kl p_k) − Σ p_l ū*_zl ,  0 ≤ p ≤ H',
+ ev:'근거: 원문 Abstract · Introduction 1–5문단 · §3.1 Eq.(6)–(8) · Discussion. 참고문헌에 Kalker 1977은 없고 Kalker & van Randen 1972만 인용.', ci:[]},
+
+{id:'stk',l:1,y:1997,dy:22,lab:'Stanley 97',t:'(22) Stanley, H. M. & Kato, T. (1997)',v:'An FFT-Based Method for Rough Surface Contact · J. Trib. 119',tier:'A',src:1,
+ pr:'돌기 기반 모델은 접촉경계의 기하 전체를 버리므로 표면 분리거리, 접촉영역의 합체, 돌기 간 상호작용을 제대로 다룰 수 없었다. 경계 기하 전체를 보존하는 “완전한” 문제를, 2D와 3D 동등하게 그리고 임의 형상에 대해 빠르게 푸는 것이 목표였다.',
+ gp:'돌기 모델은 분리거리를 과대평가하고 접촉영역 합체 메커니즘이 없으며 summit 식별의 샘플링 문제를 안았다. 유한요소법은 고주파 성분이 있으면 메시가 폭증하고, 영향계수 반복법은 접촉영역을 추측→인장압력 제거→재계산하는 절차가 복잡한 지형에서 수렴을 보장하지 못했다.',
+ me:'Westergaard의 정현파 해와 Johnson 등의 3D 이중 정현파 확장을 FFT 구조와 결합해 변위를 요소별 곱셈 한 번으로 계산하고, Kalker의 변분원리를 적용했다. Hessian이 없으므로 기울기로 압력을 갱신→하중을 맞추도록 균일 이동→음압 절단을 반복한다.',
+ re:'10~30회 반복으로 수렴하며 파장당 샘플링이 낮아도 해석해와 잘 맞는다. 접촉영역을 사전에 추측할 필요 없이 압력해와 함께 진화하고, 하중이 늘면서 고립된 준-Hertz 접촉이 큰 영역으로 합체되는 과정을 3D에서 직접 보여준다. 계산량이 N²이 아닌 N log N으로 커진다.',
+ lg:'주기적 표면을 전제하며 무마찰 법선 트랙션만 다룬다. 부분접촉에서 압력의 진짜 대역폭이 무한이라 접촉영역 경계가 격자 입도만큼 거칠게 표현되고, 층상 반무한체·접선 트랙션 확장은 후속에 남겼다.',
+ r11:'2011 모델의 건접촉 계산 엔진 그 자체. 압력 갱신 절차와 u(p) = IFFT{w·FFT(p)} 가 그대로 채택되고, 여기에 Tian & Bhushan의 소성 제약이 더해진다.',
+ eq:'u(p) = FFT⁻¹(w·FFT(p)) ;  min f = ½∫p·u(p)dS + ∫p·g dS,  p ≥ 0',
+ ev:'근거: 원문 Abstract · §1 Background 1–5문단 · §4 Variational Statement · §9 Summary. 참고문헌에 Kalker 1977, Johnson et al. 1985.', ci:['kal','j85']},
+
+/* ── 3 EHL·거칠기 M2/M6 ─────────────────────── */
+{id:'jgp',l:2,y:1972,dy:0,lab:'JGP 72',t:'(23) Johnson, K. L., Greenwood, J. A. & Poon, S. Y. (1972)',v:'A Simple Theory of Asperity Contact in Elastohydrodynamic Lubrication · Wear 19',tier:'A',src:1,
+ pr:'EHL 접촉에서 유막두께가 표면 조도와 같은 자릿수라 마모·피팅·스커핑이 h₀/σ 비와 상관된다는 증거가 쌓이고 있었으나, 왜 그 비가 지배 인자인지 설명하는 이론이 없었다. 유막과 돌기가 하중을 나눠 지는 부분 EHL 상태에서 하중 분담을 계산할 방법이 필요했다.',
+ gp:'Greenwood–Williamson의 건식 거친면 이론은 윤활막을 고려하지 않았고, Dowson–Higginson의 EHL 이론은 매끈한 면을 전제했다. 두 이론이 분리되어 있어 부분 EHL의 하중 배분과 돌기 접촉 빈도를 예측할 수 없었다.',
+ me:'GW 통계모델을 Dowson–Higginson EHL과 결합하고, 접촉을 벌크 헤르츠 스프링·유막 스프링·돌기 스프링의 병렬 계로 도식화해 두 스프링 특성곡선의 교점에서 하중 분담과 평형 유막두께를 구했다.',
+ re:'유막이 하중의 상당 부분을 지는 한 유막 스프링이 훨씬 뻣뻣하므로, 두 거친 면의 평균 간극은 같은 조건의 매끈면 유막두께와 거의 같다. 따라서 접촉 돌기 수와 돌기 압력이 h₀/σ만으로 결정되고, 하중 증가분은 거의 전부 유체압이 받으며 돌기압은 하중에 거의 무관하다 — 건식 GW 이론과 정반대다.',
+ lg:'하중 대부분을 돌기가 질 때는 돌기 간 탄성 상호작용을 무시한 탓에 이론이 부정확하다고 스스로 명시했고, 실측 돌기 개수를 특정할 수 없어 절대 비교가 불가능하다고 남겼다.',
+ r11:'2011 모델의 하중분담(M6) 계보 원점. 건식 돌기와 윤활 패치 사이의 하중 분담을 “Johnson 등이 처음 기술한 유량 평형의 고전적 반복 알고리즘”으로 계산한다고 명시된다.',
+ eq:'s ≈ h₀  →  돌기 접촉은 h₀/σ 가 지배 ;  소성지수 ψ = (E′/H)√(σ/β)',
+ ev:'근거: 원문 Summary · Introduction · §4 말미 · Conclusions (1)–(9). 참고문헌 3 = Dawson 1962.', ci:['daw']},
+
+{id:'gwm',l:2,y:1994,dy:-26,lab:'GW–ME 94',t:'(29) Greenwood, J. A. & Morales-Espejel, G. E. (1994)',v:'The Behaviour of Transverse Roughness in EHL Contacts · Proc. IMechE Part J 208',tier:'A',src:1,
+ pr:'다중격자 수치해석이 EHL 내 거칠기 거동을 재현했지만 그 “놀라운 특징들”을 단순하게 설명할 방법이 없었다. 특히 전이 조건에서 필름두께 변동은 윤활유 평균속도로, 압력 변동은 거친 면의 속도로 이동해 서로 분리된 것처럼 보이는 현상이 해명되지 않았다.',
+ gp:'Greenwood & Johnson의 사인압력 해석은 거친 면이 정지한 순수 미끄럼 2차원에 국한되었고, Venner 등의 완전 수치해는 결과는 주지만 지배 메커니즘을 드러내지 못했다. 관측된 필름진폭의 점진적 감쇠가 물리적인지 수치적인지도 미결이었다.',
+ me:'헤르츠 영역을 평균압력·평균간극을 갖는 무한 평행 채널로 치환해 탄성변형을 사인 성분별로 해석하고, 점도 항이 무시 가능함을 보여 Reynolds 식을 선형화한 뒤 전이 문제로 확장해 해를 특수해와 여함수로 분리했다.',
+ re:'각 푸리에 성분의 잔존/평탄화가 λ/h̄에 강하게 의존하는 단순 기준을 얻었고, 전이 해가 거친 면 속도로 이동하는 특수해와 입구에서 생겨 평균 유속으로 전파되는 상보파의 합임을 밝혔다. Venner가 보고한 진폭 감쇠는 물리현상이 아닌 수치감쇠라고 결론지었다.',
+ lg:'상보파의 진폭 자체는 입구 거동이 결정하는데 이 방법으로는 확정할 수 없다고 명시했다. 양면이 모두 거칠고 움직이는 일반 문제로의 확장도 과제로 남겼다.',
+ r11:'2011 모델 상보파(M2)의 이론적 기반. 2성분 분해 구조 전체가 여기서 온다.',
+ eq:'H_n/Z_n = C/(C + A/n),  P_n/Z_n = −1/(C + A/n),  A = 2λ/(π α h̄ E′)',
+ ev:'근거: 원문 Abstract · Introduction · §2.4 · §3 Transient · Summary and Conclusions.', ci:[]},
+
+{id:'ven',l:2,y:1997,dy:24,lab:'Venner 97',t:'(15) Venner, C. H., Couhier, F., Lubrecht, A. A. & Greenwood, J. A. (1997)',v:'Amplitude Reduction of Waviness in Transient EHL Line Contacts · 23rd Leeds–Lyon Symposium',tier:'B',src:1,
+ pr:'EHL 연구의 관심이 매끈면 정상해석에서 거칠기·웨이비니스 같은 전이 문제로 옮겨가면서, 설계에 쓸 수 있는 “거칠기가 접촉 안에서 얼마나 눌리는가”의 정량 규칙이 필요해졌다. 고하중·저점도·고온이라는 설계 트렌드로 유막이 얇아진 것이 배경이다.',
+ gp:'선행 연구들이 접촉 내 파장 변화는 상세히 해석했으나, 저자들이 직접 “퍼즐의 빠진 조각”이라 지목한 진폭 변화 — 파장과 운전조건의 함수로서의 진폭 감소 — 는 미해결이었다.',
+ me:'다중격자 기법으로 전이 EHL 선접촉을 풀어, 한쪽 면에 사인 웨이비니스를 주고 접촉 중심의 필름두께 진동 진폭을 초기진폭·무차원 파장·Moes 파라미터에 대해 체계적으로 조사했다.',
+ re:'진폭비가 초기진폭에 무관하게 선형이며, 무차원 파장 ∇ 하나의 함수로 모든 운전조건을 통합하는 마스터 커브를 얻었다. 짧은 파장은 거의 변형되지 않고 긴 파장은 거의 사라진다.',
+ lg:'일반 구름–미끄럼 조건의 진폭 거동은 추가 연구가 필요하다고 했고, 선행 예측식이 정성적으로는 같은 곡선을 주나 정량적으로 두 자릿수 낮아 “관측 거동을 지배하는 물리 메커니즘은 여전히 어둠 속”이라고 스스로 인정했다.',
+ r11:'2011 모델이 채택한 “진폭감소 방법론”이라는 용어와 접근의 출처. 압력의 전이 계산 시간을 줄이는 근거로 인용된다.',
+ eq:'A_d/A_i = 1/(1 + 0.17∇ + 0.03∇²),  ∇ = (λ/b)·M^¾/L^½',
+ ev:'근거: 원문 Abstract · Introduction · §4.4 Curve Fit · Discussion and Conclusion. 참고문헌에 GW–ME 1994.', ci:['gwm']},
+
+{id:'ehr',l:2,y:1998,dy:-52,lab:'Ehret 98',t:'(30) Ehret, P., Dowson, D. & Taylor, C. M. (1998)',v:'On Lubricant Transport Conditions in Elastohydrodynamic Conjunctions · Proc. R. Soc. A 454',tier:'A',src:1,
+ pr:'유막두께는 입구조건이 결정하고 접촉 내부는 Couette 유동이라는 통설이, Kaneta 등이 순수 미끄럼 점접촉에서 관측한 중앙부 깊은 딤플과 모순됐다. 뉴턴 유체 가정이 형상은 잘 맞추면서 표면 전단응력은 크게 과대평가하는 문제도 있었다.',
+ gp:'다양한 비뉴턴 모델이 마찰 실측 맞추기에 쓰였으나 고압역의 “Couette 유동”이라는 전제 자체는 거의 검증되지 않았다. 고압 유변학 데이터는 벽면 응력이 벌크 물성을 대표한다는 가정 위에 세워져 독립 검증이 어려웠다.',
+ me:'다중격자 EHL 점접촉 해석에 Bair–Winer와 Ree–Eyring 모델을 적용해 비교하고, 고압역 윤활유가 유리질로 고화되어 코어는 고체처럼 이동하고 전단은 양쪽 벽면의 얇은 전단대에서만 일어난다는 고화+슬립 개념을 도입했다.',
+ re:'한계전단응력만으로는 유막두께가 비현실적으로 예측되는 반면, 고화된 코어의 평균속도와 유입속도의 차이를 도입하면 딤플 관측과 잘 일치한다. 슬립은 압력에 선형으로 변한다.',
+ lg:'벽면 전단대의 정확한 정의에는 고화층·전단대의 열 발산을 다루는 열해석이 필요하며, 벽면 실측 응력과 관측 유막두께를 동시에 만족하는 EHL 이론이 여전히 요구된다고 결론에 명시했다.',
+ r11:'2011 모델의 비뉴턴 실효점도 공식의 출처. Eyring 유체의 실효점도로 인용되어 미끄럼이 있는 상보파 감쇠 계산의 유변학 항을 제공한다.',
+ eq:'일반화 뉴턴 유체  [τ] = 2(η/f(τ_e))[γ̇]   (실효점도 정의)',
+ ev:'근거: 원문 Abstract · Introduction · Conclusion. 2011 원문에서 “effective viscosity (Ehret, et al. (30))”로 인용.', ci:[]},
+
+{id:'vlu',l:2,y:2000,dy:52,lab:'Venner–Lub 00',t:'(31) Venner, C. H. & Lubrecht, A. A. (2000)',v:'Multigrid Techniques: … EHL Point Contact Problems · Proc. IMechE Part J 214',tier:'A',src:1,
+ pr:'EHL 문제는 알고리즘 비효율과 원인 불명의 수치 불안정 때문에 현실적 고하중 조건을 시뮬레이션하기 어려웠다. 특히 거친 표면의 전이 해석은 조밀 격자와 작은 시간간격을 요구해 계산비용이 실용 한계를 넘었다.',
+ gp:'“모델식을 어떻게 효율적으로 풀 것인가”는 답을 얻었지만, 그 통찰을 설계용 단순 규칙으로 번역하는 일과 모델의 유효범위를 확립하는 일이 남았다고 지적한다. 특히 널리 쓰이는 λ = h/σ 파라미터가 거칠기 변형을 전혀 반영하지 못한다고 비판한다.',
+ me:'EHL 점접촉에 대한 다중격자 및 다중레벨 다중적분 알고리즘의 핵심 요소를 정리하고, 이를 정상 타원접촉·이방성 조화 표면패턴의 전이 변형·기아윤활 문제에 적용했다.',
+ re:'정상 문제를 O(N ln N)에 풀 수 있게 되었고, 원접촉에서 이방성 패턴의 진폭감소가 단일 무차원 파장의 함수로 정리되는 곡선을 제시했다. 이 파라미터가 선접촉의 것과 상수배 차이뿐이라는 점에서 선/점 접촉의 진폭감소가 단일 메커니즘의 지배를 받음을 시사했다.',
+ lg:'진폭감소 곡선을 임의 미세형상에 적용해 λ = h/σ를 대체할 설계 규칙으로 발전시키는 것, 실험과의 광범위한 비교로 유효범위를 확정하는 것을 후속 과제로 명시했다.',
+ r11:'2011 모델이 상보파 진폭을 구할 때 근거로 삼는 뉴턴 수치 결과의 출처. 부분윤활에서 건식/윤활 간극을 주파수별로 비교·선택하는 알고리즘의 근거이기도 하다.',
+ eq:'A_d/A_i = 1/(1 + 0.15 f̄(r)∇₂ + 0.015[f̄(r)∇₂]²),  ∇₂ = (λ/a)·M^½/L^½',
+ ev:'근거: 원문 Abstract · Introduction · §4.2 Roughness deformation · Conclusion. 참고문헌 27 = GW–ME 1994, 30 = Venner et al. 1997.', ci:['ven','gwm']},
+
+{id:'h06',l:2,y:2006,dy:-26,lab:'Hooke 06',t:'(27) Hooke, C. J. (2006)',v:'Roughness in Rolling–Sliding EHL Contacts · Proc. IMechE Part J 220',tier:'A',src:1,
+ pr:'다중격자 솔버는 거친 접촉의 압력·간극을 계산할 수 있으나 너무 느려 설계 단계의 표면 비교에 부적합하고, 왜 비슷해 보이는 거칠기가 다른 압력·수명을 내는지 통찰을 주지 못한다. 순수 구름의 빠른 해석법은 이미 있었지만 미끄럼이 있는 조건은 상보파 생성 때문에 훨씬 복잡했다.',
+ gp:'저자 자신의 선행 단순해석이 유체 비압축성과 “감쇠율이 작다”는 가정 위에 있었고, 원래 거칠기와 상보파의 감쇠율은 예측했지만 상보파의 진폭 자체는 결정하지 못했다.',
+ me:'평행 간극에서의 거동 해석을 압축성 효과와 감쇠율–파장 결합을 정확히 포함하도록 개선하고, 별도로 구름–미끄럼 조건의 섭동 해석을 수행해 두 결과를 비교했다.',
+ re:'저진폭 사인 거칠기의 거동이 세 개의 복소량 — 감쇠된 원거칠기의 진폭·위상, 입구 상보파의 진폭·위상, 상보파의 파수와 감쇠율 — 으로 완전히 특정됨을 보였다. 첫째와 셋째는 해석식으로 직접 얻어지고 상보파 진폭만 별도로 구하면 된다. Eyring 유체에서 저진폭 거동은 Eyring 응력에만 의존하고 국소 점도에 무관해 온도변화에 둔감하다.',
+ lg:'상보파 진폭을 얻는 보간 절차를 제안하는 데 그쳤고, 3차원 거칠기 확장은 지면 제약으로 미뤄 횡방향 프로파일만 다뤘다.',
+ r11:'2011 모델의 비뉴턴(미끄럼 포함) 진폭감소 스킴 출처. “미끄럼을 제대로 고려하려면 비뉴턴 스킴이 필요하므로 Hooke의 스킴을 따른다”고 명시된다.',
+ eq:'|Q| = (6/π²)·τ₀·λ²/(E′h²)   — 감쇠를 지배하는 단일 파라미터',
+ ev:'근거: 원문 Abstract · Introduction · Fig.2 캡션 · Conclusions. 참고문헌 11 = GW–ME 1994.', ci:['gwm']},
+
+{id:'h07',l:2,y:2007,dy:24,lab:'Hooke 07',t:'(28) Hooke, C. J., Li, K. Y. & Morales-Espejel, G. E. (2007)',v:'Rapid Calculation of Pressures and Clearances in Rough, Rolling–Sliding EHL Contacts, Part 1 & 2 · Proc. IMechE Part C 221',tier:'A',src:1,
+ pr:'실제 EHL 접촉은 거칠기가 간극과 비슷한 크기라 압력분포가 크게 변하고 부표면 응력이 올라가 수명이 줄지만, 널리 인용되는 Tallian의 3:1 규칙은 오도의 소지가 있고 거칠기–간극–수명 사이에 단순 관계가 없다. 다중격자 솔버는 정확하나 고하중·단파장 조건에서 매우 느려 설계용으로 부적합했다.',
+ gp:'저자들의 선행 빠른 해석법은 순수 구름에 한정되었고, 미끄럼이 있는 경우의 예비 시도는 2차원 횡방향 거칠기에 머물렀다. 다른 푸리에 기반 시도들도 정지 거칠기·순수 구름·위상변화 무시 등의 제약이 있었다.',
+ me:'Part 1은 3차원 저진폭 거칠기에 대해 세 복소량을 정의하고 해석식·비선형식 수치해·섭동해 곡선맞춤으로 각각 구했다. Part 2는 성분별 결과를 FFT로 합성해 임의 거칠기의 간극·압력을 계산하고 단일 리지·다중 리지·3차원 평정 결함 실험과 비교했다.',
+ re:'정확한 EHL 해와 3% 이내로 일치하면서 계산시간을 수 시간에서 수 초로 단축했다. 어떤 유변 모델이든 접촉 내부에서는 평균 전단응력과 실효 Eyring 응력 두 값으로 대체 가능함을 보였다.',
+ lg:'상보파 진폭이 여전히 섭동해 곡선맞춤에 의존하며, 예제가 모두 Eyring 모델 기반이라 다른 유변모델에서는 달라질 수 있다고 명시했다. 실험 비교는 점접촉인데 해석은 선접촉이라는 점도 가정으로 남겼다.',
+ r11:'2011 모델의 상보파 지수감쇠식과 진폭 산정 절차의 직접 출처. 2011 논문이 세 차례 인용한다.',
+ eq:'특성길이 L = h(E′/τ_e)^½ ;  감쇠는 λ/L, 상보파 진폭은 (λ/b)S⁻²P^1.5 에 의존',
+ ev:'근거: Part 1 Abstract · Introduction · §4.3 · Discussion; Part 2 Abstract · Introduction · Conclusions. 참고문헌에 Venner 1997, Hooke 2006, MEB 2003.', ci:['ven','h06','meb']},
+
+/* ── 4 표면하응력 M3 ────────────────────────── */
+{id:'meb',l:3,y:2003,dy:-24,lab:'MEB 03',t:'(16) Morales-Espejel, G. E., Lugt, P. M., van Kuilenburg, J. & Tripp, J. H. (2003)',v:'Effects of Surface Micro-Geometry on the Pressures and Internal Stresses of Pure Rolling EHL Contacts · Trib. Trans. 46',tier:'A',src:1,
+ pr:'고성능·박막 운전 요구가 커지면서 EHL 접촉에서 실제 측정 조도가 압력과 표면하 응력에 미치는 영향을 평가할 필요가 커졌다. 당시에는 표면을 “필름 형성 능력”으로만 순위 매길 수 있었고, 변형된 조도가 만드는 압력 리플과 그로 인한 응력 변동은 반영되지 못했다.',
+ gp:'Greenwood–Morales-Espejel의 선형화 모델은 상보파 진폭을 구하지 못했고 고압역에서만 유효했다. Hooke의 완전 해석해는 압축성·비뉴턴 확장에 수치 스킴이 필요해 3D 실조도 문제의 속도 요구를 만족하지 못했고, FFT 곡선맞춤 기법들은 시간 비의존·순수 슬라이딩에 한정되었다.',
+ me:'고압역에서 Poiseuille 항이 사라진다는 가정으로 Reynolds 식을 수송방정식으로 선형화하고, 3D 표면을 푸리에 분해해 성분마다 횡방향·종방향 해를 적용한 뒤 재조립했다. 얻어진 압력 리플에서 표면하 응력장을 응력함수로 해석적으로 계산해 von Mises 응력을 얻는다.',
+ re:'3D 실측 조도에 대해 완전 수치해와 비교했을 때 변형 간극 오차 약 2.5%, 압력 리플 오차 약 20%(최악점 기준)로 일치했다. Hertz 검증에서 최대 von Mises 응력과 그 깊이가 해석해와 일치했고, 실제 베어링 궤도륜 두 표면의 순위를 매겨 조도를 “필름 형성”과 “내부 응력 억제” 두 축으로 평가하는 공학 도구를 제시했다.',
+ lg:'응력을 빠르게 계산하는 경로는 열었으나 그것을 손상/피로수명으로 변환하는 판정기준은 없었고, 순수 구름·저진폭 조도로 사용범위가 제한되어 슬라이딩·부분윤활 확장이 숙제로 남았다.',
+ r11:'2011 모델 표면하 응력장 모듈(M3)의 직접 조상. 실측 조도 → 푸리에 분해 → 압력 리플 → 반해석 표면하 응력장이라는 파이프라인 자체를 제공한다.',
+ eq:'ū·∂(ρh)/∂x + ∂(ρh)/∂t = 0  (선형화 수송방정식)   [응력식 일부 OCR 손상 의심]',
+ ev:'근거: 원문 Abstract · Introduction 전문 · Subsurface Stresses 절 · Discussion. 참고문헌 5 = GW–ME 1994, 6 = Venner 1997, 22 = Tripp 등(투고 중).', ci:['gwm','ven','tri']},
+
+{id:'tri',l:3,y:2003,dy:26,lab:'Tripp 03',t:'(16b) Tripp, J. H., van Kuilenburg, J., Morales-Espejel, G. E. & Lugt, P. M. (2003)',v:'Frequency Response Functions and Rough Surface Stress Analysis · Trib. Trans. 46',tier:'A',src:1,
+ pr:'접촉 문제로 표면 트랙션이 구해진 뒤 재료 내부의 표면하 응력장을 어떻게 계산할 것인가가 베어링·기어에서 반복되는 문제였다. 거친 윤활 접촉의 완전 수치해는 오래 걸릴 뿐 아니라 다른 조도 시료에 재사용 가능한 파라미터로 특성화하기도 어렵다.',
+ gp:'기존 노력은 트랙션 계산에 집중했고 그 뒤의 표면하 응력 평가는 상대적으로 다뤄지지 않았다. 특히 완전 3D 이중 정현파 전단 트랙션 문제는 두 개의 평면변형 문제의 중첩으로 분해되지 않아 기존 방식으로 풀리지 않았다.',
+ me:'2D 정현 법선·전단 하중에 대해 Airy 응력함수로 6성분을 유도하고, 3D 이중 정현 법선하중은 회전 좌표계 두 평면변형장의 중첩으로 재조합했다. 분해 불가능한 3D 전단하중에는 Boussinesq/Cerruti 포텐셜 기반의 새 응력함수를 제안해 완전한 내부 응력장을 해석적으로 얻고, 이를 주파수응답함수로 삼아 FFT를 적용했다.',
+ re:'마찰이 있는 구형 압자 문제에서 Hamilton–Goodman 해석해를 정확히 재현했다. 그리고 결정적으로, 조도가 있으면 <strong>최대 응력의 위치가 조도 파장 규모의 깊이(수 µm)로 올라오며 이 깊이는 하중이나 거시 접촉 크기와 무관</strong>함을 보였다.',
+ lg:'표층 근방 고응력역에서 항복→잔류응력 또는 균열 발생 후 짧은 전파로 조기 표면 손상이 일어난다고 지적했지만, 실제 손상 개시·수명 예측은 후속 과제로 남겼다.',
+ r11:'M3의 계산 엔진(주파수응답함수 + FFT). “마이크로피팅 손상 깊이가 조도 파장 규모”라는 물리적 근거를 제공한다.',
+ eq:'σ_z = p₀(1+ζz)e^(−ζz)·cos αx·cos βy,  ζ = √(α²+β²)   (3D 이중 정현 법선하중)',
+ ev:'근거: 원문 Abstract · Introduction · 평면변형/이중정현 유도 · Results · Conclusion. 서지 판별: 이 논문의 ref 13이 (16)을, (16)의 ref 22가 이 논문을 “submitted”로 상호 인용.', ci:['meb','j85','gwm']},
+
+/* ── 5 다축피로 M4 ──────────────────────────── */
+{id:'woh',l:4,y:1870,dy:0,lab:'Wöhler 1870',t:'(18) Wöhler, A. (1870)',v:'Über die Festigkeitsversuche mit Eisen und Stahl · Z. Bauwesen 20',tier:'D',src:0,
+ pr:'미확인.', gp:'미확인.', me:'미확인 — 철과 강의 강도 시험.',
+ re:'반복하중에 대한 재료 강도를 체계적으로 시험해 오늘날 S–N(Wöhler) 곡선으로 불리는 표현을 남겼다.',
+ lg:'응력 진폭과 파단 수명을 잇는 곡선이라는 형식 자체가 이후 모든 피로 설계의 기본 언어가 되었다.',
+ r11:'2011 모델은 교번 굽힘 피로한도를 σ_f = A·ln(N) + B 형태의 Wöhler 곡선으로 근사하며, 이 형식의 이름이 여기서 온다. 상수 A·B 자체의 데이터는 Shimizu 2009에서 온다.',
+ eq:'σ_f = A·ln(N) + B   (2011 모델의 근사 형식)',
+ ev:'근거: 2011 원문 Nomenclature(A, B = Wöhler curve slope/intercept parameter) 및 피로 절. 원문 미확보.', ci:[]},
+
+{id:'pal',l:4,y:1924,dy:0,lab:'Palmgren 1924',t:'(20) Palmgren, A. G. (1924)',v:'Die Lebensdauer von Kugellagern · VDI Z. 68(14)',tier:'D',src:0,
+ pr:'미확인.', gp:'미확인.', me:'미확인.',
+ re:'구름 베어링에도 피로한계가 존재한다는 개념을 처음 제안했다. 그러나 Palmgren 자신이 1936년에 이를 철회했다 — SKF 시험실 데이터에서 하중을 낮출수록 수명이 계속 늘어날 뿐 한계가 나타나지 않았기 때문이다.',
+ lg:'누적손상 규칙(Palmgren–Miner)의 원전이자, 베어링 피로한계 논쟁의 출발점. 1985년 Ioannides와 Harris가 이 1924년 개념을 되살려 ISO 표준의 수명 수정계수로 이어진다.',
+ r11:'2011 모델이 가변 운전조건의 피로를 누적할 때 쓰는 Palmgren–Miner 규칙의 원전. 손상 파라미터 d가 이 규칙으로 갱신된다.',
+ eq:'d = Σ(n_i/N_i)   (Palmgren–Miner 누적)',
+ ev:'근거: 2011 원문 Nomenclature 및 시간루프 절; Shimizu 2009 서론이 Palmgren의 1936년 철회를 원문 인용.', ci:[]},
+
+{id:'dv89',l:4,y:1989,dy:-26,lab:'Dang Van 89',t:'(13) Dang Van, K., Griveau, B. & Message, O. (1989)',v:'On a New Multiaxial Fatigue Limit Criterion: Theory and Applications · EGF 3',tier:'A',src:1,
+ pr:'한 세기 넘게 축적된 피로 연구는 단축 하중에는 유효하지만, 3차원 비비례 하중을 받는 구조를 설계할 때 엔지니어는 여전히 곤란을 겪는다. 주응력 방향이 고정되지 않는 일반 다축 하중에서는 기준식 자체를 세우는 일이 조심스럽다.',
+ gp:'Gough–Pollard, Sines, Crossland 등 기존 기준은 응력 진폭과 평균 정수압 같은 거시적 피크값의 상관만 다루므로 하중 경로의 시간적 전개와 균열 성장 방향이 드러나지 않는다. 균열 발생은 결정립 한두 개 규모의 미시 현상인데, 거시 시험 파라미터의 상관만으로는 이미 “필터링”된 정보만 보게 된다.',
+ me:'거시 스케일과 결정립 규모의 미시 스케일을 구분하고, 피로한도 근방에서는 탄성 셰이크다운에 도달한다고 보아 Melan 정리로 시간에 무관한 잔류응력장을 도입해 미시 응력을 거시 응력만으로 평가한다. 잔류응력의 편차부는 하중 경로를 감싸는 최소 초구 문제로 구한다.',
+ re:'안정화 사이클 중 어느 한 순간이라도 조건을 위반하면 임계 배향 결정립에서 균열이 발생한다는 순간 기준을 세웠다. 동일한 전단 진폭과 평균 정수압을 갖지만 손상 여부가 다른 두 경로를 구분할 수 있어 기존 기준 대비 우위를 보였다. 검증 사례는 <strong>SKF France의 볼베어링 링 시험</strong>이었고, 균열 발생 위치와 임계 하중이 예측과 잘 일치했다.',
+ lg:'국소 탄소성 구성방정식을 정확히 알 수 없어 최소 초구로 근사하는 점, 고사이클 피로한도 수준에만 적용 가능하고 수명 예측은 다루지 않는 점이 남았다.',
+ r11:'2011 모델의 피로 판정기준. 국소 체적에 가해지는 하중 경로를 시간에 따라 추적할 수 있어 다축 피로를 지지한다는 이유로 선택되었다.',
+ eq:'d = max_t [ τ̂(t) / (β − α·p̂(t)) ] ≥ 1',
+ ev:'근거: 원문 Abstract · Introduction · 매크로–마이크로 원리 · 판정식 · 볼베어링 적용 검증.', ci:[]},
+
+{id:'dv93',l:4,y:1993,dy:26,lab:'Dang Van 93',t:'(14) Dang Van, K. (1993)',v:'Macro-Micro Approach in High-Cycle Multiaxial Fatigue · ASTM STP 1191',tier:'A',src:1,
+ pr:'지난 40년의 연구는 대부분 저사이클 피로에 집중되었지만 산업 응용 대부분은 고사이클 피로다. 다축 기준이 많음에도 피로 저항 설계는 여전히 문제이며, 엔지니어는 부품 자체를 대상으로 어렵고 비싼 실험으로 피로한도를 찾아야 했다.',
+ gp:'기존 기준들이 설계 문제를 해결하지 못한다는 점을 문제로 삼는다. 결정립 스케일에서 국소 응력이 거시 응력과 다르므로 파괴역학을 그대로 쓰는 것은 위험하고, 균열 “발생” 개념 자체가 관찰 스케일에 따라 논쟁 중이며, 국소 탄소성 구성방정식은 실제로 얻는 것이 불가능하다는 한계를 명시한다.',
+ me:'1989년의 매크로–마이크로 방법을 정리·확장한다. 탄성 국소화 텐서와 국소 잔류응력으로 두 스케일을 잇고, 의사 셰이크다운 가정과 Melan 정리로 시간에 무관한 잔류응력만 구하면 되도록 문제를 축소한 뒤, 그 중심을 “하중경로를 모두 포함하는 최소 초구의 중심”으로 놓는다.',
+ re:'판정을 τ + α·p − β 의 선형형으로 제시하고, 인장과 비틀림 두 시험만으로 안전영역을 결정할 수 있게 했다. 실무 판정은 Tresca 전단을 사이클 전체에 대해 계산하는 것으로 충분하며, 동시에 균열 발생 면의 방향까지 준다.',
+ lg:'균열 발생 원인이 재료에 따라 다양하므로 소성 해석에 근거한 단순 기준을 주기 어렵고, 제안된 체적이 특정 오배향 결정립이 아니라 “평균” 결정립에 가깝다는 근사적 성격이 남는다.',
+ r11:'2011 모델이 채택한 판정기준의 정본 형식. 최소 외접 초구로 잔류응력 중심을 구하는 절차가 이후 수치 구현의 핵심이 된다.',
+ eq:'f(σ) = τ + α·p − β ;  d = max_t[τ(t)/(β − α·p(t))] > 1',
+ ev:'근거: 원문 Abstract · Introduction · 2스케일과 Melan · 최소초구 가정 · Eq.12–15 · Final Remarks. 참고문헌 [1] = 1989년 논문.', ci:['dv89']},
+
+{id:'fou',l:4,y:2000,dy:-52,lab:'Fouvry 00',t:'(35) Fouvry, S., Kapsa, P. & Vincent, L. (2000)',v:'Fretting-Wear and Fretting-Fatigue: Relation Through a Mapping Concept · ASTM STP 1367',tier:'D',src:0,
+ pr:'미확인.', gp:'미확인.', me:'미확인 — 프레팅 마모와 프레팅 피로를 맵 개념으로 연결.',
+ re:'미확인.',
+ lg:'미확인 — 원문 미확보.',
+ r11:'2011 논문이 Dang Van 기준의 성공 사례로 인용한다: 압축 잔류응력이 없는 구름접촉피로 표면이나 프레팅 조건에서는 이 모델이 성공적으로 쓰였다는 근거.',
+ eq:'', ev:'근거: 2011 원문 피로 절 — “For the modeling of a surface in rolling contact fatigue without compressive residual stresses, or in fretting conditions, the model has been used with success; see Fouvry, et al. (35) and Baietto, et al. (36).”', ci:[]},
+
+{id:'dv03',l:4,y:2003,dy:52,lab:'DV 철도 03',t:'(32) Dang Van, K. & Maitournam, M. H. (2003)',v:'Rolling Contact in Railways: Modelling, Simulation and Damage Prediction · FFEMS 26',tier:'B',src:1,
+ pr:'레일 두부에 kidney형 균열, shelling, squat, head check 같은 구름접촉 손상이 발생해 정량 예측이 필요해졌다. 차륜–레일 접촉면적이 작아 응력이 처음부터 탄성한계를 넘고 소성변형과 잔류응력이 누적되므로, 손상의 원인이 되는 접촉부 근방의 역학 상태를 먼저 평가해야 한다.',
+ gp:'탄성 계산에 기반해 접촉 소성을 무시하는 모델은 부적절하며, Mises/Tresca형 고전 기준은 균열 개시 깊이를 약 3 mm로 예측하나 실제 kidney형 균열은 약 7 mm에서 시작한다. 응력확대계수 기반 순수 파괴역학은 차륜 아래 응력장이 주로 압축이고 구배가 급해 곤란하며, 기존 FEM으로 하중을 증분 병진시키는 방식은 비용이 크고 부정확하다.',
+ me:'하중과 함께 움직이는 좌표계에서 정상상태를 가정해 시간 미분을 유선을 따르는 공간 미분으로 대체하는 정상상태 알고리즘을 개발해 반복 이동하중 하 안정화 상태를 효율적으로 구한다. 그 안정화 응력 사이클에 Dang Van 기준을 점별로 적용해 균열 발생 여부와 균열면 방향을 예측한다.',
+ re:'이동하중으로 생기는 잔류응력 분포가 정지하중 반복 시와 크게 달라, 하중 이동을 고려하지 않고는 역학 상태를 추정할 수 없음을 보였다. 3D 해석에서 스핀 효과로 인한 큰 접선응력을 포함한 통과 시나리오로 squat가 주행면 중앙부에서 발생함을 예측해 실차 관찰과 일치시켰다.',
+ lg:'레일 재료가 비균질하면 재료상수가 위치에 따라 달라져야 하나 본 논문에서는 상수로 가정한 점이 남은 과제다.',
+ r11:'2011 논문이 “Dang Van 기준이 구름접촉피로 모델링에 여러 차례 쓰였다”는 근거로 인용하는 대표 사례. 다축 피로 기준을 구름접촉으로 옮기는 방법론이 여기서 정리된다.',
+ eq:'max_t{τ(t) + a·p(t)} ≤ b ;  d(t) = τ(t)/(b − a·p(t))',
+ ev:'근거: 원문 Abstract · Introduction · 안정화 상태 평가 절 · 다축 기준 절 · squat 3D 절 · Conclusion. 본문이 Kalker의 방법을 언급하나 참고문헌 목록에서 확인되지 않아 인용 엣지에서 제외.', ci:[]},
+
+{id:'des',l:4,y:2006,dy:-26,lab:'Desimone 06',t:'(33) Desimone, H., Bernasconi, A. & Beretta, S. (2006)',v:'On the Application of Dang Van Criterion to Rolling Contact Fatigue · Wear 260',tier:'B',src:1,
+ pr:'기어·캠·구름베어링·차륜에서 고사이클 접촉피로는 산업적으로 중요하며, 구름접촉피로는 응력텐서 6성분이 모두 나타나는 가장 까다로운 비위상 다축피로 문제다. 최근 다수 연구가 Dang Van 기준을 여기 적용해 왔으나 그 적합성 자체는 검증되지 않았다.',
+ gp:'관행적 보정은 순수 굽힘과 순수 비틀림 단 두 개 시험으로 기울기를 정하는데, 두 경로가 서로 가까워 작은 오차가 기울기에 큰 영향을 준다. 더 근본적으로, 전통적 단일 직선 궤적은 압축 평균응력에서 허용 전단이 증가한다고 예측하는데 이는 음의 응력비에서 평탄한 응답을 보이는 고전 Haigh 선도와 어긋난다.',
+ me:'UTS 1350 MPa 강 평활시편을 응력비 R = −2, −1, 0.1, 0.3으로 시험해 Dang Van 평면에 사상하고 파손궤적을 재보정했다. R = −2와 −1의 피로한계가 같다는 사실로부터 음~작은 양의 정수압 영역에서는 기울기 0인 수평 구간, 그 이상에서는 음의 기울기인 2구간 궤적을 제안하고 3차원 구름/미끄럼 접촉에 적용했다.',
+ re:'제안한 2구간 궤적은 파손을 예측하는 반면 기존 궤적은 예측하지 못하며, 기존식으로는 한계가 무마찰 접촉의 소성개시와 탄성 셰이크다운 한계를 훨씬 상회하는 물리적으로 모순된 값이 된다. 부수적으로, 수평 구간을 쓰고 응력경로가 전부 음의 정수압 영역에 있으면 잔류응력을 고려하지 않고도 기준을 적용할 수 있음을 보였다.',
+ lg:'파손궤적의 부정확한 외삽을 피하려면 더 많은 시험이 필요하고, 다축 기준은 단축이 아니라 비위상 다축 하중으로 검증해야 한다고 명시했다.',
+ r11:'2011 논문이 서론에서 “Dang Van 기준의 구름접촉 적용에는 아직 뜨거운 논쟁이 있다”며 드는 근거 중 하나. 주된 이견은 제조 잔류응력의 중첩 문제다.',
+ eq:'τ_max(t) + a_DV[σ_H(t) + σ_H,res] = τ_W ;  a_DV = 3(τ_W/σ_W − ½)',
+ ev:'근거: 원문 Abstract · §1 및 §1.1 Eq.1–7 · §3 · Concluding remarks. 기준수명 N_ref는 이 논문 어디에도 없음 — 피로한계 논문이며 제시된 수치는 정규화 피로한계와 접촉하중비뿐임을 원문 대조로 확인.', ci:['dv89','dv93','dv03']},
+
+{id:'ber',l:4,y:2006,dy:26,lab:'Bernasconi 06',t:'(34) Bernasconi, A., Filippini, M., Foletti, S. & Vaudo, D. (2006)',v:'Multiaxial Fatigue of a Railway Wheel Steel under Non-Proportional Loading · Int. J. Fatigue 28',tier:'B',src:1,
+ pr:'고속철도의 속도·동하중 증가로 차륜 구름접촉피로 위험이 커졌다. 표면하 피로는 답면 아래 수 mm의 최대 전단응력 위치에서 균열이 발생하며, 그 응력장은 맥동 압축 수직응력과 위상이 어긋난 교번 전단응력이 결합된 다축·비비례 상태다.',
+ gp:'표면하 균열발생 평가에 Dang Van 기준이 차륜 수명예측에 빈번히 쓰였으나, 그 선택이 표면하 응력상태에 최대한 가까운 응력을 가한 다축 시험으로 정당화된 경우는 드물었다. 비비례 다축 하중에서 정적 압축이 미치는 영향에 대한 결과는 저자들이 아는 한 문헌에 없었다.',
+ me:'고속철 차륜용 R7T강 시편에 90° 위상차의 교번 비틀림과 맥동 압축 축하중을 가해 주응력 방향이 회전하는 비비례 응력상태를 구현하고, 허용 전단진폭을 staircase법으로 구해 임계면 계열과 적분접근 계열 기준으로 해석했다.',
+ re:'음의 축하중 절댓값이 커질수록 허용 전단진폭은 감소했는데, Dang Van 모델은 음의 정수압에서 허용 전단이 증가한다고 보아 이 경향을 예측하지 못했다. 응력이 음의 정수압을 만들 때 이 기준은 순환소성 개시를 암묵적으로 제한하지 못하므로, 적용 전에 별도로 확인해야 한다고 결론지었다.',
+ lg:'응력구배와 미세조직의 관계, 재료 이방성 반영, 잔류응력이 개입할 때 적분접근 기준 간 예측 차이를 후속 과제로 남겼다.',
+ r11:'Desimone과 함께 2011 서론의 “뜨거운 논쟁”을 구성하는 반대 근거. 두 편이 서로 다른 실험으로 같은 결론(압축 영역에서의 과대예측)에 도달했다는 점이 이 비판의 무게를 만든다.',
+ eq:'max_t[τ_DV(t) + α σ_H(t)] = β,  α = 3(τ_W/σ_W − ½), β = τ_W',
+ ev:'근거: 원문 Abstract · Introduction · §2.1–2.2 · §3.1 Eq.2–4 · Concluding remarks · Appendix A. 참고문헌 [3] = Dang Van et al. 1989.', ci:['dv89']},
+
+{id:'shi',l:4,y:2009,dy:-52,lab:'Shimizu 09',t:'(19) Shimizu, S., Tsuchiya, K. & Tosha, K. (2009)',v:'Probabilistic Stress-Life (P-S-N) Study on Bearing Steel Using Alternating Torsion Life Test · Trib. Trans. 52',tier:'A',src:1,
+ pr:'1985년 Ioannides와 Harris가 Palmgren의 1924년 피로한계 개념을 되살려 Lundberg–Palmgren 식에 적용했고, 이것이 ISO 표준의 수명 수정계수로 들어갔다. 그런데 베어링강에 정말 피로한계가 존재하는지, 존재한다면 그 값이 얼마인지가 확인되지 않은 채였다.',
+ gp:'경도 58 HRC 이상 베어링강의 통상적 S–N 데이터에 대해, 확률적 응력-수명 관점에서 피로한계 경향을 언급한 전문가가 없었다. 회전굽힘 및 기가사이클 영역 시험에서도 베어링강은 피로한계를 보이지 않았다.',
+ me:'JIS SUJ2 / AISI 52100 (58–62 HRC) 시편으로 0.5, 0.63, 0.76, 0.80, 0.95, 1.0 GPa 여섯 전단응력 진폭에서 총 150회의 교번 비틀림 시험을 수행하고, 3-파라미터 Weibull·대수정규 등 분포함수로 통계 처리했다.',
+ re:'<strong>관측 가능한 피로한계는 없다.</strong> log-log 상에서 수명은 전단응력의 −10.34승에 비례하는 직선이다. 파손은 표면의 켤레 인장·압축 교번응력에 의한 것이었고 개시점에 fisheye나 비금속 개재물은 관찰되지 않았다.',
+ lg:'피로한계가 없다면 현행 ISO 표준을 재검토해야 하며, 그렇지 않으면 베어링을 과소 설계하거나 수명을 과대 예측할 위험이 있다고 경고했다.',
+ r11:'2011 모델의 Wöhler 상수 A·B의 재료 데이터 출처. 주의: 이 논문의 “A = 10.34”는 응력-수명 지수이지 2011 식의 기울기 상수 A가 아니다. 2011의 A·B는 이 데이터 위에 적합시킨 값으로 보아야 한다.',
+ eq:'2011 모델:  σ_f = A·ln(N) + B  →  1 = max_t{ τ̂ / [A/√3·ln N + B/√3 − α·p̂] }',
+ ev:'근거: 원문 Introduction · Summary 1–3항. 2011 원문 Eq.[10]·[11]. Palmgren 1924를 ref (1)로 인용.', ci:['pal']},
+
+{id:'bai',l:4,y:2010,dy:52,lab:'Baietto 10',t:'(36) Baietto, M. C., Pierres, E. & Gravouil, A. (2010)',v:'A Multi-Model X-FEM Strategy Dedicated to Frictional Crack Growth under Cyclic Fretting Fatigue Loadings · Int. J. Solids Struct. 47',tier:'B',src:1,
+ pr:'프레팅은 오래전부터 마모와 조기 피로 파손의 원인으로 인식되어 왔고, 균열이 매우 이른 단계에 발생해 부품 수명의 대부분이 균열 성장 구간이다. 접촉역학·피로·마모가 얽힌 다분야 문제이며, 미터에서 마이크로미터까지 걸치는 강한 다중스케일 문제다.',
+ gp:'분포 전위 기법은 균열 계면의 접촉·마찰을 다룰 수 있으나 선형탄성 파괴역학과 2D 가정에 묶여 국소 스케일에 한정된다. 유한요소법은 구조 전체 스케일을 잡지만 국소 정확도가 떨어지고, 균열 성장 시뮬레이션은 재메싱 때문에 계산·메모리 비용이 감당하기 어렵다.',
+ me:'반해석 2체 접촉 해석으로 계면의 압력과 순환 트랙션을 정확히 얻고, 이를 입력으로 Dang Van 기준을 적용해 균열 발생 위치와 경사각을 정한다. 그 뒤 X-FEM/LATIN 모델로 균열면 사이의 마찰 접촉까지 포함해 균열 성장을 시뮬레이션한다.',
+ re:'반해석 참조 모델과 비교·검증했고, 넓은 프레팅 하중 범위와 균열면 마찰계수 범위에서 접근법의 강건성을 보였다. 비비례 다축 피로에 맞는 기준으로 균열 성장 방향을 정확히 예측했다.',
+ lg:'2D 가정과 균열면 마찰계수·벌크 응력의 영향에 대한 파라메트릭 이해에 머물러, 3D 확장이 후속 과제로 남았다.',
+ r11:'2011 논문이 Fouvry와 나란히 인용하는, Dang Van 기준의 성공 사례. 압축 잔류응력이 없는 조건에서는 이 기준이 잘 작동한다는 근거로 쓰인다. Ruiz 기준이 균열 위치만 주는 데 반해 Dang Van은 방향까지 준다는 점도 이 논문이 명시한다.',
+ eq:'',
+ ev:'근거: 원문 Abstract · §1 Introduction · §2.2 Crack risk assessment. 본문에서 “Dang Van’s criterion (1993)”을 명시적으로 인용.', ci:['dv93']},
+
+/* ── 6 마모 M5 ──────────────────────────────── */
+{id:'arc',l:5,y:1953,dy:0,lab:'Archard 53',t:'(17) Archard, J. F. (1953)',v:'Contact and Rubbing of Flat Surfaces · J. Appl. Phys. 24(8)',tier:'A',src:1,
+ pr:'명목상 평평한 두 면이 접촉할 때 실제 접촉면적은 겉보기 면적의 극히 일부이며, 그것이 몇 개의 면적으로 어떻게 분포하는지에 따라 접촉저항·국부온도·마모가 달라진다. 그런데 이 분포에 관한 직접적 실험 증거가 거의 없어 대부분의 실험이 단일 접촉 형상으로 대체되고 있었다.',
+ gp:'Holm, Burwell & Strang, Rabinowicz & Tabor는 모두 “하중이 늘어도 개별 접촉면적의 평균 크기는 일정하고 개수만 늘어난다”는 가정에 의존했다. Archard는 이 가정을 두면 어떤 마모 메커니즘을 상정하든 마모가 자동으로 하중에 비례하게 되므로, 그런 이론은 메커니즘 규명에 아무 정보도 주지 못한다고 지적한다.',
+ me:'하중이 늘면 접촉면의 개수와 크기가 동시에 증가하는 다중 접촉 모델을 세우고, 접촉 지속거리·입자 형상·마모입자 생성 확률이라는 가정을 더해 마모율 식을 유도했다. 실험은 pin-and-ring 기계로 brass·stellite 핀을 공구강 링에 대해 공기 중에서 시험했다.',
+ re:'소성변형과 덩어리 제거의 조합에서 W = K·P/(3·p_m)을 얻었다. 하중 비례성의 논증은 무모델적이다 — 반경 a인 접촉의 마모체적은 a³, 유효 미끄럼거리는 a에 비례하므로 단위 거리당 기여는 a², 그런데 그 접촉이 지지하는 하중도 a²다. 따라서 마모율은 겉보기 면적과 무관하고 표면을 어떤 모델로 표현하든 하중에 비례한다. 실측 기울기는 1.00과 0.98이었다.',
+ lg:'K를 “재료조합과 조건에 특유한 확률인자”로 규정했을 뿐 독립적으로 예측할 수단은 주지 못했고, 마모시험 없이는 정해지지 않는 상수로 남겼다. 윤활 시 K가 어떻게 변하는지도 후속 과제로 남았다.',
+ r11:'2011 모델의 마모 항의 원형. “Archard 마모 모델이 피로된 층을 표면에서 제거한다”는 구조로 들어가, 매 사이클 조도 높이를 깎으며 Dang Van 피로와 경쟁한다.',
+ eq:'W = K·P / (3·p_m)   [원문 OCR은 분모가 3a로 손상 — Table IV 이론값 역산으로 3·p_m 확인]',
+ ev:'근거: 원문 Abstract · §II.3 · §III.1–III.3 · Table IV·V. 주의: §III.3의 “10² or 10³”은 윤활제 존재 시 마모 감소 배수이며 마찰비와 무관하다(과거 오인용 정정).', ci:[]},
+
+{id:'wil',l:5,y:1999,dy:0,lab:'Williams 99',t:'(37) Williams, J. A. (1999)',v:'Wear Modelling: Analytical, Computational and Mapping — A Continuum Mechanics Approach · Wear 225–227',tier:'B',src:1,
+ pr:'마모 문헌에는 집계된 것만 200개에 가까운 마모 방정식이 있어 실무자는 정보가 부족한 게 아니라 오히려 과잉이다. 그럼에도 두 접촉면의 물성을 모두 안다 해도 트라이볼로지 성능을 확신을 갖고 예측할 방법은 없다. 재료별 마모 맵을 그려 운전조건별 지배 메커니즘을 확정하고 그것을 이론으로 뒷받침하는 것이 과제다.',
+ gp:'GPa 수준의 국부 압축응력장이라는 접촉 특유의 환경을 통상 시험으로 재현하기 어려워 역학 모델에 넣을 재료 데이터가 빈약하다. Suh의 층상박리 이론은 균열면이 큰 압축을 받는 모순이 있고, Lim & Ashby류 맵은 경험적 관측에 기반해 있어 이론만으로 맵을 구성하는 것이 남은 과제라고 스스로 밝힌다.',
+ me:'Archard 식을 공통 출발점으로 삼아 심한 연삭마모와 윤활된 경마모라는 두 극단을 연속체역학으로 모델링한다. 연삭 측은 돌기의 upper-bound 해석과 slip-line field로, 경마모 측은 반복하중에 대한 shakedown 이론과 반복접촉용 소성지수로 마모계수를 계산한다.',
+ re:'Archard의 K를 마모 맵의 등고선으로 재해석했다. 건식 pin-on-disc에서 K는 1.3×10⁻⁷에서 7×10⁻³까지 4자릿수에 걸쳐 변하는데 마찰계수는 0.18~0.8의 좁은 범위여서, 마찰과 마모 사이에 단순 상관이 없음을 보였다. 2체 연삭 0.005~0.05, 경계윤활 실은 약 10⁻⁹, 매끄럽고 잘 윤활된 면은 10⁻⁷~10⁻⁸ 수준이다. 소성지수가 1.0에서 3.5로 변하면 K가 수 자릿수 변동한다.',
+ lg:'정량 모델은 맵의 제한된 영역에만 유효하고 재료별로 특정되며, 필요한 상수가 마모시험 자체로만 정해지는 자기참조적 성격을 벗지 못한다고 결론에서 인정했다.',
+ r11:'2011 모델의 마모계수 범위의 문헌적 근거. k_dry ≈ f_w·k_lub 로 두고 k_lub를 1×10⁻¹¹ ~ 5×10⁻¹⁰ 범위에서 잡을 때 “문헌과 잘 일치한다”는 근거로 인용된다. 다만 이 범위 자체는 Williams 본문 수치보다 1~2자릿수 낮아 직접 전재가 아닌 외삽으로 보인다 [독립대조불가].',
+ eq:'w = K·P·s/H ;  반복접촉 소성지수 ψ_s = (E*/p_s)·√(σ/R)  →  K = K(ψ_s)',
+ ev:'근거: 원문 §1.1(Table 2 건식 K값) · §1.2(실 10⁻⁹) · §2.1(연삭 K) · §2.2.2(잘 윤활된 면 10⁻⁷~10⁻⁸) · §3.1(Fig.11) · Conclusions. 참고문헌 [2] = Archard 1953.', ci:['arc']},
+
+{id:'lo07',l:5,y:2007,dy:0,lab:'Lainé–Olver 07',t:'(10) Lainé, E. & Olver, A. V. (2007)',v:'The Effect of Anti-Wear Additives on Fatigue Damage · 62nd STLE Annual Meeting (확장초록)',tier:'D',src:0,
+ pr:'미확인.', gp:'미확인.', me:'미확인.',
+ re:'미확인 — 원문 미확보(확장초록).',
+ lg:'마이크로피팅을 “마모와 경쟁하는 현상”으로 기술하는 관점을 제시했다. 마모가 표면의 길들이기를 바꾸거나 피로된 재료층을 걷어내어 표면이 마이크로피팅에 덜 취약해진다는 것.',
+ r11:'두 가지 역할을 한다. 첫째, 2011 모델이 채택한 마모–피로 경쟁 메커니즘의 개념적 출처이며 논문은 이를 “미끄럼·첨가제·길들이기의 역할을 이해하는 열쇠”라 평가한다. 둘째, 마모 모델의 일반형 표기를 이 문헌에서 인용한다.',
+ eq:'Archard 마모 모델의 일반형 (2011 논문이 이 문헌 형식으로 인용)',
+ ev:'근거: 2011 원문 서론 및 마모 모델 절 — “The mild wear model is a relatively simple classical Archard model, which in its general form (Lainé and Olver (10)) can be …”.', ci:[]},
+
+/* ── 7 실험·벤치마크 ────────────────────────── */
+{id:'web',l:6,y:1995,dy:0,lab:'Webster 95',t:'(39) Webster, M. N. & Norbart, C. J. J. (1995)',v:'An Experimental Investigation of Micropitting Using a Roller Disk Machine · Trib. Trans. 38',tier:'C',src:1,
+ pr:'미확인 — 원문 MD는 확보되어 있으나 이번 작업에서 정독하지 않았다.',
+ gp:'미확인.',
+ me:'롤러 디스크 시험기를 이용한 마이크로피팅 실험. 상세 미확인.',
+ re:'미확인. 2011 논문에 따르면, 종방향 조도를 가진 적어도 한 사례에서 미끄럼을 크게 늘려도 마이크로피팅이 실질적으로 증가하지 않았다.',
+ lg:'미확인.',
+ r11:'2011 논문이 두 방향으로 인용한다. 하나는 “미끄럼이 늘면 마이크로피팅이 는다”는 통념 진영의 대표 문헌으로, 다른 하나는 그 통념의 반례를 이 문헌 자신이 이미 보고했다는 근거로. 미끄럼 방향의 영향을 논한 문헌으로도 인용된다.',
+ eq:'',
+ ev:'근거: 2011 원문 결과 절 — “Webster and Norbart (39) showed at least one case with longitudinal roughness in which the increase of sliding was not followed by a substantial increase of micropitting.” 원문 MD 파일명이 2008년으로 잘못 붙어 있으나 실제 서지는 Trib. Trans. 38 (1995).', ci:[]},
+
+{id:'kim',l:6,y:1998,dy:26,lab:'Kim–Olver 98',t:'(38) Kim, T. H. & Olver, A. V. (1998)',v:'Stress History in Rolling–Sliding Contact of Rough Surfaces · Trib. Int. 31(12)',tier:'C',src:1,
+ pr:'구름접촉 피로수명 모델은 응력항을 약 10승으로 올려 쓰므로 응력을 정확히 알아야 하는데, 실제 접촉은 이상적 Hertz와 크게 다르다. 강재 품질이 좋아지면서 파손 기점이 내부에서 표면으로 이동했고, 거칠기와 마찰이 만드는 표면 근방 응력이 지배적이 되었다. 특히 미끄럼이 거친 표면에서 수명을 유독 크게 떨어뜨리는 이유가 설명되지 않았다.',
+ gp:'Smith & Liu의 매끈면 응력해, Webster & Sayles의 거친면 압력해, Bailey & Sayles의 응력장 해석은 모두 한 순간의 응력 분포만 제시했다. 저자들은 피로가 응력 이력의 문제인데 거친면 접촉의 시간에 따른 응력 이력이 규명된 적이 없다고 지목한다. 또 마찰계수는 미끄럼이 수 %를 넘으면 오히려 감소하는데 수명은 계속 급락하는 모순이 설명되지 않았다.',
+ me:'유막을 제외한 건접촉 2D 탄성 선접촉 모델로 실제 거친 프로파일의 압력을 구하고 이를 표면하 응력장에 입력했다. 유막이 있으면 거칠기 유발 압력이 낮아지므로 가장 가혹한 조건으로 한정했다고 명시한다. 손상 지표는 직교전단응력에 정수압 항을 더한 Dang Van형 수정 기준이다.',
+ re:'표면 근방 응력이 등가 매끈 접촉의 수 배에 달하며 깊이에 따라 급격히 감쇠한다. 결정적으로, <strong>시편 자신의 거칠기는 정지한 응력 집중을 만드는 반면 상대면의 거칠기는 이동하는 응력장을 만들어</strong> 접촉 1회 통과 동안 각 표면요소가 겪는 응력 사이클 수를 크게 늘린다. 미끄럼이 클수록 응력 궤적 수와 쓸고 지나가는 범위가 늘어난다.',
+ lg:'건접촉 가정을 벗고 혼합윤활 압력으로 같은 응력 이력을 계산하는 일, 그리고 이 이력을 정량적 수명 예측으로 연결하는 일을 후속에 남겼다.',
+ r11:'2011 모델이 전제하는 “거칠기가 표면 근방에 국소 과응력과 다중 사이클을 만든다”는 물리를 1998년에 응력 이력 관점에서 규명한 개념적 선행. 다만 윤활 모델이 없고, 압력 리플이 평균 구름속도로 이동한다는 미소 EHL 관점과 대비된다.',
+ eq:'σ_crit = τ_zx ± 0.3 σ_H   (Dang Van형 수정 전단응력 기준)',
+ ev:'근거: 원문 Abstract · Introduction and background · Stress distribution · Description of model · Conclusion. 참고문헌 8 = GW–ME 1994.', ci:['gwm']},
+
+{id:'oil',l:6,y:2005,dy:-26,lab:'Oila–Bull 05',t:'(7) Oila, A. & Bull, S. J. (2005)',v:'Assessment of the Factors Influencing Micropitting in Rolling/Sliding Contacts · Wear 258',tier:'C',src:1,
+ pr:'마이크로피팅은 침탄 기어강의 주요 파손 기구지만 균열 발생·전파의 상세 기구가 알려져 있지 않고, 100만 사이클 미만의 짧은 운전 후에도 교체가 필요할 만큼 피해가 크다. 영향 인자가 너무 많아 “무엇이 주된 기여 인자인가”가 미해결로 남아 있었다.',
+ gp:'영향 인자를 평가할 공인된 통일 방법이 없었고, 선행 문헌이 상충했다 — 황·인계 첨가제가 마이크로피팅을 막는다는 주장과 조장한다는 주장이 병존했다. 연구자들이 각자 전공 분야의 인자만 강조하는 편향도 문제였다. 기어에서의 마르텐사이트 분해가 손상에 기여하는지는 거의 주목받지 못했다.',
+ me:'2-디스크 시험기로 기어 치면 접촉을 모사하고 재질·표면 결·하중·윤활유·온도·속도·미끄럼비 7인자를 부분요인 설계로 배치했다. 일정 사이클마다 시험을 중단해 표면과 단면 금속조직을 관찰하고 다중회귀로 분석했다.',
+ re:'<strong>개시는 접촉압력이 지배</strong>하며, 고압에서는 개시 사이클수가 다른 인자와 거의 무관해져 하중 임계값의 존재를 시사한다. <strong>진전율은 속도와 미끄럼–구름비가 지배</strong>해 둘이 커지면 진전이 빨라지고 다른 인자로 억제하기 어렵다. 상변태는 재질에 가장 강하게 의존해, 마르텐사이트 분해가 심한 강에서 진전율이 높았다.',
+ lg:'억제책으로 조도 저감·마찰 트랙션 저감·열적으로 안정한 표면을 제시했으나 각 방안의 정량적 효과와 첨가제 패키지별 상반된 성능은 미해결로 남겼다.',
+ r11:'2011 모델이 예측해야 할 현상의 방향성을 통계적으로 확정해 준 검증 근거. 압력이 개시를, 미끄럼과 속도가 진전을 지배한다는 분리는 모델이 응력 이력과 미끄럼으로 피로·마모를 나눠 계산하는 구조와 대응한다.',
+ eq:'',
+ ev:'근거: 원문 Abstract · §1 · §2 Experimental · §4 Discussion · Conclusions 1–4. 참고문헌 30 = Way 1935, 34 = Webster & Norbart 1995.', ci:['way','web']},
+
+{id:'ued',l:6,y:2005,dy:52,lab:'Ueda 05',t:'(40) Ueda, T., Ueda, K. & Mitamura, N. (2005)',v:'Unique Fatigue Failure of Spherical Roller Bearings and Life-Enhancing Measures · World Tribology Congress',tier:'D',src:0,
+ pr:'미확인.', gp:'미확인.', me:'미확인.',
+ re:'구면 롤러 베어링 특유의 피로 파손과 수명 향상책을 다룬다. 상세 미확인.',
+ lg:'미확인 — 원문 미확보.',
+ r11:'2011 논문이 미끄럼이 마이크로피팅에 미치는 영향에 최근 관심이 다시 쏠린 사례로 Webster·Kotzalas와 함께 인용하고, 그 통념을 자기 모델로 반박한다.',
+ eq:'', ev:'근거: 2011 원문 결과 절 — “the effect of sliding on micropitting has received renewed interest (e.g., Webster and Norbart (39); Ueda, et al. (40); and Kotzalas and Doll (41)).”', ci:[]},
+
+{id:'la08',l:6,y:2008,dy:-52,lab:'Lainé 08',t:'(11) Lainé, E., Olver, A. V. & Beveridge, T. A. (2008)',v:'Effect of Lubricants on Micropitting and Wear · Trib. Int. 41',tier:'C',src:1,
+ pr:'마이크로피팅 연구가 실험 갈래와 이론 갈래로 나뉘어 있었고, 첨가제 특히 내마모제가 마이크로피팅을 악화시킨다는 관찰은 있었으나 그 기구가 불명확했다. 실기 변속기 오일에 필수인 ZDDP의 사용과 마이크로피팅 저항성이 상충하는 실무적 딜레마가 배경이다.',
+ gp:'선행 실험들은 조도·하중·경도·미끄럼·속도·온도가 인자임을 밝혔지만 첨가제가 왜 마이크로피팅을 조장하는지 설명하지 못했다. 이론 연구들은 국소 압력·트랙션을 다뤘을 뿐 첨가제 화학과 연결되지 않았고, 같은 윤활유로 마이크로피팅과 경계 마모를 교차 비교한 사례가 없었다.',
+ me:'3-접촉 디스크 시험기로 조도가 정밀 제어된 링과 침탄강 롤러를 미끄럼–구름비 5.2%에서 시험하며 시간별로 조도와 직경 감소를 측정했다. 기유와 ZDDP 농도를 독립 변수로 두고, 같은 윤활유를 왕복동 리그로 경계윤활 마모도 평가했다.',
+ re:'ZDDP가 들어간 모든 시험에서 마이크로피팅이 발생했고 낮은 농도에서도 유의한 침식이 일어났다. 지배 인자는 막두께/링 조도 비 λ′로, λ′ = 0.12에서는 심한 마모를 동반한 마이크로피팅이, λ′ ≥ 0.16에서는 미세 피트는 남되 유의한 마모가 없었다. 그리고 디스크 시험의 마이크로피팅 손상과 왕복동 시험의 경미 마모가 거의 <strong>역상관</strong>이었다 — 내마모 첨가제가 거친 표면의 길들이기 마모를 막기 때문이다.',
+ lg:'“마모(길들이기)와 마이크로피팅의 트레이드오프”라는 프레임을 남겨, 내마모 성능을 지키면서 마이크로피팅을 억제하는 첨가제 조합 탐색을 후속 과제로 만들었다.',
+ r11:'2011 모델의 핵심 구성인 마모–피로 경쟁을 실험으로 직접 보여준 검증 근거. 첨가제가 마모를 억제해 조도가 유지되면 피로 손상이 커진다는 인과가 모델의 결합 항을 정당화한다.',
+ eq:'λ′ = h₀ / R_a,ring  ;  임계 λ′ ≈ 0.12 (심한 마모) vs λ′ ≥ 0.16 (마모 미미)',
+ ev:'근거: 원문 Abstract · Introduction · §2.1 Test rig · §3 · Table 1 · Conclusions. 참고문헌 1 = Webster & Norbart 1995, 4 = Way 1935, 21 = Hooke 2006.', ci:['way','web','h06']},
+
+{id:'la09',l:6,y:2009,dy:26,lab:'Lainé 09',t:'(12) Lainé, E., Olver, A. V., Lekstrom, M. F., Shollock, B. A., Beveridge, T. A. & Hua, D. Y. (2009)',v:'The Effect of a Friction Modifier Additive on Micropitting · Trib. Trans. 52',tier:'C',src:1,
+ pr:'내마모 첨가제는 기어유에 사실상 필수지만 낮은 Λ 조건에서 마이크로피팅을 악화시킨다 — 기유에서 일어나는 점진적 표면 평활화를 억제하기 때문이다. ZDDP 트라이보필름은 두께가 ~100 nm에 불과해 손상 깊이의 1/1000이므로 마이크로피팅을 막지 못한다. 마모·스커핑 보호는 유지하면서 마이크로피팅 저항성을 회복시키는 조합이 필요했다.',
+ gp:'MoDTC는 ZDDP와의 조합으로 널리 쓰이는 대표적 마찰조정제지만, 그 마이크로피팅에 대한 효과가 문헌에 기술된 바 없다고 명시한다. 선행 첨가제 연구는 내마모제가 유해하다는 수준에 머물렀고, 윤활유 효과 중 막두께를 바꾸는 요인과 화학적 요인을 분리해 평가한 설계가 부족했다.',
+ me:'3-접촉 디스크 시험기에서 카운터디스크 조도를 맞추고, 헤르츠압 1.71 GPa·미끄럼비 0.052·70 °C에서 기유, 기유+ZDDP, 기유+ZDDP+MoDTC 세 조건을 비교했다. 열효과에 의한 막두께 차이를 무시할 수 있도록 낮은 미끄럼비를 택했고, 표면막은 SEM/EDX/XPS와 TEM으로 분석했다.',
+ re:'ZDDP 단독은 지속적인 심한 손상을 낳은 반면 ZDDP+MoDTC는 초기 마이크로피팅이 운전을 계속하면서 점차 소멸했다. 이 개선은 조도 변화나 막두께로 설명되지 않았다 — 원인은 마찰이었다. MoS₂가 조도 정상부에 석출되어 경계 마찰계수를 약 2/3로 낮췄고, 돌기 주변 최대 인장응력이 마찰계수에 비례하므로 균열 개구가 줄어 전파 임계 균열크기가 크게 늘어난다.',
+ lg:'마모/조도 경로가 아니라 “돌기 마찰 → 국소 인장응력 → 균열 전파” 경로로 마이크로피팅을 제어할 수 있음을 제시하고, 마찰이 극히 낮을 때 미소 EHL 자체가 바뀔 가능성을 열린 과제로 남겼다.',
+ r11:'2011 모델에서 마찰계수와 표면 트랙션 입력이 표면개시 피로 예측을 좌우한다는 점의 실험적 근거. 조도와 막두께를 고정한 채 마찰만 낮춰 손상이 사라짐을 보여, 트랙션을 통해 표면 응력을 계산하는 구조가 옳음을 뒷받침한다.',
+ eq:'돌기 인장응력 ∝ 미끄럼 마찰계수 ;  p₀ = 1.71 GPa, SRR = 0.052, h ≈ 61–67 nm',
+ ev:'근거: 원문 Abstract · Introduction · Background · Experimental details · Discussion · Conclusions. 참고문헌 (3) = Olver 2005, (12) = Lainé 2008.', ci:['olv','la08']},
+
+{id:'br1',l:6,y:2010,dy:0,lab:'Brandão 10-I',t:'(8) Brandão, J. A., Seabra, J. H. O. & Castro, J. (2010)',v:'Surface Initiated Tooth Flank Damage, Part I: Numerical Model · Wear 268',tier:'C',src:1,
+ pr:'재료·표면처리·오일 개선으로 내부기점 스폴링은 줄어든 대신 표면기점 피로손상이 기어 수명을 결정하게 되었다. 이 균열은 전파시간이 매우 짧아 전체 수명이 사실상 개시 시간과 같으므로 개시 모델이 유용하다. 손상이 표면 아래 수십 µm 이내에서 일어나므로 치면 거칠기 상호작용이 만드는 응력 교란을 무시할 수 없다.',
+ gp:'기존 기어 손상 평가는 거칠기 상호작용으로 인한 표면 근방 응력 교란을 다루지 못했고, 이를 보려면 혼합윤활 접촉 문제를 풀어야 한다고 지목한다. 또한 복잡·비비례 하중이력에 적합한 피로 개시 판정기준이 기어 치면 해석에 결합된 적이 없었다.',
+ me:'혼합막 윤활 모델로 하중을 유막 분담분과 직접접촉 분담분으로 나누어 압력과 접선응력을 합성하고, 탄성 셰이크다운으로 안정화된 메조스코픽 잔류응력을 구한 뒤 Dang Van 기준을 하중이력 전 순간에 대해 검사한다. 스퍼기어 물림 전 과정을 시뮬레이션한다.',
+ re:'가장 불리한 응력 상태가 접촉 영역 내부가 아니라 <strong>접촉 바깥</strong>에서 발생한다. 접촉 중의 큰 정수압 압축은 지속적 이득이 없고 오히려 메조스코픽 최대 전단변형을 키워 해로우며, 실제로 유익한 압축은 열처리·연삭에 의한 초기 잔류응력뿐이다. 모델은 피치선 위·아래에서 관찰되는 균열의 특징적 방향성도 예측해냈다.',
+ lg:'개시까지만 다루므로 균열 전파·질량손실로 연결하는 모델이 필요했고, 재료 피로상수와 경계 마찰계수의 불확실성 해소를 숙제로 남겼다.',
+ r11:'2011 SKF와 동일한 조합(혼합윤활 접촉해 + 다축피로 판정)을 독립적으로 구성한 평행 진영. 다만 윤활해가 미소 EHL 반해석 리플 이론이 아니라 하중분담 기반 혼합막 모델이고, 판정도 수명 적산이 아니라 셰이크다운 기준의 이진적 개시 판정이다.',
+ eq:'β_eq = max_t(τ_max + α_DV·p_H) ≤ β_DV ;  Λ = h₀/R_q',
+ ev:'근거: 원문 Abstract · §1 · §2.1.1–2.1.2 · §2.2.2 Eq.30–32 · Conclusion. 참고문헌 [3][4] = Oila & Bull, [17] = Dang Van 1989, [22] = Desimone 2006.', ci:['oil','dv89','des']},
+
+{id:'br2',l:6,y:2010,dy:78,lab:'Brandão 10-II',t:'(9) Brandão, J. A., Seabra, J. H. O. & Castro, J. (2010)',v:'Surface Initiated Tooth Flank Damage, Part II: Prediction of Micropitting Initiation and Mass Loss · Wear 268',tier:'C',src:1,
+ pr:'Part I의 개시 모델이 실제 기어에서 통하는지 검증이 필요했다. 마이크로피팅은 폭·깊이 약 10 µm의 미세 피트로 즉각 파괴적이지는 않지만 소음·기하정밀도 저하와 효율 손실을 부르고, 극단적으로는 심부 균열이나 표면층 박리로 이어진다.',
+ gp:'유사한 접근을 한 선행 연구가 수치 결과를 실제 시험과 대조하는 데까지 가지 않았다고 지적한다. 더 근본적으로 Part I은 순수 개시 모델이라 균열 전파나 재료 제거량에 대해 아무 말도 하지 못하며, 마이크로피팅 특유의 메커니즘을 내장하고 있지도 않아 피팅과 마모가 결과에 섞인다는 한계를 스스로 지목한다.',
+ me:'Part I의 접촉·판정 모델에 근사 균열전파 모델을 덧댄다. Dang Van 위반점들이 고립되지 않고 패치로 뭉치는 성질을 이용해, 균열이 미끄럼 하류 표면에서 시작해 패치 경계를 따라 전파하여 패치가 통째로 떨어져 나간다고 가정하고, 그 패치를 Oila & Bull이 보고한 소성변형역에 대응시켜 질량손실로 환산한다.',
+ re:'예측 질량손실이 실측과 매우 잘 맞았다. 예측 곡선의 위치는 재료 피로상수에 강하게 좌우되나 모든 케이스의 곡선이 실측과 거의 평행해, Dang Van 피로개시 면적과 마이크로피팅·경미 마모의 질량손실 사이에 직접적 상관이 있음을 시사했다. 예측된 균열 경사각도 일반적 관찰과 일치했다.',
+ lg:'정량적 검증을 위해서는 마이크로피팅만을 겨냥한 전용 실험군이 필요하며, 임시방편적 패치–경계 전파 가정을 대체할 제대로 된 균열전파 모델이 여전히 없다는 점을 숙제로 남겼다.',
+ r11:'2011 모델과 동일한 출력(질량손실·조도 변화·손상 위치)을 실제 기어 시험으로 검증한 경쟁 진영의 대조군. 다만 여기서는 Dang Van 위반 패치의 면적을 곧바로 제거 질량으로 환산하며, 마모를 별도 Archard 항으로 걸지 않는다.',
+ eq:'m_DV = Z₁ · A_DV · b · ρ_steel',
+ ev:'근거: 원문 Abstract · §1 · §3 · §3.1 · §3.2 Eq.4 · Conclusion. 참고문헌 [1] = Part I.', ci:['br1']},
+
+/* ── 통합과 수렴 ────────────────────────────── */
+{id:'skf',l:2.6,y:2010,dy:0,lab:'SKF 통합 10',t:'(21) Morales-Espejel, G. E., Wemekamp, A. W. & Félix-Quiñonez, A. (2010)',v:'Micro-Geometry Effects on the Sliding Friction Transition in EHL · Proc. IMechE Part J 224',tier:'A',src:1,big:1,
+ pr:'EHL 접촉의 마찰 예측은 유변학·경계막 화학·표면 형상 세 가지 때문에 어렵고, 특히 경계윤활에서 완전유막으로 넘어가는 전이영역에서 형상의 영향이 가장 크다. 결정론적 실측 마이크로지오메트리가 이 전이영역의 하중분담과 마찰에 미치는 영향을 실용적 시간 안에 계산할 방법이 필요했다.',
+ gp:'Johnson·Greenwood·Poon 이래의 하중분담 아이디어는 확률적이라 실측 형상의 차이를 구분하지 못한다. 결정론적 혼합윤활 모델들은 완전 수치계산이 비싸다는 한계가 있다. Reynolds 식으로는 원리적으로 유막 파단과 실제 건식 접촉 패치를 예측할 수 없음을 저자 스스로 명시하며 목표를 “공학적 근사”로 한정한다.',
+ me:'세 모듈을 하나로 통합한다. 건접촉은 Kalker 변분원리 → Stanley & Kato FFT를 3D로 확장하고 Tian & Bhushan 방식으로 완전소성을 도입하며, 탄성변위는 Johnson 등의 이중정현 해에서 얻은 주파수응답 행렬로 계산한다. 윤활은 Greenwood–Morales-Espejel의 특수해/상보파 구조를 Hooke 계열의 비뉴턴 스킴으로 갱신한다. 하중분담은 주파수영역에서 건식·윤활 간극의 절댓값 최대로 전이 간극을 만들고 유량 균형으로 수렴시킨다.',
+ re:'순수 구름 결함 사례에서 변형 형상과 압력 리플이 측정·수치해와 잘 일치했고, 볼-온-디스크로 10개 실측 표면의 Stribeck 곡선을 측정해 하중분담으로 환산·비교했다. 184×120점 표면의 트랙션 곡선 하나가 PC에서 약 2분이면 계산된다.',
+ lg:'저자 스스로 “공학적 스킴”이라 부르며 부분윤활의 물리(유막 파단, 미세유동, 표면에너지)는 다루지 않았고, 열효과를 미포함으로 남겼다. 그리고 결정적으로 — <strong>얻어진 압력·하중분담을 손상으로 잇는 단계가 비어 있었다.</strong>',
+ r11:'2011 논문의 최우선 선행연구이자 부분윤활 계산 코어 전체(M1 건접촉 + M2 상보파 + M6 하중분담)를 그대로 제공한다. 2011은 여기에 표면하 응력장·Dang Van 피로·Archard 마모를 얹어 손상 예측을 완성한다.',
+ eq:'μ = φ_bl·μ_bl + (1−φ_bl)·μ_ehl ;  h_tran = IFFT{max(|h̃_dry|, |h̃_lub|)}',
+ ev:'근거: 원문 Abstract · §1 · §2 Dry contact model · §3 Lubrication model · §4.2 Load sharing · §5 Results · Conclusions. 목록 내 11편을 인용 — 접촉·EHL·응력 세 계열 전체.',
+ ci:['meb','stk','jgp','kal','tia','j85','h06','h07','gwm','ehr','vlu']},
+
+{id:'p11',l:3,y:2011,fx:1300,dy:0,lab:'',t:'Morales-Espejel, G. E. & Brizmer, V. (2011)',v:'Micropitting Modelling in Rolling–Sliding Contacts: Application to Rolling Bearings · Tribology Transactions',tier:'★',src:1,big:2,
+ pr:'구름–미끄럼 접촉의 마이크로피팅을 실제 베어링 조건에서 예측할 수 있는가. 마이크로피팅은 베어링에서 주된 파손 모드는 아니지만 압흔·표면개시 스폴링·소착 같은 다른 파손 모드를 촉진하거나 가속시킨다.',
+ gp:'선행 수치 연구 중 포르투 진영(Brandão 등)이 혼합윤활과 Dang Van 기준을 결합해 기어의 질량손실을 예측했고, Lainé와 Olver가 마이크로피팅이 경미 마모와 경쟁한다는 관점을 제시했다. 2011 논문은 이 상호작용이 미끄럼·첨가제·길들이기의 역할을 이해하는 열쇠라고 보고, 이를 정량 모델 안에 넣는 것을 과제로 삼는다.',
+ me:'부분윤활 코어(M1 건접촉 + M2 상보파 + M6 하중분담, 출처 (21))가 매 오버롤링의 압력·트랙션을 내놓고, 이를 표면하 응력장(M3)으로 변환한 뒤 Dang Van 기준(M4)으로 손상을 판정하고 Palmgren–Miner로 누적한다. 여기에 Archard 마모(M5)를 병렬로 걸어 매 사이클 조도를 깎고 손상 맵을 표면 쪽으로 이동시킨다. 여섯 서브모델이 시간루프로 결합된다.',
+ re:'피로와 마모가 경쟁하는 구조가 창발적 거동을 낳는다. 그리고 통념 하나를 뒤집는다 — 미끄럼이 늘면 마이크로피팅이 는다는 균열전파 기반 정설과 달리, 모델과 실험 모두 S ≈ 0.01에서 손상이 최대이고 그 이상에서는 오히려 감소함을 보인다. 이유는 두 가지다: 미끄럼이 늘면 마모가 피로층을 걷어내고, 마찰은 미끄럼에 비례해 늘지 않는다(건접촉은 Coulomb, EHL은 한계전단응력 근방).',
+ lg:'미끄럼 방향의 영향을 모델이 구분하지 못하는데 실험도 차이를 보이지 않아, 베어링 조건에서는 균열전파 메커니즘이 큰 역할을 하지 않으리라는 가설을 남겼다.',
+ r11:'—',
+ eq:'σ_f = A·ln(N) + B  →  1 = max_t{ τ̂(n⃗,t) / [A/√3·ln N + B/√3 − α·p̂(t)] } ;  Δh_w/Δn = k·p·u_s/H',
+ ev:'근거: 원문 서론 전문 · 피로 절 Eq.[10][11] · 마모 절 · 결과 절(미끄럼 효과). 참고문헌 41편 전체가 이 노드로 수렴한다.',
+ ci:[]}
+];
+
+/* ── 렌더 ── */
+const svg = document.getElementById('tree');
+const NS = 'http://www.w3.org/2000/svg';
+const el = (n,a={}) => {const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+const map = {}; N.forEach(n=>map[n.id]=n);
+const px = n => n.fx || X(n.y);
+const py = n => (n.l===2.6 ? (L[2].y+L[3].y)/2 : L[Math.round(n.l)].y) + (n.dy||0);
+
+// 배경: 레인 띠와 라벨
+const gBG = el('g'); svg.appendChild(gBG);
+L.forEach((ln,i)=>{
+  gBG.appendChild(el('line',{x1:140,y1:ln.y,x2:1380,y2:ln.y,class:'gridline'}));
+  const t1=el('text',{x:8,y:ln.y-3,class:'lanelab',fill:`var(${ln.c})`}); t1.textContent=ln.k; gBG.appendChild(t1);
+  const t2=el('text',{x:8,y:ln.y+11,class:'lanesub'}); t2.textContent=ln.s; gBG.appendChild(t2);
+});
+// 연도 눈금
+TICKS.forEach(y=>{
+  const x=X(y);
+  gBG.appendChild(el('line',{x1:x,y1:34,x2:x,y2:44,class:'gridline'}));
+  const t=el('text',{x:x,y:28,class:'axis','text-anchor':'middle'}); t.textContent=y; gBG.appendChild(t);
+});
+// 축 압축 표시
+const brk = el('text',{x:(X(1870)+X(1935))/2,y:806,class:'axis','text-anchor':'middle'});
+brk.textContent='← 1870–1935 구간은 압축 표시'; gBG.appendChild(brk);
+
+// 엣지
+const gE = el('g'); svg.appendChild(gE);
+const edges = [];
+N.forEach(n=>(n.ci||[]).forEach(src=>{
+  const a=map[src], b=n; if(!a) return;
+  const x1=px(a),y1=py(a),x2=px(b),y2=py(b);
+  const mx=(x1+x2)/2;
+  const p=el('path',{d:`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`,class:'edge'});
+  p.dataset.a=src; p.dataset.b=n.id; gE.appendChild(p); edges.push(p);
+}));
+// 2011 수렴: 각 레인 → 2011
+const P11=map['p11'], x11=px(P11), y11=py(P11);
+[0,1,2,3,4,5,6].forEach(i=>{
+  const y=L[i].y, x=1180;
+  const p=el('path',{d:`M${x},${y} C${x+60},${y} ${x11-60},${y11} ${x11-14},${y11}`,class:'edge'});
+  p.dataset.a='LANE'+i; p.dataset.b='p11'; gE.appendChild(p); edges.push(p);
+});
+
+// 노드
+const gN = el('g'); svg.appendChild(gN);
+N.forEach(n=>{
+  const g=el('g',{class:'node',tabindex:0,role:'button'}); g.dataset.id=n.id;
+  const col = n.l===2.6 ? 'var(--l3)' : (n.id==='p11' ? 'var(--accent)' : `var(${L[Math.round(n.l)].c})`);
+  const r = n.big===2 ? 15 : n.big ? 10 : 6;
+  g.appendChild(el('circle',{cx:px(n),cy:py(n),r:r,fill:n.src?col:'var(--bg)',stroke:col,'stroke-width':n.src?0:1.6}));
+  if(n.lab){
+    const t=el('text',{x:px(n),y:py(n)-(r+7),'text-anchor':'middle'}); t.textContent=n.lab; g.appendChild(t);
+  } else {
+    const t=el('text',{x:px(n),y:py(n)-24,'text-anchor':'middle','font-size':'12','font-weight':'700'});
+    t.textContent='2011 통합모델'; g.appendChild(t);
+    const t2=el('text',{x:px(n),y:py(n)+34,'text-anchor':'middle','font-size':'9.5'});
+    t2.textContent='Morales-Espejel & Brizmer'; g.appendChild(t2);
+  }
+  const ti=el('title'); ti.textContent=n.t; g.appendChild(ti);
+  gN.appendChild(g);
+});
+
+/* ── 상호작용 ── */
+const card=document.getElementById('card');
+let cur=null;
+const F=[['문제의식','pr'],['선행 한계','gp'],['방법론','me'],['핵심 결과','re'],['남긴 숙제','lg'],['2011에서의 역할','r11']];
+
+function open(id){
+  const n=map[id]; if(!n) return;
+  cur=id;
+  const col = n.id==='p11' ? 'var(--accent)' : (n.l===2.6?'var(--l3)':`var(${L[Math.round(n.l)].c})`);
+  let h=`<button class="close">닫기</button>`;
+  h+=`<p class="ct">${n.t}<span class="badge" style="color:${col}">Tier ${n.tier}</span></p>`;
+  h+=`<p class="cv">${n.v}</p>`;
+  if(!n.src) h+=`<div class="nosrc">원문 미확보 — 서지와 2011년 논문의 언급에서 확인되는 범위만 기재</div>`;
+  h+='<dl>';
+  F.forEach(([k,f])=>{ if(n[f] && n[f]!=='—') h+=`<dt>${k}</dt><dd>${n[f]}</dd>`; });
+  h+='</dl>';
+  if(n.eq) h+=`<div class="eq">${n.eq}</div>`;
+  if(n.ev) h+=`<div class="ev">${n.ev}</div>`;
+  card.innerHTML=h; card.classList.add('on');
+  card.querySelector('.close').onclick=close;
+
+  document.querySelectorAll('.node').forEach(g=>{
+    const rel = g.dataset.id===id || (n.ci||[]).includes(g.dataset.id) ||
+                (map[g.dataset.id].ci||[]).includes(id);
+    g.classList.toggle('dim',!rel); g.classList.toggle('sel',g.dataset.id===id);
+  });
+  edges.forEach(p=>{
+    const hot = p.dataset.a===id || p.dataset.b===id;
+    p.classList.toggle('hot',hot); p.classList.toggle('dim',!hot);
+  });
+  const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  card.scrollIntoView({block:'nearest',behavior:rm?'auto':'smooth'});
+}
+function close(){
+  cur=null; card.classList.remove('on');
+  document.querySelectorAll('.node').forEach(g=>g.classList.remove('dim','sel'));
+  edges.forEach(p=>p.classList.remove('hot','dim'));
+}
+gN.addEventListener('click',e=>{
+  const g=e.target.closest('.node'); if(!g) return;
+  g.dataset.id===cur ? close() : open(g.dataset.id);
+});
+gN.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' ') return;
+  const g=e.target.closest('.node'); if(!g) return;
+  e.preventDefault(); g.dataset.id===cur ? close() : open(g.dataset.id);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+</script>
