@@ -753,7 +753,236 @@ Phase 1 stub 의 `roller_approach(disp: &[f64; 3], ...)` 시그니처 (이미 3-
 - ✅ Level D 검증 문서화
 - ✅ Phase 5 (Life/Static Rating) 재활성화 시 사용할 `BearingResult` 인터페이스 안정
 
-진입 시점에 상세화. 핵심: ISO 16281 A.3.1 알고리즘, 3-DOF (δr, γx, γy), Level D 검증.
+---
+
+#### 4.12 다음 세션 재개 계획 — TRB 원본 참고 완전 재작성 (2026-08-19 WIP 후속)
+
+> **배경**: 2026-08-19 세션에서 Phase 4-A (bearing.rs 재작성) + 4-B (Smoke test) 착수했으나 3-DOF 통합 NR 이 수렴 실패 (`4c853a4` WIP commit).
+> 사용자 결정: TRB-main 원본 로직 참고하여 완전 재작성.
+
+##### 4.12.1 세션 재개 절차
+
+```powershell
+cd d:\AI\AI_Seminar_CRB
+git checkout phase-4          # WIP 브랜치로 이동
+git log --oneline -5          # 4c853a4 확인
+
+# TRB 원본 bearing.rs 재추출 (git 히스토리에서)
+git show 5441446:CRB-main/src-tauri/src/solver/bearing.rs `
+  > $env:TEMP\trb_bearing_original.rs
+# → 4113 라인, TRB 5-DOF NR 원본
+
+# 현재 CRB bearing.rs (WIP, 430 라인) 검토
+Get-Content CRB-main\src-tauri\src\solver\bearing.rs | Measure-Object -Line
+
+# TRB 원본 핵심 라인: 278 (initial_guess), 740 (solve_bearing_equilibrium),
+#                    92 (compute_residual), 17 (solve_3x3)
+```
+
+##### 4.12.2 현재 (2026-08-19 WIP) 실패 원인 진단
+
+| 관측 | 원인 | 대응 방향 |
+|------|------|---------|
+| Smoke: `pure_gravity` residual = **892 kN** (F_y=-1000 의 89% 미달) | NR 100 iter 후 stuck. 실제 필요 δ_y ≈ -100 μm 인데 initial guess -50 μm 에서 진행 못 함 | Phase 분리 방식 채택 시 iteration 수 줄어들며 자연스러운 수렴 |
+| Smoke: `pure_fx` δ_y = **-95 μm** (F_y=0 인데 non-zero) | 3-DOF 통합 NR 의 **γ_x DOF 가 F_y residual 로 잘못 흘러들어감** (Jacobian coupling) | γ_x 를 outer loop 로 분리 → radial 2-DOF NR 은 γ_x=0 조건에서 수행 |
+| Zero load 만 pass | initial guess = 0 이 정답이라 iteration 불필요 | — |
+
+**결정적 통찰**: `γ_x` 는 `M_x = Σ Q_j·(d_pw/2)·sin ψ_j` 만 지배. `F_y = Σ Q_j·sin ψ_j` 와 **sin ψ_j 공통** 이므로 3-DOF Jacobian 에서 δ_y 와 γ_x 열이 거의 linearly dependent → Jacobian 조건수 나쁨 → NR 발산.
+
+##### 4.12.3 TRB 원본 알고리즘 (참고 상세)
+
+**파일**: `git show 5441446:CRB-main/src-tauri/src/solver/bearing.rs` (4113 라인, 5-DOF)
+
+**핵심 구조**:
+
+| 함수 | 라인 | 역할 |
+|------|------|------|
+| `solve_3x3` | 17~55 | 3×3 linear solve (Cramer's rule) |
+| `compute_residual` | 92~240 | 5-DOF residual [Fx, Fy, Fa, Mx, My] |
+| `initial_guess` | 278~319 | k_radial = Z/2 · 500 · cos α 기반 (clamp ±50 μm) |
+| `compute_induced_thrust` | 332~349 | TRB 특유 axial 반력 (α ≠ 0) |
+| `solve_preload_displacement` | 620~730 | dz 초기값 target F_a 로부터 |
+| **`solve_bearing_equilibrium`** | **740~1260** | **핵심: Phase A (radial 2×2 또는 3×3) + Phase B (tilting) 분리** |
+| `solve_bearing_equilibrium_5dof` | 1263~2250 | 완전 5-DOF 통합 (fallback) |
+| `solve_bearing_dual` | 2258~ | Gen1 + Gen3 비교 |
+
+**Phase A 핵심 로직** (라인 892~945, dz fixed case = **CRB 에 직접 대응**):
+```rust
+// 2×2 NR for (δx, δy), δz 고정
+let f_radial = f_r.max(1.0);
+for _outer in 0..max_iter {
+    let (residual, _) = compute_residual(input, &slices, &disp, 0.0)?;
+    let r_radial = (residual[0].powi(2) + residual[1].powi(2)).sqrt();
+    if r_radial / f_radial < tol { break; }
+
+    // 2×2 Jacobian (forward FD, h_s = 0.01 μm)
+    let mut j2 = [[0.0_f64; 2]; 2];
+    for col in 0..2 {
+        let mut dp = disp;
+        dp[col] += h_s;
+        let (rp, _) = compute_residual(input, &slices, &dp, 0.0)?;
+        for row in 0..2 { j2[row][col] = (rp[row] - residual[row]) / h_s; }
+    }
+
+    // Cramer's rule (2×2)
+    let det = j2[0][0] * j2[1][1] - j2[0][1] * j2[1][0];
+    let dx_step = (j2[1][1] * (-residual[0]) - j2[0][1] * (-residual[1])) / det;
+    let dy_step = (j2[0][0] * (-residual[1]) - j2[1][0] * (-residual[0])) / det;
+
+    // Step clamp (max_step = disp_mag * 0.5, clamp 5~30 μm)
+    let step_norm = (dx_step.powi(2) + dy_step.powi(2)).sqrt();
+    let scale = if step_norm > max_step { max_step / step_norm } else { 1.0 };
+    let dd = [dx_step * scale, dy_step * scale];
+
+    // Line search: 20회 반감, best_alpha 유지
+    let mut alpha_ls = 1.0;
+    let mut best_alpha = 0.0;
+    let mut best_norm = r_radial;
+    for _ in 0..20 {
+        let mut d_trial = disp;
+        d_trial[0] += alpha_ls * dd[0];
+        d_trial[1] += alpha_ls * dd[1];
+        let (rt, _) = compute_residual(input, &slices, &d_trial, 0.0)?;
+        let rt_r = (rt[0].powi(2) + rt[1].powi(2)).sqrt();
+        if rt_r < best_norm { best_norm = rt_r; best_alpha = alpha_ls; }
+        if rt_r < r_radial { break; }
+        alpha_ls *= 0.5;
+    }
+    if best_alpha < 1e-15 { best_alpha = alpha_ls; }
+    disp[0] += best_alpha * dd[0];
+    disp[1] += best_alpha * dd[1];
+}
+```
+
+##### 4.12.4 TRB → CRB 변환 매핑 표
+
+| TRB 5-DOF | CRB 3-DOF | 변환 방식 | 근거 |
+|-----------|----------|---------|------|
+| `disp[0]` = δx | `disp[0]` = δx | 동일 | D5 좌표계 |
+| `disp[1]` = δy | `disp[1]` = δy | 동일 | D5 |
+| `disp[2]` = δz | 제거 (=0) | axial 지지 없음 | D4 |
+| `disp[3]` = γx | `disp[2]` = γx | 배열 위치 변경 | D6 |
+| `disp[4]` = γy | 제거 (=0) | single-plane misalignment | D6 |
+| `f_a_input * 1000` | `0.0` 강제 | axial 하중 무시 | D4 |
+| `preload_mode / delta_preload_um` | 제거 | axial preload 무관 | D4 |
+| `compute_induced_thrust(f_r, α_o)` | 제거 | α=0 → sin α = 0 → thrust 없음 | D1 |
+| `alpha_rad = raceway_geom.alpha_o.to_radians()` | `0.0` 상수 | 원통 raceway | D1 |
+| `cos α, sin α` | `1.0, 0.0` | α=0 | — |
+| `cos_alpha_diff = cos(α_o - α_i)` | `1.0` | 이미 Phase 1.3-B 로 반영 | — |
+| Phase A dz_free 분기 | 항상 dz fixed=0 | δz free 케이스 제거 | D4 |
+| Phase A **2×2 NR** (δx, δy) | **동일 유지** — 핵심 재활용 | γ_x 는 outer loop | 4.12.5 |
+| `solve_preload_displacement` | 제거 | axial 없음 | D4 |
+| M_x, M_y residual | **M_x 만** (γ_x 담당) | γ_y=0 (D6) | — |
+| rib_contact 참조 | 제거 | D1 | 완료 (Phase 1.3-B) |
+
+##### 4.12.5 재작성 전략 — Phase 분리 방식 (핵심)
+
+**Outer loop**: γ_x 1-DOF NR
+```
+for outer_iter in 0..max_iter:
+    Phase A: (δx, δy) 2-DOF NR  (γ_x 고정, TRB 원본 그대로 이식)
+        수렴 시 M_x residual 계산
+    if |M_x_residual| / M_x_ref < tol: break
+    γ_x update (1-DOF NR):
+        dMdγ = numerical FD (M_x with γ_x + dγ)
+        Δγ_x = -M_x_residual / dMdγ
+        line search on γ_x
+```
+
+**이유**:
+- Phase A 는 TRB 원본과 동일 (검증된 로직)
+- γ_x 는 별도 축이라 coupling 없음
+- outer loop 는 보통 3~5 iter 로 수렴 (M_x 는 δ 에 약한 종속)
+
+**대안**: 3×3 통합 NR 로 하되:
+- Jacobian pivoting (QR decomposition)
+- Levenberg-Marquardt damping
+- 그러나 Phase 분리가 더 단순 + 안정
+
+##### 4.12.6 Rust 코드 skeleton (예상)
+
+```rust
+pub fn solve_bearing_equilibrium(
+    input: &BearingInput,
+    progress: &dyn ProgressReporter,
+) -> Result<BearingResult, SolverError> {
+    let slices = compute_slices(...)?;
+    let mut disp = initial_guess_crb(input);   // [δx, δy, γx] 3-DOF
+
+    let m_x_target = input.operating.m_x * 1e6;  // N·mm
+    let m_x_ref = m_x_target.abs().max(1e3);
+
+    // Outer loop: γ_x (M_x equilibrium)
+    for outer in 0..input.solver.max_iterations {
+        // Phase A: 2-DOF NR (δx, δy), γ_x 고정
+        phase_a_radial_2dof(&mut disp, input, &slices)?;
+
+        // M_x residual 계산
+        let (r_all, _) = compute_residual_3d(input, &slices, &disp)?;
+        if (r_all[2] / m_x_ref).abs() < input.solver.convergence_tol { break; }
+
+        // γ_x update (1-DOF NR)
+        let h_g = 1e-6_f64;   // rad
+        let mut disp_p = disp;
+        disp_p[2] += h_g;
+        let (r_p, _) = compute_residual_3d(input, &slices, &disp_p)?;
+        let dmdg = (r_p[2] - r_all[2]) / h_g;
+        if dmdg.abs() > 1e-30 {
+            disp[2] += -r_all[2] / dmdg * 0.5;  // damping 0.5
+        }
+    }
+
+    // 최종 결과 구축 (BearingResult, default 필드 채움)
+    build_bearing_result(input, &slices, disp, ...)
+}
+
+fn phase_a_radial_2dof(disp: &mut [f64; 3], input: &BearingInput, slices: &[SliceGeometry])
+    -> Result<(), SolverError>
+{
+    // TRB 원본 line 892~945 로직 그대로 이식 (α=0, dz=0 강제)
+    // 2×2 NR, max_step clamp 5~30 μm, line search 20회 best_alpha
+}
+```
+
+##### 4.12.7 Level D 검증 참조값
+
+**Sjovall integral** (Harris & Kotzalas 5th ed. Ch 7, Eq 7.71):
+```
+Q_max / F_r = 1 / (Z · J_r(ε))
+```
+- ε = 0.5 (zero clearance, radial only): `J_r(0.5) = 0.2453`
+- Zero clearance NU 240 (Z=18), F_y=-1000 kN:
+  - **Q_max = 1000 · 1000 / (18 · 0.2453) = 226,455 N ≈ 226.5 kN**
+- Load zone extent (2·ψ_lim):
+  - ε=0.5 → 정확히 180°
+  - ε<0.5 (preload) → > 180°
+  - ε>0.5 (clearance) → < 180°
+
+**Clearance 조건** (g_r > 0):
+- ε = 0.5 · (1 − g_r / (2·δ_max))
+- δ_max ≈ 100 μm, g_r = 30 μm → ε ≈ 0.425 → J_r(0.425) ≈ 0.21 (Harris 표)
+- Q_max ≈ 1000·1000 / (18·0.21) ≈ 264.6 kN
+
+**Level D 통과 기준**: 상대오차 < **5%** (Plan §5.2 Level D)
+
+**추가 Reference (정성)**:
+- F_x = 0, F_y = -F_r 조건: **δ_x = 0** (대칭성), γ_x = 0 (M_x=0 조건)
+- F_x = F_r, F_y = 0: **δ_y = 0** (대칭성)
+- Load zone 하부 (F_y < 0 이면 ψ ≈ -90° 부근) 에 Q_max 집중
+
+##### 4.12.8 예상 소요 시간 (다음 세션)
+
+| 단계 | 시간 |
+|------|------|
+| Session 재개 + TRB 원본 재추출 | 5분 |
+| bearing.rs Phase 분리 구조 재작성 | 25분 |
+| Smoke test 통과 확인 (4~5 조건) | 10분 |
+| Level D test (Harris/Sjovall 참조값) | 15분 |
+| Python 리포트 + Action.md | 15분 |
+| Commit + merge 사전 질문 | 5분 |
+| **합계** | **약 75분** |
+
+이 정도 시간이면 새 세션의 context 여유로 완주 가능. `4c853a4` WIP 위에 이어 작업.
 
 ### Phase 5 — Life / Static Rating (상세 계획, 2026-08-19 병렬 작성)
 
