@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>메인샤프트 좌굴·단면 타원화 검토 — 규격·수식 조사보고서</title>
+<style>
+
+:root{
+  --surface-1:#fcfcfb; --page:#f9f9f7;
+  --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s7:#4a3aa7; --s8:#e34948;
+  --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+  --seq100:#cde2fb; --seq250:#86b6ef; --seq400:#3987e5; --seq550:#1c5cab; --seq700:#0d366b;
+  --wash:rgba(42,120,214,0.08);
+  --h1:#cde2fb;--h1i:#0b0b0b; --h2:#86b6ef;--h2i:#0b0b0b; --h3:#3987e5;--h3i:#ffffff;
+  --h4:#1c5cab;--h4i:#ffffff; --h5:#0d366b;--h5i:#ffffff;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --surface-1:#1a1a19; --page:#0d0d0d;
+  --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s7:#9085e9; --s8:#e66767;
+  --seq100:#0d366b; --seq250:#184f95; --seq400:#3987e5; --seq550:#6da7ec; --seq700:#cde2fb;
+  --wash:rgba(57,135,229,0.12);
+  --h1:#0d366b;--h1i:#ffffff; --h2:#184f95;--h2i:#ffffff; --h3:#3987e5;--h3i:#ffffff;
+  --h4:#86b6ef;--h4i:#0b0b0b; --h5:#cde2fb;--h5i:#0b0b0b;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:1rem}
+body{
+  margin:0; background:var(--page); color:var(--text-primary);
+  font-family:system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased;
+}
+.layout{display:grid; grid-template-columns:290px minmax(0,1fr); gap:0; max-width:1560px; margin:0 auto}
+/* ---------- TOC ---------- */
+#toc{
+  position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  padding:26px 18px 60px 24px; border-right:1px solid var(--border); background:var(--page);
+}
+#toc .brand{font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:4px}
+#toc .ttl{font-size:15px; font-weight:700; line-height:1.4; margin-bottom:18px; color:var(--text-primary)}
+#toc ol{list-style:none; margin:0; padding:0; counter-reset:sec}
+#toc li{margin:0}
+#toc a{
+  display:block; padding:5px 10px; border-left:2px solid transparent; margin-left:-2px;
+  color:var(--text-secondary); text-decoration:none; font-size:13.5px; line-height:1.45; border-radius:0 4px 4px 0;
+}
+#toc a:hover{background:var(--wash); color:var(--text-primary)}
+#toc a.active{border-left-color:var(--s1); color:var(--text-primary); font-weight:650; background:var(--wash)}
+#toc a.sub{padding-left:26px; font-size:12.5px; color:var(--text-muted)}
+#toc a.sub.active{color:var(--text-primary)}
+#toc .tocgap{height:10px}
+/* ---------- main ---------- */
+main{padding:34px 44px 120px; min-width:0}
+.topbar{display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:8px; flex-wrap:wrap}
+.eyebrow{font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); font-weight:700}
+h1{font-size:31px; line-height:1.25; margin:6px 0 10px; letter-spacing:-.015em}
+.sub{color:var(--text-secondary); font-size:15px; margin:0 0 6px}
+.meta{color:var(--text-muted); font-size:13px; margin:0 0 30px}
+h2{font-size:22px; margin:56px 0 14px; padding-top:14px; border-top:1px solid var(--border); letter-spacing:-.01em; scroll-margin-top:16px}
+h2 .num{color:var(--text-muted); font-weight:600; margin-right:10px; font-variant-numeric:tabular-nums}
+h3{font-size:17px; margin:32px 0 10px; letter-spacing:-.005em; scroll-margin-top:16px}
+h4{font-size:14.5px; margin:22px 0 8px; color:var(--text-secondary)}
+p{margin:10px 0}
+ul,ol{margin:10px 0; padding-left:22px}
+li{margin:5px 0}
+code,.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace; font-size:13px}
+code{background:var(--wash); padding:1px 5px; border-radius:4px}
+a{color:var(--s1)}
+.theme-btn{
+  border:1px solid var(--border); background:var(--surface-1); color:var(--text-secondary);
+  border-radius:999px; padding:7px 15px; font-size:12.5px; cursor:pointer; font-family:inherit; white-space:nowrap;
+}
+.theme-btn:hover{color:var(--text-primary)}
+/* ---------- blocks ---------- */
+.card{background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:20px 22px; margin:20px 0}
+.formula{
+  background:var(--surface-1); border:1px solid var(--border); border-left:3px solid var(--s1);
+  border-radius:8px; padding:14px 18px; margin:14px 0; overflow-x:auto;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:13.5px; line-height:1.85;
+  white-space:pre; color:var(--text-primary);
+}
+.callout{border-radius:10px; padding:14px 18px; margin:16px 0; border:1px solid var(--border); background:var(--surface-1); border-left-width:3px; border-left-style:solid}
+.callout p:first-child{margin-top:0} .callout p:last-child{margin-bottom:0}
+.callout .tag{display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px}
+.c-key{border-left-color:var(--s1)} .c-key .tag{color:var(--s1)}
+.c-warn{border-left-color:var(--warn)} .c-warn .tag{color:var(--text-secondary)}
+.c-crit{border-left-color:var(--crit)} .c-crit .tag{color:var(--crit)}
+.c-good{border-left-color:var(--good)} .c-good .tag{color:var(--good)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+/* ---------- tables ---------- */
+.tw{overflow-x:auto; margin:16px 0; border:1px solid var(--border); border-radius:10px; background:var(--surface-1)}
+table{border-collapse:collapse; width:100%; font-size:13.5px}
+th,td{padding:9px 13px; text-align:left; border-bottom:1px solid var(--grid); vertical-align:top}
+thead th{background:var(--wash); font-weight:700; font-size:12.5px; color:var(--text-secondary); white-space:nowrap; border-bottom:1px solid var(--axis)}
+tbody tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+td.mid,th.mid{text-align:center}
+.tag-ok{color:var(--good); font-weight:700} .tag-no{color:var(--crit); font-weight:700} .tag-w{color:var(--serious); font-weight:700}
+/* ---------- figures ---------- */
+figure{margin:26px 0; background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:18px 20px 14px}
+figure .fig-h{font-size:14.5px; font-weight:700; margin:0 0 3px}
+figure .fig-s{font-size:12.5px; color:var(--text-secondary); margin:0 0 14px; line-height:1.6}
+figcaption{font-size:12.5px; color:var(--text-secondary); margin-top:12px; padding-top:11px; border-top:1px solid var(--grid); line-height:1.65}
+.legend{display:flex; flex-wrap:wrap; gap:8px 18px; margin:0 0 12px; font-size:12.5px; color:var(--text-secondary)}
+.legend span{display:inline-flex; align-items:center; gap:7px}
+.legend i{width:14px; height:3px; border-radius:2px; display:inline-block}
+.legend i.sq{width:11px; height:11px; border-radius:3px}
+svg{display:block; max-width:100%; height:auto; overflow:visible}
+.svgwrap{overflow-x:auto}
+/* ---------- KPI ---------- */
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:12px; margin:18px 0}
+.kpi{background:var(--surface-1); border:1px solid var(--border); border-radius:11px; padding:15px 16px}
+.kpi .l{font-size:12px; color:var(--text-secondary); margin-bottom:5px; line-height:1.4}
+.kpi .v{font-size:29px; font-weight:700; line-height:1.1; letter-spacing:-.02em}
+.kpi .d{font-size:12px; margin-top:5px; display:flex; align-items:center; gap:6px; color:var(--text-muted)}
+.kpi.ok{border-top:3px solid var(--good)} .kpi.no{border-top:3px solid var(--crit)} .kpi.nt{border-top:3px solid var(--s1)}
+/* ---------- flow ---------- */
+.flow{display:flex; flex-direction:column; gap:0; margin:18px 0}
+.fstep{display:grid; grid-template-columns:34px 1fr; gap:14px; align-items:start}
+.fstep .bub{width:28px;height:28px;border-radius:50%;background:var(--s1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700; flex:none}
+.fstep .bub.alt{background:var(--s2)} .fstep .bub.star{background:var(--crit)}
+.fstep .bd{padding-bottom:16px; min-width:0}
+.fstep .bd b{display:block; font-size:14px; margin-bottom:3px}
+.fstep .bd .t{font-size:13px; color:var(--text-secondary); line-height:1.6}
+.fline{grid-column:1; width:2px; background:var(--grid); margin:0 auto; height:100%}
+.fstep .rail{display:flex; flex-direction:column; align-items:center; height:100%}
+.fstep .rail .ln{width:2px; flex:1; background:var(--grid); min-height:10px}
+.fstep:last-child .rail .ln{background:transparent}
+/* ---------- misc ---------- */
+.pill{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:.03em; white-space:nowrap}
+.p-ok{background:rgba(12,163,12,.13); color:var(--good)}
+.p-w{background:rgba(250,178,25,.18); color:#8a6100}
+:root[data-theme="dark"] .p-w{color:var(--warn)}
+.p-no{background:rgba(208,59,59,.14); color:var(--crit)}
+.p-n{background:var(--wash); color:var(--s1)}
+.two{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px}
+.quote{border-left:3px solid var(--axis); padding:6px 0 6px 16px; margin:14px 0; color:var(--text-secondary); font-size:13.5px; line-height:1.7}
+.quote b{color:var(--text-primary)}
+.arch{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0}
+@media (max-width:760px){.arch{grid-template-columns:1fr}}
+.arch .col{background:var(--surface-1); border:1px solid var(--border); border-radius:12px; padding:16px 18px}
+.arch .col h5{margin:0 0 4px; font-size:14.5px}
+.arch .col .cs{font-size:12px; color:var(--text-muted); margin:0 0 12px}
+.arch .lay{border-radius:8px; padding:9px 12px; margin:7px 0; font-size:12.5px; line-height:1.5; border:1px solid var(--border)}
+.arch .lay > b:first-child{display:block; font-size:13px; margin-bottom:2px}
+.arch .lay.acc{border-left:3px solid var(--s1)} .arch .lay.acc2{border-left:3px solid var(--s2)}
+.arch .lay.new{border-left:3px solid var(--good); background:var(--wash)}
+.arch .lay.non{border-left:3px solid var(--axis); color:var(--text-muted)}
+.ev{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:4px;letter-spacing:.03em;vertical-align:1px;white-space:nowrap}
+.ev-a{background:rgba(12,163,12,.14);color:var(--good)} .ev-b{background:rgba(250,178,25,.18);color:#8a6100}
+:root[data-theme="dark"] .ev-b{color:var(--warn)}
+.ev-c{background:rgba(208,59,59,.13);color:var(--crit)}
+.srcs{font-size:13px; color:var(--text-secondary)}
+.srcs a{word-break:break-all}
+hr{border:none; border-top:1px solid var(--border); margin:40px 0}
+@media (max-width:1000px){
+  .layout{grid-template-columns:1fr}
+  #toc{position:static; height:auto; border-right:none; border-bottom:1px solid var(--border); max-height:none}
+  main{padding:24px 18px 80px}
+  h1{font-size:25px}
+}
+@media print{
+  #toc,.theme-btn{display:none} .layout{display:block} main{padding:0}
+  figure,.card,.tw{break-inside:avoid} h2{break-after:avoid}
+}
+
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav id="toc">
+  <div class="brand">Engineering Research Report</div>
+  <div class="ttl">메인샤프트 좌굴 · 단면 타원화<br>규격 · 수식 조사</div>
+  <button class="theme-btn" id="themeBtn" type="button">◐ 다크모드</button>
+  <div class="tocgap"></div>
+  <ol>
+    <li><a href="#s0">0. 결론 요약</a></li>
+    <li><a href="#s1">1. 판정 절차</a></li>
+    <li><a href="#s2">2. 좌굴 — 규격 지도</a></li>
+    <li><a href="#s2-1" class="sub">2.1 단면등급 선별</a></li>
+    <li><a href="#s2-2" class="sub">2.2 EN 1993-1-6 적용범위</a></li>
+    <li><a href="#s3">3. 좌굴 계산식</a></li>
+    <li><a href="#s3-1" class="sub">3.1 EN 1993-1-6 자오선</a></li>
+    <li><a href="#s3-2" class="sub">3.2 DNV-RP-C202</a></li>
+    <li><a href="#s3-3" class="sub">3.3 고전식·NASA 검산</a></li>
+    <li><a href="#s4">4. 사례 검산 3건</a></li>
+    <li><a href="#s5">5. 베어링 시트 타원화</a></li>
+    <li><a href="#s5-1" class="sub">5.1 DIN 7190-1</a></li>
+    <li><a href="#s5-2" class="sub">5.2 중공축 페널티</a></li>
+    <li><a href="#s5-3" class="sub">5.3 베어링사 규정</a></li>
+    <li><a href="#s5-4" class="sub">5.4 링 크리프 실측</a></li>
+    <li><a href="#s5-5" class="sub">5.5 링 타원화 폐형식</a></li>
+    <li><a href="#s6">6. 빔 모델 판정기준</a></li>
+    <li><a href="#s7">7. 풍력 규격의 공백</a></li>
+    <li><a href="#s8">8. 실제 사양 검토</a></li>
+    <li><a href="#s8-1" class="sub">8.1 사양의 성격</a></li>
+    <li><a href="#s8-3" class="sub">8.3 단면등급 판정</a></li>
+    <li><a href="#s8-4" class="sub">8.4 좌굴 계산</a></li>
+    <li><a href="#s8-6" class="sub">8.6 압입 가능성</a></li>
+    <li><a href="#s8-8" class="sub">8.8 결론·권고</a></li>
+    <li><a href="#s9">9. 검증 상태</a></li>
+    <li><a href="#s10">10. 참고문헌</a></li>
+  </ol>
+</nav>
+
+<main>
+  <div class="topbar">
+    <div>
+      <div class="eyebrow">Engineering Research Report · Wind Turbine Main Shaft</div>
+      <h1>메인샤프트 좌굴 · 단면 타원화<br>규격 · 수식 조사보고서</h1>
+      <p class="sub">빔 모델과 폐형식으로 검토 가능한 규격·수식 전수조사 · 판정기준 확립 · 실제 축 3종 검산 · <b>제시 사양 9안 판정</b></p>
+      <p class="meta">작성 2026-07-30 · 초점: 베어링 시트 국부 타원화 + 전역 쉘 좌굴 D/t 판정기준 · 계보: 기계요소계(DIN·베어링사) / Eurocode / DNV</p>
+    </div>
+  </div>
+
+  <h2 id="s0"><span class="num">0</span>결론 요약</h2>
+
+  <div class="kpis">
+    <div class="kpi ok"><div class="l">기어드 단조축 (D/t ≈ 3)</div><div class="v">해당 없음</div><div class="d"><span class="pill p-ok">쉘 아님</span> σ_cr 이 항복의 240배</div></div>
+    <div class="kpi ok"><div class="l">IEA-15 직접구동 (D/t = 30)</div><div class="v">해당 없음</div><div class="d"><span class="pill p-ok">Class 1</span> r/t = 14.5 &lt; 20</div></div>
+    <div class="kpi no"><div class="l">IEA-22 직접구동 (D/t = 155)</div><div class="v">χ = 0.81</div><div class="d"><span class="pill p-no">Class 4</span> 좌굴이 19 % 감소</div></div>
+    <div class="kpi nt"><div class="l">베어링 시트 접촉압 여유</div><div class="v">1.35</div><div class="d"><span class="pill p-w">주의</span> Q_I = 0.85 이면 0.97</div></div>
+  </div>
+
+  <h3>세 문장 요약</h3>
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>① 기어드 단조 메인샤프트에서 좌굴은 검토 대상이 아니며, 그 근거는 두 겹이다</div>
+    <p><b>근거 1 — 단면등급.</b> EN 1993-1-1 의 원형중공단면 Class 1 한계는 <code>d/t ≤ 50·ε²</code> (ε² = 235/f_y). 크기보정된 42CrMo4 (R<sub>p0.2</sub> = 510 MPa)에서 한계는 <b>23.0</b> 인데 실제 D/t 는 <b>3.08</b> — <b>7.5배 여유</b>로 Class 1 이다. 소성단면계수를 온전히 쓸 수 있고 국부좌굴 검토가 요구되지 않는다.</p>
+    <p><b>근거 2 — 규격 적용범위 자체.</b> EN 1993-1-6 §1.1(16) 은 적용범위를 <i>"radius to thickness ratios within the range <b>20 to 5000</b>"</i> 로 한정한다. 기어드 축의 r/t 는 <b>1.04</b> — 쉘 규격의 하한보다 <b>19배 아래</b>다. 이것은 얇은 쉘이 아니라 후육 원통이며, <b>쉘 좌굴이라는 한계상태 자체가 존재하지 않는다.</b></p>
+    <p style="margin-bottom:0">설계보고서에는 두 번째 근거를 쓰는 것이 더 강력하다. "여유가 크다"가 아니라 "해당 규격의 적용 대상이 아니다"이기 때문이다.</p>
+  </div>
+
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>② 진짜 검토 대상은 베어링 시트의 국부 접촉압 손실이다</div>
+    <p>중공축은 <b>세 가지 페널티를 동시에</b> 받는다. Q<sub>I</sub> = d<sub>i</sub>/d<sub>F</sub> = 0.589 인 1120 mm 시트 기준:</p>
+    <ul style="margin:8px 0">
+      <li><b>과잉량 11 % 증가 필요</b> — 같은 접촉압을 얻으려면 (DIN 7190-1 식 13 의 K 비)</li>
+      <li><b>보어 후프응력 3.06배</b> — σ<sub>t,bore</sub> = −2p/(1−Q<sub>I</sub>²)</li>
+      <li><b>접촉압 여유 1.35</b> — 반경하중이 요구하는 p<sub>r</sub> 대비. Q<sub>I</sub> = 0.85 로 얇아지면 <b>0.97 로 1 미만</b>이 되어 국부 분리가 시작된다</li>
+    </ul>
+    <p style="margin-bottom:0">이것이 Fraunhofer IWES 가 실측한 링 크리프의 메커니즘이며, 그들의 결론은 <i>"Hollow cast main shafts and lightweight designs increase flexibility, making ring creep more visible"</i> 이다.</p>
+  </div>
+
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>③ 빔 모델은 이 문제를 원리적으로 풀 수 없고, 메인샤프트에는 빔이 유효한 구간도 없다</div>
+    <p>빔 이론은 단면이 자기 평면 안에서 변형하지 않는다고 가정한다 — <b>타원화를 표현할 자유도가 없다.</b> Abaqus 이론매뉴얼은 이를 무시하면 <i>"부재의 굽힘강성을 <b>5배 이상</b> 과대평가할 수 있다"</i> 고 명시한다.</p>
+    <p style="margin-bottom:0">그리고 <b>세 가지 독립 기준이 모두 같은 결론</b>을 낸다: L/D = 3.8 은 Timoshenko 하한 8 의 <b>절반</b>이고, ANSYS 가 구현한 "교란영역 = 2 × 지름" 규칙을 적용하면 양측 베어링의 교란영역 합 7,536 mm 가 베어링 스팬 5,200 mm 를 <b>초과</b>한다. <b>빔이 깨끗하게 성립하는 원역(far field)이 축 어디에도 없다.</b></p>
+  </div>
+
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>④ 제시된 사양 (d = 5,070~5,157 mm · t = 69.5~72.5 mm) 판정 → <a href="#s8">§8</a></div>
+    <p><b>d/t = 69.9 ~ 74.2</b> 로 위 두 사례의 정확히 중간, <b>재질이 결론을 가르는 구간</b>에 놓입니다.</p>
+    <ul style="margin:8px 0">
+      <li><b>S275 이하 · 주철 → 검토 불요</b> (Class 3). <b>S355 이상 → 전 안 Class 4, 쉘 좌굴 검토 필수.</b> 임계 항복강도 285~302 MPa</li>
+      <li>다만 저감은 경미합니다 — S355 기준 <b>χ ≈ 0.92</b> (8 % 저감). EN 1993-1-6 과 DNV-RP-C202 가 <b>1.4 % 이내로 일치</b></li>
+      <li><b>★ 이 단면에 압입 베어링 시트는 불가능합니다</b> — Q_I = 0.973 이라 과잉량 4.7배, 보어 후프응력 37.6배, 항복 한계압이 <b>10.8 MPa</b> 에 불과</li>
+      <li>9안은 <b>등가 굽힘강도 설계 스윕</b>입니다 (W 편차 0.65 %). 2.5 % 경량화의 대가가 χ 로는 0.7 % 뿐이므로 <b>경량화 쪽이 유리</b></li>
+    </ul>
+    <p style="margin-bottom:0"><b>확인 필요:</b> ① 재질·항복강도 ② 9행이 설계안인가 실측값인가 ③ 베어링 부착 방식</p>
+  </div>
+
+  <h3>이 보고서가 확정한 판정 임계값</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>판정 항목</th><th style="width:180px">임계값</th><th>출처</th><th style="width:70px">등급</th></tr></thead>
+    <tbody>
+      <tr style="background:var(--wash)"><td><b>쉘 좌굴 검토 필요 여부</b></td><td class="num"><b>d/t &gt; 90·ε²</b><br><span style="font-size:12px;color:var(--text-muted)">S355 → 59.6 · R<sub>p0.2</sub>510 → 41.5</span></td><td>EN 1993-1-1 Table 5.2, 원형중공단면 Class 3/4 경계</td><td class="mid"><span class="ev ev-a">A</span></td></tr>
+      <tr style="background:var(--wash)"><td><b>쉘 규격 적용 하한</b></td><td class="num"><b>r/t ≥ 20</b> (d/t ≥ 40)</td><td>EN 1993-1-6 §1.1(16) 원문</td><td class="mid"><span class="ev ev-b">B</span></td></tr>
+      <tr><td>제작 품질등급 파라미터</td><td class="num">Q = 40 / 25 / 16<br><span style="font-size:12px;color:var(--text-muted)">A 우수 / B 상 / C 보통</span></td><td>EN 1993-1-6 §8.4 · 공차표 U<sub>0,max</sub> = 1/(4Q) 로 역검증</td><td class="mid"><span class="ev ev-b">B</span></td></tr>
+      <tr><td>좌굴 부분안전계수</td><td class="num">γ ≥ 1.2</td><td>IEC 61400-1 (Eurocode 의 1.1 보다 보수적)</td><td class="mid"><span class="ev ev-b">B</span></td></tr>
+      <tr style="background:var(--wash)"><td><b>중공축 전용 압입계산 임계</b></td><td class="num"><b>c<sub>i</sub> = d<sub>i</sub>/d ≥ 0.5</b></td><td>SKF 카탈로그 6000 원문 (유일하게 수치를 공개한 제조사)</td><td class="mid"><span class="ev ev-a">A</span></td></tr>
+      <tr><td>DIN 7190 평활 손실</td><td class="num">0.4·(R<sub>zA</sub>+R<sub>zI</sub>)<br><span style="font-size:12px;color:var(--crit)">2001년판 0.8 에서 변경</span></td><td>DIN 7190-1:2017-02 (DIN Media 변경목록)</td><td class="mid"><span class="ev ev-a">A</span></td></tr>
+      <tr><td>링 크리프 개시</td><td class="num">슬라이딩 &gt; 0.1 µm/사이클</td><td>FVA 작업반 2008 → IWES 적용. <b>보어 100 mm 까지만 검증됨</b></td><td class="mid"><span class="ev ev-a">A</span></td></tr>
+      <tr><td>빔 이론 하한 (전단변형 포함)</td><td class="num">L/D ≳ 8</td><td>Abaqus <i>Choosing a beam element</i> — "up to 1/8 of typical axial distances"</td><td class="mid"><span class="ev ev-a">A</span></td></tr>
+      <tr><td>빔 이론 하한 (Euler-Bernoulli)</td><td class="num">L/D ≳ 15</td><td>동상 — "less than about 1/15"</td><td class="mid"><span class="ev ev-a">A</span></td></tr>
+      <tr style="background:var(--wash)"><td><b>국부 교란 영향권</b></td><td class="num"><b>2 × 지름</b><br><span style="font-size:12px;color:var(--text-muted)">이론값 ≈ 2√(R·t)</span></td><td>ANSYS <code>ELBOW</code> 명령의 구현 규칙 — 상용코드가 실제로 쓰는 값</td><td class="mid"><span class="ev ev-a">A</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="s1"><span class="num">1</span>판정 절차</h2>
+  <p>수집한 규격을 실행 순서로 배열하면 다음과 같습니다. 굵은 분기가 실제로 대부분의 축을 걸러냅니다.</p>
+
+  <div class="flow">
+    <div class="fstep"><div class="rail"><div class="bub star">1</div><div class="ln"></div></div><div class="bd"><b>★ 기하학적 적용범위 — 대부분 여기서 끝난다</b><div class="t"><code>r/t &lt; 20</code> (즉 <code>D/t &lt; 40</code>) 이면 <b>EN 1993-1-6 의 적용 대상이 아니다.</b> 쉘이 아니라 후육 원통이므로 쉘 좌굴 한계상태가 성립하지 않는다. <b>여기서 종료.</b><br><span style="color:var(--good)">→ 기어드 단조 메인샤프트 (D/t 2~4) 는 전부 여기 해당</span></div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">2</div><div class="ln"></div></div><div class="bd"><b>단면등급 선별</b><div class="t"><code>ε² = 235/f_y</code> 계산 후<br>
+      <code>d/t ≤ 50ε²</code> → Class 1 · 소성설계, 국부좌굴 검토 불요<br>
+      <code>d/t ≤ 70ε²</code> → Class 2 · 소성저항, 회전능력 제한<br>
+      <code>d/t ≤ 90ε²</code> → Class 3 · 탄성(초기항복) 저항<br>
+      <code>d/t &gt; 90ε²</code> → <b>Class 4 · 쉘 좌굴 검토 필수</b><br>
+      <span style="color:var(--text-muted)">주의: 원형중공단면은 ε 가 아니라 <b>ε²</b> 를 쓴다. I형강과 다르다 — 전형적인 실수 지점</span></div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">3</div><div class="ln"></div></div><div class="bd"><b>Class 4 일 때 — 유효단면 경로가 없음에 주의</b><div class="t">EN 1993-1-1/1-5 의 유효폭(effective width) 기법은 <b>평판 전용</b>이며 원형중공단면에 대한 유효단면 정식화가 <b>존재하지 않는다.</b> 따라서 Class 4 CHS 의 경로는 <b>EN 1993-1-6 하나뿐</b>이다.</div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub alt">4</div><div class="ln"></div></div><div class="bd"><b>좌굴 계산 — 세 경로 중 선택</b><div class="t">(a) <b>EN 1993-1-6 §8.5 응력설계</b> + Annex D 파라미터 → §3.1<br>(b) <b>DNV-RP-C202 §3 폐형식</b> → §3.2 <span style="color:var(--good)">(가장 실행하기 쉬움)</span><br>(c) LBA/MNA 총괄법 또는 GMNIA 수치해석<br>어느 쪽이든 <code>0.605·E·t/r</code> 에 NASA SP-8007 감소계수를 곱한 값으로 자릿수 검산할 것</div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub star">5</div><div class="ln"></div></div><div class="bd"><b>★ 별개 검토 — 베어링 시트 국부 타원화</b><div class="t">위 1~4 를 통과해도 <b>이건 남는다.</b> 전역 안정 문제가 아니라 국부 접촉 문제이므로 D/t 와 무관하게 발생한다.<br><code>c_i = d_i/d ≥ 0.5</code> 이면 SKF 가 중공축 전용 계산을 요구 → §5</div></div></div>
+    <div class="fstep"><div class="rail"><div class="bub">6</div><div class="ln"></div></div><div class="bd"><b>모델 형식 결정</b><div class="t"><code>L/D &lt; 8</code> 이거나 교란영역(2×D)이 스팬을 덮으면 빔 모델은 부적합 → 쉘/솔리드 또는 타원화 자유도를 갖는 요소 → §6</div></div></div>
+  </div>
+
+  <h2 id="s2"><span class="num">2</span>좌굴 — 규격 지도와 판정기준</h2>
+
+  <figure>
+    <p class="fig-h">D/t 지도 — 어느 축이 어느 영역에 있는가</p>
+    <p class="fig-s">가로축 = D/t (로그 스케일). 위 두 띠는 EN 1993-1-1 단면등급 구간, 아래 띠는 EN 1993-1-6 의 기하학적 적용범위</p>
+    <div class="legend">
+      <span><i class="sq" style="background:var(--h2)"></i>Class 1 · 소성설계</span>
+      <span><i class="sq" style="background:var(--h3)"></i>Class 2</span>
+      <span><i class="sq" style="background:var(--h4)"></i>Class 3 · 탄성저항</span>
+      <span><i class="sq" style="background:var(--h5)"></i>Class 4 · 쉘 좌굴 검토 필수</span>
+    </div>
+    <div class="svgwrap" id="fig-dtmap"></div>
+    <figcaption>세 축의 위치가 결정적입니다. <b>기어드 단조축(D/t = 3.1)</b>은 어느 재질에서도 Class 1 이고, 무엇보다 <b>EN 1993-1-6 적용범위(D/t ≥ 40)에 들어가지도 않습니다.</b> <b>IEA-15(D/t = 30)</b>도 마찬가지로 Class 1 이며 r/t = 14.5 로 적용범위 밖입니다 — 직접구동이라고 무조건 쉘 검토가 필요한 게 아닙니다. <b>IEA-22(D/t = 155)</b>만 Class 4 로 넘어가 실제 검토 대상이 됩니다.</figcaption>
+  </figure>
+
+  <h3 id="s2-1">2.1 단면등급 선별 — EN 1993-1-1 Table 5.2</h3>
+  <div class="formula">원형중공단면 (CHS), 굽힘 및/또는 압축:
+
+  Class 1 :  d/t ≤ 50·ε²
+  Class 2 :  d/t ≤ 70·ε²
+  Class 3 :  d/t ≤ 90·ε²
+  Class 4 :  d/t >  90·ε²
+
+  ε = √(235/f_y)   →   ε² = 235/f_y      [f_y in N/mm²]</div>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>ε 인가 ε² 인가 — 가장 흔한 실수</div>
+    <p>I형강의 웹·플랜지는 <b>ε</b> 를 씁니다 (c/t ≤ 72ε, 33ε …). <b>원형중공단면만 ε² 를 씁니다.</b> 혼동하면 S355 에서 한계가 59.6 대신 73.2 로 나와 23 % 비보수측이 됩니다.</p>
+    <p style="margin-bottom:0">또한 CHS 는 압축·굽힘에 <b>같은 한계 하나</b>만 주어집니다. I형강처럼 하중종류별로 나뉘지 않습니다.</p>
+  </div>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>강종 / 재질</th><th class="num">f_y or R<sub>p0.2</sub><br>[MPa]</th><th class="num">ε² = 235/f_y</th><th class="num">Class 1<br>50ε²</th><th class="num">Class 2<br>70ε²</th><th class="num">Class 3<br>90ε²</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>S235</td><td class="num">235</td><td class="num">1.0000</td><td class="num">50.00</td><td class="num">70.00</td><td class="num"><b>90.00</b></td><td></td></tr>
+      <tr style="background:var(--wash)"><td>S355</td><td class="num">355</td><td class="num">0.6620</td><td class="num">33.10</td><td class="num">46.34</td><td class="num"><b>59.58</b></td><td>IEA 참조터빈 steel_drive 가정</td></tr>
+      <tr><td>S460</td><td class="num">460</td><td class="num">0.5109</td><td class="num">25.54</td><td class="num">35.76</td><td class="num"><b>45.98</b></td><td>Eurocode 기본 범위 상한</td></tr>
+      <tr style="background:var(--wash)"><td>42CrMo4 (d<sub>eff</sub>&gt;300 보정)</td><td class="num">510</td><td class="num">0.4608</td><td class="num">23.04</td><td class="num">32.25</td><td class="num"><b>41.47</b></td><td>K₁(R<sub>p0.2</sub>)=0.567 적용값</td></tr>
+      <tr><td>Q&amp;T 축강</td><td class="num">700</td><td class="num">0.3357</td><td class="num">16.79</td><td class="num">23.50</td><td class="num"><b>30.21</b></td><td>EN 1993-1-12 범위 상한</td></tr>
+      <tr><td>Q&amp;T 축강 (소재 16 mm)</td><td class="num">900</td><td class="num">0.2611</td><td class="num">13.06</td><td class="num">18.28</td><td class="num"><b>23.50</b></td><td><span class="pill p-no">Eurocode 범위 밖</span> 참고용</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>유효범위 주의:</b> Eurocode 본편은 S235–S460, EN 1993-1-12 가 S700 까지 보충합니다. <b>S700 초과는 Eurocode 적용 대상이 아닙니다.</b> 조질 축강(34CrNiMo6, 42CrMo4)의 소재 항복강도 700~1000 MPa 대는 규격 밖이므로 위 표의 하위 두 행은 <b>정합성 검산용</b>으로만 쓰십시오. 다만 이 방향의 외삽은 한계를 <b>낮추므로</b> 보수측입니다.</p>
+
+  <h4>Class 4 가 의미하는 것</h4>
+  <div class="quote">EN 1993-1-1 §5.5.2 — "Class 4 cross-sections are those in which <b>local buckling will occur before the attainment of yield stress</b> in one or more parts of the cross-section." <span class="ev ev-a">A</span></div>
+  <p>절차적으로는 유효단면 물성 또는 명시적 쉘 해석이 요구됩니다. 그런데 <b>EN 1993-1-1/1-5 는 원형중공단면에 대한 유효폭 정식화를 제공하지 않습니다</b> — 유효폭 이론은 평판 전용입니다. 따라서 <b>Class 4 CHS 의 경로는 EN 1993-1-6 하나뿐</b>입니다.</p>
+
+  <h3 id="s2-2">2.2 EN 1993-1-6 적용범위 — 실무상 가장 강력한 한 문장</h3>
+  <div class="quote">§1.1(16) — "This Standard is intended for application to structures within the following limits: design metal temperatures within the range −50 °C to +300 °C; <b>radius to thickness ratios within the range 20 to 5000</b>." <span class="ev ev-b">B</span></div>
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>설계보고서에 쓸 문장</div>
+    <p><b>r/t ≥ 20 은 d/t ≥ 40 을 뜻합니다.</b> 기어드 메인샤프트는 r/t = 1~2 로 쉘 규격 하한의 <b>1/10 ~ 1/20</b> 입니다.</p>
+    <p style="margin-bottom:0">즉 "안전율이 크다"가 아니라 <b>"쉘이 아니므로 쉘 좌굴 한계상태가 존재하지 않는다"</b> 가 정확한 서술이며, 인증 심사에서 훨씬 방어하기 쉽습니다.</p>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)">참고 — EN 1993-1-6 에는 <b>"좌굴 검토를 생략할 수 있는 조건" 조항이 별도로 없습니다.</b> 위 적용범위 문장이 사실상 그 역할을 합니다.</p>
+
+  <h2 id="s3"><span class="num">3</span>좌굴 계산식</h2>
+
+  <h3 id="s3-1">3.1 EN 1993-1-6 자오선(축방향) 좌굴 — Annex D.1.2</h3>
+  <p>아래 식들은 Knödel(독일 쉘좌굴 권위자)의 공개 Mathcad 예제와 <b>모든 단계의 산술을 3자리까지 대조 검증</b>했습니다.</p>
+  <div class="formula">입력:  r [mm] 중립면 반경 · t [mm] · l [mm] 경계간 길이 · E · f_yk · Q · C_xb · γ_M1
+
+(1)  ω = l / √(r·t)
+
+(2)  길이계수 C_x
+       ω ≤ 1.7          : C_x = 1.36 − 1.83/ω + 2.07/ω²
+       1.7 < ω ≤ 0.5·r/t : C_x = 1.0
+       ω > 0.5·r/t      : C_x = 1 + (0.2/C_xb)·(1 − 2·ω·t/r) ,  C_x ≥ 0.6
+       C_xb = 6 (BC1-BC1) / 3 (BC1-BC2) / 1 (BC2-BC2)
+
+(3)  σ_x,Rcr = 0.605 · E · C_x · (t/r)              ← 고전 좌굴응력 × C_x
+
+(4)  λ_x = √( f_yk / σ_x,Rcr )
+
+(5)  Δw_k/t = (1/Q)·√(r/t)          Q = 40 / 25 / 16  (제작등급 A/B/C)
+
+(6)  α_x = 0.62 / ( 1 + 1.91·(Δw_k/t)^1.44 )        ← 결함 감소계수
+
+(7)  λ_x0 = 0.20 ,  β = 0.60 ,  η = 1.0
+
+(8)  λ_p = √( α_x / (1 − β) )
+
+(9)  λ_x ≤ λ_x0        : χ = 1.0
+     λ_x0 < λ_x < λ_p  : χ = 1 − β·((λ_x − λ_x0)/(λ_p − λ_x0))^η
+     λ_x ≥ λ_p         : χ = α_x / λ_x²
+
+(10) σ_x,Rd = χ · f_yk / γ_M1        γ_M1 = 1.1 (풍력은 1.2, §7 참조)</div>
+
+  <figure>
+    <p class="fig-h">좌굴 감소계수 χ — 제작 품질등급의 효과</p>
+    <p class="fig-s">가로축 = 상대세장비 λ_x. r/t = 77 (IEA-22) 기준으로 α_x 를 산출한 곡선</p>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>Class A (Q = 40, 우수)</span>
+      <span><i style="background:var(--s2)"></i>Class B (Q = 25, 상)</span>
+      <span><i style="background:var(--s3)"></i>Class C (Q = 16, 보통)</span>
+      <span><i class="sq" style="background:var(--s4)"></i>IEA-22 운전점</span>
+    </div>
+    <div class="svgwrap" id="fig-chi"></div>
+    <figcaption>IEA-22 는 λ_x = 0.464 로 <b>중간(탄소성 상호작용) 구간</b>에 위치합니다. 제작등급 A ↔ C 의 차이는 χ 0.830 ↔ 0.782 로 <b>약 6 %</b> — 크지 않습니다. 그러나 λ 가 더 큰(더 얇은) 영역으로 가면 χ = α/λ² 구간에서 등급 차이가 <b>50 % 가까이</b> 벌어집니다. 제작 품질등급의 가치는 세장비에 강하게 의존합니다.</figcaption>
+  </figure>
+
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>판 자체가 다르다 — 반드시 명시할 것</div>
+    <div class="tw" style="margin:8px 0">
+    <table>
+      <thead><tr><th>판</th><th>α_x 식</th><th>β</th></tr></thead>
+      <tbody>
+        <tr><td><b>EN 1993-1-6:2007</b></td><td class="mono">0.62 / (1 + 1.91·(Δw_k/t)^1.44)</td><td class="num">0.60 (고정)</td></tr>
+        <tr><td>A1:2017 / prEN / :2025</td><td class="mono">0.83 / (1 + 2.2·(Δw_k/t)^0.88)</td><td class="num">0.75 / 0.65 / 0.50 (등급별)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="margin-bottom:0">본 보고서의 계산은 <b>2007년판</b> 기준입니다. 8 MW 타워 라운드로빈 연구에서 참가기관들이 <b>서로 다른 판</b>을 사용한 사례가 보고되어 있습니다 — 학술적 지적이 아니라 실제 분쟁 소지입니다. IEC 61400-6 은 <b>AMD1:2017 의 수정 자오선식을 쓰면 γ_M1 = 1.2 를 쓰라</b>고 명시합니다.</p>
+  </div>
+
+  <h3 id="s3-2">3.2 DNV-RP-C202 — 폐형식 경로 (실행하기 가장 쉬움)</h3>
+  <p>SDC Verifier 의 공개 수계산 벤치마크로 <b>ψ · ξ · ρ 계수 전부를 인쇄값에서 역산 검증</b>했습니다 (4자리 일치).</p>
+  <div class="formula">(A) 곡률 파라미터        Z_l = (l²/(r·t))·√(1−ν²)
+
+(B) 좌굴계수 (Table 3-2)
+     하중              ψ       ξ                  ρ
+     축응력            1     0.702·Z_l          0.5·(1 + r/(150t))^(−0.5)
+     굽힘              1     0.702·Z_l          0.5·(1 + r/(300t))^(−0.5)
+     비틀림·전단      5.34   0.856·Z_l^0.75      0.6
+     측압              4     1.04·√Z_l           0.6
+     정수압            2     1.04·√Z_l           0.6
+
+(C) C = ψ·√( 1 + (ρ·ξ/ψ)² )        ← 괄호 안은 Z_l 이 아니라 ξ
+
+(D) f_E = C · π²E/(12(1−ν²)) · (t/l)²
+
+(E) σ_a0 = −min(0, σ_a,Sd)   σ_m0 = −min(0, σ_m,Sd)   σ_h0 = −min(0, σ_h,Sd + p_Sd·r/t)
+
+(F) σ_j,Sd = √( σ_a0² − σ_a0·σ_h0 + σ_h0² + 3τ_Sd² )
+
+(G) λ_s² = (f_y/σ_j,Sd)·( σ_a0/f_Ea + σ_m0/f_Em + σ_h0/f_Eh + τ_Sd/f_Eτ )
+
+(H) f_ks = f_y / √(1 + λ_s⁴)
+
+(I) γ_M = 1.15                     (λ_s < 0.5)
+         = 0.85 + 0.60·λ_s         (0.5 ≤ λ_s ≤ 1.0)
+         = 1.45                    (λ_s > 1.0)
+
+(J) f_ksd = f_ks / γ_M        (K) 이용률 U = σ_j,Sd / f_ksd ≤ 1.0</div>
+  <p style="font-size:13px;color:var(--text-secondary)">⚠ 굽힘 행의 ρ 분모 <b>300</b> 은 축응력 행의 150 으로부터 유추한 값이며 벤치마크에서 검증되지 않았습니다. 축응력의 150 은 검증되었습니다. 물리적으로는 <b>굽힘이 균일압축보다 결함에 덜 민감</b>하다는 잘 알려진 사실을 DNV 가 표현한 것입니다 (§3.3 의 NASA 결과와 같은 물리).</p>
+  <p style="font-size:13px;color:var(--text-secondary)">RP-C202 에는 <b>명시적 r/t 적용범위가 없습니다.</b> 다만 Z_l 과 박육쉘 정식화 자체가 t ≪ r 을 전제하므로, D/t = 2~4 축에 적용하는 것은 의미가 없습니다.</p>
+
+  <h3 id="s3-3">3.3 고전식과 NASA 감소계수 — 자릿수 검산용</h3>
+  <div class="formula">고전 탄성 좌굴응력 (Lorenz-Timoshenko):
+    σ_cr = E·t / ( r·√(3(1−ν²)) )  =  0.605 · E · t/r     (ν = 0.3)
+
+NASA SP-8007 감소계수:
+    φ = (1/16)·√(r/t)
+    축압축:  γ = 1 − 0.901·(1 − e^(−φ))
+    굽힘  :  γ = 1 − 0.731·(1 − e^(−φ))
+    σ_allow = γ · σ_cr    (단, 항복으로 상한 제한)</div>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>반직관적 결과 — 굽힘 혜택은 생각보다 작다</div>
+    <p>"굽힘은 압축보다 좌굴에 유리하다"는 흔한 통념의 <b>정량적 크기</b>는 다음과 같습니다. NASA 두 식의 비 γ_bend/γ_comp:</p>
+    <div class="tw" style="margin:8px 0">
+    <table>
+      <thead><tr><th class="num">r/t</th><th class="num">50</th><th class="num">100</th><th class="num">250</th><th class="num">500</th><th class="num">1000</th><th class="num">2000</th></tr></thead>
+      <tbody><tr><td>γ_bend/γ_comp</td><td class="num">1.09</td><td class="num">1.14</td><td class="num">1.25</td><td class="num">1.40</td><td class="num">1.65</td><td class="num">2.04</td></tr></tbody>
+    </table>
+    </div>
+    <p style="margin-bottom:0"><b>메인샤프트 영역(r/t = 15~78)에서는 5~12 % 에 불과합니다.</b> 굽힘 혜택은 극박육 현상이며, 축 정도의 두께에서는 거의 못 챙깁니다. "굽힘이니까 여유가 2배"라는 가정은 틀립니다.</p>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>NASA 와 Eurocode 의 차이도 알아둘 것.</b> IEA-22 에 NASA 를 적용하면 허용응력 1,141 MPa 로 항복(355)이 지배해 좌굴 문제가 없어 보입니다. 그러나 EN 1993-1-6 은 χ = 0.81 을 줍니다. 차이는 <b>NASA 는 순수 탄성 감소계수</b>인 반면 <b>Eurocode 의 χ 는 탄소성 상호작용 구간(λ₀ ~ λ_p)을 포함</b>하기 때문입니다. NASA 는 자릿수 검산용으로만 쓰고 판정에는 쓰지 마십시오.</p>
+
+  <h2 id="s4"><span class="num">4</span>사례 검산 3건</h2>
+  <p>앞선 가이드 §04 사이징계산기의 15 MW 기어드 축, IEA-15 및 IEA-22 직접구동 토크튜브에 위 식들을 전부 적용했습니다.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:190px">항목</th><th>A. 기어드 단조축 15 MW</th><th>B. IEA-15 토크튜브</th><th>C. IEA-22 토크튜브</th></tr></thead>
+    <tbody>
+      <tr><td>OD × t × L [mm]</td><td class="num">1884 × 612 × 7200</td><td class="num">3000 × 100 × 2200</td><td class="num">3100 × 20 × 2700</td></tr>
+      <tr><td>f_y [MPa]</td><td class="num">510 (42CrMo4 보정)</td><td class="num">355</td><td class="num">355</td></tr>
+      <tr style="background:var(--wash)"><td><b>D/t</b></td><td class="num"><b>3.08</b></td><td class="num"><b>30.0</b></td><td class="num"><b>155.0</b></td></tr>
+      <tr><td>r/t (중립면)</td><td class="num">1.04</td><td class="num">14.5</td><td class="num">77.0</td></tr>
+      <tr style="background:var(--wash)"><td><b>단면등급</b></td><td class="num"><span class="pill p-ok">Class 1</span><br>한계 23.0 대비 7.5배 여유</td><td class="num"><span class="pill p-ok">Class 1</span><br>한계 33.1 대비 1.1배 여유</td><td class="num"><span class="pill p-no">Class 4</span><br>한계 59.6 의 2.6배 초과</td></tr>
+      <tr style="background:var(--wash)"><td><b>EN 1993-1-6 적용?</b></td><td class="num"><span class="pill p-no">✗ 범위 밖</span><br>r/t 하한 20 의 1/19</td><td class="num"><span class="pill p-no">✗ 범위 밖</span><br>r/t 하한 20 의 1/1.4</td><td class="num"><span class="pill p-ok">✓ 적용</span></td></tr>
+      <tr><td>고전 σ_cr = 0.605Et/r</td><td class="num">122,256 MPa<br><span style="font-size:12px;color:var(--text-muted)">항복의 240배</span></td><td class="num">8,762 MPa<br><span style="font-size:12px;color:var(--text-muted)">항복의 24.7배</span></td><td class="num">1,650 MPa<br><span style="font-size:12px;color:var(--text-muted)">항복의 4.6배</span></td></tr>
+      <tr><td>EN 1993-1-6 χ (등급 B)</td><td class="num">—</td><td class="num">—</td><td class="num"><b>0.812</b></td></tr>
+      <tr style="background:var(--wash)"><td><b>σ_x,Rd (γ_M1 = 1.2)</b></td><td class="num">해당 없음</td><td class="num">해당 없음</td><td class="num"><b>240 MPa</b><br><span style="font-size:12px;color:var(--text-muted)">등급 A 245 / C 231</span></td></tr>
+      <tr><td>DNV-RP-C202 f_ksd</td><td class="num">해당 없음</td><td class="num">해당 없음</td><td class="num"><b>252 MPa</b> <span class="pill p-ok">교차검증</span></td></tr>
+      <tr><td>NASA 탄성 허용 (굽힘)</td><td class="num">—</td><td class="num">—</td><td class="num">1,141 MPa → 항복 355 지배</td></tr>
+      <tr><td><b>결론</b></td><td><b>좌굴 검토 불요.</b> 쉘이 아니며 Class 1</td><td><b>좌굴 검토 불요.</b> D/t = 30 이어도 Class 1 이고 r/t &lt; 20</td><td><b>좌굴이 지배적 검토.</b> 항복 대비 <b>19 % 저감</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>독립 두 경로가 수렴한다</div>
+    <p>IEA-22 에 대해 <b>EN 1993-1-6 (γ_M1=1.1) 이 262 MPa, DNV-RP-C202 가 252 MPa</b> 를 줍니다 — <b>4 % 차이</b>입니다. 완전히 다른 정식화(Eurocode 는 결함진폭 기반 χ, DNV 는 곡률파라미터 기반 f_E)에서 나온 값이 이 정도로 일치하는 것은 두 계산이 모두 올바르게 수행되었다는 강한 방증입니다.</p>
+    <p style="margin-bottom:0">실무 권장: <b>DNV-RP-C202 로 계산하고 EN 1993-1-6 으로 검산</b>하십시오. DNV 쪽이 폐형식이라 스프레드시트 구현이 훨씬 쉽습니다.</p>
+  </div>
+
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>IEA-15 가 주는 교훈</div>
+    <p style="margin-bottom:0">D/t = 30 인 IEA-15 토크튜브조차 <b>Class 1 이고 쉘 규격 적용범위 밖</b>입니다. "직접구동 = 박육 = 좌굴 검토 필요" 라는 도식은 성립하지 않습니다. 실제 임계점은 <b>D/t 40(적용범위) 및 90ε²(Class 4)</b> 이며, IEA-15 는 둘 다 통과합니다. 판정은 반드시 <b>수치로</b> 하십시오.</p>
+  </div>
+
+  <h2 id="s5"><span class="num">5</span>베어링 시트 국부 타원화</h2>
+  <p>여기서부터가 기어드 중공축에서 <b>실제로 문제가 되는</b> 영역입니다. 전역 안정 문제가 아니라 국부 접촉 문제이므로 D/t 와 무관하게 발생합니다.</p>
+
+  <h3 id="s5-1">5.1 DIN 7190-1:2017-02 — 계산 체계</h3>
+  <div class="formula">기하:  Q_I = d_i / d_F   (중공축 지름비)     Q_A = d_F / d_aA   (허브/내륜 지름비)
+
+보조량 K — 식 (13), 중공축의 핵심:
+  K = (1+Q_A²)/(1−Q_A²) + ν_A + (E_A/E_I)·[ (1+Q_I²)/(1−Q_I²) − ν_I ]
+
+  중실축(Q_I = 0), 식 (14):
+  K = (1+Q_A²)/(1−Q_A²) + ν_A + (E_A/E_I)·(1 − ν_I)
+
+유효 과잉량 — 식 (7):
+  U_w = U − 0.4·(R_zA + R_zI)          ★ 2017년판. 2001년판은 0.8
+
+접촉압 — 식 (18)/(24):
+  ξ_w = U_w / d_F          p = ξ_w · E_A / K          U_w,req = p·K·d_F/E_A
+
+응력 (중공축, 외압 p):
+  시트에서    σ_r = −p ,  σ_t = −p·(1+Q_I²)/(1−Q_I²)
+  보어에서    σ_r = 0  ,  σ_t = −2p/(1−Q_I²)      ★ 최대 후프응력
+
+항복 한계압:
+  중공축   p_PI = (1 − Q_I²)·R_eLI / √3
+  중실축   p_PI = 2·R_eLI / √3
+  허브     p_PA = (1 − Q_A²)·R_eLA / √3
+
+요구 접촉압:
+  토크·축력   p_req = S_R·√( F_ax² + (2T/d_F)² ) / (ν·π·d_F·l_F)
+  반경하중    p_r   = F_r / (d_F · l_F)              ← 베어링 시트에서 지배적
+  굽힘(허브)  p_b   = 4.5·M_b / ((1−Q)·d_F·l_F²)     ← 기어·커플링용, 베어링에는 통상 미적용
+
+설계규칙:  비틀림 l_F/d_F ≤ 1.5 · 교번굽힘 l_F/d_F = 1.5~2.0</div>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>2017년판의 평활계수 변경 — 놓치면 4 µm 손해</div>
+    <p>DIN Media 변경목록 원문: <i>"Notable changes include <b>reducing the smoothening factor from 0.8 to 0.4</b> to align with practical experience."</i></p>
+    <p style="margin-bottom:0">MESYS · KISSsoft · Bearing News 가 독립적으로 확인합니다. 반면 HS Anhalt 강의자료와 eAssistant 핸드북은 여전히 <b>0.8</b> 을 싣고 있습니다 — 구판 기준이므로 2017년판 준거 계산에 쓰면 안 됩니다.</p>
+  </div>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>탄소성 폐형식은 중공축에 적용 불가</div>
+    <p>KISSsoft 의 DIN 7190 문서가 전제조건을 명시합니다: <i>"The inner part (shaft) must be full (Q<sub>i</sub> = 0)"</i>, <i>"EI = EA and μI = μA"</i>.</p>
+    <p style="margin-bottom:0">일반 탄성 절차(식 13/18/24)는 Q_I 를 명시적으로 포함하므로 <b>중공축에 유효</b>합니다. 그러나 <b>탄소성 폐형식(식 28~42, 소성침투율 q_PA/q_A ≤ 0.30 포함)은 Q_I = 0 에 대해서만 유도</b>되었습니다. 중공 시트에 소성이 개입하면 규격의 폐형식 밖이며 FE 로 가야 합니다.</p>
+  </div>
+
+  <h3 id="s5-2">5.2 중공축 페널티 — 세 가지가 동시에</h3>
+  <figure>
+    <p class="fig-h">중공비 Q_I 가 만드는 세 가지 페널티</p>
+    <p class="fig-s">좌: 같은 접촉압을 얻기 위한 과잉량 증가율 f_hollow = K(Q_I)/K(0) · 우: 축 보어의 후프응력 배율 2/(1−Q_I²)</p>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>Q_A = 0.85</span>
+      <span><i style="background:var(--s2)"></i>Q_A = 0.89 (1120 mm SRB)</span>
+      <span><i style="background:var(--s3)"></i>Q_A = 0.93</span>
+      <span><i style="background:var(--s8)"></i>보어 후프응력 배율</span>
+    </div>
+    <div class="svgwrap" id="fig-hollow"></div>
+    <figcaption>과잉량 페널티는 Q_I = 0.5 까지는 완만(5~12 %)하다가 그 이후 급격해집니다 — <b>SKF 가 임계값을 정확히 0.5 에 둔 이유</b>가 여기 있습니다. 반면 <b>보어 후프응력은 처음부터 가파릅니다</b>: Q_I = 0.589 에서 이미 3.06배, 0.85 에서 7.2배입니다. 후프응력은 압축이라 그 자체로는 파손을 부르지 않지만, 내경면의 피로(§DIN 743 가이드 §12.3)와 중첩됩니다.</figcaption>
+  </figure>
+
+  <figure>
+    <p class="fig-h">접촉압 여유의 붕괴 — 링 크리프의 발생 조건</p>
+    <p class="fig-s">1120 mm 시트, 과잉량 600 µm, 베어링 230/1120 (D=1580, B=345), 반경하중 3 MN 기준</p>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>p / p_r (접촉압 ÷ 반경하중 요구압)</span>
+      <span><i style="background:var(--axis)"></i>분리 한계 = 1.0</span>
+      <span><i class="sq" style="background:var(--crit);opacity:.15"></i>위험 영역</span>
+    </div>
+    <div class="svgwrap" id="fig-pmargin"></div>
+    <figcaption>중공비가 커질수록 <b>같은 과잉량에서 접촉압이 낮아지는데</b>(K 가 커지므로) <b>반경하중 요구압은 그대로</b>여서 여유가 잠식됩니다. Q_I ≈ <b>0.84</b> 에서 여유가 1.0 을 하회합니다. 실제로는 원주방향 <b>국부 최소값</b>이 평균보다 낮으므로 <b>1.0 이 아니라 1.5~2.0 을 목표</b>로 잡아야 합니다.</figcaption>
+  </figure>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>사례</th><th class="num">Q_I</th><th class="num">Q_A</th><th class="num">K</th><th class="num">f_hollow</th><th class="num">p<br>[MPa]</th><th class="num">p_r<br>[MPa]</th><th class="num">여유</th><th class="num">보어 후프<br>[MPa]</th></tr></thead>
+    <tbody>
+      <tr><td>600 mm 시트 · 중실 (2 MW 실측)</td><td class="num">0.000</td><td class="num">0.881</td><td class="num">8.94</td><td class="num">1.000</td><td class="num">7.76</td><td class="num">4.29</td><td class="num"><b>1.81</b></td><td class="num">−15.5</td></tr>
+      <tr style="background:var(--wash)"><td>1120 mm 시트 · 중공 (IWES 급)</td><td class="num">0.589</td><td class="num">0.890</td><td class="num">10.71</td><td class="num">1.110</td><td class="num">10.47</td><td class="num">7.76</td><td class="num"><b>1.35</b></td><td class="num">−32.1</td></tr>
+      <tr><td>1120 mm 시트 · 박육 중공</td><td class="num">0.850</td><td class="num">0.890</td><td class="num">14.85</td><td class="num">1.540</td><td class="num">7.55</td><td class="num">7.76</td><td class="num"><span class="tag-no">0.97</span></td><td class="num">−54.4</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)">항복 여유는 모든 경우에 충분합니다 (p_PI = 90~294 MPa, 실제 p 의 8.6~38배). <b>베어링 시트의 지배 기준은 항복이 아니라 접촉압 유지</b>입니다.</p>
+
+  <h3 id="s5-3">5.3 베어링 제조사 규정 — SKF 만이 수치를 공개한다</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>제조사</th><th style="width:210px">중공축 지름비 한계</th><th>중공축 과잉량 산정식</th></tr></thead>
+    <tbody>
+      <tr style="background:var(--wash)"><td><b>SKF</b></td><td class="num"><b>c_i = d_i/d ≥ 0.5</b><br><span style="font-size:12px;color:var(--text-muted)">원문 독일어 확인</span></td><td>선도(Diagram)만 제공. 폐형식 미공개 → §5.2 의 f_hollow 로 대체 가능</td></tr>
+      <tr><td>Schaeffler / FAG / INA</td><td class="num"><span class="pill p-no">미공개</span></td><td>정성적 언급만 — "중공축은 필요시 더 조인 끼워맞춤을 선택"</td></tr>
+      <tr><td>NTN</td><td class="num"><span class="pill p-no">미공개</span></td><td>원문: <i>"For hollow shafts, please contact NTN Engineering"</i></td></tr>
+      <tr><td>NSK</td><td class="num"><span class="pill p-no">미공개</span></td><td>없음</td></tr>
+      <tr><td>Koyo / JTEKT</td><td class="num"><span class="pill p-no">미공개</span></td><td>없음</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="formula">SKF 내륜 등가 지름비 추정:
+  c_e = d / [ k·(D − d) + d ]
+  k = 0.25  원추롤러(계열 ≤150 mm) 및 원통롤러
+  k = 0.30  그 외 모든 형식
+  (D = 베어링 외경)   → 이 c_e 를 DIN 7190 의 Q_A 로 사용</div>
+
+  <h4>형상공차 — 진원도는 IT 등급으로만 통제된다</h4>
+  <div class="tw">
+  <table>
+    <thead><tr><th>베어링 등급</th><th>면</th><th class="num">치수공차</th><th class="num">진원도 t₁</th><th class="num">평행도 t₂</th><th class="num">축방향 흔들림 t₃</th></tr></thead>
+    <tbody>
+      <tr style="background:var(--wash)"><td>Normal / PN</td><td>축</td><td class="num">IT6 / IT5</td><td class="num"><b>IT4/2</b> (원주하중)<br>IT5/2 (점하중)</td><td class="num">IT4/2 · IT5/2</td><td class="num">IT4</td></tr>
+      <tr><td>Normal</td><td>하우징</td><td class="num">IT7 / IT6</td><td class="num">IT5/2 · IT6/2</td><td class="num">IT5/2 · IT6/2</td><td class="num">IT5</td></tr>
+      <tr><td>P5</td><td>축</td><td class="num">IT5</td><td class="num">IT2/2 · IT3/2</td><td class="num">IT2/2 · IT3/2</td><td class="num">IT2</td></tr>
+      <tr><td>P4 / SP</td><td>축</td><td class="num">IT4</td><td class="num">IT1/2 · IT2/2</td><td class="num">IT1/2 · IT2/2</td><td class="num">IT1</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><b>"/2" 의 의미:</b> 전체 반경 흔들림 공차는 <b>두 동축 원통의 반지름 차</b>로 정의되므로 ISO 공차등급의 <b>절반</b>으로 제한합니다.</p>
+  <p><b>실제 수치로 환산 (ISO 286 IT 값 기준):</b> d = 600 mm, Normal 등급, 원주하중 → IT4/2. IT4 (500–630 mm) = 20 µm ⇒ <b>진원도 10 µm</b>. d = 1120 mm 이면 IT4 (1000–1250 mm) = 33 µm ⇒ <b>진원도 약 16 µm</b>.</p>
+  <p><b>표면조도 (Schaeffler, 500–1250 mm):</b> IT7 → Ra 3.2 · IT6 → 1.6 · IT5 → 1.6 · IT4 → 0.8 µm. <i>"축은 연삭, 구멍은 정밀선삭"</i></p>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>중요한 부재 — 어느 제조사도 진원도 µm 상한을 주지 않는다</div>
+    <p>SKF · Schaeffler · NTN · NSK · Koyo 전부를 조사했으나, <b>과잉량 대비 허용 진원도 이탈량을 µm 로 명시한 곳은 없습니다.</b> 통제는 전적으로 위 IT 등급 표를 통한 간접 방식입니다.</p>
+    <p style="margin-bottom:0">누군가 "제조사가 정한 진원도 한계는 ○ µm" 라고 하면 <b>출처를 요구하십시오</b> — 본 조사에서는 찾지 못했습니다.</p>
+  </div>
+
+  <h3 id="s5-4">5.4 링 크리프 — 실측 데이터</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:230px">출처</th><th>대상</th><th>핵심 수치</th></tr></thead>
+    <tbody>
+      <tr style="background:var(--wash)"><td><b>Kirsch &amp; Kyling 2021</b><br>Forsch. Ingenieurwes. (IWES BeBen XXL)</td><td>3–4 MW 급 <b>주조 중공 로터축</b><br>주베어링 Ø1120 SRB · 지지 Ø820 4열 CRB<br>EN-GJS-400-18-LT 칠주조 · µ = 0.3</td><td>원문: <i>"The occurring sliding distance through the interference fit is <b>29 µm</b>, which clearly exceeds the mentioned threshold."</i><br>임계: <i>"If the sliding distance exceeds a threshold value of <b>0.1 µm</b>, ring creep probably occurs."</i><br>발생 예측: 시험대 하중의 <b>57 % 이상</b>에서 프레팅 피로·크리프 발생<br>최대 굽힘모멘트 13 MN·m</td></tr>
+      <tr><td><b>Grosse &amp; Kyling 2025</b><br>Forsch. Ingenieurwes.</td><td>2 MW 드라이브트레인<br>주베어링 보어 <b>0.6 m</b> · <b>반경 과잉량 0.1 mm</b><br>베어링 틈새 0.15 mm · µ = 0.2</td><td>100 % 하중 (697 kN, 3,740 kN·m): 회전당 슬라이딩 <b>24 µm</b><br>144 % 하중 (1 MN, 5,370 kN·m): <b>40 µm</b><br>★ <b>탄성 슬립허용치 SLTO ≤ 0.002 mm 여야 크리프가 FE 에서 검출됨</b></td></tr>
+      <tr><td>IWES 블로그 (Grosse)</td><td>대형 구름베어링 일반</td><td><i>"<b>Hollow cast main shafts and lightweight designs increase flexibility, making ring creep more visible.</b>"</i><br><i>"Local under-pressurized regions are starting points for creeping."</i><br><i>"Classical tolerance-based design alone is insufficient for large components"</i></td></tr>
+      <tr><td>MDPI Machines 11(5):543</td><td>대형 베어링 크리프 기구</td><td>롤러 하중이 링을 <b>파형 변형</b>시켜 롤러 아래에서는 마찰전단↑·접촉압↓ → 국부 미끄럼 누적.<br>마찰계수는 크리프 중 <b>증가</b>한다 (마모산화·미소용착) — 수명계산에서 µ 를 상수로 두면 안 됨</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>0.1 µm 임계값의 가장 약한 고리</div>
+    <p>이 임계값의 출처는 FVA 구름베어링 작업반(2008)이며, IWES 자신이 <b>"보어 100 mm 까지의 베어링에 대해서만 검증되었다"</b> 고 명시합니다. 이를 <b>1120 mm 에 적용하는 것은 11배 외삽</b>입니다.</p>
+    <p style="margin-bottom:0">IWES 도 이 한계를 인지하고 명시적으로 flag 하고 있습니다. 인용할 때 반드시 함께 옮기십시오.</p>
+  </div>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>FE 수치 함정 — 반드시 기억할 것</div>
+    <p style="margin-bottom:0">Abaqus/ANSYS 접촉 모델에서 <b>탄성 슬립허용치(SLTO)가 0.002 mm 보다 크면 크리프가 아예 검출되지 않습니다.</b> 자체 모델에서 크리프가 0 으로 나온다면 결과를 믿기 전에 SLTO 부터 확인하십시오. 이것은 물리가 아니라 수치 인공물입니다.</p>
+  </div>
+
+  <h3 id="s5-5">5.5 링 타원화 폐형식</h3>
+  <div class="formula">[1] 얇은 링 · 지름방향 대칭 점하중 P 2개 (Air Force Stress Manual Table 5-6)
+    M(x) = P·R·( 1/π − ½·sin x )        x = 하중점으로부터의 각도 [rad]
+    하중점    M = +0.31831·P·R          ← 최대
+    90° 위치  M = −0.18169·P·R
+    지름 변화 (하중선 방향, 감소) = (π/4 − 2/π)·P·R³/(E·I) = 0.148847·P·R³/(E·I)
+    지름 변화 (직교방향, 증가)    = (2/π − ½)·P·R³/(E·I)  = 0.136619·P·R³/(E·I)
+    폭 b · 두께 t 슬리브:  I = b·t³/12 ,  σ_b = 6M/(b·t²)
+
+[2] 균일 외압 → 타원화 없음
+    M = 0 ,  균일 반경수축 δ_r = q·R²/(A·E) ,  탄성좌굴 q_cr = 3·E·I/R³
+    ★ 완전 균일 압력은 타원화를 만들지 않는다.
+      베어링 시트 타원화는 전부 (i) 비균일 롤러 반력 (ii) 제작 진원도 오차 에서 온다.
+
+[3] 롤러 최대하중 (Stribeck / Harris)
+    Q_max = 5 · F_r / (Z · cos α)        정상 틈새
+    Q_max = 4.37 · F_r / (Z · cos α)     무틈새
+    Stribeck 분포:  Q(ψ) = Q_max·[1 − (1−cos ψ)/(2ε)]^(3/2)
+
+[4] 진원도 이탈 ↔ 접촉압 손실  (관계식 유도)
+    Δp/p = ΔU / U_w        ← K, Q_I, Q_A, E 와 무관하게 정확히 성립
+    분리 조건 (강체 근사, 보수측):  OOR_local ≥ U_w,min
+    실무 권장:  OOR ≤ (0.3 ~ 0.5) · U_w,min</div>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>존재하지 않는 것 — 명확히</div>
+    <p><b>[4] 의 분리 기준과 0.3~0.5 계수는 규격이 아니라 유도·권장값입니다.</b> DIN 7190 에도, SKF·Schaeffler 카탈로그에도, 풍력 문헌에도 <b>진원도 이탈과 접촉압 손실을 잇는 폐형식은 없습니다.</b></p>
+    <p style="margin-bottom:0">또한 <b>(롤러 수, 하중영역 각) → (링 굽힘) → (접촉압 손실)</b> 을 직접 잇는 발표된 폐형식도 <b>존재하지 않습니다.</b> MDPI 논문은 정성적으로 기술하고, IWES 는 FE 로 풉니다. 누군가 그런 식을 제시하면 그것은 인용이 아니라 <b>구성물</b>입니다.</p>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>Δp/p = ΔU/U_w 의 함의.</b> 중공축은 더 유연하므로(K 가 큼) 같은 진원도 오차에 대해 <b>절대</b> 압력손실은 작습니다 — 1120 mm 시트에서 중실 0.089 MPa/µm, 중공 Q_I=0.85 는 0.053 MPa/µm. 그러나 <b>출발 압력 자체가 낮으므로 상대 손실은 동일</b>합니다. 이 관계는 기하·재질과 무관하게 정확히 성립하며, 이것이 링 크리프 판정의 핵심입니다.</p>
+
+  <h2 id="s6"><span class="num">6</span>빔 모델 판정기준</h2>
+  <p>사용자 요청에 따라 요소 이론이 아니라 <b>판정 기준</b>만 정리합니다.</p>
+
+  <h3>6.1 원리적 한계 — 빔은 타원화를 표현할 자유도가 없다</h3>
+  <div class="quote">
+    Abaqus <i>Beam modeling: overview</i> — "The beam section ... <b>cannot deform in its own plane</b> (except for a constant change in cross-sectional area, which may be introduced in geometrically nonlinear analysis)." <span class="ev ev-a">A</span><br><br>
+    Abaqus <i>Theory Manual</i> §3.5.1 — "the ovalization and, possibly, warping, of the cross-section may be important: <b>these effects can reduce the bending stiffness of the member by a factor of five or more</b> in common piping designs." <span class="ev ev-a">A</span><br><br>
+    Abaqus <i>Elbow elements</i> — "Although the elbow elements appear as beams, <b>they are, in fact, shells</b>, with quite complex deformation patterns allowed." · "Flexibility factors ... <b>do not apply in nonlinear cases, and the pipeline must be modeled as a shell</b> to predict the response accurately." <span class="ev ev-a">A</span>
+  </div>
+  <p>즉 빔 모델의 문제는 정확도가 아니라 <b>표현력</b>입니다. 격자를 아무리 세밀하게 해도 단면 변형이 없는 요소는 타원화를 만들어내지 못합니다. ANSYS ELBOW290 과 Abaqus ELBOW 요소가 <b>Fourier 자유도를 추가</b>하는 이유가 이것입니다.</p>
+
+  <h3>6.2 세장비 기준</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>이론</th><th class="num">L/D 하한</th><th>원문</th></tr></thead>
+    <tbody>
+      <tr><td>Euler-Bernoulli</td><td class="num"><b>≳ 15</b></td><td>"typical dimensions in the cross-section should be <b>less than about 1/15</b> of typical axial distances for transverse shear flexibility to be negligible"</td></tr>
+      <tr style="background:var(--wash)"><td>Timoshenko (전단변형 포함)</td><td class="num"><b>≳ 8</b></td><td>"shear flexible beam theory can provide useful results for cross-sectional dimensions <b>up to 1/8</b> of typical axial distances"</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>"typical axial distance" 의 정의에 주의.</b> Abaqus 는 이를 <i>"distance between supports, gross cross-section changes, or vibration wavelengths"</i> 로 규정합니다. 메인샤프트에서는 전장이 아니라 <b>베어링 간격</b>이 해당하므로, 실효 비율은 전장 기준보다 <b>더 나빠집니다.</b></p>
+
+  <figure>
+    <p class="fig-h">빔 이론 유효성 — 메인샤프트는 어디에도 들지 못한다</p>
+    <p class="fig-s">가로축 = L/D. 세로 기준선은 Timoshenko 하한 8, Euler-Bernoulli 하한 15</p>
+    <div class="legend">
+      <span><i class="sq" style="background:var(--s1)"></i>실제 L/D</span>
+      <span><i class="sq" style="background:var(--crit);opacity:.15"></i>빔 이론 유효범위 밖</span>
+    </div>
+    <div class="svgwrap" id="fig-beam"></div>
+    <figcaption>세 축 모두 Timoshenko 하한의 <b>1/2 ~ 1/11</b> 에 위치합니다. 참고로 비교한 <b>풍력 타워</b>는 L/D ≈ 25 로 빔 이론이 편안하게 성립합니다 — 같은 원통 구조라도 축과 타워는 근본적으로 다른 대상입니다.</figcaption>
+  </figure>
+
+  <h3>6.3 국부 교란의 영향권 — 베어링 시트 타원화는 얼마나 멀리 가는가</h3>
+  <div class="formula">이론 (Kraus, 원통쉘 굽힘 경계층):
+    교란은 √(R·t) 에 비례하는 특성길이로 지수 감쇠
+    90 % 감쇠 거리 ≈ 2·√(R·t)      (NASA 예제 역산: 1.8·√(Rt))
+
+상용코드 구현 (ANSYS ELBOW 명령):
+    "the algorithm marches out along the straight region and converts 289's to 290's
+     until a distance of 2 pipe diameters is exceeded"
+    → 교란영역 반경 = 2 × 지름</div>
+  <div class="tw">
+  <table>
+    <thead><tr><th>축</th><th class="num">L/D</th><th class="num">√(R·t)</th><th class="num">2√(Rt)<br>이론</th><th class="num">2×D<br>ANSYS</th><th class="num">베어링<br>스팬</th><th>판정</th></tr></thead>
+    <tbody>
+      <tr style="background:var(--wash)"><td>A. 기어드 단조축 15 MW</td><td class="num">3.82</td><td class="num">624</td><td class="num">1,248</td><td class="num">3,768</td><td class="num">5,200</td><td><span class="pill p-no">양측 합 7,536 &gt; 5,200 → 중첩</span></td></tr>
+      <tr><td>B. IEA-15 토크튜브</td><td class="num">0.73</td><td class="num">381</td><td class="num">762</td><td class="num">6,000</td><td class="num">1,200</td><td><span class="pill p-no">중첩</span></td></tr>
+      <tr><td>C. IEA-22 토크튜브</td><td class="num">0.87</td><td class="num">175</td><td class="num">351</td><td class="num">6,200</td><td class="num">870</td><td><span class="pill p-no">중첩</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>세 기준이 같은 결론으로 수렴한다</div>
+    <p>① <b>세장비</b> L/D = 3.8 은 Timoshenko 하한 8 의 절반<br>② <b>ANSYS 2×D 규칙</b>으로 양측 베어링의 교란영역이 스팬을 초과<br>③ <b>단면 변형 자유도</b> 자체가 없어 타원화를 원리적으로 표현 불가</p>
+    <p style="margin-bottom:0"><b>메인샤프트에는 빔 이론이 깨끗하게 성립하는 원역(far field)이 없습니다.</b> 서로 독립적인 세 근거가 같은 방향을 가리키는 것이 이 결론의 강도입니다.</p>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)">단, <b>2√(Rt) 는 박육쉘 공식</b>이므로 t 가 R 에 필적하는 후육축(사례 A)에서는 그대로 쓸 수 없습니다. 두 기준이 어긋나면 <b>큰 쪽을 채택</b>하십시오.</p>
+
+  <h3>6.4 빔 모델 보정의 표준 패턴 — 그리고 그 한계</h3>
+  <p>배관 분야는 이 문제를 <b>빔 모델 + 스칼라 보정</b>으로 해결해 왔습니다. 곡관(엘보)의 유연성계수·응력증대계수(SIF)가 그것입니다.</p>
+  <div class="formula">유연성 특성수:   h = t·R₁ / r₂²        (R₁ = 곡률반경, r₂ = 단면 평균반경)
+유연성계수:      k = 1.65 / h
+면내 SIF:        i_i = 0.90 / h^(2/3)
+면외 SIF:        i_o = 0.75 / h^(2/3)
+ASME III C₂ =    1.95 / h^(2/3)
+하한:            k, i 는 어떤 경우에도 1 미만으로 취하지 않는다</div>
+  <p><b>패턴의 요점:</b> 1-D 빔 모델을 유지하되, 빔이 구조적으로 표현할 수 없는 2-D 단면 물리를 <b>하나의 무차원수 h 의 함수인 스칼라</b>로 주입합니다. 직축에는 곡관의 h 가 그대로 전이되지 않지만, <b>템플릿은 유효</b>합니다 — 직축 빔 모델을 정당화하려면 대응하는 무차원수를 명명하고 그 보정이 1 에 가까움을 보여야 합니다.</p>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>보정 패턴의 정량적 한계 — Abaqus 벤치마크</div>
+    <p>Abaqus 예제 1.1.3(선형탄성 배관 면내굽힘, 쉘 40×75 기준해 대비):</p>
+    <ul style="margin:8px 0">
+      <li><b>ELBOW31 + Fourier 6 모드</b> — 쉘 기준해와 <i>"excellent agreement"</i></li>
+      <li><b>0-모드 ELBOW31</b>(= 고전 빔) — <i>"cannot ovalize, which accounts for its stiff response"</i>, 최대 <b>5배 과강성</b></li>
+      <li><b>PIPE31 + 규격 보정계수</b> — 전 범위에서 <b>약 20 % 오차 상존</b>, k ≈ 1.5 부근에서 과강성↔과연성 전이</li>
+    </ul>
+    <p style="margin-bottom:0">즉 <b>규격식 스칼라 보정조차 설계된 선형 영역에서 20 % 잔차</b>를 남깁니다. 그리고 Abaqus 자신이 명시하듯 <b>비선형에는 아예 적용되지 않습니다.</b></p>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>직축과 곡관의 차이도 인지할 것.</b> 곡관의 타원화 구동력은 <b>곡률</b>이지만, 메인샤프트의 구동력은 <b>국부 하중 도입</b>(베어링 시트, 압입, 수축링)입니다. 따라서 곡관 SIF 를 그대로 가져올 수는 없고, §6.3 의 교란영역 기준이 대신 판정 도구가 됩니다.</p>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>회전축 전용 기준은 없습니다.</b> API 684, ISO 21940 및 회전체동역학 교재에서 "언제 빔 회전자 모델이 무효가 되는가"에 대한 규범적 기준을 찾지 못했습니다. 축대칭 조화요소·3-D 솔리드 회전자 정식화 연구가 다수 존재한다는 사실 자체가 빔의 한계를 방증하지만, 인용 가능한 임계값은 아닙니다. 구조·배관 분야에서 차용해야 합니다.</p>
+
+  <h2 id="s7"><span class="num">7</span>풍력 규격의 공백</h2>
+  <p>결론부터: <b>메인샤프트의 쉘 좌굴·타원화는 풍력 규격의 실제 공백이며, 타 분야 규격 차용이 불가피하고 또 정당합니다.</b></p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:170px">규격</th><th>안정성 취급</th><th>타원화·진원도</th></tr></thead>
+    <tbody>
+      <tr><td><b>IEC 61400-1:2019</b></td><td>§7.6.4 "Stability" 존재. <b>다만 1쪽 미만</b> (7.6.4 와 7.6.5 가 같은 p.57 에서 시작). 배경문서 기준 <b>좌굴 γ ≥ 1.2</b> — Eurocode 3-1-6 의 1.1 보다 보수적</td><td>없음</td></tr>
+      <tr style="background:var(--wash)"><td><b>IEC 61400-8:2024</b><br><span style="font-size:12px;color:var(--text-muted)">메인샤프트 명시 포함</span></td><td>한계상태 목록에 <i>"stability analysis (e.g. buckling)"</i> <b>1회</b>. 그 외 유일한 언급은 <i>"For buckling, the partial safety factor for resistance shall be chosen as per IEC 61400-1, unless it can be shown to be lower with appropriate data."</i><br><b>수식 0 · 절차 0 · 인용규격 0</b></td><td class="num"><span class="pill p-no">전무</span></td></tr>
+      <tr><td><b>IEC 61400-6:2020</b><br><span style="font-size:12px;color:var(--text-muted)">타워·기초</span></td><td><b>EN 1993-1-6 을 규범적으로 인용.</b> §6.5.1: <i>"<b>shell buckling for tubular towers</b> or beam buckling of lattice towers"</i><br>§6.5.2: γ_M1 = 1.1 (AMD1:2017 수정 자오선식 사용 시 <b>1.2</b>)<br>§6.5.3 GMNIA 허용 · <b>제작·설치 결함 반영 의무</b> · Annex E 개구부 간이검증</td><td>플랜지 평면도만 (2.0 mm). 쉘 진원도는 EN 1993-1-6 의 제작등급에 위임</td></tr>
+      <tr><td>GL 2010</td><td>기호 γ_Mc "material partial safety factor for stability" 확인. <b>수치와 참조 좌굴규격은 미확인</b></td><td>미확인</td></tr>
+      <tr><td>IEC 61400-4</td><td>DIN 743 및 <b>DIN 7190</b> 을 규범 인용. ISO 4287/4288(표면조직) 인용하나 <b>형상공차 규격은 없음</b></td><td class="num"><span class="pill p-no">전무</span></td></tr>
+      <tr><td>DIN 743</td><td>적용한계 원문: <i>"...kein dominierender Querkraftschub; <b>kein Knicken</b>"</i> — <b>좌굴 명시적 제외</b>. 중공축의 정적 지지계수 K_2F 는 제공하면서 안정성은 침묵</td><td class="num"><span class="pill p-no">해당 없음</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>결정적 증거 — 의도적 누락 논증</div>
+    <p>IEC 61400-8 은 Eurocode 3 를 <b>네 번</b> 규범 인용합니다 — EN 1993-<b>1-8</b>(접합), <b>1-9</b>(피로), <b>1-10</b>(인성), EN 1999(알루미늄). 그런데 <b>EN 1993-1-6(쉘 강도·안정)만 빠져 있습니다.</b></p>
+    <p style="margin-bottom:0">같은 기술위원회(TC 88)가 만든 <b>IEC 61400-6 은 EN 1993-1-6 을 규범 인용</b>하고 AMD1:2017 까지 추적합니다. TC 88 은 이 규격의 존재를 알고 있으면서 나셀 구조부품에는 인용하지 않은 것입니다. <b>범위 착오가 아니라 실제 공백</b>이라는 가장 강한 증거입니다.</p>
+  </div>
+
+  <p><b>IEC 61400-8 전문 검색 결과 (FDIS 88/1010 및 CDV 88/897 양쪽):</b></p>
+  <div class="two">
+    <div class="card" style="border-top:3px solid var(--good)">
+      <h4 style="margin-top:0">검색 결과 있음</h4>
+      <p style="font-size:13px;margin-bottom:0"><code>buckling</code> (2회) · <code>stability</code> (1회) · <code>thin-walled</code> (1회 — 그것도 <b>안정이 아니라 처짐</b> 문맥의 §5.2.2 "out of plane deformations in thin walled structures") · <code>wall thickness</code> · <code>main shaft</code> · <code>finite element</code></p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--crit)">
+      <h4 style="margin-top:0">전무 (양쪽 문서 모두)</h4>
+      <p style="font-size:13px;margin-bottom:0"><code>shell</code> · <code>ovalization</code> · <code>ovality</code> · <code>out-of-roundness</code> · <code>roundness</code> · <code>circularity</code> · <code>cylindricity</code> · <code>slenderness</code> · <code>D/t</code> · <code>EN 1993-1-6</code> · <code>DIN 743</code> · <code>local buckling</code> · <code>geometric imperfection</code> · <code>cross-section distortion</code> · <code>eigenvalue</code> · <code>shell element</code> · <code>beam element</code> · <code>bearing seat</code> · <code>form tolerance</code> · <code>hollow shaft</code></p>
+    </div>
+  </div>
+
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>차용 권장 순서 — 인접 권위 기준</div>
+    <ol style="margin-bottom:0">
+      <li><b>EN 1993-1-6</b> — 같은 IEC 61400 계열의 -6 이 <b>동일한 기하 부류(원통 쉘)</b>에 대해 이미 규범 인용 중. 가장 논쟁의 여지가 적은 차용</li>
+      <li><b>γ ≥ 1.2</b> — IEC 61400-8 → -1 위임 경로상 <b>저항 산정법과 무관하게 지배</b>. 어느 규격으로 저항을 구하든 이 계수를 적용</li>
+      <li><b>DNV-RP-C202</b> — 폐형식 교차검증용. §4 에서 확인했듯 EN 1993-1-6 과 4 % 이내로 일치</li>
+      <li><b>DIN 7190-1 + SKF c_i ≥ 0.5</b> — 베어링 시트 국부 문제. IEC 61400-4 가 DIN 7190 을 이미 규범 인용하므로 근거가 있음</li>
+    </ol>
+  </div>
+
+
+  <h2 id="s8"><span class="num">8</span>실제 사양 검토 — 제시된 9안</h2>
+
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>입력 사양</div>
+    <p>외경 d = 5,070 ~ 5,157 mm · 두께 t = 69.5 ~ 72.5 mm · <b>d/t = 69.9 ~ 74.2</b> (9개 행)</p>
+    <p style="margin-bottom:0">이 사양은 <b>본 보고서가 다룬 판정 경계의 정확히 한가운데</b>에 놓입니다. 앞선 사례 A(기어드 단조축 D/t = 3)는 검토 불요, 사례 C(IEA-22, D/t = 155)는 명백히 필요였는데, 이 사양은 <b>재질에 따라 결론이 갈리는 구간</b>입니다.</p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi nt"><div class="l">d/t 범위 (9안)</div><div class="v">69.9 – 74.2</div><div class="d"><span class="pill p-n">쉘 영역</span> 적용하한 40 의 1.8배</div></div>
+    <div class="kpi no"><div class="l">단면등급 (S355 이상)</div><div class="v">Class 4</div><div class="d"><span class="pill p-no">검토 필수</span> 한계 59.6 초과</div></div>
+    <div class="kpi ok"><div class="l">좌굴 감소계수 χ (S355)</div><div class="v">0.92</div><div class="d"><span class="pill p-ok">경미</span> 8 % 저감</div></div>
+    <div class="kpi no"><div class="l">중공비 Q_I</div><div class="v">0.973</div><div class="d"><span class="pill p-no">압입 불가</span> SKF 임계 0.5 의 1.9배</div></div>
+  </div>
+
+  <h3 id="s8-1">8.1 사양의 성격 — 9안은 등가 굽힘강도 설계 스윕이다</h3>
+  <p>9개 행의 기하량을 계산하면 성격이 드러납니다.</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">#</th><th class="num">d<br>[mm]</th><th class="num">t<br>[mm]</th><th class="num">d/t</th><th class="num">r/t<br>(중립면)</th><th class="num">내경 d_i<br>[mm]</th><th class="num">Q_I</th><th class="num">단면적 A<br>[mm²]</th><th class="num">단면계수 W<br>[mm³]</th><th class="num">질량<br>[kg/m]</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td class="num">5,130</td><td class="num">70.5</td><td class="num">72.77</td><td class="num">35.88</td><td class="num">4,989</td><td class="num">0.9725</td><td class="num">1,120,590</td><td class="num">1.398×10⁹</td><td class="num">8,797</td></tr>
+      <tr><td class="num">2</td><td class="num">5,152</td><td class="num">70.0</td><td class="num">73.60</td><td class="num">36.30</td><td class="num">5,012</td><td class="num">0.9728</td><td class="num">1,117,590</td><td class="num">1.401×10⁹</td><td class="num">8,773</td></tr>
+      <tr style="background:var(--wash)"><td class="num"><b>3</b></td><td class="num"><b>5,157</b></td><td class="num"><b>69.5</b></td><td class="num"><b>74.20</b></td><td class="num">36.60</td><td class="num">5,018</td><td class="num">0.9730</td><td class="num">1,110,808</td><td class="num">1.394×10⁹</td><td class="num"><b>8,720</b></td></tr>
+      <tr><td class="num">4</td><td class="num">5,153</td><td class="num">70.0</td><td class="num">73.61</td><td class="num">36.31</td><td class="num">5,013</td><td class="num">0.9728</td><td class="num">1,117,810</td><td class="num">1.401×10⁹</td><td class="num">8,775</td></tr>
+      <tr><td class="num">5</td><td class="num">5,103</td><td class="num">71.5</td><td class="num">71.37</td><td class="num">35.19</td><td class="num">4,960</td><td class="num">0.9720</td><td class="num">1,130,195</td><td class="num">1.402×10⁹</td><td class="num">8,872</td></tr>
+      <tr><td class="num">6</td><td class="num">5,125</td><td class="num">70.5</td><td class="num">72.70</td><td class="num">35.85</td><td class="num">4,984</td><td class="num">0.9725</td><td class="num">1,119,482</td><td class="num">1.395×10⁹</td><td class="num">8,788</td></tr>
+      <tr style="background:var(--wash)"><td class="num"><b>7</b></td><td class="num"><b>5,070</b></td><td class="num"><b>72.5</b></td><td class="num"><b>69.93</b></td><td class="num">34.47</td><td class="num">4,925</td><td class="num">0.9714</td><td class="num">1,138,258</td><td class="num">1.402×10⁹</td><td class="num"><b>8,935</b></td></tr>
+      <tr><td class="num">8</td><td class="num">5,087</td><td class="num">71.5</td><td class="num">71.15</td><td class="num">35.07</td><td class="num">4,944</td><td class="num">0.9719</td><td class="num">1,126,601</td><td class="num">1.393×10⁹</td><td class="num">8,844</td></tr>
+      <tr><td class="num">9</td><td class="num">5,083</td><td class="num">72.0</td><td class="num">70.60</td><td class="num">34.80</td><td class="num">4,939</td><td class="num">0.9717</td><td class="num">1,133,461</td><td class="num">1.400×10⁹</td><td class="num">8,898</td></tr>
+      <tr style="border-top:2px solid var(--axis)"><td colspan="7"><b>편차 (max/min − 1)</b></td><td class="num"><b>2.47 %</b></td><td class="num"><b>0.65 %</b></td><td class="num"><b>2.47 %</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>핵심 관찰 — 굽힘 단면계수가 0.65 % 이내로 일정하다</div>
+    <p>d 는 1.7 %, t 는 4.3 %, 단면적은 2.5 % 흩어져 있는데 <b>굽힘 단면계수 W 만 0.65 % 이내로 고정</b>되어 있습니다. 우연이 아닙니다.</p>
+    <p><b>검산:</b> W ∝ d²·t 이므로 W 일정이면 t ∝ 1/d². d 를 5,070 → 5,157 (+1.72 %) 로 키우면 t 는 72.5 → 70.1 이어야 하는데 실제값은 69.5 입니다 (0.8 % 차). 반면 A 일정(t ∝ 1/d) 가정은 71.3 을 주어 더 어긋납니다. → <b>등가 굽힘강도 조건의 설계 스윕</b>이라는 해석이 맞습니다.</p>
+    <p style="margin-bottom:0"><b>따라서 이 9안은 "같은 굽힘강도를 유지하면서 지름과 두께를 맞바꾼 후보군"</b>이며, 검토는 각 안을 독립 판정하는 것이 아니라 <b>트레이드오프의 방향</b>을 읽는 것이 됩니다.</p>
+  </div>
+
+  <figure>
+    <p class="fig-h">9안의 트레이드오프 — 2.5 % 경량화의 대가는 d/t 6 % 악화</p>
+    <p class="fig-s">가로축 = d/t · 세로축 = 단위길이당 질량. 굽힘 단면계수는 전 안에서 0.65 % 이내로 동일</p>
+    <div class="legend">
+      <span><i class="sq" style="background:var(--s1)"></i>9개 설계안</span>
+      <span><i class="sq" style="background:var(--s2)"></i>#3 최경량 / #7 최저 d/t</span>
+      <span><i style="background:var(--axis)"></i>S355 Class 3/4 경계 (59.6) — 전 안이 우측</span>
+    </div>
+    <div class="svgwrap" id="fig-trade"></div>
+    <figcaption>강한 단조 감소 경향입니다 (미세한 역전 3곳은 W 가 정확히 일정하지는 않기 때문). <b>#7 → #3</b> 으로 가면 질량이 8,935 → 8,720 kg/m 로 <b>2.5 % 가벼워지지만</b> d/t 가 69.9 → 74.2 로 <b>6.1 % 나빠집니다.</b> 좌굴 감소계수 χ 로 환산하면 그 대가는 S355 기준 0.9280 → 0.9214, 즉 <b>0.7 %</b> 에 불과합니다 — <b>경량화 쪽이 명백히 이득</b>입니다. 단, 이 결론은 아래 8.6 의 압입 문제를 고려하기 <b>전</b>의 것입니다.</figcaption>
+  </figure>
+
+  <h3 id="s8-2">8.2 판정 ① 적용범위 — 전 안이 쉘 영역</h3>
+  <p>r/t = 34.5 ~ 36.6 이므로 <b>EN 1993-1-6 §1.1(16) 의 적용범위 (r/t 20 ~ 5000) 안에 확실히 들어옵니다.</b> 앞선 사례 A(기어드 단조축, r/t = 1.04)처럼 "쉘이 아니다"로 종결할 수 없습니다.</p>
+  <div class="formula">r/t = 34.5 ~ 36.6      ✓ 적용범위 하한 20 의 1.7 ~ 1.8배
+d/t = 69.9 ~ 74.2      ✓ 적용범위 하한 40 의 1.7 ~ 1.9배
+→ 쉘 구조로 취급해야 하며, 판정은 단면등급으로 넘어간다</div>
+
+  <h3 id="s8-3">8.3 판정 ② 단면등급 — <b>재질이 결론을 가른다</b></h3>
+  <figure>
+    <p class="fig-h">재질별 단면등급 판정 — 사양이 경계에 걸쳐 있다</p>
+    <p class="fig-s">가로축 = d/t. 각 행은 재질별 Class 3/4 경계 (90·ε², ε² = 235/f_y). 붉은 띠가 제시 사양 9안의 범위</p>
+    <div class="legend">
+      <span><i class="sq" style="background:var(--h2)"></i>Class 1–3 · 좌굴 검토 불요</span>
+      <span><i class="sq" style="background:var(--h5)"></i>Class 4 · 쉘 좌굴 검토 필수</span>
+      <span><i class="sq" style="background:var(--crit);opacity:.2"></i>제시 사양 69.9 – 74.2</span>
+    </div>
+    <div class="svgwrap" id="fig-spec"></div>
+    <figcaption><b>임계 항복강도는 285 ~ 302 MPa 입니다.</b> d/t = 74.2(안 #3)는 f_y &gt; 285 MPa 에서, d/t = 69.9(안 #7)는 f_y &gt; 302 MPa 에서 Class 4 로 넘어갑니다. 즉 <b>S275 이하이면 검토 불요, S355 이상이면 전 안이 Class 4</b> 입니다. 주철(EN-GJS-400-18U-LT, R_p0.2 = 240)도 Class 3 로 검토 불요입니다.</figcaption>
+  </figure>
+  <div class="tw">
+  <table>
+    <thead><tr><th>재질</th><th class="num">f_y / R_p0.2<br>[MPa]</th><th class="num">Class 3 한계<br>90ε²</th><th style="width:150px">9안 판정</th><th>쉘 좌굴 검토</th></tr></thead>
+    <tbody>
+      <tr><td>S235</td><td class="num">235</td><td class="num">90.00</td><td class="num">Class 2 ~ 3</td><td><span class="pill p-ok">불요</span></td></tr>
+      <tr><td>S275</td><td class="num">275</td><td class="num">76.91</td><td class="num">Class 3</td><td><span class="pill p-ok">불요</span></td></tr>
+      <tr><td>EN-GJS-400-18U-LT</td><td class="num">240</td><td class="num">88.12</td><td class="num">Class 3</td><td><span class="pill p-ok">불요</span></td></tr>
+      <tr style="background:var(--wash)"><td><b>S355</b></td><td class="num">355</td><td class="num">59.58</td><td class="num"><b>Class 4</b></td><td><span class="pill p-no">★ 필수</span></td></tr>
+      <tr><td>S420</td><td class="num">420</td><td class="num">50.36</td><td class="num">Class 4</td><td><span class="pill p-no">필수</span></td></tr>
+      <tr><td>S460</td><td class="num">460</td><td class="num">45.98</td><td class="num">Class 4</td><td><span class="pill p-no">필수</span></td></tr>
+      <tr><td>42CrMo4 (d_eff&gt;300 보정)</td><td class="num">510</td><td class="num">41.47</td><td class="num">Class 4</td><td><span class="pill p-no">필수</span></td></tr>
+      <tr><td>34CrNiMo6 (d_eff&gt;300 보정)</td><td class="num">567</td><td class="num">37.30</td><td class="num">Class 4</td><td><span class="pill p-no">필수</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>확인이 필요한 단 하나의 입력</div>
+    <p style="margin-bottom:0"><b>재질과 항복강도를 알려주시면 이 검토가 즉시 확정됩니다.</b> 그 외의 모든 변수(길이, 경계조건, 제작등급)는 아래에서 보이듯 결과에 거의 영향을 주지 않습니다. 재질 하나가 "검토 불요"와 "Class 4 검토 필수"를 가릅니다.</p>
+  </div>
+
+  <h3 id="s8-4">8.4 판정 ③ 쉘 좌굴 계산</h3>
+  <h4>길이 불확실성이 없다는 확인부터</h4>
+  <div class="formula">√(r·t) = 420 mm ,   0.5·r/t = 18.3
+중간구간 조건  1.7 < ω ≤ 18.3   →   L = 715 ~ 7,695 mm
+→ 이 범위에서 C_x = 1.0 (그 밖에서는 C_x > 1 로 유리)</div>
+  <p>축 길이가 <b>0.7 m ~ 7.7 m 사이 어디든</b> C_x = 1.0 입니다. 실제 축이 이 범위를 벗어날 가능성은 낮고, 벗어나더라도 결과가 <b>안전측으로만</b> 움직입니다. 따라서 길이를 모른 채로도 판정이 확정됩니다.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">f_y<br>[MPa]</th><th class="num">σ_x,Rcr<br>[MPa]</th><th class="num">λ_x</th><th>제작등급</th><th class="num">Δw_k/t</th><th class="num">α_x</th><th class="num">λ_p</th><th class="num">χ</th><th class="num">σ_x,Rd<br>γ=1.2</th><th class="num">DNV f_ksd<br>(교차검증)</th></tr></thead>
+    <tbody>
+      <tr><td class="num" rowspan="3">235</td><td class="num" rowspan="3">3,471</td><td class="num" rowspan="3">0.2602</td><td>A (Q=40)</td><td class="num">0.1512</td><td class="num">0.5507</td><td class="num">1.173</td><td class="num">0.963</td><td class="num">188.6</td><td class="num" rowspan="3">202.3</td></tr>
+      <tr><td>B (Q=25)</td><td class="num">0.2420</td><td class="num">0.4970</td><td class="num">1.115</td><td class="num">0.961</td><td class="num">188.1</td></tr>
+      <tr><td>C (Q=16)</td><td class="num">0.3781</td><td class="num">0.4215</td><td class="num">1.027</td><td class="num">0.956</td><td class="num">187.3</td></tr>
+      <tr style="background:var(--wash)"><td class="num" rowspan="3"><b>355</b></td><td class="num" rowspan="3">3,471</td><td class="num" rowspan="3">0.3198</td><td>A (Q=40)</td><td class="num">0.1512</td><td class="num">0.5507</td><td class="num">1.173</td><td class="num"><b>0.926</b></td><td class="num">274.0</td><td class="num" rowspan="3"><b>301.7</b></td></tr>
+      <tr style="background:var(--wash)"><td>B (Q=25)</td><td class="num">0.2420</td><td class="num">0.4970</td><td class="num">1.115</td><td class="num"><b>0.921</b></td><td class="num"><b>272.6</b></td></tr>
+      <tr style="background:var(--wash)"><td>C (Q=16)</td><td class="num">0.3781</td><td class="num">0.4215</td><td class="num">1.027</td><td class="num">0.913</td><td class="num">270.1</td></tr>
+      <tr><td class="num" rowspan="3">460</td><td class="num" rowspan="3">3,471</td><td class="num" rowspan="3">0.3640</td><td>A (Q=40)</td><td class="num">0.1512</td><td class="num">0.5507</td><td class="num">1.173</td><td class="num">0.899</td><td class="num">344.6</td><td class="num" rowspan="3">379.2</td></tr>
+      <tr><td>B (Q=25)</td><td class="num">0.2420</td><td class="num">0.4970</td><td class="num">1.115</td><td class="num">0.892</td><td class="num">342.1</td></tr>
+      <tr><td>C (Q=16)</td><td class="num">0.3781</td><td class="num">0.4215</td><td class="num">1.027</td><td class="num">0.881</td><td class="num">337.7</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)">표의 χ 는 <b>최악 안(#3, d/t = 74.2)</b> 기준입니다. 최선 안(#7)은 S355·등급 B 에서 0.928 로 0.7 % 높을 뿐입니다.</p>
+
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>두 규격이 다시 수렴한다</div>
+    <p>S355 기준 <b>EN 1993-1-6 (등급 B, γ_M1 = 1.1) 이 297.4 MPa, DNV-RP-C202 가 301.7 MPa</b> — <b>1.4 % 차이</b>입니다. 앞선 IEA-22 검산(4 % 차)보다도 잘 맞습니다.</p>
+    <p style="margin-bottom:0">DNV 쪽에서 흥미로운 점: f_E = 1,639 MPa 로 EN 의 σ_x,Rcr = 3,471 MPa 의 <b>절반 이하</b>인데, 이는 DNV 의 ρ 계수가 이미 결함 감소를 포함하기 때문입니다(EN 은 α_x 로 분리). 정식화가 다른데 최종값이 맞는 것이 교차검증의 의미입니다. 또한 f_E 는 <b>길이가 소거되어</b> 길이 무관으로 확인되었습니다.</p>
+  </div>
+
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>좌굴 저감은 경미하다 — 두께를 키우는 것은 손해</div>
+    <p>S355 기준 χ ≈ 0.92 이므로 <b>좌굴에 의한 저항 감소는 약 8 %</b> 입니다. 이를 피하려고 Class 3 로 되돌리려면 t ≥ d/59.58 = <b>86.6 mm</b> 가 필요하며, 이는 현재 69.5 mm 대비 <b>+25 % 두께, +25 % 질량</b>입니다.</p>
+    <p style="margin-bottom:0"><b>8 % 를 아끼려고 25 % 를 더하는 것은 명백한 손해입니다.</b> Class 4 를 받아들이고 §3.1 또는 §3.2 의 절차로 쉘 좌굴 검토를 수행하는 것이 올바른 판단입니다.</p>
+  </div>
+
+  <h3 id="s8-5">8.5 판정 ④ 제작공차 — 규격 공차는 오히려 느슨하다</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>제작등급</th><th class="num">진원도 (d_max − d_min)</th><th class="num">딤플 (게이지 1,682 mm)</th><th class="num">축방향 편심 e_a</th></tr></thead>
+    <tbody>
+      <tr><td>A (Excellent, Q=40)</td><td class="num">≤ 36.1 mm</td><td class="num">≤ 10.1 mm</td><td class="num">≤ 2 mm</td></tr>
+      <tr><td>B (High, Q=25)</td><td class="num">≤ 51.6 mm</td><td class="num">≤ 16.8 mm</td><td class="num">≤ 3 mm</td></tr>
+      <tr><td>C (Normal, Q=16)</td><td class="num">≤ 77.4 mm</td><td class="num">≤ 26.9 mm</td><td class="num">≤ 4 mm</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>EN 1993-1-6 Table 8.1 의 공차는 <b>사일로·탱크 등 판금 용접 쉘</b>을 상정한 값이라 기계가공·단조품에는 터무니없이 느슨합니다. 진원도 36 mm 는 5 m 축에서는 상상하기 어려운 수치입니다.</p>
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>실무적 함의 — 제작등급 A 는 사실상 자동 확보</div>
+    <p style="margin-bottom:0">기계가공된 축이라면 <b>제작등급 A (Q = 40) 를 주장하는 데 아무 어려움이 없습니다.</b> 다만 위 표에서 보듯 A ↔ C 의 χ 차이는 S355 에서 0.926 ↔ 0.913, <b>1.4 % 에 불과</b>합니다. λ_x 가 0.32 로 작아 결함 민감도가 낮기 때문입니다(§3.1 그림 참조). <b>제작등급 향상에 비용을 쓸 가치는 없습니다.</b></p>
+  </div>
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>배제해야 할 대안 해석 — 만약 9행이 실측값이라면</div>
+    <p>9행이 <b>한 부재의 9개 측정점</b>이라면 이야기가 완전히 달라집니다. 그 경우 d_max − d_min = 5,157 − 5,070 = <b>87 mm</b> 이고, 이는 <b>등급 C 한계 77.4 mm 조차 초과</b>합니다 (진원도 이탈 1.69 % vs 한계 1.5 %).</p>
+    <p style="margin-bottom:0">그러면 Q = 16 도 사용할 수 없고 결함진폭을 실측 기반으로 재산정해야 합니다. <b>다만 8.1 에서 보였듯 W 가 0.65 % 로 일정한 것은 측정 산포로 설명되지 않으므로, 설계안 스윕이라는 해석이 옳습니다.</b> 그래도 <b>이 점은 명시적으로 확인해 주십시오</b> — 두 해석의 결론이 정반대입니다.</p>
+  </div>
+
+  <h3 id="s8-6">8.6 판정 ⑤ ★ 이 단면에 압입 베어링 시트를 놓을 수 없다</h3>
+  <p>가장 중요한 발견입니다. 내경이 d − 2t 이므로 <b>중공비 Q_I = 0.971 ~ 0.973</b> 입니다.</p>
+  <div class="tw">
+  <table>
+    <thead><tr><th>안</th><th class="num">Q_I</th><th class="num">K (Q_A = 0.89 가정)</th><th class="num">f_hollow</th><th class="num">과잉량 증가</th><th class="num">보어 후프응력 배율</th></tr></thead>
+    <tbody>
+      <tr><td>중실축 (참조)</td><td class="num">0.000</td><td class="num">9.62</td><td class="num">1.000</td><td class="num">—</td><td class="num">1.0×</td></tr>
+      <tr><td>SKF 임계</td><td class="num">0.500</td><td class="num">10.29</td><td class="num">1.070</td><td class="num">+7 %</td><td class="num">2.7×</td></tr>
+      <tr><td>§5 의 IWES 급 사례</td><td class="num">0.589</td><td class="num">10.71</td><td class="num">1.110</td><td class="num">+11 %</td><td class="num">3.1×</td></tr>
+      <tr style="background:var(--wash)"><td><b>안 #7 (d/t 69.9)</b></td><td class="num"><b>0.9714</b></td><td class="num">43.09</td><td class="num"><b>4.479</b></td><td class="num"><b>+348 %</b></td><td class="num"><b>35.5×</b></td></tr>
+      <tr style="background:var(--wash)"><td><b>안 #3 (d/t 74.2)</b></td><td class="num"><b>0.9730</b></td><td class="num">45.23</td><td class="num"><b>4.701</b></td><td class="num"><b>+370 %</b></td><td class="num"><b>37.6×</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>실행 불가능한 이유 두 가지</div>
+    <p><b>① 과잉량.</b> 같은 접촉압을 얻으려면 중실축 대비 <b>4.7배</b>의 과잉량이 필요합니다. 5,157 mm 시트에서 실용 접촉압 10 MPa 를 얻으려면 <code>U_w = p·K·d_F/E = 10 × 45.23 × 5157 / 210000 = <b>11.1 mm</b></code> 의 지름 과잉량이 됩니다. NSK 상한(d 의 7/10,000 = 3.6 mm)과 NTN 상한(d/1,000 = 5.2 mm)을 <b>2~3배 초과</b>합니다.</p>
+    <p><b>② 보어 응력.</b> 후프응력이 접촉압의 <b>37.6배</b>가 됩니다. 접촉압 10 MPa 이면 보어에서 −376 MPa 의 압축 후프응력이 발생하며, 이는 S355 항복을 넘습니다. 항복 한계압 <code>p_PI = (1−Q_I²)·R_eL/√3</code> 은 S355 에서 <b>불과 10.8 MPa</b> 입니다.</p>
+    <p style="margin-bottom:0"><b>결론: 이 두께의 원통 벽에 직접 압입 베어링 시트를 형성하는 것은 불가능합니다.</b></p>
+  </div>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>따라서 설계는 다음 중 하나여야 한다</div>
+    <ol style="margin-bottom:0">
+      <li><b>볼트 플랜지 베어링 마운트</b> — 압입이 아니라 볼트로 베어링을 고정 (대형 직접구동의 표준 방식). VDI 2230 / EN 1993-1-8 경로</li>
+      <li><b>국부 후육 시트</b> — 베어링 위치만 벽두께를 대폭 키운 단조/주조 형상. 이 경우 <b>시트부의 Q_I 를 별도로 계산</b>해야 하며 5.2 의 페널티 곡선이 적용됩니다</li>
+      <li><b>이 5.1 m 단면이 애초에 베어링 시트가 아닌 경우</b> — 예: 허브 연결 튜브, 하중전달 실린더. 그렇다면 이 항목은 해당 없음</li>
+    </ol>
+  </div>
+  <p style="font-size:13px;color:var(--text-secondary)"><b>참고 — 이 지름의 위치.</b> 외경 5.1 m 는 앞선 데이터베이스에서 조사한 어떤 메인샤프트보다 큽니다 (최대가 IEA-22 직접구동의 3.1 m). thyssenkrupp rothe erde 의 주베어링 대응 로터축 지름 역량이 6.5 m 이므로 <b>초대형 직접구동(20 MW 급 이상)의 로터 튜브</b>로는 성립 가능한 치수입니다. 기어드 4점지지 축이라면 이 치수는 물리적으로 맞지 않습니다.</p>
+
+  <h3 id="s8-7">8.7 검토하지 않은 항목</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th>항목</th><th>왜 검토하지 않았는가</th><th>필요한 입력</th></tr></thead>
+    <tbody>
+      <tr><td>실제 이용률 U</td><td>설계응력 σ_Ed 를 모름. 본 검토는 <b>저항측</b>만 산정</td><td>하중 스펙트럼 또는 σ_Ed</td></tr>
+      <tr><td>원주방향·전단 좌굴</td><td>EN 1993-1-6 Annex D.1.3/D.1.4 를 확보하지 못함 (§9)</td><td>ECCS No.125 또는 규격 원문. 토크가 크면 필수</td></tr>
+      <tr><td>상호작용 검토</td><td>§8.5.3 상호작용식이 미확정 (§9). 다만 σ_θ ≈ 0 이면 무의미</td><td>하중 조합</td></tr>
+      <tr><td>피로 (Class 4 단면)</td><td>본 보고서 범위 밖. Class 4 단면의 피로는 <b>DIN 743 로 다룰 수 없음</b> (공칭응력 전제가 깨짐)</td><td>EN 1993-1-9 또는 IEC 61400-8 §7.5 경로</td></tr>
+      <tr><td>국부 하중 도입부</td><td>플랜지·볼트·베어링 마운트 위치 미상. §6.3 기준으로 <b>2×d = 10.3 m</b> 반경이 교란영역</td><td>부착물 위치</td></tr>
+      <tr><td>제작 방법</td><td>용접 롤드 쉘 / 단조 / 주조에 따라 결함 등급과 잔류응력이 달라짐</td><td>제작 공정</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="s8-8">8.8 결론과 권고</h3>
+  <div class="callout c-key">
+    <div class="tag"><span class="dot" style="background:var(--s1)"></span>검토 결론 5가지</div>
+    <ol style="margin-bottom:0">
+      <li><b>9안은 등가 굽힘강도 설계 스윕이다</b> (W 편차 0.65 %). 개별 안의 우열보다 트레이드오프 방향을 보는 것이 맞습니다.</li>
+      <li><b>전 안이 쉘 영역이다</b> (r/t 34.5~36.6, 적용범위 하한 20 의 1.7~1.8배). "쉘이 아니다"로 종결할 수 없습니다.</li>
+      <li><b>S355 이상이면 전 안이 Class 4 → 쉘 좌굴 검토 필수.</b> 임계 항복강도는 285~302 MPa 입니다. S275 이하·주철이면 검토 불요.</li>
+      <li><b>다만 좌굴 저감은 경미하다</b> (S355 기준 χ ≈ 0.92, 8 % 저감). EN 과 DNV 가 1.4 % 이내로 일치합니다. Class 3 로 되돌리려면 두께 +25 % 가 필요하므로 <b>Class 4 를 수용하고 검토하는 것이 경제적</b>입니다.</li>
+      <li><b>★ 이 단면에 압입 베어링 시트는 불가능하다</b> (Q_I = 0.973, 과잉량 4.7배, 보어 후프 37.6배, 항복한계압 10.8 MPa). 볼트 마운트 또는 국부 후육 시트로 가야 합니다.</li>
+    </ol>
+  </div>
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>확인 요청 3가지</div>
+    <ol style="margin-bottom:0">
+      <li><b>재질과 항복강도</b> — 이 하나가 "검토 불요"와 "Class 4 필수"를 가릅니다. 나머지 변수는 결과에 거의 영향이 없습니다.</li>
+      <li><b>9행이 설계안인가 측정값인가</b> — 측정값이라면 진원도 이탈 87 mm 가 EN 1993-1-6 등급 C 한계(77.4 mm)마저 초과합니다. W 일정성으로 보아 설계안으로 판단했으나 확인이 필요합니다.</li>
+      <li><b>베어링 부착 방식</b> — 압입인지 볼트 마운트인지. 압입이라면 8.6 이 즉시 설계 변경 사유가 됩니다.</li>
+    </ol>
+  </div>
+
+  <h2 id="s9"><span class="num">9</span>검증 상태</h2>
+  <p>본 보고서의 수식은 대부분 유료 규격에서 나온 것입니다. 확보 경로와 신뢰도를 항목별로 밝힙니다.</p>
+
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>산술 검증됨 — 최고 신뢰도</div>
+    <p><b>EN 1993-1-6 자오선 좌굴 전 체인</b> — Knödel(독일 쉘좌굴 권위자)의 공개 Mathcad 예제와 <b>모든 중간값을 3자리까지 대조</b>했습니다. C_x, σ_x,Rcr, λ_x, Δw_k/t, α_x, λ_p, χ, σ_x,Rd 전부 일치. 추출 과정에서 C_x 의 부호가 <code>1.36 + 1.83/ω − 2.07/ω²</code> 로 잘못 나왔는데, 인쇄값 1.332 를 재현하는 것은 <code>1.36 − 1.83/ω + 2.07/ω²</code> 뿐이라 정정했습니다.</p>
+    <p><b>Q = 40/25/16 이중 검증</b> — 제작공차표의 U<sub>0,max</sub> = 0.006/0.010/0.016 과 Δw_k = √(rt)/Q, 게이지길이 4√(rt) 로부터 U₀ = 1/(4Q) 를 유도하면 0.00625/0.01000/0.01563 이 나와 공차표와 일치합니다. <b>같은 숫자를 두 방향에서 본 것</b>입니다.</p>
+    <p style="margin-bottom:0"><b>DNV-RP-C202 계수 전부</b> — SDC Verifier 공개 수계산 벤치마크의 인쇄값에서 ψ·ξ·ρ 를 <b>역산</b>했습니다. Z_l, ξ_axial, ρ_axial, ξ_shear, ξ_lateral, C_a, f_Ea, λ_s², f_ks, γ_M 이 모두 4자리 일치. 인용보다 강한 자기검산입니다.</p>
+  </div>
+
+  <div class="callout c-good">
+    <div class="tag"><span class="dot" style="background:var(--good)"></span>원문 확인 / 복수 출처 일치</div>
+    <p style="margin-bottom:0">EN 1993-1-1 CHS 등급한계 50/70/90ε² 및 ε² = 235/f_y · Class 4 정의 · EN 1993-1-6 §1.1(16) r/t 20~5000 · 4개 한계상태 LS1~LS4 · 해석유형 LA/LBA/MNA/GMNIA · §8.5 χ 식과 λ_p = √(α/(1−β)) · 고전식 0.605·E·t/r · NASA SP-8007 감소계수 두 식 · DIN 7190 평활계수 0.8→0.4 변경 · 소성침투 한계 30 % · SKF c_i ≥ 0.5 원문 · Schaeffler 형상공차표 · IWES 29 µm / 0.1 µm / 57 % · Grosse 2025 의 SLTO 0.002 mm · Abaqus L/D 15·8 및 "factor of five or more" · ANSYS 2×지름 규칙 · DIN 743 "kein Knicken" · IEC 61400-8 의 buckling 2회 및 EN 1993-1-6 미인용 · IEC 61400-6 §6.5.1·6.5.2</p>
+  </div>
+
+  <div class="callout c-crit">
+    <div class="tag"><span class="dot" style="background:var(--crit)"></span>미확보 또는 불확실 — 인용 전 확인 필요</div>
+    <ol style="margin-bottom:0">
+      <li><b>EN 1993-1-6 Annex D.1.3(원주방향)·D.1.4(전단)</b> — <b>전혀 확보하지 못함.</b> σ_θ,Rcr, C_θ, α_θ, λ_θ0, τ_xθ,Rcr, C_τ, α_τ 의 어떤 값도 본 보고서에 없습니다. 추정하지 않았습니다. 토크가 지배적인 축이라면 이 부분이 반드시 필요합니다 → ECCS 권고집(Rotter &amp; Schmidt, ECCS No.125)이 보완 경로</li>
+      <li><b>EN 1993-1-6 §8.5.3 상호작용식</b> — 두 판독이 <b>모순</b>. 하나는 교차항 없이 k_x = 1+χ_x, 다른 하나(Schmidt 해설, 규격 공저자)는 교차항 포함에 k_x = 1.25+0.75χ_x. <b>후자를 믿습니다</b>(k_i = (χ_x·χ_θ)² 형태가 구조적으로 타당). k_θ 계수(0.25 vs 0.75)는 <b>미해결</b>. 단, σ_θ ≈ 0 이면 두 논쟁이 모두 무의미해집니다</li>
+      <li><b>EN 1993-1-1 Table 5.2 의 상한 NOTE</b> — "d/t 가 ○ 을 넘으면 EN 1993-1-6 을 따른다"는 주석을 <b>확보하지 못했습니다.</b> 조사 중 이 주석이 있다는 답이 한 번 나왔으나, 해당 PDF 사본이 Table 5.2 sheet 3/3 이전에서 잘려 있음을 확인하고 <b>폐기</b>했습니다. 90ε² 를 트리거로 쓰십시오 — 검증되었고 어느 해석에서도 보수측입니다</li>
+      <li><b>DNV-RP-C202 굽힘 행의 ρ 분모 300</b> — 축응력의 150 은 검증되었으나 300 은 유추입니다</li>
+      <li><b>DNV-RP-C202 및 DNV-ST-F101 의 r/t · D/t 적용범위</b> — 문서 내에서 찾지 못했습니다. 흔히 인용되는 "F101 은 15 ≤ D/t ≤ 45" 는 <b>확인 실패</b></li>
+      <li><b>DIN 7190-1:2017-02 원문</b> — 유료. 본 보고서의 식은 전부 2차 출처(TU Berlin 전사본, HS Anhalt 강의자료, KISSsoft·MESYS·FVA-Workbench 문서)의 재현입니다. 다만 <b>상호 교차검증과 자기정합성 검산</b>을 거쳤습니다(예: 보어 응력식으로부터 p_PI 식을 유도해 일치 확인). <b>최종 설계 전 구입 권장</b></li>
+      <li><b>SKF Diagram 1</b> (Δ_H/Δ_V vs c_i) 수치 — 래스터 이미지라 추출 실패. 조사 도구가 그럴듯한 숫자를 냈으나 Lamé 이론과 어긋나 <b>폐기</b>했습니다. §5.2 의 f_hollow 폐형식으로 대체 가능</li>
+      <li><b>Rauert et al. 2016</b> (프레팅 피로, 수축링 하 표면균열) — 전문 확보 실패. 오픈액세스이므로 직접 내려받으십시오. <b>이 논문의 수치를 본 보고서 근거로 인용하지 마십시오</b> — 초록만 읽었습니다</li>
+      <li><b>IEC 61400-1 §7.6.4 본문</b> — 조항 제목·쪽수는 확인했으나 본문 미확보. γ ≥ 1.2 는 AAU 배경문서 출처</li>
+      <li><b>GL 2010 γ_Mc 수치와 참조 좌굴규격</b> — 기호 정의만 확인. <b>"GL 은 DIN 18800-4 를 따른다"는 통설을 쪽수 근거 없이 받아들이지 마십시오</b> — 확인하지 못했습니다</li>
+      <li><b>DNV-ST-0361 및 IEC 61400-4:2025 본문</b> — 미확보. 기계 측 타원화 조항이 남아 있을 수 있는 마지막 두 곳입니다</li>
+      <li><b>Roark Table 9.2 원문</b> — 이미지 PDF 라 미추출. §5.5 [1] 은 Air Force Stress Manual 에서 확보했고 두 출처가 일치합니다. <b>n 개 등간격 하중 케이스는 필자 재구성</b>이며 n = 2 에서 [1] 과 정확히 일치함을 확인했으나 원문 대조는 못 했습니다</li>
+      <li><b>진원도 ↔ 접촉압 손실 관계식과 0.3~0.5 계수</b> — <b>규격이 아니라 유도·권장값</b>입니다 (§5.5 [4]). 어느 규격·카탈로그에도 이 관계의 폐형식은 없습니다</li>
+    </ol>
+  </div>
+
+  <div class="callout c-warn">
+    <div class="tag"><span class="dot" style="background:var(--warn)"></span>조사 과정에서 폐기한 생성 오류 3건 — 기록으로 남깁니다</div>
+    <ol style="margin-bottom:0">
+      <li>EN 1993-1-1 Table 5.2 의 "EN 1993-1-6 참조" 주석 — 해당 PDF 가 그 페이지 이전에서 잘려 있음을 확인 후 폐기</li>
+      <li>EN 1993-1-6 Annex D 전체 파라미터 세트 — 동일 사유로 폐기</li>
+      <li>ΔK_th 수치 및 BS 7910 Level 1/2/3 위계(직전 IEC 61400-8 조사) — 재확인 시 "문서에 없음" 으로 확인되어 폐기</li>
+    </ol>
+    <p style="margin-bottom:0;margin-top:8px">유료 규격 요약본에 그럴듯한 숫자가 섞여 드는 전형적 경로입니다. 본 보고서에 남은 것은 <b>존재를 확인한 페이지에서 인용했거나, 두 독립 출처가 일치하거나, 산술로 자기검산되는 것</b>뿐입니다.</p>
+  </div>
+
+  <h3>구입 우선순위</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="mid" style="width:44px">순위</th><th>문서</th><th>해결되는 것</th></tr></thead>
+    <tbody>
+      <tr><td class="mid"><b>1</b></td><td><b>DIN 7190-1:2017-02</b></td><td>§5.1 전체의 신뢰도를 B → A 로. 베어링 시트가 실제 검토 대상이므로 최우선</td></tr>
+      <tr><td class="mid"><b>2</b></td><td><b>ECCS No.125</b> — Rotter &amp; Schmidt, <i>European Design Recommendations for Buckling of Steel Shells</i>, 5th ed.</td><td>EN 1993-1-6 Annex D 전 파라미터(원주·전단 포함)를 해설과 함께 수록. 규격 본체보다 이쪽이 실용적</td></tr>
+      <tr><td class="mid"><b>3</b></td><td>EN 1993-1-6 (판을 명시할 것: 2007 / A1:2017 / 2025)</td><td>§8.5.3 상호작용식 확정, Annex D 원문</td></tr>
+      <tr><td class="mid"><b>4</b></td><td>DNV-RP-C202</td><td>굽힘 ρ 확정, 적용범위 확인. <b>공식 PDF 가 무료 공개</b>되어 있으니 직접 내려받으면 됨</td></tr>
+      <tr><td class="mid"><b>5</b></td><td>SKF 카탈로그 6000 (인쇄본) Diagram 1</td><td>중공축 과잉량 배율의 제조사 공식값</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 id="s10"><span class="num">10</span>참고문헌</h2>
+  <div class="srcs">
+    <h4>좌굴 — 규격</h4>
+    <ul>
+      <li>EN 1993-1-1:2005 (Table 5.2 단면등급, ε 정의) — <a href="https://www.phd.eng.br/wp-content/uploads/2015/12/en.1993.1.1.2005.pdf">PDF</a></li>
+      <li>EN 1993-1-6:2007 (쉘 강도·안정, §1.1(16) 적용범위, §8.4 공차, §8.5 좌굴) — <a href="https://www.phd.eng.br/wp-content/uploads/2015/12/en.1993.1.6.2007.pdf">PDF (Annex D 이전에서 절단)</a></li>
+      <li>DNV-RP-C202 <i>Buckling strength of shells</i> — <a href="https://rules.dnv.com/docs/pdf/dnvpm/codes/docs/2010-10/RP-C202.pdf">DNV 공식 무료 PDF</a> · <a href="https://fenix.tecnico.ulisboa.pt/downloadFile/1126518382265792/DNVGL-RP-C202_2018-Buckling%20Shell.pdf">2018 판 미러</a></li>
+      <li>DNV-ST-F101 <i>Submarine pipeline systems</i> — <a href="https://www.dnv.com/energy/standards-guidelines/dnv-st-f101-submarine-pipeline-systems/">DNV</a> · <a href="https://www.orcina.com/webhelp/OrcaFlex/Content/html/Codechecks,DNVSTF101.htm">Orcina 구현 문서 (ovality 항 포함)</a></li>
+      <li>NASA SP-8007 <i>Buckling of Thin-Walled Circular Cylinders</i> — <a href="https://ntrs.nasa.gov/api/citations/19690013955/downloads/19690013955.pdf">NTRS 1968</a> · <a href="https://shellbuckling.com/papers/classicNASAReports/NASA-SP-8007-2020Rev2FINAL.pdf">2020 Rev.2</a></li>
+      <li>DIN 743-1:2012-12 (적용한계 "kein Knicken") — <a href="https://pdfcoffee.com/din-743-1-2012-12-tragfhigkeitsberechnung-von-wellen-und-achsen-teil-1-grundlagen-pdf-free.html">전사본</a></li>
+    </ul>
+    <h4>좌굴 — 검증에 사용한 계산례·해설</h4>
+    <ul>
+      <li>Knödel, <i>Mathcad — EC3-1-6_axial</i> (자오선 좌굴 완전 계산례) — <a href="http://www.peterknoedel.de/lehre/FHA-Stahl/Skript/MusterStatik/RBST/EC3-1-6_axial_10-01-20.pdf">PDF</a></li>
+      <li>SDC Verifier, <i>DNV RP-C202 Buckling Benchmark — hand calcs</i> — <a href="https://sdcverifier.com/benchmarks/dnv-rp-c202-plate-buckling-benchmark-hand-calcs-vs-sdc-verifier/">링크</a></li>
+      <li>Schmidt, <i>Kommentar zu DIN EN 1993-1-6</i> (규격 공저자 해설, 상호작용식) — <a href="https://www.p-s-p.de/uploads/downloads/Vortrag_Schmidt_Kommentar_zu_DIN_EN_1993-1-6_Stuttgart_2012-06.pdf">PDF</a></li>
+      <li>SSRC 2014, <i>Cylindrical shell buckling strength according to the "overall method" of Eurocode 3</i> — <a href="https://files.ssrcweb.org/proceedings/2014/cylindrical-shell-buckling-strength-according-to-the-overall-method-of-eurocode-3---background-and-applicability-to-the-design-of-high-strength-steel-circular-hollow-sections.pdf">PDF</a></li>
+      <li>Wagner, Hühne &amp; Khakimova (DLR), <i>On the development of shell buckling knockdown factors</i> — <a href="https://elib.dlr.de/129525/">DLR</a></li>
+      <li>Jäger-Cañás &amp; Pasternak (BTU Cottbus), ICTWS 2018 (α_x 2017년판 형태) — <a href="https://www-docs.b-tu.de/fg-stahlbau/public/Fachgebiet_Stahlbau/publikationen/2018_ICTWS%20-%20Jaeger-Canas%20Pasternak%20-%20ON%20THE%20BUCKLING%20BEHAVIOR%20OF%20RING-STIFFENED%20SHELLS%20UNDER%20AXIAL%20COMPRESSION(1).pdf">PDF</a></li>
+      <li>Hutchinson &amp; Thompson (Harvard), <i>Imperfections and energy barriers in shell buckling</i> — <a href="https://groups.seas.harvard.edu/hutchinson/papers/2018-2-BucklingKnockdowns.pdf">PDF</a></li>
+      <li>ECCS No.125, Rotter &amp; Schmidt, <i>European Design Recommendations for Buckling of Steel Shells</i> 5th ed. — <a href="https://books.google.com/books/about/Buckling_of_Steel_Shells.html?id=8VUFzgEACAAJ">서지</a></li>
+    </ul>
+    <h4>압입·베어링 시트</h4>
+    <ul>
+      <li>DIN 7190-1:2017-02 (원통 압입) — <a href="https://www.dinmedia.de/en/standard/din-7190-1/248945061">DIN Media (0.8→0.4 변경 명시)</a></li>
+      <li>DIN 7190-1 전사본 — <a href="https://www.studocu.com/de/document/technische-universitat-berlin/konstruktionslehre/berechnungsgrundlagenund-gestaltungsregeln-fur-zylindrische-pressverbande/23157395">TU Berlin</a> · <a href="https://www.hs-anhalt.de/fileadmin/Dateien/FB6/personen/voigt_st/Lehrunterlagen/01_ME/05_Zylindrische_Pressverbaende_DIN_7190.pdf">HS Anhalt 강의자료</a> · <a href="https://www.schweizer-fn.de/maschinenelemente/pressverbindung/pressverbindung.php">schweizer-fn</a></li>
+      <li>KISSsoft DIN 7190 문서 (Q_i = 0 전제조건) — <a href="https://www.kisssoft.cz/file.php?nid=21287&amp;oid=11448838">PDF</a> · MESYS 평활계수 — <a href="https://www.mesys.ag/manual/surface_roughness_shaft_and_housing.html">링크</a> · FVA-Workbench — <a href="https://doc.fva-service.de/90/de/root-interference-fit.html">링크</a></li>
+      <li>SKF 카탈로그 6000, <i>Tolerances for seats on hollow shafts</i> (c_i ≥ 0.5) — <a href="https://www.boie.de/ftp/pub/skf/6000_I_DE/6000-I_DE_00_06_Application_of_bearings.pdf">PDF</a> · <a href="https://www.skf.com/us/products/rolling-bearings/principles-of-rolling-bearing-selection/bearing-selection-process/bearing-interfaces/tolerances-for-bearing-seats-and-abutments/tolerances-for-seats-on-hollow-shafts">SKF</a></li>
+      <li>Schaeffler MH1 <i>Technical principles</i> (형상공차·조도표) — <a href="https://www.schaeffler.com/remotemedien/media/_shared_media/08_media_library/01_publications/schaeffler_2/catalogue_1/downloads_6/mh1_technical_principles_de_en.pdf">PDF</a></li>
+      <li>NTN <i>Bearing fits</i> — <a href="https://www.ntnglobal.com/en/products/catalog/pdf/2203E_a07.pdf">PDF</a> · NSK CAT E1102 §9 — <a href="https://bearing.co.il/wp-content/uploads/2024/11/NSK_CAT_E1102m_A82-95.pdf">PDF</a> · Koyo/JTEKT — <a href="https://koyo.jtekt.co.jp/en/support/bearing-knowledge/9-3000.html">링크</a></li>
+    </ul>
+    <h4>링 크리프 · 타원화</h4>
+    <ul>
+      <li>Kirsch &amp; Kyling, <i>Optimized cast components in the drive train of wind turbines and inner ring creep in the main bearing seat</i>, Forsch Ingenieurwes (2021) — <a href="https://link.springer.com/article/10.1007/s10010-021-00458-x">Springer</a></li>
+      <li>Grosse &amp; Kyling, <i>Numerical simulation of ring creep on a wind turbine main shaft</i>, Forsch Ingenieurwes (2025) — <a href="https://link.springer.com/article/10.1007/s10010-025-00805-2">Springer</a></li>
+      <li>Kyling &amp; Siddiqui, <i>Full-scale fatigue testing of a cast-iron wind turbine rotor shaft</i> (2023) — <a href="https://link.springer.com/article/10.1007/s10010-023-00649-8">Springer</a></li>
+      <li>Grosse (Fraunhofer IWES), <i>Ring creep — understanding a complex phenomenon in large rolling bearings</i> — <a href="https://websites.fraunhofer.de/iwes-blog/en/ring-creep-understanding-a-complex-phenomenon-in-large-rolling-bearings/peter-grosse">블로그</a></li>
+      <li><i>Simulative and Experimental Investigation of the Ring Creeping Damage Mechanism ... in Large-Sized Bearings</i>, MDPI Machines 11(5):543 — <a href="https://www.mdpi.com/2075-1702/11/5/543">MDPI</a></li>
+      <li>Rauert, Herrmann, Dalhoff &amp; Sander, <i>Fretting fatigue induced surface cracks under shrink fitted main bearings in wind turbine rotor shafts</i>, Procedia Struct. Integrity 2 (2016) 3601–3609 — <a href="https://reposit.haw-hamburg.de/handle/20.500.12738/4197">서지 (본문 미확보)</a></li>
+      <li>Air Force Stress Manual, Circular Rings and Arches (Table 5-6) — <a href="https://engineeringlibrary.org/reference/circular-rings-arches-air-force-stress-manual">링크</a> · Cambridge DANotes, thin rings — <a href="https://www-mdp.eng.cam.ac.uk/web/library/enginfo/textbooks_dvd_only/DAN/MST/thin/thin.html">링크</a></li>
+    </ul>
+    <h4>빔 모델 한계</h4>
+    <ul>
+      <li>Abaqus, <i>Beam modeling: overview</i> — <a href="https://classes.engineering.wustl.edu/2009/spring/mase5513/abaqus/docs/v6.5/books/usb/pt05ch15s03abo19.html">링크</a> · <i>Theory Manual</i> §3.5.1 — <a href="https://classes.engineering.wustl.edu/2009/spring/mase5513/abaqus/docs/v6.5/books/stm/ch03s05ath73.html">링크</a></li>
+      <li>Abaqus, <i>Choosing a beam element</i> (L/D 15·8) — <a href="https://ceae-server.colorado.edu/v2016/books/usb/pt06ch29s03alm08.html">링크</a> · <i>Elbow elements</i> — <a href="https://ceae-server.colorado.edu/v2016/books/usb/pt06ch29s05alm15.html">링크</a></li>
+      <li>Abaqus Example 1.1.3, <i>Parametric study of a linear elastic pipeline under in-plane bending</i> — <a href="https://classes.engineering.wustl.edu/2009/spring/mase5513/abaqus/docs/v6.6/books/exa/ch01s01aex03.html">링크</a></li>
+      <li>ANSYS ELBOW290 — <a href="https://www.mm.bme.hu/~gyebro/files/ans_help_v182/ans_elem/Hlp_E_ELBOW290.html">문서</a> · ELBOW 명령 2×지름 규칙 — <a href="https://innovationspace.ansys.com/knowledge/forums/topic/i-found-in-the-manual-that-the-elbow-command-will-convert-straight-pipe289-elements-to-elbow290-where-it-is-beneficial-what-are-the-conditions-for-when-it-is-considered-beneficial/">ANSYS 지식베이스</a></li>
+      <li>Rodabaugh &amp; George, <i>Effect of Internal Pressure on Flexibility and Stress-Intensification Factors of Curved Pipe or Welding Elbows</i>, ASME (1957) — <a href="https://asmedigitalcollection.asme.org/fluidsengineering/article-abstract/79/4/939/1136095/">ASME</a> · COBEM 2013 리뷰 — <a href="https://abcm.org.br/anais/cobem/2013/PDF/2110.pdf">PDF</a></li>
+      <li>NASA TP, 원통쉘 굽힘 경계층(√(Rt) 감쇠, Kraus 1967 인용) — <a href="https://ntrs.nasa.gov/api/citations/20000052710/downloads/20000052710.pdf">PDF</a></li>
+    </ul>
+    <h4>풍력 규격</h4>
+    <ul>
+      <li>IEC 88/1010/FDIS (IEC 61400-8:2024 직전 단계 전문) — <a href="https://www.aresca.us/wp-content/uploads/2024/03/88_1010e_FDIS.pdf">PDF</a> · IEC 88/897/CDV — <a href="https://www.aresca.us/wp-content/uploads/2022/09/88_897e_CDV.pdf">PDF</a></li>
+      <li>IEC 61400-6:2020/AMD1 FDIS (88/1088, §6.5.2 γ_M1) — <a href="https://www.aresca.us/wp-content/uploads/2025/02/88_1088e_FDIS.pdf">PDF</a> · 발행본 목차 — <a href="https://cdn.standards.iteh.ai/samples/19765/238d9b21a81c4b309be09ff06bc5ff7e/IEC-61400-6-2020.pdf">iTeh</a></li>
+      <li>IEC 61400-6 pre-CD (§6.5 전문) — <a href="https://studylib.net/doc/25715135/iec-tc88---61400">studylib</a></li>
+      <li>IEC 61400-1:2019 (§7.6.4 조항 확인) — <a href="https://webstore.ansi.org/preview-pages/IEC/preview_iec61400-1%7Bed4.0%7Den.pdf">ANSI 미리보기</a> · 배경문서 (좌굴 γ ≥ 1.2) — <a href="https://vbn.aau.dk/ws/files/559225421/Safety_Factors_IEC_61400-1_ed_4_-_background_document.pdf">Aalborg VBN</a></li>
+      <li>IEC 61400-4:2012 (DIN 743·DIN 7190 규범인용) — <a href="https://cdn.standards.iteh.ai/samples/16778/14cee1cb16134f399a1c65f5bc935aaf/IEC-61400-4-2012.pdf">iTeh 샘플</a></li>
+      <li>GL Guideline 2010 (γ_Mc 기호) — <a href="https://wordpressstorageaccount.blob.core.windows.net/wp-media/wp-content/uploads/sites/649/2018/05/Session_3_-_Handout_3_-_GL_Guideline_for_the_Certification_of_Wind_Turbines.pdf">핸드아웃</a></li>
+    </ul>
+  </div>
+
+  <hr>
+  <p style="font-size:12.5px;color:var(--text-muted)">본 보고서는 공개 자료 기반이며 원 규격을 대체하지 않습니다. §9 의 미확보 항목은 인쇄본 대조 후 사용하십시오. 사례 검산은 앞선 <i>DIN 743 · IEC 61400-8 적용 가이드</i> §04 사이징계산기의 출력 치수를 입력으로 사용했습니다. · 작성 2026-07-30</p>
+</main>
+</div>
+<div id="tip" style="position:fixed;pointer-events:none;opacity:0;transition:opacity .12s;background:var(--surface-1);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:12.5px;line-height:1.55;box-shadow:0 4px 18px rgba(0,0,0,.14);z-index:99;max-width:270px"></div>
+<script>
+(function(){
+"use strict";
+var NS="http://www.w3.org/2000/svg", TIP=document.getElementById("tip");
+function E(n,a,s){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);if(s)e.setAttribute("style",s);return e;}
+function T(x,y,txt,st){var e=E("text",{x:x,y:y},"font-size:11.5px;font-family:inherit;"+(st||"fill:var(--text-muted)"));e.textContent=txt;return e;}
+function svg(id,w,h){var d=document.getElementById(id);if(!d)return null;
+  var s=E("svg",{viewBox:"0 0 "+w+" "+h,width:w,height:h,role:"img"},"width:100%;min-width:"+Math.min(w,620)+"px;height:auto");
+  d.appendChild(s);return s;}
+function lg(v){return Math.log10(v);}
+function mkLog(d0,d1,r0,r1){var a=lg(d0),b=lg(d1);return function(v){return r0+(lg(v)-a)/(b-a)*(r1-r0);};}
+function mkLin(d0,d1,r0,r1){return function(v){return r0+(v-d0)/(d1-d0)*(r1-r0);};}
+function path(pts,st){var d="";for(var i=0;i<pts.length;i++)d+=(i?"L":"M")+pts[i][0].toFixed(2)+" "+pts[i][1].toFixed(2);return E("path",{d:d,fill:"none","stroke-linejoin":"round","stroke-linecap":"round"},st);}
+function grid(g,x1,x2,y,lbl){g.appendChild(E("line",{x1:x1,x2:x2,y1:y,y2:y},"stroke:var(--grid);stroke-width:1"));}
+function hover(node,html){
+  node.style.cursor="default";
+  node.addEventListener("mousemove",function(ev){TIP.innerHTML=html;TIP.style.opacity=1;
+    var w=TIP.offsetWidth,h=TIP.offsetHeight,x=ev.clientX+14,y=ev.clientY-h-10;
+    if(x+w>window.innerWidth-8)x=ev.clientX-w-14; if(y<8)y=ev.clientY+16;
+    TIP.style.left=x+"px";TIP.style.top=y+"px";});
+  node.addEventListener("mouseleave",function(){TIP.style.opacity=0;});
+}
+var C={s1:"var(--s1)",s2:"var(--s2)",s3:"var(--s3)",s4:"var(--s4)",ax:"var(--axis)",gr:"var(--grid)",crit:"var(--crit)",sf:"var(--surface-1)"};
+
+
+var C={s1:"var(--s1)",s2:"var(--s2)",s3:"var(--s3)",s4:"var(--s4)",s8:"var(--s8)",ax:"var(--axis)",gr:"var(--grid)",crit:"var(--crit)",good:"var(--good)"};
+var CLS=["var(--h2)","var(--h3)","var(--h4)","var(--h5)"];
+var CLSI=["var(--h2i)","var(--h3i)","var(--h4i)","var(--h5i)"];
+
+/* ===== 1. D/t 지도 ===== */
+(function(){
+ var W=880,H=252,L=230,R=W-30,T0=64,B=H-70;
+ var s=svg("fig-dtmap",W,H); if(!s)return;
+ var x=mkLog(1,300,L,R);
+ [1,3,10,30,40,60,100,155,300].forEach(function(t){
+   s.appendChild(E("line",{x1:x(t),x2:x(t),y1:T0-14,y2:B},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(x(t),B+18,String(t),"fill:var(--text-muted);text-anchor:middle"));});
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(R,B+38,"D / t   ·   로그 스케일","fill:var(--text-muted);text-anchor:end"));
+ var rows=[
+  {n:"단면등급 · S355 (f_y=355)",e2:235/355},
+  {n:"단면등급 · 42CrMo4 보정 (510)",e2:235/510}
+ ];
+ var bh=26, gap=42;
+ rows.forEach(function(r,i){
+   var y=T0+gap*i, lim=[50*r.e2,70*r.e2,90*r.e2,300];
+   s.appendChild(T(L-12,y+bh-8,r.n,"fill:var(--text-secondary);text-anchor:end;font-size:12px"));
+   var x0=1;
+   lim.forEach(function(hi,k){
+     var xa=x(x0), xb=x(hi);
+     var rc=E("rect",{x:xa+(k?1.5:0),y:y,width:Math.max(2,xb-xa-(k?1.5:0)),height:bh,rx:3},"fill:"+CLS[k]);
+     hover(rc,"<b>Class "+(k+1)+"</b><br>"+r.n+"<br>D/t "+(k?lim[k-1].toFixed(1):"0")+" ~ "+(k<3?hi.toFixed(1):"∞")
+       +(k==3?"<br><span style='color:var(--crit)'>쉘 좌굴 검토 필수</span>":""));
+     s.appendChild(rc);
+     if(xb-xa>20){var tx=T((xa+xb)/2,y+bh/2+4,"C"+(k+1),"fill:"+CLSI[k]+";text-anchor:middle;font-size:"+(xb-xa>34?11.5:9.5)+"px;font-weight:700");
+       tx.setAttribute("pointer-events","none");s.appendChild(tx);}
+     x0=hi;});
+   s.appendChild(T(x(90*r.e2),y-5,(90*r.e2).toFixed(1),"fill:var(--text-secondary);text-anchor:middle;font-size:10.5px;font-weight:700"));
+ });
+ var y3=T0+gap*2;
+ s.appendChild(T(L-12,y3+bh-8,"EN 1993-1-6 적용범위","fill:var(--text-secondary);text-anchor:end;font-size:12px"));
+ var out=E("rect",{x:x(1),y:y3,width:x(40)-x(1),height:bh,rx:3},"fill:var(--axis);opacity:.45");
+ hover(out,"<b>EN 1993-1-6 적용범위 밖</b><br>r/t &lt; 20 (D/t &lt; 40)<br>쉘이 아니라 후육 원통<br>쉘 좌굴 한계상태가 존재하지 않음");
+ s.appendChild(out);
+ var inn=E("rect",{x:x(40)+1.5,y:y3,width:x(300)-x(40)-1.5,height:bh,rx:3},"fill:"+C.s1);
+ hover(inn,"<b>EN 1993-1-6 적용범위</b><br>§1.1(16) r/t = 20 ~ 5000<br>즉 D/t ≥ 40");
+ s.appendChild(inn);
+ var t1=T((x(1)+x(40))/2,y3+bh/2+4,"범위 밖 — 쉘 아님","fill:var(--text-secondary);text-anchor:middle;font-size:11px;font-weight:700");
+ t1.setAttribute("pointer-events","none"); s.appendChild(t1);
+ var t2=T((x(40)+x(300))/2,y3+bh/2+4,"쉘 규격 적용","fill:#ffffff;text-anchor:middle;font-size:11px;font-weight:700");
+ t2.setAttribute("pointer-events","none"); s.appendChild(t2);
+ s.appendChild(T(x(40),y3-5,"40","fill:var(--s1);text-anchor:middle;font-size:10.5px;font-weight:700"));
+ var mk=[{v:3.08,l:"기어드 단조축",c:C.good},{v:30,l:"IEA-15",c:C.good},{v:155,l:"IEA-22",c:C.crit}];
+ mk.forEach(function(m){
+   s.appendChild(E("line",{x1:x(m.v),x2:x(m.v),y1:T0-14,y2:B},"stroke:"+m.c+";stroke-width:2"));
+   var c=E("circle",{cx:x(m.v),cy:T0-14,r:5},"fill:"+m.c+";stroke:var(--surface-1);stroke-width:2");
+   hover(c,"<b>"+m.l+"</b><br>D/t = "+m.v); s.appendChild(c);
+   s.appendChild(T(x(m.v),T0-24,m.l,"fill:"+m.c+";text-anchor:middle;font-size:11px;font-weight:700"));});
+})();
+
+/* ===== 2. chi 곡선 ===== */
+(function(){
+ var W=880,H=310,L=64,R=W-190,T0=26,B=H-54;
+ var s=svg("fig-chi",W,H); if(!s)return;
+ var x=mkLin(0,2,L,R), y=mkLin(0,1.05,B,T0);
+ [0,0.2,0.4,0.6,0.8,1.0].forEach(function(v){
+   s.appendChild(E("line",{x1:L,x2:R,y1:y(v),y2:y(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L-9,y(v)+4,v.toFixed(1),"fill:var(--text-muted);text-anchor:end"));});
+ [0,0.5,1.0,1.5,2.0].forEach(function(v){
+   s.appendChild(E("line",{x1:x(v),x2:x(v),y1:T0,y2:B},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(x(v),B+18,v.toFixed(1),"fill:var(--text-muted);text-anchor:middle"));});
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L,T0-10,"χ  (좌굴 감소계수)","fill:var(--text-secondary);font-weight:700"));
+ s.appendChild(T(R,B+38,"λ_x  상대세장비","fill:var(--text-muted);text-anchor:end"));
+ var rt=77, sets=[{Q:40,c:C.s1,l:"A"},{Q:25,c:C.s2,l:"B"},{Q:16,c:C.s3,l:"C"}];
+ sets.forEach(function(k){
+   var dwk=Math.sqrt(rt)/k.Q, a=0.62/(1+1.91*Math.pow(dwk,1.44)), lp=Math.sqrt(a/0.4);
+   function chi(l){return l<=0.2?1:(l<lp? 1-0.6*((l-0.2)/(lp-0.2)) : a/(l*l));}
+   var pts=[];for(var i=0;i<=200;i++){var l=2*i/200; pts.push([x(l),y(chi(l))]);}
+   s.appendChild(path(pts,"stroke:"+k.c+";stroke-width:2"));
+   s.appendChild(T(R+12,y(chi(2))+4+(k.Q==40?-6:k.Q==16?6:0),"Class "+k.l+"  α="+a.toFixed(3),"fill:var(--text-secondary);font-size:11px"));
+   var c=E("circle",{cx:x(0.464),cy:y(chi(0.464)),r:5},"fill:"+C.s4+";stroke:var(--surface-1);stroke-width:2");
+   hover(c,"<b>IEA-22 · Class "+k.l+"</b><br>λ_x = 0.464<br>α_x = "+a.toFixed(4)+"<br>λ_p = "+lp.toFixed(3)+"<br><b>χ = "+chi(0.464).toFixed(3)+"</b><br>σ_x,Rd(γ=1.2) = "+(chi(0.464)*355/1.2).toFixed(0)+" MPa");
+   s.appendChild(c);});
+ s.appendChild(E("line",{x1:x(0.464),x2:x(0.464),y1:T0,y2:B},"stroke:var(--s4);stroke-width:1.5;opacity:.6"));
+ s.appendChild(T(x(0.464)+8,T0+14,"IEA-22  λ = 0.464","fill:var(--s4);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(x(0.2)+6,B-8,"λ₀=0.2","fill:var(--text-muted);font-size:10.5px"));
+ s.appendChild(T(R+12,T0+14,"세장비가 클수록","fill:var(--text-muted);font-size:11px"));
+ s.appendChild(T(R+12,T0+29,"제작등급 차이가 커진다","fill:var(--text-muted);font-size:11px"));
+})();
+
+/* ===== 3. 중공 페널티 2패널 ===== */
+(function(){
+ var W=880,H=290,s=svg("fig-hollow",W,H); if(!s)return;
+ var pw=(W-195)/2, T0=40, B=H-56;
+ function Kf(QA,QI){return (1+QA*QA)/(1-QA*QA)+0.3+((1+QI*QI)/(1-QI*QI)-0.3);}
+ // panel 1
+ var L1=58, x1=mkLin(0,0.9,L1,L1+pw), y1=mkLin(1,2.6,B,T0);
+ s.appendChild(T(L1,T0-18,"과잉량 배율  f_hollow = K(Q_I)/K(0)","fill:var(--text-primary);font-size:12.5px;font-weight:700"));
+ [1,1.4,1.8,2.2,2.6].forEach(function(v){
+   s.appendChild(E("line",{x1:L1,x2:L1+pw,y1:y1(v),y2:y1(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L1-8,y1(v)+4,v.toFixed(1),"fill:var(--text-muted);text-anchor:end"));});
+ [0,0.3,0.5,0.7,0.9].forEach(function(v){
+   s.appendChild(T(x1(v),B+18,v.toFixed(1),"fill:var(--text-muted);text-anchor:middle"));});
+ s.appendChild(E("line",{x1:L1,x2:L1+pw,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L1+pw,B+36,"Q_I = d_i/d_F","fill:var(--text-muted);text-anchor:end"));
+ [{QA:0.85,c:C.s1},{QA:0.89,c:C.s2},{QA:0.93,c:C.s3}].forEach(function(k){
+   var K0=Kf(k.QA,0), pts=[];
+   for(var i=0;i<=180;i++){var q=0.9*i/180; pts.push([x1(q),y1(Kf(k.QA,q)/K0)]);}
+   s.appendChild(path(pts,"stroke:"+k.c+";stroke-width:2"));
+   [0.3,0.5,0.7,0.85].forEach(function(q){
+     var h=E("circle",{cx:x1(q),cy:y1(Kf(k.QA,q)/K0),r:10},"fill:transparent");
+     hover(h,"Q_A = "+k.QA+"<br>Q_I = "+q+"<br><b>f_hollow = "+(Kf(k.QA,q)/K0).toFixed(3)+"</b><br>과잉량 "+((Kf(k.QA,q)/K0-1)*100).toFixed(0)+" % 증가 필요");
+     s.appendChild(h);});});
+ s.appendChild(E("line",{x1:x1(0.5),x2:x1(0.5),y1:T0,y2:B},"stroke:var(--crit);stroke-width:1.5;opacity:.7"));
+ s.appendChild(T(x1(0.5)+6,T0+13,"SKF 임계 0.5","fill:var(--crit);font-size:11px;font-weight:700"));
+ // panel 2
+ var L2=L1+pw+95, x2=mkLin(0,0.9,L2,L2+pw), y2=mkLin(1,12,B,T0);
+ s.appendChild(T(L2,T0-18,"보어 후프응력 배율  2/(1−Q_I²)","fill:var(--text-primary);font-size:12.5px;font-weight:700"));
+ [2,4,6,8,10,12].forEach(function(v){
+   s.appendChild(E("line",{x1:L2,x2:L2+pw,y1:y2(v),y2:y2(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L2-8,y2(v)+4,String(v),"fill:var(--text-muted);text-anchor:end"));});
+ [0,0.3,0.5,0.7,0.9].forEach(function(v){
+   s.appendChild(T(x2(v),B+18,v.toFixed(1),"fill:var(--text-muted);text-anchor:middle"));});
+ s.appendChild(E("line",{x1:L2,x2:L2+pw,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L2+pw,B+36,"Q_I = d_i/d_F","fill:var(--text-muted);text-anchor:end"));
+ var p2=[];for(var i=0;i<=180;i++){var q=0.9*i/180; p2.push([x2(q),y2(Math.min(12,2/(1-q*q)))]);}
+ s.appendChild(path(p2,"stroke:"+C.s8+";stroke-width:2"));
+ [0.3,0.589,0.7,0.85].forEach(function(q){
+   var v=2/(1-q*q);
+   var c=E("circle",{cx:x2(q),cy:y2(Math.min(12,v)),r:4},"fill:"+C.s8+";stroke:var(--surface-1);stroke-width:2");
+   var h=E("circle",{cx:x2(q),cy:y2(Math.min(12,v)),r:11},"fill:transparent");
+   hover(h,"Q_I = "+q+"<br><b>σ_t,bore = "+v.toFixed(2)+" × p</b><br>중실축은 1.00 × p");
+   s.appendChild(c);s.appendChild(h);});
+ s.appendChild(E("line",{x1:x2(0.5),x2:x2(0.5),y1:T0,y2:B},"stroke:var(--crit);stroke-width:1.5;opacity:.7"));
+ s.appendChild(T(x2(0.10),y2(9.6),"Q_I = 0.589  →  3.06 ×","fill:"+C.s8+";font-size:11.5px;font-weight:700"));
+ s.appendChild(T(x2(0.10),y2(8.4),"Q_I = 0.85   →  7.21 ×","fill:"+C.s8+";font-size:11.5px;font-weight:700"));
+ s.appendChild(T(x2(0.10),y2(7.2),"중실축 = 1.00 ×","fill:var(--text-muted);font-size:11px"));
+})();
+
+/* ===== 4. 접촉압 여유 ===== */
+(function(){
+ var W=880,H=300,L=64,R=W-200,T0=26,B=H-54;
+ var s=svg("fig-pmargin",W,H); if(!s)return;
+ var x=mkLin(0,0.92,L,R), y=mkLin(0.6,2.0,B,T0);
+ var QA=0.890, Uw=0.598, DF=1120, Emod=210000, pr=7.76;
+ function Kf(QI){return (1+QA*QA)/(1-QA*QA)+0.3+((1+QI*QI)/(1-QI*QI)-0.3);}
+ function rat(QI){return ((Uw/DF)*Emod/Kf(QI))/pr;}
+ s.appendChild(E("rect",{x:L,y:y(1.0),width:R-L,height:B-y(1.0)},"fill:var(--crit);opacity:.10"));
+ [0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0].forEach(function(v){
+   s.appendChild(E("line",{x1:L,x2:R,y1:y(v),y2:y(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L-9,y(v)+4,v.toFixed(1),"fill:var(--text-muted);text-anchor:end"));});
+ [0,0.2,0.4,0.6,0.8,0.9].forEach(function(v){
+   s.appendChild(T(x(v),B+18,v.toFixed(1),"fill:var(--text-muted);text-anchor:middle"));});
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L,T0-10,"p / p_r   접촉압 여유","fill:var(--text-secondary);font-weight:700"));
+ s.appendChild(T(R,B+38,"Q_I = d_i/d_F   중공비","fill:var(--text-muted);text-anchor:end"));
+ s.appendChild(E("line",{x1:L,x2:R,y1:y(1.0),y2:y(1.0)},"stroke:var(--axis);stroke-width:2"));
+ s.appendChild(T(L+8,y(1.0)-8,"분리 한계 = 1.0","fill:var(--text-secondary);font-size:11px;font-weight:700"));
+ var pts=[];for(var i=0;i<=180;i++){var q=0.92*i/180; pts.push([x(q),y(rat(q))]);}
+ s.appendChild(path(pts,"stroke:"+C.s1+";stroke-width:2.5"));
+ [{q:0.0,l:"중실"},{q:0.589,l:"IWES 급"},{q:0.85,l:"박육"}].forEach(function(m){
+   var v=rat(m.q);
+   var c=E("circle",{cx:x(m.q),cy:y(v),r:6},"fill:"+(v<1.0?C.crit:C.s1)+";stroke:var(--surface-1);stroke-width:2");
+   var h=E("circle",{cx:x(m.q),cy:y(v),r:13},"fill:transparent");
+   hover(h,"<b>"+m.l+" · Q_I = "+m.q.toFixed(3)+"</b><br>K = "+Kf(m.q).toFixed(2)+"<br>p = "+((Uw/DF)*Emod/Kf(m.q)).toFixed(2)+" MPa<br>p_r = "+pr+" MPa<br><b>여유 = "+v.toFixed(2)+"</b>"+(v<1?"<br><span style='color:var(--crit)'>국부 분리 시작</span>":""));
+   s.appendChild(c);s.appendChild(h);
+   s.appendChild(T(x(m.q)+(m.q<0.1?10:0),y(v)-14,m.l+" "+v.toFixed(2),"fill:"+(v<1.0?C.crit:C.s1)+";text-anchor:"+(m.q<0.1?"start":"middle")+";font-size:11px;font-weight:700"));});
+ s.appendChild(T(R+14,T0+18,"K 가 커질수록 같은","fill:var(--text-secondary);font-size:11px"));
+ s.appendChild(T(R+14,T0+33,"과잉량에서 p 가 낮아짐","fill:var(--text-secondary);font-size:11px"));
+ s.appendChild(T(R+14,T0+55,"교차점 Q_I ≈ 0.84","fill:var(--crit);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(R+14,T0+75,"실제로는 원주방향","fill:var(--text-muted);font-size:11px"));
+ s.appendChild(T(R+14,T0+90,"국부 최소값이 지배","fill:var(--text-muted);font-size:11px"));
+ s.appendChild(T(R+14,T0+105,"→ 목표 1.5~2.0","fill:var(--text-muted);font-size:11px;font-weight:700"));
+})();
+
+/* ===== 5. 빔 유효성 ===== */
+(function(){
+ var W=880,H=250,L=190,R=W-60,T0=48,B=H-46;
+ var s=svg("fig-beam",W,H); if(!s)return;
+ var x=mkLin(0,28,L,R);
+ var d=[{n:"A. 기어드 단조축 15 MW",v:3.82},{n:"B. IEA-15 토크튜브",v:0.73},
+        {n:"C. IEA-22 토크튜브",v:0.87},{n:"(참고) 풍력 타워",v:25.0}];
+ s.appendChild(E("rect",{x:L,y:T0-10,width:x(8)-L,height:B-T0+12},"fill:var(--crit);opacity:.10"));
+ [0,5,8,10,15,20,25].forEach(function(v){
+   s.appendChild(E("line",{x1:x(v),x2:x(v),y1:T0-10,y2:B},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(x(v),B+18,String(v),"fill:var(--text-muted);text-anchor:middle"));});
+ s.appendChild(E("line",{x1:L,x2:L,y1:T0-10,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(R,B+36,"L / D","fill:var(--text-muted);text-anchor:end"));
+ [{v:8,l:"Timoshenko 하한 8",c:C.crit},{v:15,l:"Euler-Bernoulli 하한 15",c:C.ax}].forEach(function(k){
+   s.appendChild(E("line",{x1:x(k.v),x2:x(k.v),y1:T0-16,y2:B},"stroke:"+k.c+";stroke-width:2"));
+   s.appendChild(T(x(k.v)+6,T0-20,k.l,"fill:"+(k.c==C.crit?"var(--crit)":"var(--text-secondary)")+";font-size:11px;font-weight:700"));});
+ var bh=22, gap=(B-T0)/d.length;
+ d.forEach(function(r,i){
+   var y=T0+gap*i+(gap-bh)/2, ok=r.v>=8;
+   s.appendChild(T(L-12,y+bh/2+4,r.n,"fill:var(--text-secondary);text-anchor:end;font-size:12px"));
+   var rc=E("rect",{x:L,y:y,width:Math.max(3,x(r.v)-L),height:bh,rx:3},"fill:"+C.s1);
+   hover(rc,"<b>"+r.n+"</b><br>L/D = "+r.v.toFixed(2)+"<br>Timoshenko 하한 8 대비 "+(r.v/8).toFixed(2)+"배<br>E-B 하한 15 대비 "+(r.v/15).toFixed(2)+"배"+(ok?"":"<br><span style='color:var(--crit)'>빔 이론 유효범위 밖</span>"));
+   s.appendChild(rc);
+   s.appendChild(T(Math.max(x(r.v),L)+8,y+bh/2+4,r.v.toFixed(2),"fill:var(--text-secondary);font-size:11.5px;font-weight:700"));});
+})();
+
+/* ========== 6. 9안 트레이드오프 ========== */
+(function(){
+ var W=880,H=320,L=76,R=W-230,T0=30,B=H-58;
+ var s=svg("fig-trade",W,H); if(!s)return;
+ var x=mkLin(69.3,74.8,L,R), y=mkLin(8690,8960,B,T0);
+ var d=[{n:1,dt:72.77,m:8797,lab:"#1·6"},{n:2,dt:73.60,m:8773,lab:"#2·4"},{n:3,dt:74.20,m:8720,lab:"#3"},
+        {n:4,dt:73.61,m:8775,lab:null},{n:5,dt:71.37,m:8872,lab:"#5"},{n:6,dt:72.70,m:8788,lab:null},
+        {n:7,dt:69.93,m:8935,lab:"#7"},{n:8,dt:71.15,m:8844,lab:"#8"},{n:9,dt:70.60,m:8898,lab:"#9"}];
+ [8700,8750,8800,8850,8900,8950].forEach(function(v){
+   s.appendChild(E("line",{x1:L,x2:R,y1:y(v),y2:y(v)},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(L-9,y(v)+4,v.toLocaleString(),"fill:var(--text-muted);text-anchor:end"));});
+ [70,71,72,73,74].forEach(function(v){
+   s.appendChild(E("line",{x1:x(v),x2:x(v),y1:T0,y2:B},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(x(v),B+18,String(v),"fill:var(--text-muted);text-anchor:middle"));});
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(L,T0-10,"단위길이 질량 [kg/m]","fill:var(--text-secondary);font-weight:700"));
+ s.appendChild(T(R,B+38,"d / t","fill:var(--text-muted);text-anchor:end"));
+ var pts=d.slice().sort(function(a,b){return a.dt-b.dt;}).map(function(p){return [x(p.dt),y(p.m)];});
+ s.appendChild(path(pts,"stroke:var(--s1);stroke-width:1.5;opacity:.35"));
+ d.forEach(function(p){
+   var hi=(p.n==3||p.n==7), col=hi?C.s2:C.s1;
+   var c=E("circle",{cx:x(p.dt),cy:y(p.m),r:hi?7:5.5},"fill:"+col+";stroke:var(--surface-1);stroke-width:2");
+   var h=E("circle",{cx:x(p.dt),cy:y(p.m),r:14},"fill:transparent");
+   hover(h,"<b>안 #"+p.n+"</b><br>d/t = "+p.dt.toFixed(2)+"<br>질량 = "+p.m.toLocaleString()+" kg/m<br>#7 대비 "+((p.m/8935-1)*100).toFixed(2)+" %");
+   s.appendChild(c); s.appendChild(h);
+   if(p.lab)s.appendChild(T(x(p.dt),y(p.m)-(hi?14:12),p.lab,"fill:"+(hi?col:"var(--text-muted)")+";text-anchor:middle;font-size:"+(hi?11.5:10.5)+"px;font-weight:700"));});
+ s.appendChild(T(R+16,T0+18,"#7 → #3","fill:var(--s2);font-size:12.5px;font-weight:700"));
+ s.appendChild(T(R+16,T0+38,"질량  −2.5 %","fill:var(--good);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(R+16,T0+54,"d/t   +6.1 %","fill:var(--crit);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(R+16,T0+70,"χ     −0.7 %","fill:var(--text-secondary);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(R+16,T0+94,"→ 경량화가 유리","fill:var(--text-primary);font-size:11.5px;font-weight:700"));
+ s.appendChild(T(R+16,T0+118,"굽힘 단면계수 W 는","fill:var(--text-muted);font-size:11px"));
+ s.appendChild(T(R+16,T0+133,"9안 전체 0.65 % 이내","fill:var(--text-muted);font-size:11px"));
+ s.appendChild(T(R+16,T0+148,"= 등가 강도 스윕","fill:var(--text-muted);font-size:11px;font-weight:700"));
+})();
+
+/* ========== 7. 재질별 단면등급 판정 ========== */
+(function(){
+ var W=880,H=290,L=210,R=W-40,T0=58,B=H-56;
+ var s=svg("fig-spec",W,H); if(!s)return;
+ var x=mkLin(30,95,L,R);
+ var mats=[{n:"S235",fy:235},{n:"S275",fy:275},{n:"EN-GJS-400-18U-LT",fy:240},
+           {n:"S355",fy:355},{n:"S460",fy:460},{n:"42CrMo4 보정",fy:510}];
+ [30,40,50,59.6,70,76.9,80,90].forEach(function(v){
+   s.appendChild(E("line",{x1:x(v),x2:x(v),y1:T0-12,y2:B},"stroke:var(--grid);stroke-width:1"));
+   s.appendChild(T(x(v),B+18,v==59.6?"59.6":(v==76.9?"76.9":String(v)),"fill:var(--text-muted);text-anchor:middle;font-size:10.5px"));});
+ s.appendChild(E("line",{x1:L,x2:R,y1:B,y2:B},"stroke:var(--axis);stroke-width:1"));
+ s.appendChild(T(R,B+38,"d / t","fill:var(--text-muted);text-anchor:end"));
+ var bh=22, gap=(B-T0)/mats.length;
+ // 사양 밴드
+ s.appendChild(E("rect",{x:x(69.93),y:T0-16,width:x(74.20)-x(69.93),height:B-T0+18},"fill:var(--crit);opacity:.16"));
+ s.appendChild(T((x(69.93)+x(74.20))/2,T0-22,"제시 사양 69.9 – 74.2","fill:var(--crit);text-anchor:middle;font-size:11.5px;font-weight:700"));
+ mats.forEach(function(m,i){
+   var lim=90*235/m.fy, y=T0+gap*i+(gap-bh)/2, c4=lim<69.93;
+   s.appendChild(T(L-12,y+bh/2+4,m.n+"  ("+m.fy+")","fill:var(--text-secondary);text-anchor:end;font-size:12px"));
+   var a=E("rect",{x:L,y:y,width:Math.max(2,x(Math.min(lim,95))-L),height:bh,rx:3},"fill:var(--h2)");
+   hover(a,"<b>"+m.n+"</b>  f_y = "+m.fy+" MPa<br>Class 3 한계 = 90·ε² = "+lim.toFixed(2)+"<br>이 구간은 Class 1~3 → 좌굴 검토 불요");
+   s.appendChild(a);
+   if(lim<95){
+     var b=E("rect",{x:x(lim)+1.5,y:y,width:x(95)-x(lim)-1.5,height:bh,rx:3},"fill:var(--h5)");
+     hover(b,"<b>"+m.n+"</b>  f_y = "+m.fy+" MPa<br>d/t > "+lim.toFixed(2)+" → <b>Class 4</b><br>쉘 좌굴 검토 필수"+(c4?"<br><span style='color:var(--crit)'>★ 제시 사양 전 안이 여기</span>":""));
+     s.appendChild(b);
+     var tx=T(x(lim)+(x(95)-x(lim))/2,y+bh/2+4,"Class 4","fill:var(--h5i)");
+     tx.setAttribute("style","fill:var(--h5i);text-anchor:middle;font-size:10.5px;font-weight:700;font-family:inherit");
+     tx.setAttribute("pointer-events","none"); s.appendChild(tx);
+     var bl=T(x(lim)-7,y+bh/2+4,lim.toFixed(1),"");
+     bl.setAttribute("style","fill:var(--h2i);text-anchor:end;font-size:10px;font-weight:700;font-family:inherit");
+     bl.setAttribute("pointer-events","none"); s.appendChild(bl);}
+   if(x(Math.min(lim,95))-L>60){
+     var t2=T(L+9,y+bh/2+4,"Class 1–3","fill:var(--h2i)");
+     t2.setAttribute("style","fill:var(--h2i);text-anchor:start;font-size:10.5px;font-weight:700;font-family:inherit");
+     t2.setAttribute("pointer-events","none"); s.appendChild(t2);}
+   s.appendChild(T(R+4,y+bh/2+4,c4?"필수":"불요","fill:"+(c4?"var(--crit)":"var(--good)")+";font-size:11px;font-weight:700"));
+ });
+})();
+
+/* ===== TOC scrollspy + theme ===== */
+var links=[].slice.call(document.querySelectorAll("#toc a[href^='#']"));
+var targets=links.map(function(a){return document.getElementById(a.getAttribute("href").slice(1));});
+function spy(){
+  var best=-1;
+  for(var i=0;i<targets.length;i++){ if(!targets[i])continue;
+    var r=targets[i].getBoundingClientRect(); if(r.top<=140)best=i; }
+  links.forEach(function(a,i){a.classList.toggle("active",i===best);});
+  if(best>=0 && window.innerWidth>1000){
+    var a=links[best],n=document.getElementById("toc"),ar=a.getBoundingClientRect(),nr=n.getBoundingClientRect();
+    if(ar.top<nr.top+30||ar.bottom>nr.bottom-30)n.scrollTop+=ar.top-nr.top-nr.height/2;}
+}
+var tick=false;
+window.addEventListener("scroll",function(){if(!tick){tick=true;requestAnimationFrame(function(){spy();tick=false;});}},{passive:true});
+spy();
+var btn=document.getElementById("themeBtn");
+btn.addEventListener("click",function(){
+  var d=document.documentElement.getAttribute("data-theme")==="dark";
+  document.documentElement.setAttribute("data-theme",d?"light":"dark");
+  btn.textContent=d?"◐ 다크모드":"◐ 라이트모드";});
+if(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches){
+  document.documentElement.setAttribute("data-theme","dark");btn.textContent="◐ 라이트모드";}
+})();
+</script>
+</body>
+</html>

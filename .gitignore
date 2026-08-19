@@ -36,7 +36,8 @@ Main bearing/02. 자료/MASTA/*_검증_*.Masta
 Main bearing/01. 정리/Python 자동화/Results/**/*.log
 
 # MASTA 모델 파일 — 스크립트로 재생성 가능한 대용량 바이너리(파일당 8MB+), 커밋 제외
-**/MASTA/*.masta
+# 260819: 실제 확장자가 .Masta(대문자 M)라 *.masta 규칙이 한 번도 매칭되지 않았음
+**/MASTA/*.[Mm]asta
 **/MASTA/*.lock
 
 # 스크리닝 ε 맵 — 설계 × DLC × k 301수준이라 파일당 60 MB 다 (260805)
