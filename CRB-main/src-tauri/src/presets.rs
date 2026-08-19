@@ -204,49 +204,36 @@ pub fn ensure_default_preset(app: AppHandle) -> Result<(), String> {
 
     let default_input = default_bearing_input();
     let json = serde_json::to_string_pretty(&default_input).map_err(|e| e.to_string())?;
-    let path = dir.join("NSK HR30306J (Default).json");
+    let path = dir.join("NU 240 (CRB Default).json");
     fs::write(&path, json).map_err(|e| e.to_string())?;
     Ok(())
 }
 
-/// Construct the default BearingInput matching defaults.ts (NSK HR30306J).
+/// Construct the default BearingInput for CRB (Phase 1 stub — NU 240 유사 파라미터).
+/// Phase 1.5 (defaults) 에서 정식 값 확정 예정.
 fn default_bearing_input() -> BearingInput {
     BearingInput {
         macro_geom: MacroGeometry {
-            d: 30.0,
-            outer_diameter: 72.0,
-            t: 20.75,
-            alpha: 11.859,
-            z: 14,
-            d_we_max: 10.9371,
-            d_we_min: 10.123273,
-            l_we: 11.65,
-            d_pw: 51.0,
-            h_rib: 2.5,
-            alpha_rib: 9.855,
-            g_r: 0.0,
-            h_c: None,
+            d: 200.0,
+            outer_diameter: 360.0,
+            t: 58.0,
+            z: 18,
+            d_we: 44.0,      // 균일 원통 roller diameter
+            l_we: 42.0,
+            d_pw: 280.0,
+            g_r: 30.0,
         },
         raceway_geom: RacewayGeometry {
-            alpha_i: 7.85,
-            alpha_o: 11.859,
-            r_i: 300.0,
-            r_o: 300.0,
-            r_rib: 1500.0,
-            r_rib_circ: None,
+            r_i: 1.0e9,       // 원통 raceway (transverse 곡률 무한대 근사)
+            r_o: 1.0e9,
             d_uc: 0.0,
             l_uc: 0.0,
         },
         roller_profile: RollerProfile {
-            crown_type: CrownType::Polynomial {
-                coeffs: vec![-0.001713, 0.007566, -0.1307, -0.1991, -0.04019],
-            },
-            delta_c: 0.0,
-            delta_dub_l: 0.0,
-            delta_dub_s: 0.0,
-            l_dub_l: 0.0,
-            l_dub_s: 0.0,
-            r_sph: 35.0,
+            crown_type: CrownType::Logarithmic { a_log: 0.0 },
+            delta_c: 5.0,
+            delta_dub: 0.0,   // 양쪽 대칭 (D1: rib 없음, 부록 A.1)
+            l_dub: 0.0,
             sigma_roller: 0.15,
         },
         raceway_profile_inner: RacewayProfile {
@@ -254,14 +241,14 @@ fn default_bearing_input() -> BearingInput {
             w_a: 0.0,
             ra: 0.15,
             custom_profile: None,
-            polynomial_coeffs: Some(vec![-0.01255, -0.01808, -0.01308, 0.1398, -0.2076]),
+            polynomial_coeffs: None,
         },
         raceway_profile_outer: RacewayProfile {
             delta_rw: 0.0,
             w_a: 0.0,
             ra: 0.15,
             custom_profile: None,
-            polynomial_coeffs: Some(vec![-0.0006185, 0.001334, -0.2418, -0.08751, -0.1606]),
+            polynomial_coeffs: None,
         },
         material: Material {
             e_roller: 210.0,
@@ -272,23 +259,19 @@ fn default_bearing_input() -> BearingInput {
             density_ring: 7.85,
         },
         operating: OperatingConditions {
-            f_x: 5.0,
-            f_y: 0.0,
-            f_a: 2.0,
-            m_x: 0.0,
-            m_y: 0.0,
-            n_inner_rpm: 1500.0,
+            f_x: 100.0,
+            f_y: -500.0,      // -Y = 중력 방향 (D5)
+            m_x: 0.0,         // single-plane misalignment 축 (D6)
+            n_inner_rpm: 500.0,
             n_outer_rpm: 0.0,
             gamma: 0.0,
-            t_op: 70.0,
+            t_op: 60.0,
             nu_40: 68.0,
             nu_100: 8.0,
             alpha_pv: 20.0,
             lubrication_type: LubricationType::Oil,
             starvation_factor: 1.0,
             rho_oil: 850.0,
-            preload_mode: PreloadMode::DisplacementFromForce,
-            delta_preload_um: 0.0,
             design_life_hours: 100.0,
             lubrication_model: LubricationModel::Method1_DH, film_decay_enabled: false, film_decay_time_hours: 0.0, skew_angle_deg: 0.0, replenishment_rate_nm_s: 0.0, surface_finish: SurfaceFinish::Standard, additive_type: AdditiveType::None,
             tau_eyring: 5.0,
@@ -301,7 +284,7 @@ fn default_bearing_input() -> BearingInput {
             friction_model: FrictionModel::PalmgrenLike,
             thermal_correction: ThermalCorrection::Aihara1987,
             hysteresis_loss_factor: 0.005,
-            skf_trb_series: SkfTrbSeriesEnum::Series303,
+            // skf_trb_series 제거 (CRB Phase 7 에서 SKF 대응 검토)
             skf_lubrication: SkfLubricationEnum::OilBath,
             skf_y_factor: 1.6,
             k_fluid: 0.15,

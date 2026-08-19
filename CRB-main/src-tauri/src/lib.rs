@@ -30,10 +30,11 @@ pub fn run() {
             commands::solve_roller_gen3_for_load,
             commands::solve_bearing,
             commands::solve_bearing_dual,
-            commands::compute_rib,
-            commands::solve_transient,
-            commands::parse_load_csv,
-            commands::run_hmehl,
+            // Phase 1.3-B 하이브리드 stub 상태 — 아래 command 는 후속 단계에서 재활성화:
+            // commands::compute_rib,        // D1 (rib contact 제외) → 영구 제거
+            // commands::solve_transient,    // Phase 7
+            // commands::parse_load_csv,     // Phase 7
+            // commands::run_hmehl,          // Phase 7
             presets::list_presets,
             presets::save_preset,
             presets::load_preset,
