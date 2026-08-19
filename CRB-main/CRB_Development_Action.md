@@ -11,9 +11,9 @@
 | Phase | 상태 | 완료일 | 순작업 시간 | 비고 |
 |-------|------|--------|-----------|------|
 | **0. 환경 분리** | ✅ 완료 | 2026-06-25 | ~12 분 | Sanity 통과, TRB 코드 그대로 동작 가능 상태 |
-| **1. 데이터 모델 단순화** | ✅ 완료 | 2026-08-19 | ~1 시간 20 분 | 3 commits (856c219, da07b44, b2d297b), cargo check + npm build 통과 |
-| 2. Geometry 단순화 | ⏳ 대기 | — | — | Plan §Phase 2 상세 계획 작성 완료, Level A 검증 준비 |
-| 3. Roller-Level Solver | — | — | — | — |
+| **1. 데이터 모델 단순화** | ✅ 완료 | 2026-08-19 | ~1 시간 20 분 | 3 commits (856c219, da07b44, b2d297b), cargo check + npm build 통과. merge: 6d60de3 |
+| **2. Geometry 단순화** | ✅ 완료 | 2026-08-19 | ~15 분 | 1 commit (96ac19b), Level A 8 tests pass (< 0.1% error) |
+| 3. Roller-Level Solver | ⏳ 대기 | — | — | — |
 | 4. Bearing-Level Equilibrium | — | — | — | — |
 | 5. Life / Static Rating | — | — | — | — |
 | 6. Frontend UI | — | — | — | — |
@@ -216,3 +216,88 @@ npm run tauri dev   # http://localhost:5175 + WebView 윈도우
 ---
 
 *Last updated: 2026-08-19 (Phase 1 코딩 완료, tauri dev 사용자 검증 대기. 3 commits: 856c219 / da07b44 / b2d297b)*
+
+---
+
+## Phase 2 — Geometry 단순화   ✅ 완료 (2026-08-19)
+
+**전체 소요**: ~15 분 (Phase 1 예측 1~2 day 대비 99% 단축 — 이미 Phase 1.3-B 에서 최소 수정한 코드 정식화 + Level A 골든 테스트 신규)
+**브랜치**: `phase-2` (CRB 로부터 서브)
+**Commit 수**: 1 (`96ac19b`)
+
+### 실행 방침
+
+Phase 1 4대 규약 그대로 채택: Hybrid 자율성 + 논리적 그룹 병렬 + 서브-Phase 단위 보고 + 서브-Phase 단위 commit.
+
+### 2-A 작업 내역   (geometry.rs 정식화)
+
+- `compute_slices` 재작성: 임시 α=0 대체 코드 (alpha_i_rad, alpha_o_rad, alpha_m 변수) **완전 제거**
+- 순수 원통 로직으로 단순화:
+  - Roller 반경 균일 (r_roller = D_we/2, 모든 slice 동일)
+  - γ = D_we / D_pw (α = 0 → cos(α) = 1)
+  - R_eq_inner = (D_we_eff/2) · (1 − γ_i)
+  - R_eq_outer = (D_we_eff/2) · (1 + γ_o)
+- `combine_curvature` 헬퍼 신규: raceway r → ∞ 원통이면 R_roller 유지, 유한이면 series 결합
+- ISO 16281 Clause 6.3.2 (p. 22) 근거 주석 명시
+- 부록 A.2 (x_axis 정의) 준수: x_axial 은 소단(0) → 대단(L_we) 방향, roller 축 따라
+
+### 2-B 작업 내역   (Level A 테스트 신규)
+
+- **신규 파일**: `src-tauri/tests/geometry_level_a.rs` (289 라인)
+- **테스트 8개** (모두 통과):
+  1. `level_a_hertz_half_width_matches_analytical` — b 계산 vs Palmgren 해석해
+  2. `level_a_hertz_max_pressure_matches_analytical` — p_max 계산 vs 해석해
+  3. `level_a_combined_elastic_modulus` — E* 계산 검증
+  4. `level_a_compute_slices_uniform_roller_radius` — 원통 roller 반경 균일성
+  5. `level_a_compute_slices_uniform_slice_width` — slice 폭 균등 + 총합 = L_we
+  6. `level_a_compute_slices_x_axial_symmetric` — slice 중심 좌표 대칭성
+  7. `level_a_compute_slices_r_eq_crb_orbital` — CRB γ 궤도 곡률 (D_we/D_pw)
+  8. `level_a_end_to_end_slice_hertz_matches_analytical` — 전체 파이프라인
+- **통과 기준**: 상대 오차 `TOL_REL = 1e-3` (Plan §2.6 0.1%)
+
+### 2-C 작업 내역   (통과 검증 + 부수 수정)
+
+- **이슈 트리거**: E0603 — integration test 에서 `app_lib::solver::...` 접근 불가 (private module)
+- **대응 (자동)**: `lib.rs` 의 `mod solver` → `pub mod solver` (integration test 접근 위해 표준 대응)
+- **결과**:
+  - `cargo check --lib`: ✅ exit 0, 32 warnings (Phase 1 stub 상태 이월)
+  - `cargo test --test geometry_level_a`: ✅ exit 0, **8/8 pass, 0.00s**
+
+### 통과 기준 (§7 §2.6)
+
+| 기준 | 결과 |
+|------|------|
+| `cargo test --test geometry_level_a` 모두 pass | ✅ 8/8 |
+| `cargo check` exit 0 | ✅ (warnings 만) |
+| `npm run build` 회귀 확인 | ✅ (Frontend 무변경 → 자동 유지) |
+| Phase 1 상태 대비 회귀 없음 | ✅ |
+
+### 발생 이슈 및 대응
+
+| 이슈 | 대응 | 결과 |
+|------|------|------|
+| E0603: private module solver | 자동 stub → lib.rs 에 pub mod solver | ✅ |
+
+### 미해결 / 이월 항목
+
+- ⏳ Phase 1 이월 그대로 유지 (Frontend @ts-nocheck, 부수 솔버 disable, bearing.rs stub)
+- ⏳ Level B/C/D 검증 (Phase 3/4 대상)
+
+### Plan 대비 편차 ([Plan §Phase 2](CRB_Development_Plan.md) 비교)
+
+| 항목 | Plan 예측 | 실제 | 편차 |
+|------|----------|------|------|
+| 소요 시간 | 1 ~ 2 day | **~15 분** | **–99%** (Phase 1.3-B 에서 이미 최소 수정 완료 상태) |
+| Sub-phase 수 | 3~4 (A/B/C) | 단일 commit 병합 | — |
+| 신규 테스트 | 1 파일 | 1 파일, 8 tests | Plan 대비 상세 |
+| 발생 이슈 | 0~1 예상 | 1 (pub mod 접근성) | 자동 해결 |
+
+### Phase 3 진입 조건
+
+- ✅ Phase 2 통과 기준 (§2.6) 모두 만족
+- ✅ Level A 검증 완료 → Gen1/Gen3 solver 알고리즘 검증 base 확보
+- 다음 브랜치: `phase-3` (CRB 로부터 신규 서브 브랜치 예정)
+
+---
+
+*Last updated: 2026-08-19 (Phase 1+2 완료. commits: Phase 1 = 856c219/da07b44/b2d297b/c6b663e/ff70d09 (merge 6d60de3), Phase 2 = 96ac19b (merge 대기))*
