@@ -755,7 +755,112 @@ Phase 1 stub 의 `roller_approach(disp: &[f64; 3], ...)` 시그니처 (이미 3-
 
 진입 시점에 상세화. 핵심: ISO 16281 A.3.1 알고리즘, 3-DOF (δr, γx, γy), Level D 검증.
 
-### Phase 5 — Life / Static Rating (placeholder)
+### Phase 5 — Life / Static Rating (상세 계획, 2026-08-19 병렬 작성)
+
+> Phase 1.3-B 에서 `life.rs`, `static_rating.rs` 는 `mod.rs` 에서 disable 상태.
+> Phase 5 는 두 모듈 재활성화 + ISO 16281 5.3 (lamina-level life) + ISO 76 (static rating) + ISO 281 CRB 상수 (C_r).
+
+#### 5.1 목표
+- `life.rs` 재활성화 — ISO 16281 5.3 (Cylindrical roller lamina-level life)
+- `static_rating.rs` 재활성화 — ISO 76:2006 CRB (C_0r, P_0r, S_0)
+- ISO 17956:2025 (lamina-level effective static safety S_0,eff) 지원
+- **Level E 검증**: 정성 (부호/monotonicity) + 가능 시 Reference
+
+#### 5.2 작업 대상 파일
+
+| 파일 | 변경 강도 | 주요 작업 |
+|------|---------|---------|
+| `src-tauri/src/solver/life.rs` | 🔴 재작성 | ISO 16281 5.3 lamina-level. CRB C_r 상수 (ISO 281 CRB 식) |
+| `src-tauri/src/solver/static_rating.rs` | 🔴 재작성 | ISO 76 CRB C_0r + ISO 17956 S_0,eff |
+| `src-tauri/src/solver/mod.rs` | 🟢 minor | 두 모듈 disable 주석 해제 |
+| `src-tauri/src/solver/bearing.rs` | 🟡 부분 | Phase 4 의 stub 필드 (life/static_rating) 실제 계산 값으로 대체 |
+| `src-tauri/tests/life_level_a.rs` | 🔴 신규 | Life 단위 테스트 (해석해 비교) |
+| `src-tauri/tests/static_rating_level_a.rs` | 🔴 신규 | Static rating 단위 테스트 |
+
+#### 5.3 ISO 16281 5.3 (CRB Roller Bearings Lamina-Level Life)
+
+**per-slice equivalent lamina load** (ISO Eq. 24~25):
+```
+q_ei,k = (Σⱼ (q_j,k · cos ψⱼ)^{10/3})^{3/10}   (inner ring, 회전 side)
+q_eo,k =  Σⱼ q_j,k · cos ψⱼ / Z                (outer ring, 정지 side, 근사)
+```
+
+**per-lamina life** (Lundberg-Palmgren):
+```
+L_10,k = (Q_c,k / q_e,k)^{10/3}    [10⁶ rev]
+```
+
+**Bearing life 합성** (Weibull, e = 9/8 for roller):
+```
+1/L_10^e = Σ_k (1/L_10,k)^e   → L_10 = (Σ_k L_10,k^{-e})^{-1/e}
+```
+
+**Modified life**:
+```
+L_nm = a_ISO · L_10   (a_ISO = f(κ, η_c, C_u/P))
+```
+
+#### 5.4 ISO 281 CRB C_r 계수
+
+```
+C_r = b_m · f_c · (L_we · cos α)^{7/9} · Z^{3/4} · D_we^{29/27}
+    = b_m · f_c · L_we^{7/9} · Z^{3/4} · D_we^{29/27}    (CRB: α=0)
+```
+- `b_m` = 1.1 (CRB 표준, ISO 281)
+- `f_c` = 형상 계수 (γ = D_we/D_pw 함수, ISO 281 표)
+
+#### 5.5 ISO 76 CRB Static Rating
+
+```
+C_0r = f_0 · Z · L_we · D_we · cos α = f_0 · Z · L_we · D_we    (α=0)
+```
+- `f_0` = 44 (CRB 표준, ISO 76:2006)
+
+**S_0 = C_0r / P_0r** (P_0r 는 정적 등가 하중, CRB 는 P_0r = F_r)
+
+#### 5.6 ISO 17956 lamina-level S_0,eff
+
+```
+q_0 = C_0r × (some factor)  (per-lamina reference)
+q_max = actual maximum lamina load (from Phase 4 equilibrium)
+S_0,eff = q_0 / q_max
+```
+
+#### 5.7 통과 기준
+
+- [ ] `cargo check --lib` exit 0
+- [ ] `cargo test --test life_level_a` all pass
+- [ ] `cargo test --test static_rating_level_a` all pass
+- [ ] `bearing.rs` 의 life/static_rating 필드가 실제 계산 값 (Default 대체)
+- [ ] Phase 4 회귀 확인
+
+#### 5.8 예상 시간
+
+- **2 ~ 3 day**
+- 세부: life.rs 재작성 (5h), static_rating.rs 재작성 (3h), tests (4h), 통합 (2h), 리포트 (2h)
+
+#### 5.9 잠재 이슈
+
+| 이슈 | 대응 |
+|------|------|
+| ISO 281 f_c 계수 표 (γ 함수) 접근 | ISO 원문 확인 or 문헌 (Harris 부록 A) 하드코딩 |
+| ISO 16281 Eq. 24~25 의 회전 side 판별 (내륜/외륜 어느 것이 회전) | operating.n_inner_rpm, n_outer_rpm 로 판별 (Phase 4 이미 반영) |
+| bearing.rs 재수정 (Phase 4 stub 필드 → 실제 계산) | 인터페이스 최소 변경 |
+| Level E (실험 검증) 불가 | 정성 검증 (monotonicity: F_r ↑ → L_10 ↓) 로 대체 |
+
+#### 5.10 산출물
+
+- 재작성된 `life.rs`, `static_rating.rs`
+- `tests/life_level_a.rs`, `tests/static_rating_level_a.rs`
+- `python-prototype/phase5_life_report.py`
+- `reports/phase5/*.png` (L_10 vs F_r, C_r/P 곡선 등)
+- `Action.md` Phase 5 섹션
+
+#### 5.11 Phase 6 진입 조건
+
+- ✅ Phase 5 통과 기준 (§5.7) 모두 만족
+- ✅ `solve_bearing` 이 life/static_rating 실제 값 반환
+- ✅ Frontend (Phase 6) 에서 이 값 표시 가능한 인터페이스 확정
 
 진입 시점에 상세화. 핵심: ISO 16281 5.3 + ISO 281 C_R (CRB) + ISO 76 C_0r.
 
