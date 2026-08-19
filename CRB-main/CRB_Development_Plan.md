@@ -845,15 +845,16 @@ gh repo view --web                  # 브라우저에서 repo 열기
 
 > **상황 가정**: 사용자가 이미 본인의 GitHub 계정에 레포지터리를 가지고 있고, 거기에 CRB-main 을 추가하려는 경우. 그리고 일상 작업은 Visual Studio Code 의 Git 통합 UI 로 진행하고 싶음.
 
-#### C.12.1 사전 확인 — 어떤 시나리오인가 (3가지 중 선택)
+#### C.12.1 사전 확인 — 어떤 시나리오인가 (4가지 중 선택)
 
 | 시나리오 | 설명 | 선택 기준 |
 |---------|------|----------|
 | **A. 기존 레포가 비어 있거나 CRB 전용** | CRB-main 통째로 main 브랜치에 push | 그 레포가 CRB 프로젝트만을 위한 것 |
 | **B. 기존 레포에 다른 프로젝트도 있음 (monorepo)** | CRB-main 을 기존 레포의 **하위 폴더**로 추가 (예: `repo-root/CRB-main/`) | 한 레포에 TRB-main, CRB-main 등 여러 프로젝트 공존 |
 | **C. 별도 브랜치로 분리** | 기존 레포의 새 브랜치 (예: `crb-main` 브랜치) 로 CRB-main push | 다른 프로젝트와 완전 분리하되 같은 레포에서 관리 |
+| **D. Git worktree + Sparse-checkout (상급자 방식, ⭐ 본 프로젝트 실제 채택)** | 별도 브랜치 (`CRB`) 를 별도 물리 폴더 (`AI_Seminar_CRB/`) 로 worktree, 그 worktree 는 **CRB-main 폴더만** sparse-checkout | 한 monorepo 에서 여러 브랜치를 동시에 편집 + 각 브랜치별 필요 파일만 노출 |
 
-→ 본 안내는 **A** (가장 단순) 와 **B** (가장 실용적) 두 시나리오를 다룸. C 는 §C.7 의 브랜치 전략으로 응용 가능.
+→ 본 안내는 **A** (가장 단순), **B** (가장 실용적), **D** (본 프로젝트 채택) 세 시나리오를 다룸. C 는 §C.7 의 브랜치 전략으로 응용 가능.
 
 #### C.12.2 시나리오 A — 기존 빈 레포에 CRB-main 통째로 push
 
@@ -1055,7 +1056,193 @@ gh issue create --title "Phase 4 평형 알고리즘 수치 발산 이슈" --bod
 gh pr create --title "Phase 1 완료" --body "D1~D7 반영"
 ```
 
-#### C.12.10 한 페이지 요약 — "VS Code 에서 Git 쓰는 법 5초 안내"
+#### C.12.10 시나리오 D — Git Worktree + Sparse-checkout (⭐ 본 프로젝트 실제 채택)
+
+##### C.12.10.1 개념
+
+**Git Worktree**: 하나의 저장소를 **여러 물리 폴더에 각기 다른 브랜치로 체크아웃**하는 기능. 브랜치 전환 시 파일 갈아 끼우는 대신 폴더별로 브랜치 격리.
+
+**Sparse-checkout**: 저장소 전체가 아닌 **특정 폴더/파일만** 워킹 디렉토리에 노출. 대형 monorepo 에서 필요한 부분만 다루기 좋음.
+
+**두 기능 조합의 위력**:
+```
+GitHub Repo (CHOICHOI-KIMM/AI_Seminar)
+├── main 브랜치       ─┐
+├── CRB 브랜치        ─┤ 세 브랜치 모두 존재
+└── P3_HTML 브랜치    ─┘
+
+로컬 파일시스템
+├── d:/AI/AI_Seminar/           ← main worktree (전체 파일)
+│   ├── CRB-main/               ← main 에도 CRB-main 있음 (초기 상태 기록)
+│   ├── Main bearing/
+│   └── 논문 취합/
+│
+└── d:/AI/AI_Seminar_CRB/       ← CRB worktree (sparse-checkout: CRB-main 만)
+    └── CRB-main/               ← CRB 브랜치 작업 전용, 다른 폴더 미노출
+```
+
+**장점**:
+- 두 브랜치를 **동시에 편집** 가능 (컨텍스트 스위칭 없음)
+- CRB 작업 폴더에는 **CRB-main 만 보임** → 다른 프로젝트 파일에 방해 안 받음
+- 각 worktree 는 독립 IDE 세션 (VS Code 창) 열기 가능
+
+##### C.12.10.2 초기 세팅 (1회)
+
+```powershell
+# 1) monorepo 를 어딘가에 이미 clone 했다고 가정
+#    예: d:\AI\AI_Seminar (main 브랜치 체크아웃 상태)
+
+cd "d:\AI\AI_Seminar"
+
+# 2) CRB 브랜치가 없다면 먼저 생성
+git branch CRB main            # main 에서 CRB 분기
+git push -u origin CRB         # 원격에 push
+
+# 3) 별도 물리 폴더로 worktree 생성 (핵심)
+git worktree add "d:\AI\AI_Seminar_CRB" CRB
+
+# 4) 새 worktree 로 이동 후 sparse-checkout 설정
+cd "d:\AI\AI_Seminar_CRB"
+git sparse-checkout init --cone
+git sparse-checkout set CRB-main
+
+# → 이제 d:\AI\AI_Seminar_CRB\ 에는 CRB-main 폴더만 보임
+```
+
+##### C.12.10.3 일상 작업
+
+```powershell
+# CRB 작업 → CRB worktree 에서만
+cd "d:\AI\AI_Seminar_CRB\CRB-main"
+code .                          # VS Code 로 열기 — CRB-main 만 workspace 로 보임
+
+# 수정 → commit → push (일반 git 명령 그대로)
+git add .
+git commit -m "Phase 1.1: ..."
+git push                        # origin/CRB 로 push
+```
+
+##### C.12.10.4 Phase 1 서브 브랜치 (본 프로젝트 채택 형태)
+
+```powershell
+cd "d:\AI\AI_Seminar_CRB"       # CRB worktree
+git checkout -b phase-1         # CRB 로부터 phase-1 서브 브랜치 생성
+# ... 작업 ...
+git commit -m "..."
+# Phase 1 완료 시:
+git checkout CRB
+git merge phase-1
+git push
+```
+
+##### C.12.10.5 다른 브랜치도 worktree 로 (선택)
+
+```powershell
+# 각 Phase 나 목적별로 별도 물리 폴더
+git worktree add "d:\AI\AI_Seminar_P3" P3_HTML
+git worktree add "d:\AI\AI_Seminar_experiment" experiment-branch
+
+# 목록 확인
+git worktree list
+```
+
+##### C.12.10.6 정리
+
+```powershell
+# Worktree 제거 (물리 폴더도 함께 삭제됨)
+git worktree remove "d:\AI\AI_Seminar_CRB"
+
+# 오래된 링크 정리
+git worktree prune
+```
+
+##### C.12.10.7 주의사항
+
+- **같은 브랜치를 두 worktree 에서 동시 체크아웃 불가** — Git 이 잠금 걸어줌. 그러므로 각 worktree 는 서로 다른 브랜치
+- **`.git` 은 파일** (worktree 는 폴더가 아니라 파일로 표시) — 지우면 안 됨
+- **Sparse-checkout 은 파일 필터**, 브랜치 무관. 원격에는 여전히 모든 파일 있음
+- **VS Code 는 각 worktree 를 독립 workspace 로 인식** — 여러 창 동시 편집 가능
+
+#### C.12.11 다중 PC 환경 — 개발도구 재설치 필요성
+
+⚠️ **매우 중요**: Git worktree 는 **파일만 동기화**합니다. **개발도구 (Node.js, Rust, VS 2022 BuildTools)** 는 각 PC 에 **독립 설치** 되어야 합니다.
+
+##### C.12.11.1 시나리오 — 두 PC 병행 작업
+
+| 항목 | PC-A (원 개발 PC) | PC-B (동기화 후) |
+|------|-------------------|------------------|
+| Git 저장소 | ✅ 완비 | ✅ clone 완료 |
+| 소스 파일 | ✅ 최신 | ✅ 최신 (push/pull) |
+| **Node.js** | ✅ 설치됨 | ❌ **새로 설치 필요** |
+| **Rust toolchain** | ✅ 설치됨 | ❌ **새로 설치 필요** |
+| **VS 2022 BuildTools** | ✅ 설치됨 | ❌ **새로 설치 필요** |
+| **PATH 환경변수** | ✅ 설정됨 | ❌ **새로 설정 필요** |
+
+##### C.12.11.2 PC-B 에서 필요한 순차 설치
+
+```powershell
+# 1) PowerShell 실행정책 (CurrentUser)
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
+
+# 2) Node.js LTS (약 3~5분)
+winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements --silent
+
+# 3) Rust toolchain (약 2~3분)
+Invoke-WebRequest https://win.rustup.rs/x86_64 -OutFile $env:TEMP\rustup-init.exe
+& $env:TEMP\rustup-init.exe -y --default-toolchain stable-msvc --default-host x86_64-pc-windows-msvc --profile default
+
+# 4) VS 2022 BuildTools (약 15~25분, UAC 프롬프트 클릭 필요)
+Invoke-WebRequest https://aka.ms/vs/17/release/vs_buildtools.exe -OutFile $env:TEMP\vs_buildtools.exe
+Start-Process -FilePath $env:TEMP\vs_buildtools.exe -Wait -ArgumentList @(
+  "--passive","--wait","--norestart",
+  "--add","Microsoft.VisualStudio.Workload.VCTools",
+  "--add","Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+  "--add","Microsoft.VisualStudio.Component.Windows11SDK.22621",
+  "--includeRecommended"
+)
+
+# 5) 글로벌 cargo config (SSL CRL 우회 — 회사망/연구기관망 필수)
+@"
+[http]
+check-revoke = false
+
+[net]
+git-fetch-with-cli = true
+"@ | Set-Content "$env:USERPROFILE\.cargo\config.toml" -Encoding utf8
+
+# 6) 검증
+cd <프로젝트 폴더>\src-tauri
+cargo check    # 첫 실행 시 의존성 컴파일 5~10분
+cd ..
+npm install    # 약 1분
+```
+
+##### C.12.11.3 PC 간 잠재 이슈
+
+| 이슈 | 대응 |
+|------|------|
+| **MSVC 버전 차이** — 프로젝트 `src-tauri/.cargo/config.toml` 이 하드코딩된 MSVC 버전 (예: `14.44.35207`) | 새 PC 의 실제 설치 버전으로 갱신. `Get-ChildItem "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC"` 로 확인 |
+| **Windows SDK 버전 차이** (예: `10.0.26100` vs `10.0.22621`) | 동일하게 config.toml 의 LIB/INCLUDE 경로 갱신 |
+| **VS 설치 경로 차이** (`Program Files` vs `Program Files (x86)`, Community/Professional/Enterprise/BuildTools) | config.toml 의 CC/CXX/LIB/INCLUDE/linker 경로 4가지 통째로 갱신 |
+| **`.cargo/config.toml` 이 git 추적 중** — PC-A 의 경로가 PC-B 에서 안 맞음 | `.gitignore` 에 `src-tauri/.cargo/config.toml` 추가 + `config.toml.template` 을 대신 git 추적 |
+| **User PATH 에 cargo bin 미포함** | `[Environment]::SetEnvironmentVariable("Path", "$([Environment]::GetEnvironmentVariable('Path', 'User'));$env:USERPROFILE\.cargo\bin", "User")` |
+| **회사망 SSL 오류 (`CRYPT_E_NO_REVOCATION_CHECK`)** | 5번 단계의 글로벌 config 필수 |
+
+##### C.12.11.4 시간 예산
+
+| 단계 | 소요 시간 |
+|------|---------|
+| Node.js 설치 | 3~5분 |
+| Rust 설치 | 2~3분 |
+| VS 2022 BuildTools (다운로드 6GB) | **15~25분** (가장 오래) |
+| Cargo config + PATH | 1분 |
+| 첫 cargo check (전 의존성 컴파일) | 5~10분 |
+| npm install | 1~2분 |
+| **총계** | **약 30~50분** |
+
+한 번 세팅하면 이후 소스 push/pull 은 즉시 반영. 재설치는 OS 재설치 시에만.
+
+#### C.12.12 한 페이지 요약 — "VS Code 에서 Git 쓰는 법 5초 안내"
 
 | 키/위치 | 동작 |
 |---------|------|
@@ -1068,4 +1255,4 @@ gh pr create --title "Phase 1 완료" --body "D1~D7 반영"
 
 ---
 
-*Last updated: 2026-06-25 (Phase 0 완료 + §6 결정 D1~D7 확정 + §7 Phase 1 상세 계획 + 부록 A·B·C(§C.1~C.12) 추가. [실행 기록은 CRB_Development_Action.md](CRB_Development_Action.md))*
+*Last updated: 2026-08-19 (Phase 0 완료 + §6 결정 D1~D7 + §7 Phase 1 상세 + 부록 A·B·C(§C.1~C.12) 완성. C.12.10 시나리오 D (git worktree + sparse-checkout) 및 C.12.11 다중 PC 환경 안내 추가. [실행 기록은 CRB_Development_Action.md](CRB_Development_Action.md))*
