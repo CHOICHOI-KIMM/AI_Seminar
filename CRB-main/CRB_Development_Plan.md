@@ -703,6 +703,11 @@ Phase 1 stub 의 `roller_approach(disp: &[f64; 3], ...)` 시그니처 (이미 3-
 - [ ] `cargo test --test roller_level_c` 회귀 확인
 - [ ] `cargo test --test geometry_level_a` 회귀 확인
 - [ ] `npm run tauri dev` 로 solve_bearing command 호출 시 결과 반환 (Phase 1 stub → 실제 결과)
+- [ ] **각 DOF 별 non-trivial condition test 통과** (2026-08-19 추가):
+  - δ_x DOF: F_x ≠ 0 조건 → δ_x ≠ 0 확인
+  - δ_y DOF: F_y ≠ 0 조건 → δ_y ≠ 0 확인
+  - γ_x DOF: M_x ≠ 0 조건 → γ_x ≠ 0 확인, 부호 반전 대칭, 단조성, self-consistency (rel_err < 5%)
+  - **원칙**: 각 DOF 를 침묵실패 없이 실측 검증. 모든 test 가 특정 DOF=0 조건이면 그 DOF path 는 검증 안 된 것.
 
 #### 4.7 예상 시간
 
@@ -1062,6 +1067,7 @@ S_0,eff = q_0 / q_max
 - [ ] `cargo test --test static_rating_level_a` all pass
 - [ ] `bearing.rs` 의 life/static_rating 필드가 실제 계산 값 (Default 대체)
 - [ ] Phase 4 회귀 확인
+- [ ] **각 계산 경로 별 non-trivial condition test** (§4.6 침묵실패 방지 원칙 적용): 예. L_10 계산은 실제 하중분포 (Q_j ≠ uniform) 조건 사용, S_0 는 Q_max 지점 (특정 roller 지목) 조건.
 
 #### 5.8 예상 시간
 

@@ -154,3 +154,65 @@ fn smoke_roller_count_equals_z() {
     assert_eq!(result.equilibrium.roller_results.len(), 18);
     assert_eq!(result.equilibrium.roller_loads.len(), 18);
 }
+
+// ─── M_x 검증 (Outer γ_x loop 수렴성/정확성) ─────────────────────
+
+/// Smoke 6: Dominant M_x (with minimal radial preload) — Outer γ_x loop 수렴 검증
+///
+/// Pure moment (F=0) 는 clearance g_r 로 인해 어떤 roller 도 접촉하지 못하므로
+/// dM/dγ = 0 → 초기 gradient singular → 물리적으로 정의 불량.
+/// 최소 radial preload (F_y=-100 kN, g_r=0 → 접촉 보장) + M_x 로 γ_x 응답 확인.
+#[test]
+fn smoke_pure_mx_converges() {
+    // clearance = 0 으로 pure preload 없이도 접촉 확보. F_y 는 minimal (-100 kN).
+    let input = crb_input(0.0, -100.0, 100.0, 0.0);  // g_r=0, F_y=-100, M_x=100
+    let result = solve_bearing_equilibrium(&input, &SilentReporter).expect("NR should converge");
+    let disp = &result.equilibrium.displacement;
+    println!("Dominant M_x: δ = [{:.3}, {:.3}, 0, {:.3e}, 0] μm/rad",
+             disp[0], disp[1], disp[3]);
+
+    // γ_x 는 non-zero (M_x 를 만족시켜야)
+    assert!(disp[3].abs() > 1e-8, "M_x≠0 이면 γ_x ≠ 0 이어야, 실제 γ_x={:.3e}", disp[3]);
+    assert!(disp[0].abs() < 30.0, "δ_x 는 크지 않음, 실제 {}", disp[0]);
+    assert!(disp[1].abs() < 30.0, "δ_y 는 크지 않음, 실제 {}", disp[1]);
+}
+
+/// Smoke 7: M_x 부호 반전 → γ_x 부호 반전 (선형성 검증)
+#[test]
+fn smoke_mx_sign_flip() {
+    let input_pos = crb_input(0.0, -500.0, 50.0, 30.0);   // radial + M_x > 0
+    let input_neg = crb_input(0.0, -500.0, -50.0, 30.0);  // radial + M_x < 0
+
+    let r_pos = solve_bearing_equilibrium(&input_pos, &SilentReporter).expect("NR converges");
+    let r_neg = solve_bearing_equilibrium(&input_neg, &SilentReporter).expect("NR converges");
+
+    let g_pos = r_pos.equilibrium.displacement[3];
+    let g_neg = r_neg.equilibrium.displacement[3];
+    println!("M_x sign flip: γ_x(+50 kN·m) = {:.3e}, γ_x(-50 kN·m) = {:.3e}", g_pos, g_neg);
+
+    // 부호 반전
+    assert!(g_pos * g_neg < 0.0, "M_x 부호 반전 시 γ_x 도 반전, 실제 pos={:.3e}, neg={:.3e}",
+            g_pos, g_neg);
+    // 절대값 유사 (선형성, 30% 여유)
+    let rel = ((g_pos.abs() - g_neg.abs()) / g_pos.abs().max(g_neg.abs())).abs();
+    assert!(rel < 0.3, "γ_x 절대값 유사해야 (선형성), 실제 rel = {:.2}", rel);
+}
+
+/// Smoke 8: M_x monotonicity — M_x 증가 → γ_x 증가
+#[test]
+fn smoke_mx_monotonicity() {
+    let mut gammas = Vec::new();
+    for &m_x in &[10.0, 50.0, 100.0, 200.0_f64] {   // kN·m
+        let input = crb_input(0.0, -500.0, m_x, 30.0);   // F_y 유지 + M_x 변화
+        let result = solve_bearing_equilibrium(&input, &SilentReporter).expect("NR converges");
+        let g = result.equilibrium.displacement[3];
+        println!("M_x = {} kN·m → γ_x = {:.4e} rad", m_x, g);
+        gammas.push(g);
+    }
+    // γ_x 단조 증가 (M_x 증가 방향)
+    for i in 0..gammas.len() - 1 {
+        assert!(gammas[i + 1] > gammas[i],
+            "M_x 증가 시 γ_x 단조 증가 실패: γ_x[{}]={:.3e}, γ_x[{}]={:.3e}",
+            i, gammas[i], i+1, gammas[i+1]);
+    }
+}

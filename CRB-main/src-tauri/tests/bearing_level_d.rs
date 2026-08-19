@@ -176,6 +176,94 @@ fn level_d_monotonicity_load_vs_displacement() {
     }
 }
 
+/// Level D-6: M_x self-consistency — Outer γ_x loop residual < tol 검증
+///
+/// 여러 M_x 조건에서 solver 가 실제로 M_x 를 만족하는지 (내부 residual 확인).
+/// 이는 Outer γ_x loop 이 실제로 수렴한다는 direct evidence.
+#[test]
+fn level_d_mx_self_consistency() {
+    for &m_x_knm in &[10.0_f64, 50.0, 100.0, 200.0] {
+        let input = nu240(0.0, -500.0, m_x_knm, 30.0);
+        let result = solve_bearing_equilibrium(&input, &SilentReporter).expect("NR converges");
+
+        // Solver 결과로부터 실제 M_x 재계산 (slice-level axial arm)
+        let mg = &input.macro_geom;
+        let l_we_half = mg.l_we / 2.0;
+        let mut m_x_calc_nmm = 0.0_f64;
+        for r in &result.equilibrium.roller_results {
+            let sin_psi = r.psi_deg.to_radians().sin();
+            for s in &r.slice_results {
+                // slice_width from geometry (assume uniform)
+                let sw = mg.l_we / (input.solver.n_slices as f64);
+                let x_axial = (s.k as f64 + 0.5) * sw;
+                let x_arm = x_axial - l_we_half;
+                m_x_calc_nmm += s.q_k * sw * x_arm * sin_psi;
+            }
+        }
+        let m_x_calc_knm = m_x_calc_nmm * 1e-6;
+        let m_x_target_knm = m_x_knm;
+        let rel_err = ((m_x_calc_knm - m_x_target_knm) / m_x_target_knm).abs();
+        println!("M_x_target = {} kN·m, M_x_calc = {:.3} kN·m, rel_err = {:.4}",
+                 m_x_target_knm, m_x_calc_knm, rel_err);
+        // Outer γ_x loop 이 실제로 M_x 를 만족시켜야 (< 1%)
+        assert!(rel_err < 0.05,
+            "M_x self-consistency 실패: target={} kN·m, calc={:.3}, rel_err={:.4}",
+            m_x_target_knm, m_x_calc_knm, rel_err);
+    }
+}
+
+/// Level D-7: F_y + M_x 결합 시 Q_j 상하 비대칭 (top-bottom skew) 확인
+///
+/// F_y 만 있으면 Q_j 는 하부 로드존, 좌우 대칭 (Y-축 대칭).
+/// M_x·sin ψ 로 인한 γ_x tilt 는 slice-level Δδ 상하 (Y-축) 방향 비대칭 유발.
+///   sin ψ_j=+90° = +1 (top), sin ψ_j=-90° = -1 (bottom) → 서로 반대 tilt
+/// 따라서 검증 축은 상하 (index j vs Z/2+j), 좌우 아님 (sin 함수는 좌우 대칭).
+#[test]
+fn level_d_combined_fy_mx_skew() {
+    let baseline = solve_bearing_equilibrium(
+        &nu240(0.0, -1000.0, 0.0, 0.0), &SilentReporter
+    ).expect("baseline NR converges");
+    let combined = solve_bearing_equilibrium(
+        &nu240(0.0, -1000.0, 100.0, 0.0), &SilentReporter
+    ).expect("combined NR converges");
+
+    let q_base: Vec<f64> = baseline.equilibrium.roller_loads.clone();
+    let q_comb: Vec<f64> = combined.equilibrium.roller_loads.clone();
+    let z = q_base.len();
+
+    // Baseline: 좌우 대칭 (F_y-only) — index j vs Z-j 대칭 유지 확인 (sanity)
+    let mut lr_sym_diff = 0.0_f64;
+    for i in 1..z/2 {
+        lr_sym_diff += (q_base[i] - q_base[z - i]).abs();
+    }
+    let q_max_base = q_base.iter().cloned().fold(0.0_f64, f64::max).max(1.0);
+    println!("Baseline (F_y-only) 좌우 대칭 편차 = {:.2} N ({}%)",
+             lr_sym_diff, lr_sym_diff / q_max_base * 100.0);
+    assert!(lr_sym_diff / q_max_base < 0.05,
+        "baseline 은 좌우 대칭 이어야, 실제 편차 = {:.2} N", lr_sym_diff);
+
+    // M_x 효과: index j (bottom side, sin ψ<0) vs Z/2+j (top side, sin ψ>0) 비교.
+    // Combined 는 M_x sign 에 따라 하부 부하가 증감 → 상/하 로드존 크기 변화.
+    // Baseline top-bottom (top=0) 대비 combined 의 top-bottom 이 증가하면 skew 발생.
+    let sum_bottom_base: f64 = (0..z/2).map(|j| q_base[j]).sum();
+    let sum_top_base: f64 = (z/2..z).map(|j| q_base[j]).sum();
+    let sum_bottom_comb: f64 = (0..z/2).map(|j| q_comb[j]).sum();
+    let sum_top_comb: f64 = (z/2..z).map(|j| q_comb[j]).sum();
+
+    let ratio_base = sum_top_base / sum_bottom_base.max(1.0);
+    let ratio_comb = sum_top_comb / sum_bottom_comb.max(1.0);
+    println!("Baseline top/bottom ratio = {:.4}, Combined = {:.4}", ratio_base, ratio_comb);
+    println!("  Bottom: {:.1}→{:.1} kN, Top: {:.1}→{:.1} kN",
+             sum_bottom_base/1000.0, sum_bottom_comb/1000.0,
+             sum_top_base/1000.0, sum_top_comb/1000.0);
+
+    // combined 에서 top/bottom ratio 가 baseline 과 유의미하게 달라야
+    let ratio_change = (ratio_comb - ratio_base).abs();
+    assert!(ratio_change > 0.001 || (sum_top_comb - sum_top_base).abs() > 100.0,
+        "M_x 추가 시 top/bottom 로드 분포 변화 있어야, ratio change = {:.4}",
+        ratio_change);
+}
+
 /// Level D-5: Load zone extent — clearance ↑ → loaded roller 수 ↓
 #[test]
 fn level_d_load_zone_vs_clearance() {

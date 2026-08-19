@@ -15,8 +15,8 @@
 // Phase 5+ 에서 재활성화될 life/static_rating/thermal_speed 는 현재 Default 값으로 채움.
 
 use crate::error::SolverError;
-use crate::solver::gen1;
 use crate::solver::geometry::compute_slices;
+use crate::solver::hertz;
 use crate::solver::types::*;
 
 // ─── 순수 계산 함수 ─────────────────────────────────────────────────
@@ -33,22 +33,24 @@ pub fn radial_load_angle(f_x: f64, f_y: f64) -> f64 {
     if f_r < 1e-10 { 0.0 } else { f_y.atan2(f_x) }
 }
 
-/// Roller approach [μm] — CRB 3-DOF.
-///   δ_rigid(ψ) = δ_x·cos ψ + δ_y·sin ψ
-///                + (d_pw/2)·(γ_x + γ_ext)·sin ψ · 1000
-///                − g_r / 2
+/// Roller **macro-center** radial approach [μm] at roller mid-length (x_axial = L_we/2).
+///   δ_r_center(ψ) = δ_x·cos ψ + δ_y·sin ψ − g_r/2
+///
+/// γ_x is **NOT** included here — for single-row CRB (α=0), γ_x has zero radial
+/// arm at macro level and instead produces slice-level Δδ_k = x_arm·γ_x·sin ψ
+/// (handled inside `compute_residual_3d`). TRB 원본 (5441446 line 84) 은
+/// (d_pw/2)·γ_x·sin ψ 항을 포함했으나, 이는 axial 방향 arm 이며 α=0 인 CRB
+/// 에서는 contact normal 에 sin α = 0 로 곱해져 무효 → slice-level 로 이관.
 pub fn roller_approach(
     disp: &[f64; 3],
     psi: f64,
-    d_pw: f64,
+    _d_pw: f64,
     g_r: f64,
-    gamma_ext: f64,
+    _gamma_ext: f64,
 ) -> f64 {
     let (cos_psi, sin_psi) = (psi.cos(), psi.sin());
     let delta_r = disp[0] * cos_psi + disp[1] * sin_psi;
-    let gamma_x_total = disp[2] + gamma_ext;
-    let axial_arm = (d_pw / 2.0) * 1000.0 * gamma_x_total * sin_psi;
-    delta_r + axial_arm - g_r / 2.0
+    delta_r - g_r / 2.0
 }
 
 // ─── Residual + Jacobian ─────────────────────────────────────────────
@@ -60,7 +62,13 @@ const OUTER_TOL_REL: f64 = 1e-4;
 const GAMMA_DAMPING: f64 = 0.5;     // γ_x update under-relaxation
 
 /// Compute 3-D residual [F_x_res, F_y_res, M_x_res] and per-roller results.
-/// Uses Gen1 (independent slice) as base — fast for NR loop.
+///
+/// Slice-level implementation (CRB Option B):
+///   δ_k(ψ) = δ_r_center(ψ) + (x_axial_k − L_we/2)·γ_x_total·sin ψ · 1000
+///                            − Δz_outer_k − Δz_inner_k·cos_alpha_diff
+///
+/// γ_x_total = disp[2] + gamma_ext → slice 별 Δδ_k 편차 → q_k 좌우 비대칭 →
+/// M_x = Σ_j sin ψ_j · Σ_k q_k·l_k·(x_k − L_we/2)  (single-row CRB 물리).
 fn compute_residual_3d(
     input: &BearingInput,
     slices: &[SliceGeometry],
@@ -68,45 +76,65 @@ fn compute_residual_3d(
 ) -> Result<([f64; 3], Vec<RollerResult>), SolverError> {
     let mg = &input.macro_geom;
     let z = mg.z;
-    let d_pw = mg.d_pw;
     let cos_alpha_diff = 1.0; // CRB α=0
 
     let f_x = input.operating.f_x * 1000.0;
     let f_y = input.operating.f_y * 1000.0;
     let m_x = input.operating.m_x * 1e6;
     let gamma_ext = input.operating.gamma_rad();
+    let gamma_x_total = disp[2] + gamma_ext;
 
     let load_angle = radial_load_angle(f_x, f_y);
     let positions = roller_positions(z, load_angle);
 
+    let l_we_half = mg.l_we / 2.0;
+
+    // Pre-compute Hertz material constants
+    let mat = &input.material;
+    let e_star_gpa = hertz::combined_elastic_modulus(mat.e_roller, mat.nu, mat.e_ring, mat.nu);
+    let e_star_mpa = e_star_gpa * 1000.0;
+    let e_avg_mpa = ((mat.e_roller + mat.e_ring) / 2.0) * 1000.0;
+    let nu = mat.nu;
+
     let mut residual = [0.0_f64; 3];
     let mut roller_results = Vec::with_capacity(z as usize);
 
-    let l_we = mg.l_we;
-    let l_we_half = l_we / 2.0;
-
     for &psi in positions.iter() {
         let (cos_psi, sin_psi) = (psi.cos(), psi.sin());
-        let delta_rigid = roller_approach(disp, psi, d_pw, mg.g_r, gamma_ext);
+        // macro-center radial approach (γ_x-free)
+        let delta_r_center = disp[0] * cos_psi + disp[1] * sin_psi - mg.g_r / 2.0;
+        // tilt gradient: [μm] per [mm] of axial arm
+        let tilt_um_per_mm = 1000.0 * gamma_x_total * sin_psi;
 
-        let (slice_results, q_normal) = if delta_rigid > 0.0 {
-            gen1::solve_gen1_roller(slices, delta_rigid, &input.material, cos_alpha_diff)
-        } else {
-            (Vec::new(), 0.0)
-        };
+        let mut slice_results = Vec::with_capacity(slices.len());
+        let mut q_normal = 0.0_f64;
+        let mut m_ax_j = 0.0_f64; // Σ q_k·l_k·x_arm  [N·mm]
 
-        // M_x: slice-level axial moment (roller 축 arm x_k − L_we/2)
-        // Single row CRB 는 radial 하중만으로 M_x 못 만듦 (arm = 0).
-        // γ_x 로 인한 slice-level Δδ_k 가 q_{j,k} 를 비대칭화 → m_j ≠ 0 → M_x 생성.
-        let mut m_ax_j = 0.0_f64;
-        for (sr, s) in slice_results.iter().zip(slices.iter()) {
-            let x_arm = s.x_axial - l_we_half;    // slice 축 arm [mm]
-            m_ax_j += sr.q_k * s.slice_width * x_arm;   // N·mm per roller
+        for s in slices.iter() {
+            let x_arm = s.x_axial - l_we_half;
+            let delta_k_rigid = delta_r_center + x_arm * tilt_um_per_mm;
+            let delta_k = delta_k_rigid
+                - s.delta_z_total_outer
+                - s.delta_z_total_inner * cos_alpha_diff;
+
+            let h1 = s.r_roller;
+            let h2 = s.r_roller * 2.0;
+            let sr = hertz::compute_slice_contact(
+                s.k, delta_k, s.r_eq_inner, s.r_eq_outer,
+                e_star_mpa, e_avg_mpa, nu,
+                s.slice_width, h1, h2, cos_alpha_diff,
+            );
+
+            if sr.in_contact {
+                q_normal += sr.q_k * s.slice_width;
+                m_ax_j += sr.q_k * s.slice_width * x_arm;
+            }
+            slice_results.push(sr);
         }
 
-        residual[0] += q_normal * cos_psi;              // F_x
-        residual[1] += q_normal * sin_psi;              // F_y
-        residual[2] += m_ax_j * sin_psi;                // M_x (single-row: axial arm)
+        residual[0] += q_normal * cos_psi;
+        residual[1] += q_normal * sin_psi;
+        residual[2] += m_ax_j * sin_psi;
 
         roller_results.push(RollerResult {
             psi_deg: psi.to_degrees(),

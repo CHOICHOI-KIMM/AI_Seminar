@@ -722,8 +722,80 @@ python python-prototype/phase4_level_d_report.py
 - ✅ Phase 4 통과 기준 (§4.6) 모두 만족
 - ✅ `solve_bearing_equilibrium` 실제 결과 반환 (BearingResult 완전 채움)
 - ✅ Level D Sjovall 검증 (rel_err 0.8%)
+- ✅ **M_x/γ_x DOF 실동작 검증 완료** (§Phase 4 M_x 검증 참조)
 - ⏳ life/static_rating 모듈 재활성화 (Plan §Phase 5 §5.2 대로)
 
 ---
 
-*Last updated: 2026-08-19 (Phase 1+2+3+4 완료. Phase 4 = phase-4 브랜치 uncommitted. Plan §Phase 4/5/6 상세 완료)*
+## Phase 4 — M_x/γ_x DOF 실동작 검증 (2026-08-19 추가)
+
+### 배경: 침묵 실패 (Silent Failure) 발견
+
+Phase 4 커밋 (3a342bd) 시 5개 smoke + 5개 Level D 통과 확인 후 "3-DOF 완료" 로 표기했으나, **모든 기존 test 는 M_x=0 조건**. 이로 인해 Outer γ_x loop 자체가 검출되지 않은 상태로 통과됨. M_x 검증 test 5개 신규 작성 → **γ_x 가 어떤 M_x 조건에도 항상 0 인 침묵 실패** 노출.
+
+### 원인 분석 (TRB 원본 5441446 참조)
+
+**TRB 원본 `roller_approach` (line 84)**:
+```rust
+let delta_a = disp[2] + (d_pw / 2.0) * 1000.0 * (gamma_x_total * sin_psi - disp[4] * cos_psi);
+```
+- `delta_a` = axial (z) 접근량. TRB (α ≠ 0) 에선 contact normal 로 `δ_r·cos α + δ_a·sin α` projection → γ_x 가 반력에 기여.
+- **CRB (α=0) 특수성**: `sin α = 0` → macro-level γ_x 항 완전 무효.
+
+**TRB 원본 자체 인정 (line 962-963)**:
+```
+// This exact proportionality means γ cannot independently control moment
+// (linearized dM_eff/dγ = 0 after force re-equilibration).
+```
+→ TRB 조차 M_x 처리를 위해 external γ_ext 변환 우회 사용.
+
+**CRB single-row M_x 지지의 유일한 실물리 경로**:
+- 유한 길이 roller × slice model
+- γ_x tilt → slice k 별 Δδ_k = (x_k − L_we/2) · γ_x · sin ψ · 1000 [μm]
+- slice 별 q_k 편차 → Σ_k q_k · l_k · x_arm ≠ 0 → M_x = Σ_j sin ψ_j · Σ_k q_k·l_k·x_arm
+
+이는 TRB 원본에 없는 **CRB 특유 확장** (사용자 결정 옵션 B, Slice-level tilt).
+
+### 수정 (bearing.rs)
+
+| 항목 | Before | After |
+|------|--------|-------|
+| `roller_approach` γ_x arm | `(d_pw/2)·γ_x·sin ψ` macro (α=0 무효) | 제거 (slice-level 로 이관) |
+| `compute_residual_3d` | gen1::solve_gen1_roller 호출 (균일 δ) | hertz::compute_slice_contact 인라인, slice k 별 δ_k = δ_r_center + x_arm·γ_x·sin ψ · 1000 |
+| M_x 계산 | 좌우 대칭 → 항상 0 | `Σ_j sin ψ_j · Σ_k q_k·l_k·x_arm` (실물리) |
+
+### 검증 결과 (신규 5 test)
+
+| Test | 검증 항목 | 결과 |
+|------|----------|------|
+| `smoke_pure_mx_converges` | Dominant M_x (F_y=-100, M_x=100, g_r=0) → γ_x ≠ 0 | ✅ γ_x = 1.099e-1 rad |
+| `smoke_mx_sign_flip` | M_x ± 부호 반전 → γ_x 반전 (선형성) | ✅ ±6.312e-2 rad 정확 반전 |
+| `smoke_mx_monotonicity` | M_x 10→50→100→200 kN·m → γ_x 단조 증가 | ✅ 1.6e-2 → 6.3e-2 → 1.1e-1 → 1.9e-1 (11.8×) |
+| `level_d_mx_self_consistency` | Solver 결과의 실제 M_x 재계산 vs target | ✅ 4개 조건 모두 **rel_err = 0.0001** (0.01%) |
+| `level_d_combined_fy_mx_skew` | F_y+M_x 결합 시 top/bottom 재분포 | ✅ ratio 0.6931 → 0.9481 (M_x=100 로 인해 상하 재분포 발생) |
+
+**핵심 지표**: M_x self-consistency rel_err = 0.0001 → Outer γ_x loop 이 M_x residual 을 실제로 0.01% 이내로 만족.
+
+### Test 로직 이슈 (수정)
+
+초기 test 2개 로직 오류:
+
+1. **`smoke_pure_mx_converges` 초안**: F=0 (pure moment) → clearance g_r 로 모든 roller out of contact → dM/dγ=0 → gradient singular. Test 조건을 dominant M_x (F_y=-100 with g_r=0) 로 완화.
+2. **`level_d_combined_fy_mx_skew` 초안**: 좌우 대칭 (index i vs Z-i) 로 검증했으나 M_x·sin ψ 는 sin ψ_i = sin ψ_{Z-i} 로 **좌우 대칭 유지**. 실제 비대칭은 상하 (Y-축) → 검증 축을 top/bottom sum 비율 변화로 수정.
+
+### 발생 이슈 및 대응 (추가)
+
+| 이슈 | 대응 | 결과 |
+|------|------|------|
+| M_x=0 test 만 존재 → γ_x path 침묵 실패 | M_x 검증 5 test 신규 (사용자 지시) | ✅ 결함 노출 |
+| CRB α=0 에서 TRB 원본 γ_x 처리 무효 | Slice-level tilt 인라인 확장 (Option B) | ✅ M_x rel_err 0.01% |
+| Pure moment test 조건 물리적 불량 | Dominant M_x + g_r=0 조건으로 완화 | ✅ |
+| Test 대칭 축 오해 (좌우 vs 상하) | top/bottom 재분포 검증으로 수정 | ✅ |
+
+### Plan 대비 편차 (추가)
+
+Plan §Phase 4 통과 기준은 3-DOF 명목상 통과였으나, **M_x DOF 실동작 검증이 필수** 임을 실증. 이후 Phase 통과 기준에 "각 DOF 별 non-trivial condition test 필수" 원칙 추가 필요.
+
+---
+
+*Last updated: 2026-08-19 (Phase 1+2+3+4 완료. Phase 4 = phase-4 브랜치 uncommitted. M_x DOF 검증 완료 → CRB merge 준비 완료. Plan §Phase 4/5/6 상세 완료)*
