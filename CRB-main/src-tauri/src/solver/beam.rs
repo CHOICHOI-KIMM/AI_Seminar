@@ -6,6 +6,10 @@ use crate::solver::types::*;
 
 /// Compute beam section properties from roller radius.
 /// Returns (I [mm⁴], A [mm²]).
+///
+/// CRB (Phase 3): 원통 roller 이므로 모든 slice 가 동일 r_roller = D_we/2 →
+/// 자동으로 I = const, A = const 로 전체 beam 요소가 균일. 별도 CRB 분기 불필요.
+/// (TRB 는 slice 별 r 다르므로 elem-wise 재계산 자연스러움 — 동일 코드가 양쪽 지원)
 pub fn beam_section_properties(r_roller: f64) -> (f64, f64) {
     let i = PI / 4.0 * r_roller.powi(4);
     let a = PI * r_roller.powi(2);

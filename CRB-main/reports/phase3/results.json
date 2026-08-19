@@ -1,0 +1,32 @@
+[
+  {
+    "delta_um": 5.0,
+    "q_total_gen1": 3188.849,
+    "q_total_gen3": 3188.849,
+    "rel_err": 0.0
+  },
+  {
+    "delta_um": 10.0,
+    "q_total_gen1": 6810.694,
+    "q_total_gen3": 6810.694,
+    "rel_err": 0.0
+  },
+  {
+    "delta_um": 20.0,
+    "q_total_gen1": 14620.709,
+    "q_total_gen3": 14620.709,
+    "rel_err": 0.0
+  },
+  {
+    "delta_um": 50.0,
+    "q_total_gen1": 40517.965,
+    "q_total_gen3": 40517.965,
+    "rel_err": 0.0
+  },
+  {
+    "delta_um": 100.0,
+    "q_total_gen1": 88372.007,
+    "q_total_gen3": 88372.007,
+    "rel_err": 0.0
+  }
+]

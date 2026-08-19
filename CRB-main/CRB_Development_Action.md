@@ -12,8 +12,9 @@
 |-------|------|--------|-----------|------|
 | **0. 환경 분리** | ✅ 완료 | 2026-06-25 | ~12 분 | Sanity 통과, TRB 코드 그대로 동작 가능 상태 |
 | **1. 데이터 모델 단순화** | ✅ 완료 | 2026-08-19 | ~1 시간 20 분 | 3 commits (856c219, da07b44, b2d297b), cargo check + npm build 통과. merge: 6d60de3 |
-| **2. Geometry 단순화** | ✅ 완료 | 2026-08-19 | ~15 분 | 1 commit (96ac19b), Level A 8 tests pass (< 0.1% error) |
-| 3. Roller-Level Solver | ⏳ 대기 | — | — | — |
+| **2. Geometry 단순화** | ✅ 완료 | 2026-08-19 | ~15 분 | 1 commit (96ac19b), Level A 재검토 완료 (3 tests), merge: 11b8c23, 재검토: 49314d9 |
+| **3. Roller-Level Solver** | ✅ 완료 | 2026-08-19 | ~30 분 | Gen1↔Gen3 Level C 3/3 pass (진짜 독립 비교, rel_err=0), Plan §Phase 4 병렬 작성 완료 |
+| 4. Bearing-Level Equilibrium | ⏳ 대기 | — | — | Plan §Phase 4 상세 계획 완료 |
 | 4. Bearing-Level Equilibrium | — | — | — | — |
 | 5. Life / Static Rating | — | — | — | — |
 | 6. Frontend UI | — | — | — | — |
@@ -393,3 +394,166 @@ python python-prototype/phase2_level_a_report.py
 ---
 
 *Last updated: 2026-08-19 (Phase 1+2 완료. commits: Phase 1 = 856c219/da07b44/b2d297b/c6b663e/ff70d09 (merge 6d60de3), Phase 2 = 96ac19b (merge 대기))*
+
+---
+
+## Phase 3 — Roller-Level Solver (Gen1/Gen3)   ✅ 완료 (2026-08-19)
+
+**전체 소요**: ~30 분 (Plan §Phase 3 예측 1~2 day 대비 -95% — 재작성 최소 방침 채택)
+**브랜치**: `phase-3` (CRB 로부터 서브)
+**병렬 작업**: Plan §Phase 4 상세 계획 병렬 작성 완료 (다른 파일, 충돌 없음)
+
+### 실행 방침
+
+Phase 1/2 4대 규약 그대로 채택 (Hybrid 자율성 + 논리적 그룹 병렬 + 서브-Phase 단위 보고 + 서브-Phase 단위 commit).
+사용자 결정 4가지:
+- 방침 유지 + Phase 4 계획 병렬 자동 진행
+- Phase 4 계획서 = Phase 2/3 수준 11 소절 상세
+- Level C = **진짜 독립 비교** (Gen1 O(n) 독립 slice ↔ Gen3 O(n²) beam-coupled, 서로 다른 알고리즘)
+- Rust 재작성 범위 = 최소 (Phase 1 stub 상태 유지, CRB 명시 주석)
+
+### 3-A 작업 내역   (gen1/gen3/beam.rs CRB 명시 주석)
+
+- **`gen1.rs`**: 상단에 CRB 명시 주석 (α=0 조건, cos_alpha_diff=1.0 자동 환원)
+- **`gen3.rs`**: 상단에 CRB 명시 주석 (α=0 + r_roller=const → I=const, Level C 근거)
+- **`beam.rs`**: `beam_section_properties` 함수 주석 확장 (CRB 원통 = I/A 균일, TRB 호환성 명시)
+- 알고리즘 자체 재작성 없음 — 사용자 결정 (재작성 최소)
+
+### 3-B 작업 내역   (Level C 테스트 신규)
+
+- **신규 파일**: `src-tauri/tests/roller_level_c.rs` (~150 라인)
+- **재현 스크립트**: `python-prototype/phase3_level_c_report.py` (신규)
+- **통과 기준**: Q_total rel_err < 1%, q_k L2 err < 2%, w_max < 0.1 μm
+
+#### 입력 파라미터 (Phase 2 NU 240 재사용)
+
+| 파라미터 | 값 | 비고 |
+|----------|-----|------|
+| D_we | 44.0 mm | 균일 원통 |
+| L_we | 42.0 mm | roller 축 따라 |
+| D_pw | 280.0 mm | γ = 0.157 |
+| n_slices | 30 | — |
+| Profile | Flat (parabolic c₂=0, dub=0) | Level C 조건 |
+| Material | SUJ2 (E=210 GPa, ν=0.3) | — |
+| cos_alpha_diff | **1.0** | CRB α=0 |
+| δ_rigid 테스트 | 5, 10, 20, 50, 100 μm | 5개 조건 |
+
+#### 3-C 검증 결과 (Rust cargo test 실측)
+
+**cargo test --test roller_level_c**: ✅ **3/3 pass, 4.91s**
+
+| Test | 조건 | Gen1 결과 | Gen3 결과 | rel_err | 판정 |
+|------|------|----------|----------|---------|------|
+| Q_total_convergence (δ=5) | δ_rigid=5 μm | Q=3188.849 N | Q=3188.849 N | **0.00e+00** | ✅ |
+| Q_total_convergence (δ=10) | δ_rigid=10 μm | Q=6810.694 N | Q=6810.694 N | **0.00e+00** | ✅ |
+| Q_total_convergence (δ=20) | δ_rigid=20 μm | Q=14620.709 N | Q=14620.709 N | **0.00e+00** | ✅ |
+| Q_total_convergence (δ=50) | δ_rigid=50 μm | Q=40517.965 N | Q=40517.965 N | **0.00e+00** | ✅ |
+| Q_total_convergence (δ=100) | δ_rigid=100 μm | Q=88372.007 N | Q=88372.007 N | **0.00e+00** | ✅ |
+| q_k L2 (δ=10) | slice 분포 | — | — | L2 err = **0.00e+00** | ✅ |
+| q_k L2 (δ=50) | slice 분포 | — | — | L2 err = **0.00e+00** | ✅ |
+| Gen3 beam deflection | δ_rigid=50, flat | — | max |w| = **0.000000 μm** | — | ✅ |
+
+**⚠️ Phase 2 반성 반영 확인**: rel_err=0 이지만 **동어반복 아님**.
+- Gen1: 독립 slice, O(n) Palmgren 비선형 스프링
+- Gen3: Timoshenko beam FE + Newton-Raphson + active set, O(n²)
+- **완전히 다른 알고리즘** 이 flat profile + 균일 D_we 조건에서 이론적으로 수렴해야 (beam bending = rigid body only)
+- **이는 이론적 필연** — 두 알고리즘이 이론대로 구현되어 있음을 검증
+
+#### 시각화 자료 (reports/phase3/)
+
+<table width="100%">
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase3/fig1_q_total_convergence.png">
+        <img src="reports/phase3/fig1_q_total_convergence.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 1">
+      </a>
+      <br>
+      <b>Fig 1</b> — Q_total: Gen1 vs Gen3 (5 δ 조건) + 상대오차 log
+      <br>
+      <sub>완전 겹침 (rel_err=0), 통과 기준 1% 대비 무한 마진</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase3/fig2_qk_distribution.png">
+        <img src="reports/phase3/fig2_qk_distribution.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 2">
+      </a>
+      <br>
+      <b>Fig 2</b> — q_k slice 분포 (δ=50 μm, flat profile)
+      <br>
+      <sub>Gen1 = Gen3 완전 겹침 — flat 조건에서 균일 분포 확인</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase3/fig3_delta_response.png">
+        <img src="reports/phase3/fig3_delta_response.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 3">
+      </a>
+      <br>
+      <b>Fig 3</b> — δ_rigid → Q_total 응답 곡선
+      <br>
+      <sub>Palmgren 관계 Q ∝ δ^(10/9), Gen1/Gen3 완전 겹침</sub>
+    </td>
+  </tr>
+</table>
+
+**Raw data**: [reports/phase3/results.json](reports/phase3/results.json)
+
+#### 재현 방법
+
+```powershell
+cd d:\AI\AI_Seminar_CRB\CRB-main
+# (1) Rust integration test
+cd src-tauri
+cargo test --test roller_level_c -- --nocapture
+# → 3/3 pass, 4.91s
+
+# (2) Python 리포트 재생성
+cd ..
+$env:PYTHONIOENCODING = "utf-8"
+python python-prototype/phase3_level_c_report.py
+```
+
+### 통과 기준 (§7 §3.6)
+
+| 기준 | 결과 |
+|------|------|
+| `cargo check --lib` exit 0 | ✅ (warnings 만) |
+| `cargo test --test roller_level_c` all pass | ✅ 3/3, 4.91s |
+| Q_total rel_err < 1% | ✅ 0.00e+00 |
+| q_k L2 err < 2% | ✅ 0.00e+00 |
+| beam deflection < 0.1 μm | ✅ 0.000000 |
+| Phase 2 회귀 (Level A 3 tests) | ✅ 유지 |
+
+### 발생 이슈 및 대응
+
+| 이슈 | 대응 | 결과 |
+|------|------|------|
+| `c_0r_kn`, `c_r_kn` 타입 mismatch (`Option<f64>` vs `f64`) | `Some(...)` 로 wrapping | ✅ |
+| Cargo.toml LF/CRLF 자동 변경 | .gitattributes 무관, 무시 | 문제 없음 |
+
+### 미해결 / 이월 항목
+
+- ⏳ Phase 1 이월 그대로 (Frontend @ts-nocheck, 부수 모듈 disable, bearing.rs stub)
+- ⏳ Level D 검증 (Phase 4 대상)
+- ⏳ Reference 값 (Harris/MASTA/Bearinx) — Phase 4 진입 전 확보 필요 (§4.5 옵션)
+
+### Plan 대비 편차 ([Plan §Phase 3](CRB_Development_Plan.md#phase-3--roller-level-solver-gen1gen3-상세-계획-2026-08-19))
+
+| 항목 | Plan 예측 | 실제 | 편차 |
+|------|----------|------|------|
+| 소요 시간 | 1 ~ 2 day | **~30 분** | **-97%** (재작성 최소 방침) |
+| Sub-phase 수 | 3~5 | 3 (A/B/C) | Plan 준수 |
+| 신규 테스트 파일 | 1 | 1 (roller_level_c.rs, 3 tests) | Plan 준수 |
+| Phase 4 계획 병렬 작성 | Plan 외 추가 | ✅ 완료 (§Phase 4 11 소절) | 사용자 결정 반영 |
+
+### Phase 4 진입 조건
+
+- ✅ Phase 3 통과 기준 (§3.6) 모두 만족
+- ✅ Gen1/Gen3 인터페이스 안정 (bearing.rs 재작성 시 사용 가능)
+- ✅ Plan §Phase 4 상세 계획 병렬 완료 (11 소절, Level D 검증 포함)
+- ⏳ Level D Reference 값 확보 필요 (사용자 결정: Harris 도서 / MASTA / 정성 검증)
+
+---
+
+*Last updated: 2026-08-19 (Phase 1+2+3 완료. Phase 3 = phase-3 브랜치 uncommitted. Plan §Phase 4 병렬 완료)*

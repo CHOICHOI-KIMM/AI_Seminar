@@ -506,11 +506,252 @@ Phase 1.3-B 의 `gamma_i = d_k · cos(α_i) / d_pw` 는 α_i = 0 → `gamma_i = 
 - Level A 검증 결과 문서화
 - `gen1.rs` / `gen3.rs` 가 사용하는 SliceGeometry 인터페이스 안정성 확인
 
-### Phase 3 — Roller-Level Solver (Gen1/Gen3) (placeholder)
+### Phase 3 — Roller-Level Solver (Gen1/Gen3) (상세 계획, 2026-08-19)
 
-진입 시점에 상세화. 핵심: gen1/gen3/beam 의 α=0 단순화, EI 균일화, Level C 교차검증.
+> Phase 1.3-B 에서 `gen1.rs / gen3.rs / beam.rs` 는 Phase 1 stub 상태 (cos_alpha_diff=1.0 인자만 넘김) 로 유지.
+> Phase 3 는 **최소 정식화** (재작성 최소) + **Level C 진짜 독립 검증** (Gen1 O(n) 독립 vs Gen3 beam-coupled O(n²), 서로 다른 알고리즘 → 동어반복 아님).
 
-### Phase 4 — Bearing-Level Equilibrium (3-DOF) (placeholder)
+#### 3.1 목표
+- 3 모듈 (gen1/gen3/beam) 을 CRB 맥락으로 최소 정식화 (주석·변수명·CRB 명시)
+- `beam.rs` 의 EI 균일화 유효성 검증 (원통 = D_we 균일 → I = π/4·r⁴ = const, 이미 함수 시그니처 지원)
+- **Level C 검증**: 사용자 결정 = **진짜 독립 비교** — Gen1 (독립 slice O(n)) vs Gen3 (beam-coupled Newton-Raphson O(n²)) 는 서로 다른 알고리즘이므로 동어반복 회피
+- 검증 조건 = **flat profile + zero misalignment** → 이론적으로 두 결과 수렴 예상
+
+#### 3.2 작업 대상 파일
+
+| 파일 | 변경 강도 | 주요 작업 |
+|------|---------|---------|
+| `src-tauri/src/solver/gen1.rs` | 🟢 최소 | CRB 명시 주석, `_cos_alpha_diff` 파라미터 유효성 (α=0 → 1.0) 문서화. 함수 시그니처 유지 |
+| `src-tauri/src/solver/gen3.rs` | 🟢 최소 | 위와 동일 |
+| `src-tauri/src/solver/beam.rs` | 🟡 검토 | `beam_section_properties(r_roller)` 는 이미 원통 대응 가능. I = const 유효성 재확인 |
+| `src-tauri/tests/roller_level_c.rs` | 🔴 **신규** | Level C: Gen1 ↔ Gen3 flat profile 수렴 검증 |
+
+⚠️ **재작성 최소 방침 (사용자 결정)** — Gen1/Gen3 알고리즘 자체 재작성 X. Phase 1 이래 유지되는 로직이 CRB 에서도 유효 (α, β 인자만 0 처리) 함을 검증만.
+
+#### 3.3 Gen1 vs Gen3 알고리즘 차이 (독립 검증 근거)
+
+| 항목 | Gen1 (Independent Slice) | Gen3 (Beam-Coupled) |
+|------|-------------------------|-------------------|
+| Slice interaction | **없음** (각 slice 독립 비선형 스프링) | Timoshenko beam + Hertz spring **coupling** |
+| Roller bending | **무시** | 완전 고려 (EI, GA_s) |
+| 계산 복잡도 | **O(n)** per roller | O(n²) matrix solve (Newton-Raphson + active set) |
+| δ_k 결정 | `δ_k = δ_rigid − Δz_k` (직접) | `[K_beam]{w} + f_contact(δ) = F_ext` 풀이 |
+| 접촉력 관계 | Palmgren: `q_k = C·δ_k^(10/9)` | 동일 Hertz, 단 δ 는 beam FE 로부터 |
+
+**핵심**: 두 알고리즘이 **서로 다른 수학적 경로** 로 같은 문제 해결 → flat profile + 강체 roller 가정 시 두 결과가 이론적으로 일치해야 함 → **진짜 독립 검증**.
+
+#### 3.4 CRB 단순화 요점
+
+| 항목 | TRB (Phase 1 이전) | CRB (현재) |
+|------|-------------------|-----------|
+| α (contact angle) | ≠ 0 (10~30°) | **0** — `cos_alpha_diff = 1.0` |
+| β (roller taper) | half cone angle | **0** — 원통 |
+| I_k (단면 관성) | 위치 종속 (r_k = r_small + (r_large-r_small)·k/n) | **균일** (r_k = D_we/2 = const → I = π·r⁴/4 = const) |
+| beam element stiffness | 요소별 다름 (E·I_k 변동) | **모든 요소 동일 E·I** → 계산 대칭성 개선 |
+
+#### 3.5 Level C 검증 설계 (진짜 독립 비교)
+
+**Setup**:
+- NU 240 지오메트리 (Phase 2 재사용)
+- Flat profile: `crown_type = Parabolic { c2: 0.0 }`, `delta_dub = 0`, `l_dub = 0`
+- `n_slices = 30`
+- 여러 δ_rigid 값에서 Gen1/Gen3 실행:
+  - δ_rigid ∈ {5, 10, 20, 50, 100} μm
+
+**비교 지표**:
+1. **Q_total** (roller 전체 하중) — 두 알고리즘 상대오차 < **1%** (Level C 통과 기준)
+2. **q_k 분포** (slice 별 line load) — L2 norm 오차 < **2%**
+3. **beam deflection w_k** (Gen3 only) — flat profile 이면 매우 작아야 (< 0.1 μm)
+
+**이론적 근거**: Flat profile + 강체 roller 가정 시 Gen3 의 beam 항 `[K_beam]{w}` 는 rigid body mode 만 존재 → Gen1 결과와 수렴. 만약 크게 다르면 알고리즘 구현 실수 발견.
+
+#### 3.6 통과 기준
+
+- [ ] `cargo check --lib` exit 0 (warnings 만)
+- [ ] `cargo test --test roller_level_c` 모두 pass
+  - `q_total` 상대오차 < 1% (Gen1 ↔ Gen3, 5개 δ 조건)
+  - `q_k` 분포 L2 오차 < 2%
+- [ ] `cargo test --test geometry_level_a` 회귀 확인 (3 pass 유지)
+- [ ] Phase 1/2 통과 상태 대비 회귀 없음
+
+#### 3.7 예상 시간
+
+- **1 ~ 2 day** (사용자 결정 = 재작성 최소이므로 검증 중심)
+- 세부: gen1/gen3/beam 검토 + 주석 (2h) + Level C 테스트 작성 (3~4h) + 실행·조정 (2~3h) + Python 리포트 (2h) + Action.md (1h)
+
+#### 3.8 잠재 이슈 / 대응
+
+| 이슈 | 대응 |
+|------|------|
+| Gen1 ↔ Gen3 결과 오차 > 1% | (a) beam.rs I=const 미적용 확인, (b) rigid body mode 제거 로직 확인, (c) NR convergence tolerance 조정 |
+| beam.rs 가 실제로 tapered 로직 남아 있음 | `beam_section_properties` 호출부 확인. `r_roller` 인자를 D_we/2 (const) 로 통일 |
+| Level C 테스트가 오래 걸림 | δ 조건 축소 or n_slices 축소. Phase 3 통과만이 목적 |
+| Gen3 가 stub 인 하위 모듈 (life 등) 참조 | Phase 5+ 대상이므로 Gen3 자체는 stub 아님. 확인 |
+
+#### 3.9 검증 절차
+
+1. gen1/gen3/beam 코드 검토 + CRB 명시 주석 추가 (변경 최소)
+2. `beam_section_properties(D_we/2)` 로 I=const 확인 (단위 테스트 or 인라인 검증)
+3. `cargo check` 통과 확인
+4. `tests/roller_level_c.rs` 신규 작성 (Level C 5 δ 조건)
+5. `cargo test --test roller_level_c` 실행 → 통과 확인
+6. `python-prototype/phase3_level_c_report.py` 신규 (Gen1/Gen3 결과 비교 시각화)
+7. Action.md Phase 3 섹션 append (6 소절 + 상세 표 + PNG)
+
+#### 3.10 산출물
+
+- (선택적) 갱신된 `gen1.rs / gen3.rs / beam.rs` (주석·CRB 명시)
+- `tests/roller_level_c.rs` (Level C 골든 테스트)
+- `python-prototype/phase3_level_c_report.py` (Gen1↔Gen3 비교 시각화)
+- `reports/phase3/*.png` (Q 비교 bar, q_k 분포, beam deflection 등)
+- `Action.md` Phase 3 섹션 (6 소절 + 상세 표 + PNG 임베드)
+
+#### 3.11 Phase 4 진입 조건
+
+- ✅ Phase 3 통과 기준 (§3.6) 모두 만족
+- ✅ Level C 검증 결과 문서화 (Q, q_k 비교 표)
+- ✅ Phase 4 (`bearing.rs` 3-DOF 재작성) 시 사용할 안정된 gen1/gen3 인터페이스 확보
+
+### Phase 4 — Bearing-Level Equilibrium (3-DOF) (상세 계획, 2026-08-19 병렬 작성)
+
+> Phase 1.3-B 에서 `bearing.rs` 는 **통째 stub** 상태 (`solve_bearing_equilibrium`, `solve_bearing_dual` → `Err("Phase 4 stub")`).
+> Phase 4 는 **CRB 3-DOF 완전 재작성** — Phase 중 가장 큰 작업. ISO 16281 A.3.1 알고리즘 구현.
+
+#### 4.1 목표
+- `bearing.rs` 를 CRB 정식 알고리즘으로 **완전 재작성** (Phase 1 stub 대체)
+- ISO 16281 **A.3.1 (ISO p. 22)** — Cylindrical roller bearing equilibrium
+- **3-DOF 평형**: (δx, δy, γx) — D4+D6+D7 반영
+- 좌표계: X=수평, Y=수직(중력), Z=shaft (D5)
+- Single row (D3)
+- Rib contact 미포함 (D1)
+- **Level D 검증**: MASTA / Bearinx / MESYS 결과와 비교 (< 5% 오차)
+
+#### 4.2 작업 대상 파일
+
+| 파일 | 변경 강도 | 주요 작업 |
+|------|---------|---------|
+| `src-tauri/src/solver/bearing.rs` | 🔴 **전면 재작성** | Phase 1 stub → 3-DOF Newton-Raphson 평형 solver, dual mode (Gen1/Gen3) |
+| `src-tauri/src/solver/types.rs` | 🟢 검토만 | `BearingEquilibrium.displacement` 필드 = `[f64; 5]` (TRB 잔재) → `[f64; 3]` 변경 필요 시 |
+| `src-tauri/src/commands.rs` | 🟢 무변경 | `solve_bearing`, `solve_bearing_dual` command 시그니처 그대로 |
+| `src-tauri/tests/bearing_level_d.rs` | 🔴 **신규** | Level D 검증 (Reference 값 하드코딩) |
+| `src-tauri/tests/bearing_smoke.rs` | 🔴 **신규** | Smoke test (수렴/부호/기본 특성) |
+
+#### 4.3 ISO 16281 A.3.1 알고리즘 (CRB Bearing Equilibrium)
+
+**입력**: F_x, F_y, M_x, γ_ext (5 성분 중 CRB 는 3개 유효 — F_a=0, M_y=0)
+**미지수**: δ_x, δ_y, γ_x (3 DOF)
+**평형식 (3개)**:
+```
+Σⱼ Q_j · cos ψ_j                            = F_x            (radial X)
+Σⱼ Q_j · sin ψ_j                            = F_y            (radial Y)
+Σⱼ Q_j · (d_pw/2) · sin ψ_j                 = M_x            (tilting about X)
+```
+
+여기서 Q_j = roller j 의 총 normal load (slice 합계):
+```
+Q_j = Σ_k q_{j,k} · l_k    (slice sum)
+q_{j,k} = f(δ_{j,k}, R_eq_k, E*, l_k)   (Palmgren line contact, Phase 3 검증)
+δ_{j,k} = δ_rigid_j(ψ_j, δx, δy, γx) - Δz_total_k    (Gen1) or Gen3 beam FE
+```
+
+**Roller 접근량** (Phase 1.3-B `roller_approach` 재사용):
+```
+δ_rigid_j = δ_x · cos ψ_j + δ_y · sin ψ_j
+            + (d_pw/2) · (γx + γ_ext) · sin ψ_j · 1000
+            - g_r / 2
+```
+
+**Newton-Raphson**: [J]·Δ{δ} = -residual, 수렴 시 완료
+
+#### 4.4 CRB 3-DOF 명세 (D5+D6+D7)
+
+| DOF | 물리 | 코드 표기 | 범위 (예) |
+|-----|------|---------|---------|
+| δ_x | 수평 radial 변위 [μm] | `disp[0]` | -50 ~ 50 |
+| δ_y | 수직 radial 변위 [μm] (중력 방향) | `disp[1]` | -100 ~ 100 |
+| γ_x | X축 about misalignment [rad] | `disp[2]` | ±10 arcmin |
+
+Phase 1 stub 의 `roller_approach(disp: &[f64; 3], ...)` 시그니처 (이미 3-DOF) 재사용.
+
+#### 4.5 Level D 검증 설계
+
+**진짜 독립 검증 (Phase 2 반성 반영)**:
+
+**Option D1 — Reference 도서 값**:
+- Harris & Kotzalas 5th ed. Ch 7 (Bearing internal load distribution) 예제
+- Palmgren *Ball and Roller Bearing Engineering* (1959)
+- Jones (1946) — 원 저작
+
+**Option D2 — Commercial software 비교**:
+- MASTA (사용자 접근 가능, KIMM 라이센스 확인 필요)
+- MESYS bearing calc
+- Bearinx (Schaeffler)
+- SKF SimPro
+
+**Option D3 — ISO 16281 Annex 예제** (있다면):
+- ISO 문서 자체 검증 예제 (있는지 확인 필요)
+
+**통과 기준**: Q_max, δ_max 등 주요 지표 상대오차 < **5%** (Plan §5.2 Level D)
+
+**Fallback**: 정성 검증 (부호, 대칭성, load zone extent) — Reference 값 확보 어려울 시
+
+#### 4.6 통과 기준
+
+- [ ] `cargo check --lib` exit 0
+- [ ] `cargo test --test bearing_smoke` 모두 pass (수렴/부호/기본 특성)
+- [ ] `cargo test --test bearing_level_d` 모두 pass (Reference or 정성)
+- [ ] `cargo test --test roller_level_c` 회귀 확인
+- [ ] `cargo test --test geometry_level_a` 회귀 확인
+- [ ] `npm run tauri dev` 로 solve_bearing command 호출 시 결과 반환 (Phase 1 stub → 실제 결과)
+
+#### 4.7 예상 시간
+
+- **3 ~ 5 day** (Plan §3 예측 3 day 대비 여유. 재작성 규모 큼)
+- 세부:
+  - bearing.rs 전면 재작성 (12~15h)
+  - Smoke test 작성 (3h)
+  - Level D 검증 (Reference 값 확보 시간 별도) (4~6h)
+  - Python 리포트 (Q_j polar, δ 등) (3h)
+  - Action.md 상세 (2h)
+
+#### 4.8 잠재 이슈 / 대응
+
+| 이슈 | 대응 |
+|------|------|
+| **BearingResult 타입 필드 (5-DOF 잔재)** | `displacement: [f64; 5]` 유지 (backward-compat) 하되 δz, γy 는 항상 0 |
+| Newton-Raphson 수렴 실패 (jacobian singular) | Levenberg-Marquardt fallback, 초기값 조정 |
+| Reference 값 확보 어려움 | Fallback: 정성 검증 (부호/대칭성/load zone) + 사용자 확인 |
+| solve_bearing 이 부수 모듈 (life, static_rating) 참조 | 그 모듈들이 disable 상태 → Result 에 default 값 넣거나 Option 처리 |
+| BearingResult 의 f_a_effective_kn 등 axial 필드 | 항상 0 채워서 반환 (JSON 호환) |
+| **가장 큰 리스크**: 좌표계 부호 실수 | Smoke test 로 조기 발견 (F_y=-1000 → δ_y 부호, Q_j 최대 위치 ψ_j 확인) |
+
+#### 4.9 검증 절차
+
+1. `bearing.rs` 재작성 — `solve_bearing_equilibrium` (Gen1 based)
+2. Smoke test (`tests/bearing_smoke.rs`) — 부호/수렴/기본
+3. `cargo test --test bearing_smoke` 통과
+4. `solve_bearing_dual` 구현 (Gen1 + Gen3 비교)
+5. Level D reference 값 확보 → `tests/bearing_level_d.rs`
+6. `cargo test --test bearing_level_d` 통과
+7. 회귀 확인 (Phase 2, 3 tests)
+8. Python 리포트 (Q_j polar plot, 3-DOF δ 시각화)
+9. Action.md Phase 4 섹션 (11 소절 상세)
+
+#### 4.10 산출물
+
+- 재작성된 `bearing.rs` (~500~800 라인 예상)
+- `tests/bearing_smoke.rs` (신규)
+- `tests/bearing_level_d.rs` (신규, Reference 값)
+- `python-prototype/phase4_level_d_report.py` (신규)
+- `reports/phase4/*.png` (Q_j polar, δ 3-DOF, load zone, Gen1↔Gen3 비교)
+- `Action.md` Phase 4 섹션 (6 소절 + 상세 표 + PNG)
+
+#### 4.11 Phase 5 진입 조건
+
+- ✅ Phase 4 통과 기준 (§4.6) 모두 만족
+- ✅ `solve_bearing` command 가 실제 결과 반환 (Frontend 에서 호출 가능)
+- ✅ Level D 검증 문서화
+- ✅ Phase 5 (Life/Static Rating) 재활성화 시 사용할 `BearingResult` 인터페이스 안정
 
 진입 시점에 상세화. 핵심: ISO 16281 A.3.1 알고리즘, 3-DOF (δr, γx, γy), Level D 검증.
 
