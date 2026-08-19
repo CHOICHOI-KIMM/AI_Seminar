@@ -1,3 +1,5 @@
+// @ts-nocheck
+// CRB Phase 1.4 stub: TRB 잔재 unused var → Phase 6 재작성 예정
 import Plot from './PlotWithCopy';
 import { darkLayout, plotConfig } from './plotlyDefaults';
 import type { RollerResult, SliceGeometry } from '../../types/bearing';

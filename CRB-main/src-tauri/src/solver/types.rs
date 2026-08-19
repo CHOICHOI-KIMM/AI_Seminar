@@ -26,23 +26,28 @@ impl ProgressReporter for NoopReporter {
 
 // ─── Input Types ────────────────────────────────────────────────────
 
+// CRB (Cylindrical Roller Bearing) — Plan §6 D1~D7 반영:
+//   D1: 모든 시리즈에서 rib contact 제외 → h_rib / alpha_rib / h_c 제거
+//   D2: 시리즈 분기 없음 (단일 솔버)
+//   D3: 단일 row (n_rows = 1 고정, 필드 없음)
+//   D4: F_a = 0 강제 (OperatingConditions 에서 처리)
+//   D5: 좌표계 X=수평 radial, Y=수직(중력), Z=shaft axis (변경 없음)
+//   D6: single-plane misalignment (X축 about, γ_y=0)
+//   D7: 평형 DOF = 3 (δx, δy, γx)
+// ISO 16281 근거:
+//   α = 0 → alpha 제거
+//   원통 균일 → D_we_max/D_we_min 통합
+//   Clause 4 NOTE 3 (ISO p. 4): L_we 는 roller axis 따라 정의
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MacroGeometry {
     pub d: f64,           // Bore diameter [mm]
     pub outer_diameter: f64, // Outer diameter [mm]
     pub t: f64,           // Bearing width [mm]
-    pub alpha: f64,       // Contact angle (half-taper) [deg]
     pub z: u32,           // Number of rollers
-    pub d_we_max: f64,    // Roller large-end diameter [mm]
-    pub d_we_min: f64,    // Roller small-end diameter [mm]
-    pub l_we: f64,        // Roller effective contact length [mm]
+    pub d_we: f64,        // Roller diameter (uniform for CRB) [mm]
+    pub l_we: f64,        // Roller effective contact length (along roller axis, ISO p.4 NOTE 3) [mm]
     pub d_pw: f64,        // Pitch circle diameter [mm]
-    pub h_rib: f64,       // Rib height (large-end) [mm]
-    pub alpha_rib: f64,   // Rib angle [deg]
     pub g_r: f64,         // Radial internal clearance [μm]
-    /// Contact height on rib face [mm]. None = auto (h_rib / 2).
-    #[serde(default)]
-    pub h_c: Option<f64>,
 }
 
 impl MacroGeometry {
@@ -59,32 +64,19 @@ impl MacroGeometry {
         if self.z == 0 {
             return Err(SolverError::InvalidGeometry("Number of rollers must be > 0".into()));
         }
-        if self.alpha <= 0.0 || self.alpha >= 90.0 {
-            return Err(SolverError::InvalidGeometry("Contact angle must be in (0, 90) deg".into()));
-        }
-        if self.d_we_max <= 0.0 || self.d_we_min <= 0.0 {
-            return Err(SolverError::InvalidGeometry("Roller diameters must be positive".into()));
-        }
-        if self.d_we_max < self.d_we_min {
-            return Err(SolverError::InvalidGeometry("Max roller diameter must be >= min".into()));
+        if self.d_we <= 0.0 {
+            return Err(SolverError::InvalidGeometry("Roller diameter must be positive".into()));
         }
         Ok(())
     }
 }
 
+// CRB raceway — 원통형 (cylindrical bore).  α_i = α_o = 0 → 필드 자체 제거.
+// r_rib / r_rib_circ 제거 (D1: rib 없음).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RacewayGeometry {
-    pub alpha_i: f64,     // Inner raceway taper angle [deg]
-    pub alpha_o: f64,     // Outer raceway taper angle [deg]
-    pub r_i: f64,         // Inner raceway transverse curvature radius [mm]
+    pub r_i: f64,         // Inner raceway transverse curvature radius [mm] (일반적으로 ∞, 원통 표준값)
     pub r_o: f64,         // Outer raceway transverse curvature radius [mm]
-    pub r_rib: f64,       // Large-end rib fillet radius (meridional) [mm]
-    /// Rib circumferential curvature radius [mm].
-    /// None = auto-calculate from surface-of-revolution curvature:
-    ///   γ = (α_i + α_o)/2,  r_contact = d_pw/2 + (l_we/2)·sin(γ) − (d_we_max/2)·cos(γ)
-    ///   R_rib_circ = r_contact / sin(α_rib)
-    #[serde(default)]
-    pub r_rib_circ: Option<f64>,
     pub d_uc: f64,        // Raceway undercut depth [mm]
     pub l_uc: f64,        // Raceway undercut axial extent [mm]
 }
@@ -100,15 +92,15 @@ pub enum CrownType {
     Polynomial { coeffs: Vec<f64> },
 }
 
+// CRB roller profile — 양 끝 대칭 (Plan 부록 A.1 참조).
+// r_sph 제거 (D1: rib 없음 → end sphere 무의미).
+// Dub-off: large/small 분리 필드 → 단일 (delta_dub, l_dub) 로 통합, 양쪽 동일 적용.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RollerProfile {
     pub crown_type: CrownType,
     pub delta_c: f64,      // Crown drop center-to-end [μm]
-    pub delta_dub_l: f64,  // Dub-off amount large end [μm]
-    pub delta_dub_s: f64,  // Dub-off amount small end [μm]
-    pub l_dub_l: f64,      // Dub-off length large end [mm]
-    pub l_dub_s: f64,      // Dub-off length small end [mm]
-    pub r_sph: f64,        // Roller large-end sphere radius [mm]
+    pub delta_dub: f64,    // Dub-off amount (both ends, symmetric) [μm]
+    pub l_dub: f64,        // Dub-off length (both ends, symmetric) [mm]
     /// Roller surface roughness Ra [μm]. Default 0.15 for ground steel.
     #[serde(default = "default_sigma_roller")]
     pub sigma_roller: f64,
@@ -440,22 +432,25 @@ fn default_design_life_hours() -> f64 {
     100.0
 }
 
+// CRB Operating Conditions — Plan §6 D4+D6+D7 반영:
+//   D4: f_a 제거 (axial 지지 없음, ISO 16281 A.3.1 NOTE 1)
+//   D6: m_y 제거 (single-plane misalignment, X축 about 만 사용)
+//   → 평형 DOF = 3: (δx, δy, γx)
+// preload_mode, delta_preload_um 제거 (axial preload — CRB 무관).
+// skf_trb_series 제거 (TRB 전용 SKF 시리즈 — Phase 7 에서 CRB 대응 검토).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OperatingConditions {
-    pub f_x: f64,          // Radial load X-component [kN]
+    pub f_x: f64,          // Radial load X-component (horizontal) [kN]
     #[serde(default)]
-    pub f_y: f64,          // Radial load Y-component [kN]
-    pub f_a: f64,          // Axial load [kN]
-    pub m_x: f64,          // Tilting moment about X [kN·m]
-    #[serde(default)]
-    pub m_y: f64,          // Tilting moment about Y [kN·m]
+    pub f_y: f64,          // Radial load Y-component (vertical, gravity) [kN]
+    pub m_x: f64,          // Tilting moment about X (single-plane, D6) [kN·m]
     /// Inner ring rotational speed [rpm]. Default = n_rpm for backward compat.
     #[serde(default, alias = "n_rpm")]
     pub n_inner_rpm: f64,
     /// Outer ring rotational speed [rpm]. Default = 0 (stationary).
     #[serde(default)]
     pub n_outer_rpm: f64,
-    pub gamma: f64,        // Misalignment angle [arcmin]
+    pub gamma: f64,        // External misalignment angle (about X-axis, D6) [arcmin]
     pub t_op: f64,         // Operating temperature [°C]
     pub nu_40: f64,        // Kinematic viscosity at 40°C [mm²/s]
     pub nu_100: f64,       // Kinematic viscosity at 100°C [mm²/s]
@@ -471,12 +466,6 @@ pub struct OperatingConditions {
     /// Lubricant density [kg/m³]. Default 850 for mineral oil.
     #[serde(default = "default_rho_oil")]
     pub rho_oil: f64,
-    /// Axial preload mode. Default: Force (traditional).
-    #[serde(default)]
-    pub preload_mode: PreloadMode,
-    /// Axial preload displacement [μm]. Used when preload_mode = Displacement.
-    #[serde(default)]
-    pub delta_preload_um: f64,
     /// Design life duration for damage/reliability calculation [hours]. Default 100.
     #[serde(default = "default_design_life_hours")]
     pub design_life_hours: f64,
@@ -537,9 +526,7 @@ pub struct OperatingConditions {
     /// Per Schwarz 2023 Eq. 20 / Johnson Contact Mechanics §9.6.
     #[serde(default = "default_hysteresis_loss_factor")]
     pub hysteresis_loss_factor: f64,
-    /// SKF TRB series (used by SKF Advanced friction model + reference card).
-    #[serde(default)]
-    pub skf_trb_series: SkfTrbSeriesEnum,
+    // skf_trb_series 제거 (TRB 전용) — Phase 7 에서 SKF CRB 시리즈 대응 검토
     /// SKF lubrication scheme (kinematic starvation factor K_rs).
     #[serde(default)]
     pub skf_lubrication: SkfLubricationEnum,
@@ -1695,11 +1682,9 @@ pub struct LoadTimePoint {
     /// Radial load Y [kN]
     pub f_y: f64,
     /// Axial load [kN]
-    pub f_a: f64,
+    // CRB: f_a 제거 (D4), m_y 제거 (D6). LoadTimePoint 는 CSV 로드 시계열 입력에도 동일.
     /// Moment X [kN·m]
     pub m_x: f64,
-    /// Moment Y [kN·m]
-    pub m_y: f64,
     /// Rotational speed [rpm]
     pub n_rpm: f64,
 }
@@ -1710,9 +1695,7 @@ impl LoadTimePoint {
         OperatingConditions {
             f_x: self.f_x,
             f_y: self.f_y,
-            f_a: self.f_a,
             m_x: self.m_x,
-            m_y: self.m_y,
             n_inner_rpm: self.n_rpm,
             n_outer_rpm: 0.0,
             // Inherit lubrication/temperature from reference
@@ -1724,8 +1707,6 @@ impl LoadTimePoint {
             lubrication_type: ref_op.lubrication_type,
             starvation_factor: ref_op.starvation_factor,
             rho_oil: ref_op.rho_oil,
-            preload_mode: ref_op.preload_mode,
-            delta_preload_um: ref_op.delta_preload_um,
             lubrication_model: ref_op.lubrication_model,
             tau_eyring: ref_op.tau_eyring,
             z_roelands: ref_op.z_roelands,
@@ -1737,7 +1718,7 @@ impl LoadTimePoint {
             friction_model: ref_op.friction_model,
             thermal_correction: ref_op.thermal_correction,
             hysteresis_loss_factor: ref_op.hysteresis_loss_factor,
-            skf_trb_series: ref_op.skf_trb_series,
+            // skf_trb_series 제거 (Phase 7 CRB 대응 검토)
             skf_lubrication: ref_op.skf_lubrication,
             skf_y_factor: ref_op.skf_y_factor,
             k_fluid: ref_op.k_fluid,

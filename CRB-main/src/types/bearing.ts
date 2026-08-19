@@ -2,33 +2,24 @@
 
 // ─── Input Types ────────────────────────────────────────────────────
 
+// CRB (Cylindrical Roller Bearing) — Plan §6 D1~D7 반영
+// D1: rib 제거, D3: 단일 row, D4: F_a 제거, D6: γ_y 제거, D7: 3-DOF (δx, δy, γx)
 export interface MacroGeometry {
-  d: number;
-  outer_diameter: number;
-  t: number;
-  alpha: number;
-  z: number;
-  d_we_max: number;
-  d_we_min: number;
-  l_we: number;
-  d_pw: number;
-  h_rib: number;
-  alpha_rib: number;
-  g_r: number;
-  /** Contact height on rib face [mm]. null = auto (h_rib / 2) */
-  h_c: number | null;
+  d: number;                // Bore diameter [mm]
+  outer_diameter: number;   // Outer diameter [mm]
+  t: number;                // Bearing width [mm]
+  z: number;                // Number of rollers
+  d_we: number;             // Roller diameter (uniform for CRB) [mm]
+  l_we: number;             // Roller effective contact length (along roller axis, ISO p.4 NOTE 3) [mm]
+  d_pw: number;             // Pitch circle diameter [mm]
+  g_r: number;              // Radial internal clearance [μm]
 }
 
 export interface RacewayGeometry {
-  alpha_i: number;
-  alpha_o: number;
-  r_i: number;
-  r_o: number;
-  r_rib: number;
-  /** Rib circumferential curvature radius [mm]. null = auto-calc from d_pw */
-  r_rib_circ: number | null;
-  d_uc: number;
-  l_uc: number;
+  r_i: number;              // Inner raceway transverse curvature radius [mm]
+  r_o: number;              // Outer raceway transverse curvature radius [mm]
+  d_uc: number;             // Raceway undercut depth [mm]
+  l_uc: number;             // Raceway undercut axial extent [mm]
 }
 
 export type CrownType =
@@ -38,15 +29,13 @@ export type CrownType =
   | { Custom: { profile: [number, number][] } }
   | { Polynomial: { coeffs: number[] } }; // [p1..p5]: p1*x^4 + p2*x^3 + p3*x^2 + p4*x + p5 [um]
 
+// CRB: 양 끝 대칭 (D1: rib 없음, 부록 A.1)
 export interface RollerProfile {
   crown_type: CrownType;
-  delta_c: number;
-  delta_dub_l: number;
-  delta_dub_s: number;
-  l_dub_l: number;
-  l_dub_s: number;
-  r_sph: number;
-  sigma_roller: number;  // roller surface roughness Ra [μm]
+  delta_c: number;         // Crown drop center-to-end [μm]
+  delta_dub: number;       // Dub-off amount (both ends, symmetric) [μm]
+  l_dub: number;           // Dub-off length (both ends, symmetric) [mm]
+  sigma_roller: number;    // roller surface roughness Ra [μm]
 }
 
 export interface RacewayProfile {
@@ -68,8 +57,7 @@ export interface Material {
 
 export type LubricationType = "Oil" | "Grease";
 
-/** Axial preload application mode for TRB */
-export type PreloadMode = "DisplacementFromForce" | "DisplacementFromForceIterative" | "Displacement";
+// CRB: PreloadMode 제거 (D4: axial preload 무관). 필요 시 Phase 7 에서 재검토.
 
 /** Lubrication analysis model selection
  *  - Method1_DH: Dowson-Higginson (1977) — classic isothermal line-contact EHL
@@ -77,15 +65,14 @@ export type PreloadMode = "DisplacementFromForce" | "DisplacementFromForceIterat
  */
 export type LubricationModel = "Method1_DH" | "Method2_MK" | "Method3_NVM";
 
+// CRB Operating Conditions — D4 (f_a 제거), D6 (m_y 제거), 평형 DOF = 3
 export interface OperatingConditions {
-  f_x: number;
-  f_y: number;
-  f_a: number;
-  m_x: number;
-  m_y: number;
+  f_x: number;            // Radial load X (horizontal) [kN]
+  f_y: number;            // Radial load Y (vertical, gravity) [kN]
+  m_x: number;            // Tilting moment about X (single-plane, D6) [kN·m]
   n_inner_rpm: number;    // Inner ring speed [rpm]
   n_outer_rpm: number;    // Outer ring speed [rpm]
-  gamma: number;
+  gamma: number;          // External misalignment (about X-axis, D6) [arcmin]
   t_op: number;
   nu_40: number;
   nu_100: number;
@@ -93,8 +80,6 @@ export interface OperatingConditions {
   lubrication_type: LubricationType;
   starvation_factor: number;  // φ_s ∈ (0,1], 1.0=fully flooded
   rho_oil: number;            // lubricant density [kg/m³]
-  preload_mode: PreloadMode;  // axial preload mode
-  delta_preload_um: number;   // axial preload displacement [μm] (for Displacement mode)
   /** Design life duration for damage/reliability calculation [hours] */
   design_life_hours: number;
   // === Advanced lubrication model parameters ===
@@ -115,7 +100,7 @@ export interface OperatingConditions {
   friction_model: FrictionModel;        // PalmgrenLike (default) | SkfAdvanced
   thermal_correction: ThermalCorrection;  // Wilson1979 | Aihara1987 (default) | None — for BH rolling friction
   hysteresis_loss_factor: number;       // Johnson 1985 α_v [-], default 0.005 (range 0.005-0.05 hardened bearing steel)
-  skf_trb_series: SkfTrbSeries;         // 302 / 303 / 313 / 320 / 322 / 322B / 323 / 323B / Other
+  // skf_trb_series 제거 (TRB 전용, CRB Phase 7 에서 SKF CRB 대응 검토)
   skf_lubrication: SkfLubrication;      // OilBath | OilJet | Grease | OilAir
   skf_y_factor: number;                 // SKF axial load factor Y (catalogue, ~1.6 for 30306)
   k_fluid: number;           // Lubricant thermal conductivity [W/(m·K)] (default 0.15)
@@ -615,10 +600,8 @@ export interface BearingResult {
   f_a_induced_kn: number;
   /** Effective axial load used by solver [kN] = max(F_a_input, F_a_induced) */
   f_a_effective_kn: number;
-  /** Preload mode used for this analysis */
-  preload_mode: PreloadMode;
-  /** Preload axial displacement δz [μm] */
-  delta_preload_um: number;
+  // CRB: preload_mode / delta_preload_um 제거 (D4: axial preload 무관).
+  // BearingResult 는 backend serde 에서 optional 이므로 클라이언트 인터페이스에서만 제거.
   /** Actual axial reaction force [kN] from rollers after equilibrium */
   f_a_reaction_kn: number;
   /** Bearing radial stiffness [N/μm] at converged state */
@@ -655,15 +638,14 @@ export interface SineChannelParams {
   amplitude: number;
 }
 
+// CRB: SineWaveConfig / LoadTimePoint 에서 f_a, m_y 제거 (D4, D6)
 export interface SineWaveConfig {
   frequency_hz: number;
   duration_s: number;
   points_per_cycle: number;
   f_x: SineChannelParams;
   f_y: SineChannelParams;
-  f_a: SineChannelParams;
   m_x: SineChannelParams;
-  m_y: SineChannelParams;
   n_rpm: SineChannelParams;
 }
 
@@ -672,10 +654,8 @@ export const DEFAULT_SINE_CONFIG: SineWaveConfig = {
   duration_s: 0.5,
   points_per_cycle: 50,
   f_x: { mean: 0, amplitude: 0 },
-  f_y: { mean: 0, amplitude: 0 },
-  f_a: { mean: 50, amplitude: 10 },
+  f_y: { mean: -500, amplitude: 100 },   // -Y = 중력 방향
   m_x: { mean: 0, amplitude: 0 },
-  m_y: { mean: 0, amplitude: 0 },
   n_rpm: { mean: 1000, amplitude: 0 },
 };
 
@@ -694,9 +674,7 @@ export function generateSineLoadSeries(config: SineWaveConfig): LoadTimePoint[] 
       t_s: t,
       f_x: config.f_x.mean + config.f_x.amplitude * s,
       f_y: config.f_y.mean + config.f_y.amplitude * s,
-      f_a: config.f_a.mean + config.f_a.amplitude * s,
       m_x: config.m_x.mean + config.m_x.amplitude * s,
-      m_y: config.m_y.mean + config.m_y.amplitude * s,
       n_rpm: config.n_rpm.mean + config.n_rpm.amplitude * s,
     });
   }
@@ -707,9 +685,7 @@ export interface LoadTimePoint {
   t_s: number;
   f_x: number;
   f_y: number;
-  f_a: number;
   m_x: number;
-  m_y: number;
   n_rpm: number;
 }
 

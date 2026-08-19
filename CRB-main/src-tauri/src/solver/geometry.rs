@@ -14,16 +14,17 @@ pub fn compute_slices(
         return Err(SolverError::InvalidInput("n_slices must be > 0".into()));
     }
 
+    // CRB: 원통 roller — r_small = r_large = d_we/2, α = 0
     let l_we = macro_geom.l_we;
     let slice_width = l_we / n_slices as f64;
-    let r_small = macro_geom.d_we_min / 2.0;
-    let r_large = macro_geom.d_we_max / 2.0;
+    let r_uniform = macro_geom.d_we / 2.0;
+    let r_small = r_uniform;
+    let r_large = r_uniform;
     let d_pw = macro_geom.d_pw;
-    let alpha_i_rad = raceway_geom.alpha_i.to_radians();
-    let alpha_o_rad = raceway_geom.alpha_o.to_radians();
-    // Half-roller taper angle and mean roller centerline angle
-    let _alpha_12 = (alpha_o_rad - alpha_i_rad) / 2.0; // half RE taper
-    let alpha_m = (alpha_i_rad + alpha_o_rad) / 2.0;   // RE centerline
+    let alpha_i_rad: f64 = 0.0;     // CRB: raceway 원통 (α_i = 0)
+    let alpha_o_rad: f64 = 0.0;     // CRB: raceway 원통 (α_o = 0)
+    let _alpha_12 = (alpha_o_rad - alpha_i_rad) / 2.0; // = 0 for CRB
+    let alpha_m = (alpha_i_rad + alpha_o_rad) / 2.0;   // = 0 for CRB
 
     let slices = (0..n_slices)
         .map(|k| {
@@ -160,20 +161,21 @@ fn crown_correction(x_centered: f64, crown_type: &CrownType, half_l: f64, delta_
 
 /// Dub-off correction at axial position x [mm].
 /// Returns additional correction in [μm].
+/// CRB: dub-off 양쪽 대칭 — 단일 (delta_dub, l_dub) 로 양 끝 동일 적용 (부록 A.1).
 fn dub_off_correction(x: f64, profile: &RollerProfile, l_we: f64) -> f64 {
     let mut dz = 0.0;
 
     // Small end dub-off (x near 0)
-    if profile.l_dub_s > 0.0 && x < profile.l_dub_s {
-        let ratio = 1.0 - x / profile.l_dub_s;
-        dz += profile.delta_dub_s * ratio * ratio;
+    if profile.l_dub > 0.0 && x < profile.l_dub {
+        let ratio = 1.0 - x / profile.l_dub;
+        dz += profile.delta_dub * ratio * ratio;
     }
 
-    // Large end dub-off (x near l_we)
+    // Large end dub-off (x near l_we) — 대칭 적용
     let x_from_large = l_we - x;
-    if profile.l_dub_l > 0.0 && x_from_large < profile.l_dub_l {
-        let ratio = 1.0 - x_from_large / profile.l_dub_l;
-        dz += profile.delta_dub_l * ratio * ratio;
+    if profile.l_dub > 0.0 && x_from_large < profile.l_dub {
+        let ratio = 1.0 - x_from_large / profile.l_dub;
+        dz += profile.delta_dub * ratio * ratio;
     }
 
     dz
@@ -299,39 +301,28 @@ mod tests {
     use super::*;
 
     fn make_test_geometry() -> (MacroGeometry, RacewayGeometry, RollerProfile, RacewayProfile) {
+        // CRB 테스트 지오메트리 (Phase 1: NU 시리즈 유사 파라미터)
         let macro_geom = MacroGeometry {
             d: 50.0,
             outer_diameter: 90.0,
             t: 20.0,
-            alpha: 15.0,
             z: 20,
-            d_we_max: 10.0,
-            d_we_min: 8.0,
+            d_we: 9.0,       // 균일 원통 roller diameter
             l_we: 15.0,
             d_pw: 70.0,
-            h_rib: 2.0,
-            alpha_rib: 10.0,
             g_r: 10.0,
-            h_c: None,
         };
         let raceway_geom = RacewayGeometry {
-            alpha_i: 15.0,
-            alpha_o: 15.0,
-            r_i: 200.0,
-            r_o: 200.0,
-            r_rib: 1.0,
-            r_rib_circ: None,
+            r_i: 1.0e9,      // 원통 raceway — transverse 곡률 무한대 근사
+            r_o: 1.0e9,
             d_uc: 0.0,
             l_uc: 0.0,
         };
         let roller_profile = RollerProfile {
             crown_type: CrownType::Parabolic { c2: 0.01 },
             delta_c: 5.0,
-            delta_dub_l: 10.0,
-            delta_dub_s: 10.0,
-            l_dub_l: 2.0,
-            l_dub_s: 2.0,
-            r_sph: 50.0,
+            delta_dub: 10.0,  // 양쪽 대칭
+            l_dub: 2.0,
             sigma_roller: 0.15,
         };
         let raceway_profile = RacewayProfile {
@@ -356,15 +347,14 @@ mod tests {
     }
 
     #[test]
-    fn test_tapered_radius() {
+    fn test_uniform_radius_crb() {
+        // CRB: 모든 slice 의 roller 반경이 균일 (= d_we/2)
         let (mg, rg, rp, rwp) = make_test_geometry();
         let slices = compute_slices(&mg, &rg, &rp, &rwp, &rwp, 10).unwrap();
-
-        // First slice near small end, last near large end
-        assert!(slices[0].r_roller < slices[9].r_roller);
-        // r_roller should be between r_small=4.0 and r_large=5.0
-        assert!(slices[0].r_roller >= 4.0);
-        assert!(slices[9].r_roller <= 5.0);
+        let r_expected = mg.d_we / 2.0;
+        for s in &slices {
+            assert!((s.r_roller - r_expected).abs() < 1e-10);
+        }
     }
 
     #[test]
@@ -425,30 +415,28 @@ mod tests {
     }
 
     #[test]
-    fn test_dub_off() {
+    fn test_dub_off_crb_symmetric() {
+        // CRB: dub-off 대칭 — 양 끝에서 같은 값
         let profile = RollerProfile {
             crown_type: CrownType::Parabolic { c2: 0.0 },
             delta_c: 0.0,
-            delta_dub_l: 20.0,
-            delta_dub_s: 15.0,
-            l_dub_l: 3.0,
-            l_dub_s: 2.0,
-            r_sph: 50.0,
+            delta_dub: 15.0,
+            l_dub: 2.5,
             sigma_roller: 0.15,
         };
         let l_we = 15.0;
 
         // At x=0 (small end edge): full dub-off
-        let dz = dub_off_correction(0.0, &profile, l_we);
-        assert!((dz - 15.0).abs() < 1e-10);
+        let dz_small = dub_off_correction(0.0, &profile, l_we);
+        assert!((dz_small - 15.0).abs() < 1e-10);
 
-        // At x=l_we (large end edge): full dub-off
-        let dz = dub_off_correction(l_we, &profile, l_we);
-        assert!((dz - 20.0).abs() < 1e-10);
+        // At x=l_we (large end edge): 대칭 → same value
+        let dz_large = dub_off_correction(l_we, &profile, l_we);
+        assert!((dz_large - 15.0).abs() < 1e-10);
 
         // At center: no dub-off
-        let dz = dub_off_correction(l_we / 2.0, &profile, l_we);
-        assert!(dz.abs() < 1e-10);
+        let dz_center = dub_off_correction(l_we / 2.0, &profile, l_we);
+        assert!(dz_center.abs() < 1e-10);
     }
 
     #[test]
