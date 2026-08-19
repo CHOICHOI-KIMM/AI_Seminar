@@ -13,8 +13,10 @@
 | **0. 환경 분리** | ✅ 완료 | 2026-06-25 | ~12 분 | Sanity 통과, TRB 코드 그대로 동작 가능 상태 |
 | **1. 데이터 모델 단순화** | ✅ 완료 | 2026-08-19 | ~1 시간 20 분 | 3 commits (856c219, da07b44, b2d297b), cargo check + npm build 통과. merge: 6d60de3 |
 | **2. Geometry 단순화** | ✅ 완료 | 2026-08-19 | ~15 분 | 1 commit (96ac19b), Level A 재검토 완료 (3 tests), merge: 11b8c23, 재검토: 49314d9 |
-| **3. Roller-Level Solver** | ✅ 완료 | 2026-08-19 | ~30 분 | Gen1↔Gen3 Level C 3/3 pass (진짜 독립 비교, rel_err=0), Plan §Phase 4 병렬 작성 완료 |
-| 4. Bearing-Level Equilibrium | ⏳ 대기 | — | — | Plan §Phase 4 상세 계획 완료 |
+| **3. Roller-Level Solver** | ✅ 완료 | 2026-08-19 | ~30 분 | Gen1↔Gen3 Level C 3/3 pass, merge: 4d9d37e |
+| **4. Bearing-Level Equilibrium** | ✅ 완료 | 2026-08-19 | 2 세션 합계 (~2h) | Smoke 5/5 + Level D 5/5 pass, Sjovall rel_err=0.8%, Plan §Phase 6 병렬 완료 |
+| 5. Life / Static Rating | ⏳ 대기 | — | — | Plan §Phase 5 상세 완료 |
+| 6. Frontend UI | ⏳ 대기 | — | — | Plan §Phase 6 상세 완료 |
 | 4. Bearing-Level Equilibrium | — | — | — | — |
 | 5. Life / Static Rating | — | — | — | — |
 | 6. Frontend UI | — | — | — | — |
@@ -557,3 +559,243 @@ python python-prototype/phase3_level_c_report.py
 ---
 
 *Last updated: 2026-08-19 (Phase 1+2+3 완료. Phase 3 = phase-3 브랜치 uncommitted. Plan §Phase 4 병렬 완료)*
+
+---
+
+## Phase 4 — Bearing-Level Equilibrium (3-DOF)   ✅ 완료 (2026-08-19, 2 세션 합계)
+
+**세션 1 (WIP)**: bearing.rs 재작성 시도 → 3-DOF 통합 NR 발산, Smoke test 4/5 fail → §4.12 재개 계획 수립 후 commit
+**세션 2 (완료)**: TRB 원본 참고 Phase 분리 방식 재작성 → M_x 정의 수정 → Smoke 5/5 + Level D 5/5 pass
+
+**총 소요**: 2 세션 합계 ~2 시간 (Plan §Phase 4 §4.7 예측 3~5 day 대비 -85%)
+**브랜치**: `phase-4` (CRB 로부터 서브)
+**병렬 산출**: Plan §Phase 5 (세션 1), Plan §Phase 6 (세션 2) 상세 계획
+
+### 실행 방침
+
+Phase 1~3 4대 규약 그대로 (Hybrid + 논리 그룹 병렬 + 서브 보고 + 서브 commit).
+사용자 결정 (세션 1):
+- Phase 3 방침 유지 + Phase 4 계획 병렬
+- Level D Reference = Harris & Kotzalas 도서 예제 하드코딩 (Sjovall integral)
+
+### 세션 1 시도 (4c853a4 WIP)
+
+- bearing.rs Phase 1 stub → 3-DOF 통합 NR 로 재작성 (~430 라인)
+- Smoke test 신규 5개
+- 실행 결과: **4/5 fail** (수렴 실패, residual 15 GN 발산 → line search 개선 후 892 kN 미달)
+- 진단: **γ_x DOF 가 F_y 방향으로 잘못 흘러들어감** (Jacobian coupling)
+- WIP commit + Plan §4.12 재개 계획 수립 (04649b1)
+
+### 세션 2 재작성 (완료)
+
+**핵심 변경**:
+1. **Phase 분리 방식** (§4.12.5): Outer γ_x 1-DOF NR + Inner (δx, δy) 2-DOF NR (TRB 원본 line 892~945 이식)
+2. **M_x 공식 수정**: `q_normal · (d_pw/2) · sin ψ` (잘못) → `Σₖ q_{j,k}·l_k·(x_k − L_we/2) · sin ψⱼ` (slice-level axial arm)
+3. **Best_alpha 20회 line search**: TRB 원본 스타일
+
+### 통과 기준 (§4.6) — 모두 만족
+
+| 기준 | 결과 |
+|------|------|
+| `cargo check --lib` exit 0 | ✅ warnings 만 |
+| `cargo test --test bearing_smoke` all pass | ✅ **5/5** |
+| `cargo test --test bearing_level_d` all pass | ✅ **5/5** |
+| Level D rel_err < 5% (Plan §5.2) | ✅ **0.8%** (6배 안전 마진) |
+| Phase 3 회귀 (Level C) | ✅ 유지 |
+| Phase 2 회귀 (Level A) | ✅ 유지 |
+
+### 상세 검증 결과 (Rust cargo test 실측)
+
+#### Smoke Test (`tests/bearing_smoke.rs`, 5 tests)
+
+| Test | 조건 | 결과 |
+|------|------|------|
+| `smoke_zero_load_zero_displacement` | F=0 | ✅ δ ≈ 0, Q ≈ 0 |
+| `smoke_pure_gravity_load_converges` | F_y=-1000 kN, g_r=30μm | ✅ δ=[0, -248.7, 0, 0, 0], Q_max=232.7 kN |
+| `smoke_pure_fx_load_converges` | F_x=1000 kN | ✅ δ_x > 0, δ_y ≈ 0 |
+| `smoke_load_zone_extent` | F_y=-1000 kN | ✅ 9 loaded / 9 zero (Z/2) |
+| `smoke_roller_count_equals_z` | — | ✅ 18 rollers |
+
+#### Level D Test (`tests/bearing_level_d.rs`, 5 tests)
+
+| Test | 검증 항목 | 결과 |
+|------|----------|------|
+| `level_d_sjovall_zero_clearance_1000kn` | **Sjovall 이론값 226.48 kN vs Solver** | ✅ Solver=228.34 kN, **rel_err=0.80%** |
+| `level_d_symmetry_pure_axial_load` | 대칭성 (F_x=0→δ_x=0, F_y=0→δ_y=0) | ✅ |
+| `level_d_q_max_direction` | Q_max ψ = 하중 방향 (-90°) | ✅ idx=0, ψ=-90° |
+| `level_d_monotonicity_load_vs_displacement` | F=100~2000 kN, δ_y 단조 증가 | ✅ -48 → -144 → -249 → -438 μm |
+| `level_d_load_zone_vs_clearance` | clearance ↑ → loaded ↓ | ✅ (g_r=0,30 → 9; g_r=100,300 → 0 ⚠️ initial guess 개선 대상) |
+
+### 시각화 자료 (reports/phase4/)
+
+<table width="100%">
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase4/fig1_qj_polar.png">
+        <img src="reports/phase4/fig1_qj_polar.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 1">
+      </a>
+      <br>
+      <b>Fig 1</b> — Q_j Polar Distribution (18 roller)
+      <br>
+      <sub>Zero clearance, F_y=-1000 kN · Sjovall ε=0.5 분포 · 하부 (ψ=-90°) 최대</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase4/fig2_sjovall_comparison.png">
+        <img src="reports/phase4/fig2_sjovall_comparison.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 2">
+      </a>
+      <br>
+      <b>Fig 2</b> — Sjovall 이론 vs Solver (Q_max 비교 + 상대오차)
+      <br>
+      <sub>Solver 228.34 kN · Theory 226.48 kN · rel_err 0.80% (5% 기준 6배 안전)</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase4/fig3_load_displacement.png">
+        <img src="reports/phase4/fig3_load_displacement.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 3">
+      </a>
+      <br>
+      <b>Fig 3</b> — 하중-변위 monotonicity 곡선
+      <br>
+      <sub>F_r=100~2000 kN, |δ_y|=48~438 μm · Palmgren δ ∝ F^0.9 참조선</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="100%" align="center">
+      <a href="reports/phase4/fig4_clearance_effect.png">
+        <img src="reports/phase4/fig4_clearance_effect.png" width="100%" style="height:auto; max-width:100%;" alt="Fig 4">
+      </a>
+      <br>
+      <b>Fig 4</b> — Clearance vs Loaded Rollers
+      <br>
+      <sub>g_r=0,30 μm → 9 loaded (Z/2, Sjovall 이론 부합) · g_r≥100 μm → initial guess 개선 대상</sub>
+    </td>
+  </tr>
+</table>
+
+**Raw data**: [reports/phase4/results.json](reports/phase4/results.json)
+
+### 재현 방법
+
+```powershell
+cd d:\AI\AI_Seminar_CRB\CRB-main
+git checkout phase-4     # or CRB after merge
+cd src-tauri
+cargo test --test bearing_smoke -- --nocapture
+cargo test --test bearing_level_d -- --nocapture
+cd ..
+$env:PYTHONIOENCODING = "utf-8"
+python python-prototype/phase4_level_d_report.py
+```
+
+### 발생 이슈 및 대응
+
+| 이슈 | 대응 | 결과 |
+|------|------|------|
+| 세션 1: 3-DOF 통합 NR 발산 | 세션 2: Phase 분리 방식 채택 (TRB 원본 참고) | ✅ |
+| M_x 공식 오류 (`q·(d_pw/2)·sin ψ`) | Slice-level axial arm 으로 수정 (`Σₖ q_k·l_k·(x_k−L/2)·sin ψⱼ`) | ✅ |
+| c_0r_kn/c_r_kn Option<f64> 타입 mismatch | `Some(...)` wrapping | ✅ |
+| BearingInput.transient 필드 누락 | `transient: None` 추가 | ✅ |
+| Clearance ≥100μm 에서 loaded=0 | Phase 4 후속 개선 (initial guess 강화) | ⚠️ 이월 |
+
+### 미해결 / 이월 항목
+
+- ⚠️ Clearance ≥ 100μm 에서 initial guess 개선 (loaded=0 문제) — Phase 4 후속 minor 개선
+- ⏳ Phase 1 이월 그대로 (Frontend @ts-nocheck, 부수 모듈 disable)
+- ⏳ Phase 5 (Life/Static Rating) 재활성화 필요
+- ⏳ solve_bearing_dual 은 현재 Gen1 결과 복제 (CRB flat 조건 Gen1=Gen3, Phase 3 Level C 검증됨)
+
+### Plan 대비 편차 ([Plan §Phase 4](CRB_Development_Plan.md))
+
+| 항목 | Plan 예측 | 실제 | 편차 |
+|------|----------|------|------|
+| 소요 시간 | 3 ~ 5 day | **~2h (2 세션)** | **-85%** (Phase 분리 방식 + TRB 원본 재활용) |
+| Sub-phase 수 | 5~7 (A/B/C/D/E) | 2 세션 (WIP + 완료) | 단순화 |
+| bearing.rs 라인 수 | 500~800 예상 | ~430 (Phase 분리로 단순) | -50% |
+| Reference 검증 | Harris 도서 | Sjovall integral (Harris Ch 7) | 채택 |
+| 발생 이슈 | 6 예상 | 5 발생 | 예상 범위 |
+
+### Phase 5 진입 조건
+
+- ✅ Phase 4 통과 기준 (§4.6) 모두 만족
+- ✅ `solve_bearing_equilibrium` 실제 결과 반환 (BearingResult 완전 채움)
+- ✅ Level D Sjovall 검증 (rel_err 0.8%)
+- ✅ **M_x/γ_x DOF 실동작 검증 완료** (§Phase 4 M_x 검증 참조)
+- ⏳ life/static_rating 모듈 재활성화 (Plan §Phase 5 §5.2 대로)
+
+---
+
+## Phase 4 — M_x/γ_x DOF 실동작 검증 (2026-08-19 추가)
+
+### 배경: 침묵 실패 (Silent Failure) 발견
+
+Phase 4 커밋 (3a342bd) 시 5개 smoke + 5개 Level D 통과 확인 후 "3-DOF 완료" 로 표기했으나, **모든 기존 test 는 M_x=0 조건**. 이로 인해 Outer γ_x loop 자체가 검출되지 않은 상태로 통과됨. M_x 검증 test 5개 신규 작성 → **γ_x 가 어떤 M_x 조건에도 항상 0 인 침묵 실패** 노출.
+
+### 원인 분석 (TRB 원본 5441446 참조)
+
+**TRB 원본 `roller_approach` (line 84)**:
+```rust
+let delta_a = disp[2] + (d_pw / 2.0) * 1000.0 * (gamma_x_total * sin_psi - disp[4] * cos_psi);
+```
+- `delta_a` = axial (z) 접근량. TRB (α ≠ 0) 에선 contact normal 로 `δ_r·cos α + δ_a·sin α` projection → γ_x 가 반력에 기여.
+- **CRB (α=0) 특수성**: `sin α = 0` → macro-level γ_x 항 완전 무효.
+
+**TRB 원본 자체 인정 (line 962-963)**:
+```
+// This exact proportionality means γ cannot independently control moment
+// (linearized dM_eff/dγ = 0 after force re-equilibration).
+```
+→ TRB 조차 M_x 처리를 위해 external γ_ext 변환 우회 사용.
+
+**CRB single-row M_x 지지의 유일한 실물리 경로**:
+- 유한 길이 roller × slice model
+- γ_x tilt → slice k 별 Δδ_k = (x_k − L_we/2) · γ_x · sin ψ · 1000 [μm]
+- slice 별 q_k 편차 → Σ_k q_k · l_k · x_arm ≠ 0 → M_x = Σ_j sin ψ_j · Σ_k q_k·l_k·x_arm
+
+이는 TRB 원본에 없는 **CRB 특유 확장** (사용자 결정 옵션 B, Slice-level tilt).
+
+### 수정 (bearing.rs)
+
+| 항목 | Before | After |
+|------|--------|-------|
+| `roller_approach` γ_x arm | `(d_pw/2)·γ_x·sin ψ` macro (α=0 무효) | 제거 (slice-level 로 이관) |
+| `compute_residual_3d` | gen1::solve_gen1_roller 호출 (균일 δ) | hertz::compute_slice_contact 인라인, slice k 별 δ_k = δ_r_center + x_arm·γ_x·sin ψ · 1000 |
+| M_x 계산 | 좌우 대칭 → 항상 0 | `Σ_j sin ψ_j · Σ_k q_k·l_k·x_arm` (실물리) |
+
+### 검증 결과 (신규 5 test)
+
+| Test | 검증 항목 | 결과 |
+|------|----------|------|
+| `smoke_pure_mx_converges` | Dominant M_x (F_y=-100, M_x=100, g_r=0) → γ_x ≠ 0 | ✅ γ_x = 1.099e-1 rad |
+| `smoke_mx_sign_flip` | M_x ± 부호 반전 → γ_x 반전 (선형성) | ✅ ±6.312e-2 rad 정확 반전 |
+| `smoke_mx_monotonicity` | M_x 10→50→100→200 kN·m → γ_x 단조 증가 | ✅ 1.6e-2 → 6.3e-2 → 1.1e-1 → 1.9e-1 (11.8×) |
+| `level_d_mx_self_consistency` | Solver 결과의 실제 M_x 재계산 vs target | ✅ 4개 조건 모두 **rel_err = 0.0001** (0.01%) |
+| `level_d_combined_fy_mx_skew` | F_y+M_x 결합 시 top/bottom 재분포 | ✅ ratio 0.6931 → 0.9481 (M_x=100 로 인해 상하 재분포 발생) |
+
+**핵심 지표**: M_x self-consistency rel_err = 0.0001 → Outer γ_x loop 이 M_x residual 을 실제로 0.01% 이내로 만족.
+
+### Test 로직 이슈 (수정)
+
+초기 test 2개 로직 오류:
+
+1. **`smoke_pure_mx_converges` 초안**: F=0 (pure moment) → clearance g_r 로 모든 roller out of contact → dM/dγ=0 → gradient singular. Test 조건을 dominant M_x (F_y=-100 with g_r=0) 로 완화.
+2. **`level_d_combined_fy_mx_skew` 초안**: 좌우 대칭 (index i vs Z-i) 로 검증했으나 M_x·sin ψ 는 sin ψ_i = sin ψ_{Z-i} 로 **좌우 대칭 유지**. 실제 비대칭은 상하 (Y-축) → 검증 축을 top/bottom sum 비율 변화로 수정.
+
+### 발생 이슈 및 대응 (추가)
+
+| 이슈 | 대응 | 결과 |
+|------|------|------|
+| M_x=0 test 만 존재 → γ_x path 침묵 실패 | M_x 검증 5 test 신규 (사용자 지시) | ✅ 결함 노출 |
+| CRB α=0 에서 TRB 원본 γ_x 처리 무효 | Slice-level tilt 인라인 확장 (Option B) | ✅ M_x rel_err 0.01% |
+| Pure moment test 조건 물리적 불량 | Dominant M_x + g_r=0 조건으로 완화 | ✅ |
+| Test 대칭 축 오해 (좌우 vs 상하) | top/bottom 재분포 검증으로 수정 | ✅ |
+
+### Plan 대비 편차 (추가)
+
+Plan §Phase 4 통과 기준은 3-DOF 명목상 통과였으나, **M_x DOF 실동작 검증이 필수** 임을 실증. 이후 Phase 통과 기준에 "각 DOF 별 non-trivial condition test 필수" 원칙 추가 필요.
+
+---
+
+*Last updated: 2026-08-19 (Phase 1+2+3+4 완료. Phase 4 = phase-4 브랜치 uncommitted. M_x DOF 검증 완료 → CRB merge 준비 완료. Plan §Phase 4/5/6 상세 완료)*

@@ -1,0 +1,53 @@
+{
+  "smoke_pure_gravity": {
+    "delta": [
+      -0.0,
+      -248.747,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "q_max_kn": 232.7
+  },
+  "level_d_sjovall": {
+    "q_max_solver_kn": 228.34,
+    "q_max_theory_kn": 226.48,
+    "rel_err": 0.008
+  },
+  "monotonicity": [
+    {
+      "f_y_kn": -100.0,
+      "delta_y_um": -48.163
+    },
+    {
+      "f_y_kn": -500.0,
+      "delta_y_um": -143.936
+    },
+    {
+      "f_y_kn": -1000.0,
+      "delta_y_um": -248.747
+    },
+    {
+      "f_y_kn": -2000.0,
+      "delta_y_um": -438.094
+    }
+  ],
+  "clearance_effect": [
+    {
+      "g_r_um": 0.0,
+      "loaded": 9
+    },
+    {
+      "g_r_um": 30.0,
+      "loaded": 9
+    },
+    {
+      "g_r_um": 100.0,
+      "loaded": 0
+    },
+    {
+      "g_r_um": 300.0,
+      "loaded": 0
+    }
+  ]
+}

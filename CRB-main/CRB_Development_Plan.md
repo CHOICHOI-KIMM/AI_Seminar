@@ -703,6 +703,11 @@ Phase 1 stub 의 `roller_approach(disp: &[f64; 3], ...)` 시그니처 (이미 3-
 - [ ] `cargo test --test roller_level_c` 회귀 확인
 - [ ] `cargo test --test geometry_level_a` 회귀 확인
 - [ ] `npm run tauri dev` 로 solve_bearing command 호출 시 결과 반환 (Phase 1 stub → 실제 결과)
+- [ ] **각 DOF 별 non-trivial condition test 통과** (2026-08-19 추가):
+  - δ_x DOF: F_x ≠ 0 조건 → δ_x ≠ 0 확인
+  - δ_y DOF: F_y ≠ 0 조건 → δ_y ≠ 0 확인
+  - γ_x DOF: M_x ≠ 0 조건 → γ_x ≠ 0 확인, 부호 반전 대칭, 단조성, self-consistency (rel_err < 5%)
+  - **원칙**: 각 DOF 를 침묵실패 없이 실측 검증. 모든 test 가 특정 DOF=0 조건이면 그 DOF path 는 검증 안 된 것.
 
 #### 4.7 예상 시간
 
@@ -753,13 +758,457 @@ Phase 1 stub 의 `roller_approach(disp: &[f64; 3], ...)` 시그니처 (이미 3-
 - ✅ Level D 검증 문서화
 - ✅ Phase 5 (Life/Static Rating) 재활성화 시 사용할 `BearingResult` 인터페이스 안정
 
-진입 시점에 상세화. 핵심: ISO 16281 A.3.1 알고리즘, 3-DOF (δr, γx, γy), Level D 검증.
+---
 
-### Phase 5 — Life / Static Rating (placeholder)
+#### 4.12 다음 세션 재개 계획 — TRB 원본 참고 완전 재작성 (2026-08-19 WIP 후속)
+
+> **배경**: 2026-08-19 세션에서 Phase 4-A (bearing.rs 재작성) + 4-B (Smoke test) 착수했으나 3-DOF 통합 NR 이 수렴 실패 (`4c853a4` WIP commit).
+> 사용자 결정: TRB-main 원본 로직 참고하여 완전 재작성.
+
+##### 4.12.1 세션 재개 절차
+
+```powershell
+cd d:\AI\AI_Seminar_CRB
+git checkout phase-4          # WIP 브랜치로 이동
+git log --oneline -5          # 4c853a4 확인
+
+# TRB 원본 bearing.rs 재추출 (git 히스토리에서)
+git show 5441446:CRB-main/src-tauri/src/solver/bearing.rs `
+  > $env:TEMP\trb_bearing_original.rs
+# → 4113 라인, TRB 5-DOF NR 원본
+
+# 현재 CRB bearing.rs (WIP, 430 라인) 검토
+Get-Content CRB-main\src-tauri\src\solver\bearing.rs | Measure-Object -Line
+
+# TRB 원본 핵심 라인: 278 (initial_guess), 740 (solve_bearing_equilibrium),
+#                    92 (compute_residual), 17 (solve_3x3)
+```
+
+##### 4.12.2 현재 (2026-08-19 WIP) 실패 원인 진단
+
+| 관측 | 원인 | 대응 방향 |
+|------|------|---------|
+| Smoke: `pure_gravity` residual = **892 kN** (F_y=-1000 의 89% 미달) | NR 100 iter 후 stuck. 실제 필요 δ_y ≈ -100 μm 인데 initial guess -50 μm 에서 진행 못 함 | Phase 분리 방식 채택 시 iteration 수 줄어들며 자연스러운 수렴 |
+| Smoke: `pure_fx` δ_y = **-95 μm** (F_y=0 인데 non-zero) | 3-DOF 통합 NR 의 **γ_x DOF 가 F_y residual 로 잘못 흘러들어감** (Jacobian coupling) | γ_x 를 outer loop 로 분리 → radial 2-DOF NR 은 γ_x=0 조건에서 수행 |
+| Zero load 만 pass | initial guess = 0 이 정답이라 iteration 불필요 | — |
+
+**결정적 통찰**: `γ_x` 는 `M_x = Σ Q_j·(d_pw/2)·sin ψ_j` 만 지배. `F_y = Σ Q_j·sin ψ_j` 와 **sin ψ_j 공통** 이므로 3-DOF Jacobian 에서 δ_y 와 γ_x 열이 거의 linearly dependent → Jacobian 조건수 나쁨 → NR 발산.
+
+##### 4.12.3 TRB 원본 알고리즘 (참고 상세)
+
+**파일**: `git show 5441446:CRB-main/src-tauri/src/solver/bearing.rs` (4113 라인, 5-DOF)
+
+**핵심 구조**:
+
+| 함수 | 라인 | 역할 |
+|------|------|------|
+| `solve_3x3` | 17~55 | 3×3 linear solve (Cramer's rule) |
+| `compute_residual` | 92~240 | 5-DOF residual [Fx, Fy, Fa, Mx, My] |
+| `initial_guess` | 278~319 | k_radial = Z/2 · 500 · cos α 기반 (clamp ±50 μm) |
+| `compute_induced_thrust` | 332~349 | TRB 특유 axial 반력 (α ≠ 0) |
+| `solve_preload_displacement` | 620~730 | dz 초기값 target F_a 로부터 |
+| **`solve_bearing_equilibrium`** | **740~1260** | **핵심: Phase A (radial 2×2 또는 3×3) + Phase B (tilting) 분리** |
+| `solve_bearing_equilibrium_5dof` | 1263~2250 | 완전 5-DOF 통합 (fallback) |
+| `solve_bearing_dual` | 2258~ | Gen1 + Gen3 비교 |
+
+**Phase A 핵심 로직** (라인 892~945, dz fixed case = **CRB 에 직접 대응**):
+```rust
+// 2×2 NR for (δx, δy), δz 고정
+let f_radial = f_r.max(1.0);
+for _outer in 0..max_iter {
+    let (residual, _) = compute_residual(input, &slices, &disp, 0.0)?;
+    let r_radial = (residual[0].powi(2) + residual[1].powi(2)).sqrt();
+    if r_radial / f_radial < tol { break; }
+
+    // 2×2 Jacobian (forward FD, h_s = 0.01 μm)
+    let mut j2 = [[0.0_f64; 2]; 2];
+    for col in 0..2 {
+        let mut dp = disp;
+        dp[col] += h_s;
+        let (rp, _) = compute_residual(input, &slices, &dp, 0.0)?;
+        for row in 0..2 { j2[row][col] = (rp[row] - residual[row]) / h_s; }
+    }
+
+    // Cramer's rule (2×2)
+    let det = j2[0][0] * j2[1][1] - j2[0][1] * j2[1][0];
+    let dx_step = (j2[1][1] * (-residual[0]) - j2[0][1] * (-residual[1])) / det;
+    let dy_step = (j2[0][0] * (-residual[1]) - j2[1][0] * (-residual[0])) / det;
+
+    // Step clamp (max_step = disp_mag * 0.5, clamp 5~30 μm)
+    let step_norm = (dx_step.powi(2) + dy_step.powi(2)).sqrt();
+    let scale = if step_norm > max_step { max_step / step_norm } else { 1.0 };
+    let dd = [dx_step * scale, dy_step * scale];
+
+    // Line search: 20회 반감, best_alpha 유지
+    let mut alpha_ls = 1.0;
+    let mut best_alpha = 0.0;
+    let mut best_norm = r_radial;
+    for _ in 0..20 {
+        let mut d_trial = disp;
+        d_trial[0] += alpha_ls * dd[0];
+        d_trial[1] += alpha_ls * dd[1];
+        let (rt, _) = compute_residual(input, &slices, &d_trial, 0.0)?;
+        let rt_r = (rt[0].powi(2) + rt[1].powi(2)).sqrt();
+        if rt_r < best_norm { best_norm = rt_r; best_alpha = alpha_ls; }
+        if rt_r < r_radial { break; }
+        alpha_ls *= 0.5;
+    }
+    if best_alpha < 1e-15 { best_alpha = alpha_ls; }
+    disp[0] += best_alpha * dd[0];
+    disp[1] += best_alpha * dd[1];
+}
+```
+
+##### 4.12.4 TRB → CRB 변환 매핑 표
+
+| TRB 5-DOF | CRB 3-DOF | 변환 방식 | 근거 |
+|-----------|----------|---------|------|
+| `disp[0]` = δx | `disp[0]` = δx | 동일 | D5 좌표계 |
+| `disp[1]` = δy | `disp[1]` = δy | 동일 | D5 |
+| `disp[2]` = δz | 제거 (=0) | axial 지지 없음 | D4 |
+| `disp[3]` = γx | `disp[2]` = γx | 배열 위치 변경 | D6 |
+| `disp[4]` = γy | 제거 (=0) | single-plane misalignment | D6 |
+| `f_a_input * 1000` | `0.0` 강제 | axial 하중 무시 | D4 |
+| `preload_mode / delta_preload_um` | 제거 | axial preload 무관 | D4 |
+| `compute_induced_thrust(f_r, α_o)` | 제거 | α=0 → sin α = 0 → thrust 없음 | D1 |
+| `alpha_rad = raceway_geom.alpha_o.to_radians()` | `0.0` 상수 | 원통 raceway | D1 |
+| `cos α, sin α` | `1.0, 0.0` | α=0 | — |
+| `cos_alpha_diff = cos(α_o - α_i)` | `1.0` | 이미 Phase 1.3-B 로 반영 | — |
+| Phase A dz_free 분기 | 항상 dz fixed=0 | δz free 케이스 제거 | D4 |
+| Phase A **2×2 NR** (δx, δy) | **동일 유지** — 핵심 재활용 | γ_x 는 outer loop | 4.12.5 |
+| `solve_preload_displacement` | 제거 | axial 없음 | D4 |
+| M_x, M_y residual | **M_x 만** (γ_x 담당) | γ_y=0 (D6) | — |
+| rib_contact 참조 | 제거 | D1 | 완료 (Phase 1.3-B) |
+
+##### 4.12.5 재작성 전략 — Phase 분리 방식 (핵심)
+
+**Outer loop**: γ_x 1-DOF NR
+```
+for outer_iter in 0..max_iter:
+    Phase A: (δx, δy) 2-DOF NR  (γ_x 고정, TRB 원본 그대로 이식)
+        수렴 시 M_x residual 계산
+    if |M_x_residual| / M_x_ref < tol: break
+    γ_x update (1-DOF NR):
+        dMdγ = numerical FD (M_x with γ_x + dγ)
+        Δγ_x = -M_x_residual / dMdγ
+        line search on γ_x
+```
+
+**이유**:
+- Phase A 는 TRB 원본과 동일 (검증된 로직)
+- γ_x 는 별도 축이라 coupling 없음
+- outer loop 는 보통 3~5 iter 로 수렴 (M_x 는 δ 에 약한 종속)
+
+**대안**: 3×3 통합 NR 로 하되:
+- Jacobian pivoting (QR decomposition)
+- Levenberg-Marquardt damping
+- 그러나 Phase 분리가 더 단순 + 안정
+
+##### 4.12.6 Rust 코드 skeleton (예상)
+
+```rust
+pub fn solve_bearing_equilibrium(
+    input: &BearingInput,
+    progress: &dyn ProgressReporter,
+) -> Result<BearingResult, SolverError> {
+    let slices = compute_slices(...)?;
+    let mut disp = initial_guess_crb(input);   // [δx, δy, γx] 3-DOF
+
+    let m_x_target = input.operating.m_x * 1e6;  // N·mm
+    let m_x_ref = m_x_target.abs().max(1e3);
+
+    // Outer loop: γ_x (M_x equilibrium)
+    for outer in 0..input.solver.max_iterations {
+        // Phase A: 2-DOF NR (δx, δy), γ_x 고정
+        phase_a_radial_2dof(&mut disp, input, &slices)?;
+
+        // M_x residual 계산
+        let (r_all, _) = compute_residual_3d(input, &slices, &disp)?;
+        if (r_all[2] / m_x_ref).abs() < input.solver.convergence_tol { break; }
+
+        // γ_x update (1-DOF NR)
+        let h_g = 1e-6_f64;   // rad
+        let mut disp_p = disp;
+        disp_p[2] += h_g;
+        let (r_p, _) = compute_residual_3d(input, &slices, &disp_p)?;
+        let dmdg = (r_p[2] - r_all[2]) / h_g;
+        if dmdg.abs() > 1e-30 {
+            disp[2] += -r_all[2] / dmdg * 0.5;  // damping 0.5
+        }
+    }
+
+    // 최종 결과 구축 (BearingResult, default 필드 채움)
+    build_bearing_result(input, &slices, disp, ...)
+}
+
+fn phase_a_radial_2dof(disp: &mut [f64; 3], input: &BearingInput, slices: &[SliceGeometry])
+    -> Result<(), SolverError>
+{
+    // TRB 원본 line 892~945 로직 그대로 이식 (α=0, dz=0 강제)
+    // 2×2 NR, max_step clamp 5~30 μm, line search 20회 best_alpha
+}
+```
+
+##### 4.12.7 Level D 검증 참조값
+
+**Sjovall integral** (Harris & Kotzalas 5th ed. Ch 7, Eq 7.71):
+```
+Q_max / F_r = 1 / (Z · J_r(ε))
+```
+- ε = 0.5 (zero clearance, radial only): `J_r(0.5) = 0.2453`
+- Zero clearance NU 240 (Z=18), F_y=-1000 kN:
+  - **Q_max = 1000 · 1000 / (18 · 0.2453) = 226,455 N ≈ 226.5 kN**
+- Load zone extent (2·ψ_lim):
+  - ε=0.5 → 정확히 180°
+  - ε<0.5 (preload) → > 180°
+  - ε>0.5 (clearance) → < 180°
+
+**Clearance 조건** (g_r > 0):
+- ε = 0.5 · (1 − g_r / (2·δ_max))
+- δ_max ≈ 100 μm, g_r = 30 μm → ε ≈ 0.425 → J_r(0.425) ≈ 0.21 (Harris 표)
+- Q_max ≈ 1000·1000 / (18·0.21) ≈ 264.6 kN
+
+**Level D 통과 기준**: 상대오차 < **5%** (Plan §5.2 Level D)
+
+**추가 Reference (정성)**:
+- F_x = 0, F_y = -F_r 조건: **δ_x = 0** (대칭성), γ_x = 0 (M_x=0 조건)
+- F_x = F_r, F_y = 0: **δ_y = 0** (대칭성)
+- Load zone 하부 (F_y < 0 이면 ψ ≈ -90° 부근) 에 Q_max 집중
+
+##### 4.12.8 예상 소요 시간 (다음 세션)
+
+| 단계 | 시간 |
+|------|------|
+| Session 재개 + TRB 원본 재추출 | 5분 |
+| bearing.rs Phase 분리 구조 재작성 | 25분 |
+| Smoke test 통과 확인 (4~5 조건) | 10분 |
+| Level D test (Harris/Sjovall 참조값) | 15분 |
+| Python 리포트 + Action.md | 15분 |
+| Commit + merge 사전 질문 | 5분 |
+| **합계** | **약 75분** |
+
+이 정도 시간이면 새 세션의 context 여유로 완주 가능. `4c853a4` WIP 위에 이어 작업.
+
+### Phase 5 — Life / Static Rating (상세 계획, 2026-08-19 병렬 작성)
+
+> Phase 1.3-B 에서 `life.rs`, `static_rating.rs` 는 `mod.rs` 에서 disable 상태.
+> Phase 5 는 두 모듈 재활성화 + ISO 16281 5.3 (lamina-level life) + ISO 76 (static rating) + ISO 281 CRB 상수 (C_r).
+
+#### 5.1 목표
+- `life.rs` 재활성화 — ISO 16281 5.3 (Cylindrical roller lamina-level life)
+- `static_rating.rs` 재활성화 — ISO 76:2006 CRB (C_0r, P_0r, S_0)
+- ISO 17956:2025 (lamina-level effective static safety S_0,eff) 지원
+- **Level E 검증**: 정성 (부호/monotonicity) + 가능 시 Reference
+
+#### 5.2 작업 대상 파일
+
+| 파일 | 변경 강도 | 주요 작업 |
+|------|---------|---------|
+| `src-tauri/src/solver/life.rs` | 🔴 재작성 | ISO 16281 5.3 lamina-level. CRB C_r 상수 (ISO 281 CRB 식) |
+| `src-tauri/src/solver/static_rating.rs` | 🔴 재작성 | ISO 76 CRB C_0r + ISO 17956 S_0,eff |
+| `src-tauri/src/solver/mod.rs` | 🟢 minor | 두 모듈 disable 주석 해제 |
+| `src-tauri/src/solver/bearing.rs` | 🟡 부분 | Phase 4 의 stub 필드 (life/static_rating) 실제 계산 값으로 대체 |
+| `src-tauri/tests/life_level_a.rs` | 🔴 신규 | Life 단위 테스트 (해석해 비교) |
+| `src-tauri/tests/static_rating_level_a.rs` | 🔴 신규 | Static rating 단위 테스트 |
+
+#### 5.3 ISO 16281 5.3 (CRB Roller Bearings Lamina-Level Life)
+
+**per-slice equivalent lamina load** (ISO Eq. 24~25):
+```
+q_ei,k = (Σⱼ (q_j,k · cos ψⱼ)^{10/3})^{3/10}   (inner ring, 회전 side)
+q_eo,k =  Σⱼ q_j,k · cos ψⱼ / Z                (outer ring, 정지 side, 근사)
+```
+
+**per-lamina life** (Lundberg-Palmgren):
+```
+L_10,k = (Q_c,k / q_e,k)^{10/3}    [10⁶ rev]
+```
+
+**Bearing life 합성** (Weibull, e = 9/8 for roller):
+```
+1/L_10^e = Σ_k (1/L_10,k)^e   → L_10 = (Σ_k L_10,k^{-e})^{-1/e}
+```
+
+**Modified life**:
+```
+L_nm = a_ISO · L_10   (a_ISO = f(κ, η_c, C_u/P))
+```
+
+#### 5.4 ISO 281 CRB C_r 계수
+
+```
+C_r = b_m · f_c · (L_we · cos α)^{7/9} · Z^{3/4} · D_we^{29/27}
+    = b_m · f_c · L_we^{7/9} · Z^{3/4} · D_we^{29/27}    (CRB: α=0)
+```
+- `b_m` = 1.1 (CRB 표준, ISO 281)
+- `f_c` = 형상 계수 (γ = D_we/D_pw 함수, ISO 281 표)
+
+#### 5.5 ISO 76 CRB Static Rating
+
+```
+C_0r = f_0 · Z · L_we · D_we · cos α = f_0 · Z · L_we · D_we    (α=0)
+```
+- `f_0` = 44 (CRB 표준, ISO 76:2006)
+
+**S_0 = C_0r / P_0r** (P_0r 는 정적 등가 하중, CRB 는 P_0r = F_r)
+
+#### 5.6 ISO 17956 lamina-level S_0,eff
+
+```
+q_0 = C_0r × (some factor)  (per-lamina reference)
+q_max = actual maximum lamina load (from Phase 4 equilibrium)
+S_0,eff = q_0 / q_max
+```
+
+#### 5.7 통과 기준
+
+- [ ] `cargo check --lib` exit 0
+- [ ] `cargo test --test life_level_a` all pass
+- [ ] `cargo test --test static_rating_level_a` all pass
+- [ ] `bearing.rs` 의 life/static_rating 필드가 실제 계산 값 (Default 대체)
+- [ ] Phase 4 회귀 확인
+- [ ] **각 계산 경로 별 non-trivial condition test** (§4.6 침묵실패 방지 원칙 적용): 예. L_10 계산은 실제 하중분포 (Q_j ≠ uniform) 조건 사용, S_0 는 Q_max 지점 (특정 roller 지목) 조건.
+
+#### 5.8 예상 시간
+
+- **2 ~ 3 day**
+- 세부: life.rs 재작성 (5h), static_rating.rs 재작성 (3h), tests (4h), 통합 (2h), 리포트 (2h)
+
+#### 5.9 잠재 이슈
+
+| 이슈 | 대응 |
+|------|------|
+| ISO 281 f_c 계수 표 (γ 함수) 접근 | ISO 원문 확인 or 문헌 (Harris 부록 A) 하드코딩 |
+| ISO 16281 Eq. 24~25 의 회전 side 판별 (내륜/외륜 어느 것이 회전) | operating.n_inner_rpm, n_outer_rpm 로 판별 (Phase 4 이미 반영) |
+| bearing.rs 재수정 (Phase 4 stub 필드 → 실제 계산) | 인터페이스 최소 변경 |
+| Level E (실험 검증) 불가 | 정성 검증 (monotonicity: F_r ↑ → L_10 ↓) 로 대체 |
+
+#### 5.10 산출물
+
+- 재작성된 `life.rs`, `static_rating.rs`
+- `tests/life_level_a.rs`, `tests/static_rating_level_a.rs`
+- `python-prototype/phase5_life_report.py`
+- `reports/phase5/*.png` (L_10 vs F_r, C_r/P 곡선 등)
+- `Action.md` Phase 5 섹션
+
+#### 5.11 Phase 6 진입 조건
+
+- ✅ Phase 5 통과 기준 (§5.7) 모두 만족
+- ✅ `solve_bearing` 이 life/static_rating 실제 값 반환
+- ✅ Frontend (Phase 6) 에서 이 값 표시 가능한 인터페이스 확정
 
 진입 시점에 상세화. 핵심: ISO 16281 5.3 + ISO 281 C_R (CRB) + ISO 76 C_0r.
 
-### Phase 6 — Frontend UI 변경 (placeholder)
+### Phase 6 — Frontend UI 변경 (상세 계획, 2026-08-19 병렬 작성)
+
+> Phase 1.4 에서 13 개 Frontend 컴포넌트에 `// @ts-nocheck` 임시 지시자 추가.
+> Phase 6 는 이 stub 을 실제 CRB UI 로 정식 재작성 + 원통 3D 렌더링.
+
+#### 6.1 목표
+- Phase 1.4 의 `@ts-nocheck` 13 파일을 CRB 데이터 모델 (types/bearing.ts, defaults.ts) 에 맞게 정식 재작성
+- BearingView3D: TRB 원추 → CRB 원통 렌더링 (Three.js `CylinderGeometry`)
+- InputPanel: α/β/D_we_max/min/rib 필드 UI 제거, CRB 필드만 노출
+- GeometryView, SectionView2D: 원통 단면도
+- ResultsCard, LifeChart, LoadDistChart: Phase 4~5 결과 표시
+- End-to-end 동작 확인 (`npm run tauri dev` → 완전 렌더링 + solve → 결과 표시)
+
+#### 6.2 작업 대상 파일 (13 개 @ts-nocheck + 신규)
+
+| 컴포넌트 | 변경 강도 | 주요 작업 |
+|----------|---------|---------|
+| `BearingView3D/index.tsx` | 🔴 대규모 | TRB `LatheGeometry` → CRB `CylinderGeometry`, α=0 → roller z축 정렬, 원통 raceway |
+| `GeometryView/index.tsx` | 🔴 대규모 | α_i/α_o 표기 제거, D_we 단일, dub 대칭 |
+| `SectionView2D/index.tsx` | 🔴 대규모 | 원통 단면 (TRB 사다리꼴 → 직사각형) |
+| `InputPanel/index.tsx` | 🔴 대규모 | α/D_we_max/min/rib UI 제거, CRB 필드 group 재구성 |
+| `ProfileView/index.tsx` | 🟡 중간 | dub-off 대칭 표기 |
+| `ResultsCard/index.tsx` | 🟡 중간 | preload_mode/f_a 필드 UI 제거 |
+| `LubricationView/index.tsx` | 🟡 중간 | (Phase 7 재활성화 대상, 지금은 minor) |
+| `TransientView/TransientTimeChart.tsx` | 🟢 minor | LoadTimePoint f_a/m_y 컬럼 제거 |
+| `LifeChart.tsx`, `LoadDistChart.tsx` | 🟡 중간 | f_a 참조 제거 |
+| `RibContactDetailChart.tsx` | 🟢 삭제 or 감춤 | D1: rib 없음 → 컴포넌트 자체 제거 or feature flag |
+| `RollerComparisonChart.tsx`, `RollerDetailChart.tsx` | 🟢 minor | TRB 잔재 unused var 정리 |
+
+#### 6.3 BearingView3D 원통 렌더링 상세
+
+**TRB 방식** (Phase 0 원본):
+```typescript
+// LatheGeometry (2D profile revolve → 3D 원추/사다리꼴)
+const innerPts = [new THREE.Vector2(rBore, -halfT), ...];
+const innerRingGeo = new THREE.LatheGeometry(innerPts, 64, 0, Math.PI * 2);
+```
+
+**CRB 방식** (Phase 6 재작성):
+```typescript
+// 원통 = 단순 CylinderGeometry (radius uniform)
+const rollerGeo = new THREE.CylinderGeometry(
+  D_we / 2,   // radiusTop
+  D_we / 2,   // radiusBottom (uniform = 원통)
+  L_we,       // height
+  32          // radialSegments
+);
+// 회전 축을 shaft 축 (Z) 으로 맞춤: RotateX(-π/2)
+```
+
+#### 6.4 InputPanel 구조
+
+**제거**: α, β, D_we_max, D_we_min, h_rib, α_rib, R_sph, dub_l/s, f_a, m_y, preload_mode
+
+**유지 그룹**:
+- Macro Geometry: d, D, T, Z, **D_we (단일)**, L_we, D_pw, G_r
+- Raceway Geometry: r_i, r_o, d_uc, l_uc
+- Roller Profile: crown_type, δ_c, **δ_dub (대칭)**, **L_dub (대칭)**, sigma_roller
+- Operating: F_x, F_y, **M_x (만)**, γ, n_rpm, T_op, ν_40, ν_100 (F_a, M_y 제거)
+- Material, Lubrication, Solver 는 그대로
+
+#### 6.5 통과 기준
+
+- [ ] `npm run build` 0 TS errors (모든 @ts-nocheck 제거)
+- [ ] `npm run tauri dev` WebView 창 정상 팝업 + **UI 완전 렌더링** (Phase 1 의 blank 문제 해결)
+- [ ] Solve 실행 시 결과 (Q_j polar, load distribution) 정상 표시
+- [ ] Phase 4~5 결과 (life, static rating) 표시 정확
+
+#### 6.6 예상 시간
+
+- **4 ~ 5 day** (13 파일 대규모 재작성 + Three.js 원통 지오메트리)
+- 세부: BearingView3D (8h) + GeometryView/SectionView2D (6h) + InputPanel (5h) + 나머지 8개 (6h) + 통합 테스트 (4h) + Action.md (2h)
+
+#### 6.7 잠재 이슈 / 대응
+
+| 이슈 | 대응 |
+|------|------|
+| Three.js LatheGeometry vs CylinderGeometry 스케일링 차이 | 원통은 훨씬 단순 — 오히려 코드 축소 |
+| InputPanel 필드 제거 시 preset JSON 하위호환 | serde default 로 이미 처리, TS 는 optional 필드 |
+| Rib chart 완전 삭제 vs feature flag | 완전 삭제 (D1: 영구 제거) |
+| Frontend 컴포넌트 간 shared type 참조 오류 | bearing.ts 단일 source of truth |
+| 3D 렌더링 성능 (100+ roller × 30+ slice) | Three.js instancing 검토 (Phase 6 후반) |
+
+#### 6.8 검증 절차
+
+1. `@ts-nocheck` 제거 (파일별) → tsc 에러 확인 → 필드 참조 수정
+2. `npm run build` 점진적 통과
+3. `npm run tauri dev` → WebView 팝업 + UI 렌더링 육안 확인
+4. NU 240 default 로 `Solve Bearing` 클릭 → 결과 표시 확인
+5. `Save Project` / `Load Project` (.crb.json) 동작 확인
+6. `Action.md` Phase 6 섹션 (스크린샷 포함)
+
+#### 6.9 산출물
+
+- 13 개 컴포넌트 재작성 (TS 정식)
+- (선택) 신규 컴포넌트: `CylinderView` etc.
+- `reports/phase6/*.png` (Before/After UI 스크린샷)
+- `Action.md` Phase 6 섹션
+
+#### 6.10 Phase 7 진입 조건
+
+- ✅ Phase 6 통과 기준 (§6.5) 모두 만족
+- ✅ End-to-end UI 정상 동작
+- ✅ Frontend 가 Phase 7 (Lubrication/Transient) 재활성화 시 준비 완료
+
+#### 6.11 우선순위 로드맵
+
+1. **Priority A** (핵심): BearingView3D + InputPanel — 이 둘만으로도 사용자 경험 크게 개선
+2. **Priority B** (중요): GeometryView + SectionView2D + ResultsCard
+3. **Priority C** (부수): 5개 chart 컴포넌트 minor 수정
 
 진입 시점에 상세화. 핵심: InputPanel 필드 정리, BearingView3D 원통 렌더링.
 
