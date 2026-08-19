@@ -2,6 +2,22 @@ use crate::error::SolverError;
 use crate::solver::types::*;
 
 /// Compute slice geometries by dividing roller effective length into n equal segments.
+///
+/// CRB (Cylindrical Roller Bearing) — Phase 2 정식 알고리즘.
+/// ISO 16281 Clause 4 NOTE 3 (ISO p. 4): "For rollers of cylindrical and spherical roller
+/// bearings, Lwe is defined along the roller axis."
+///
+/// 원통 roller 이므로:
+///   - Roller 반경 균일: r_roller_k = D_we / 2 (모든 slice 동일)
+///   - Roller 축 = raceway 축 = shaft 축 (α = 0)
+///   - Slice 위치 x_axial 은 소단 → 대단 방향, roller 축 따라 균등 분할 (부록 A.2)
+///   - Pitch diameter d_pwk 는 모든 slice 동일 (테이퍼 없으므로 x_centered 항 소멸)
+///
+/// 등가 곡률반경 (γ = D_we / D_pw, α = 0 대입):
+///   R_eq_inner = (D_we_eff/2) · (1 - γ_i)   ← inner ring 접촉 (roller vs concave inner)
+///   R_eq_outer = (D_we_eff/2) · (1 + γ_o)   ← outer ring 접촉 (roller vs concave outer)
+///
+/// Raceway 가 원통 (r_i, r_o >> D_we) 이면 transverse 곡률은 무시 (line contact).
 pub fn compute_slices(
     macro_geom: &MacroGeometry,
     raceway_geom: &RacewayGeometry,
@@ -14,30 +30,16 @@ pub fn compute_slices(
         return Err(SolverError::InvalidInput("n_slices must be > 0".into()));
     }
 
-    // CRB: 원통 roller — r_small = r_large = d_we/2, α = 0
     let l_we = macro_geom.l_we;
     let slice_width = l_we / n_slices as f64;
-    let r_uniform = macro_geom.d_we / 2.0;
-    let r_small = r_uniform;
-    let r_large = r_uniform;
+    let r_roller = macro_geom.d_we / 2.0;        // CRB: 모든 slice 균일
+    let d_we = macro_geom.d_we;
     let d_pw = macro_geom.d_pw;
-    let alpha_i_rad: f64 = 0.0;     // CRB: raceway 원통 (α_i = 0)
-    let alpha_o_rad: f64 = 0.0;     // CRB: raceway 원통 (α_o = 0)
-    let _alpha_12 = (alpha_o_rad - alpha_i_rad) / 2.0; // = 0 for CRB
-    let alpha_m = (alpha_i_rad + alpha_o_rad) / 2.0;   // = 0 for CRB
 
     let slices = (0..n_slices)
         .map(|k| {
+            // x_axial: slice k 의 중심 좌표 [mm], 소단(0) → 대단(L_we) 방향, roller 축 따라
             let x_axial = (k as f64 + 0.5) * slice_width;
-            let frac = x_axial / l_we;
-
-            // Roller radius at this slice (linear taper)
-            let r_roller = r_small + (r_large - r_small) * frac;
-
-            // Roller diameter and pitch diameter at this slice (Nguyen-Schäfer Eq 1.28)
-            let x_centered = x_axial - l_we / 2.0;
-            let d_k = 2.0 * r_roller; // could also use d_m + 2·x·tan(α_12)
-            let d_pwk = d_pw + 2.0 * x_centered * alpha_m.sin();
 
             // Profile corrections per contact surface [μm]
             let dz_roller = roller_profile_correction(x_axial, roller_profile, l_we);
@@ -45,30 +47,34 @@ pub fn compute_slices(
             let dz_outer = raceway_profile_correction(x_axial, raceway_profile_outer, l_we);
 
             // Effective roller radius adjusted by profile [mm]
-            // Inner contact: roller + inner raceway profile
-            // Outer contact: roller + outer raceway profile
             let r_roller_eff_inner = r_roller - (dz_roller + dz_inner) / 1000.0;
             let r_roller_eff_outer = r_roller - (dz_roller + dz_outer) / 1000.0;
             let d_k_eff_inner = 2.0 * r_roller_eff_inner;
             let d_k_eff_outer = 2.0 * r_roller_eff_outer;
 
-            // TRB orbital curvature with profile-adjusted D_k:
-            //   R_eq = (D_k_eff/2)·(1 ∓ γ),  γ = D_k_eff·cos(α)/D_pwk
-            let gamma_i = d_k_eff_inner * alpha_i_rad.cos() / d_pwk;
-            let gamma_o = d_k_eff_outer * alpha_o_rad.cos() / d_pwk;
-            let r_eq_inner = (d_k_eff_inner / 2.0) * (1.0 - gamma_i);
-            let r_eq_outer = (d_k_eff_outer / 2.0) * (1.0 + gamma_o);
+            // CRB orbital curvature (α = 0 → cos(α) = 1):
+            //   γ_i = D_k_eff / D_pw  (inner conforming)
+            //   γ_o = D_k_eff / D_pw  (outer conforming, 반대 부호)
+            //   R_eq_inner = (D_k_eff/2)·(1 - γ_i)   [roller vs concave inner]
+            //   R_eq_outer = (D_k_eff/2)·(1 + γ_o)   [roller vs concave outer]
+            let gamma_i = d_k_eff_inner / d_pw;
+            let gamma_o = d_k_eff_outer / d_pw;
+            let r_eq_inner_conforming = (d_k_eff_inner / 2.0) * (1.0 - gamma_i);
+            let r_eq_outer_conforming = (d_k_eff_outer / 2.0) * (1.0 + gamma_o);
 
-            // Raceway curvature radii (stored for reference)
-            let r_inner_race = raceway_geom.r_i;
-            let r_outer_race = raceway_geom.r_o;
+            // Transverse raceway curvature (r_i, r_o) 반영:
+            //   flat raceway (r → ∞) 이면 line contact 로 환원 (R_transverse = ∞)
+            //   실제 R_eq = R_conforming · r_race / (R_conforming + r_race)
+            //   단, r_race 가 매우 크면 (>1e6) 원통 근사 → R_eq = R_conforming
+            let r_eq_inner = combine_curvature(r_eq_inner_conforming, raceway_geom.r_i);
+            let r_eq_outer = combine_curvature(r_eq_outer_conforming, raceway_geom.r_o);
 
             SliceGeometry {
                 k,
                 x_axial,
                 r_roller,
-                r_inner_race,
-                r_outer_race,
+                r_inner_race: raceway_geom.r_i,
+                r_outer_race: raceway_geom.r_o,
                 r_eq_inner,
                 r_eq_outer,
                 delta_z_total_inner: dz_roller + dz_inner,
@@ -78,7 +84,19 @@ pub fn compute_slices(
         })
         .collect();
 
+    let _ = d_we; // reserved for future use (asymmetric row); silences unused warning cleanly
     Ok(slices)
+}
+
+/// Combine two curvature radii in series.
+/// 1/R_eq = 1/R_roller + 1/R_race
+/// If r_race is very large (> 1e6 mm ≈ ∞, i.e. flat / 원통 raceway), returns r_roller unchanged.
+fn combine_curvature(r_roller: f64, r_race: f64) -> f64 {
+    if r_race.abs() > 1.0e6 {
+        r_roller
+    } else {
+        r_roller * r_race / (r_roller + r_race)
+    }
 }
 
 /// Compute roller profile correction at axial position x [mm].
