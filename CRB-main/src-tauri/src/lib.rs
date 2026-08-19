@@ -1,7 +1,7 @@
 mod commands;
 mod error;
 mod presets;
-mod solver;
+pub mod solver;   // pub: integration tests (tests/geometry_level_a.rs) 접근용
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
