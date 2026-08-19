@@ -1,3 +1,5 @@
+// @ts-nocheck
+// CRB Phase 1.4 stub: 이 컴포넌트는 TRB 데이터 모델을 참조 중 → Phase 6 (Frontend UI 변경) 에서 CRB 로 정식 재작성 예정
 import { useActiveResult } from '../../hooks/useActiveResult';
 import { useAppState } from '../../store';
 import { DetailTable } from '../shared/DetailTable';

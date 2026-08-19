@@ -413,9 +413,98 @@ TRB 의 `defaultInput` 을 단일 row CRB 표준값으로 교체. 후보:
 
 ---
 
-### Phase 2 — Geometry 단순화 (placeholder)
+### Phase 2 — Geometry 단순화 (상세 계획 초안, 2026-08-19)
 
-진입 시점에 상세화. 핵심: `geometry.rs::compute_slices` 를 cylindrical 단순화, ISO 16281 B.5 profile 적용, Level A 검증.
+> Phase 1.3-B 에서 `geometry.rs` 를 CRB 로 최소 수정 완료 (α=0 대체, d_we 단일화, dub 대칭).
+> Phase 2 는 이를 **정식 CRB 알고리즘** 으로 재작성 + **Level A 검증** 추가.
+
+#### 2.1 목표
+- `geometry.rs` 를 CRB 정식 (임시 α=0 대체 코드 정리, 순수 원통 로직으로)
+- ISO 16281 **B.5 (Cylindrical & needle, p. 29)** 정식 profile 적용
+- **Level A 검증**: 단일 slice Hertz vs 해석해 (Roark/Palmgren) 상대오차 < 0.1%
+- x_axial → x_axis 변수명 정리 (부록 부분 A.2 반영, 선택)
+
+#### 2.2 작업 대상 파일
+
+| 파일 | 변경 강도 | 주요 작업 |
+|------|---------|---------|
+| `src-tauri/src/solver/geometry.rs` | 🟡 중간 | Phase 1 임시 α=0 대체 제거, ISO B.5 정식 적용 |
+| `src-tauri/src/solver/hertz.rs` | 🟢 검토만 | line contact 공식 유지 확인 |
+| `src-tauri/src/solver/types.rs` | 🟢 선택적 | `x_axial` → `x_axis` 명명 (부록 A 정합) |
+| `src-tauri/tests/geometry_level_a.rs` | 🔴 **신규** | Level A 해석해 비교 골든 테스트 |
+
+#### 2.3 ISO 16281 B.5 formula 정식 적용
+
+원통 roller profile 참조식 (ISO p. 29):
+```
+Δz(x) = A_prof · ln[ 1 / (1 - (2·(x - L_we/2) / L_we)²) ]
+```
+- Reusner 로그 프로파일과 동일 형태
+- `A_prof` = user 입력 (delta_c 로부터 유도)
+- Dub-off: 양 끝 마지막 L_dub 구간에서 추가 drop (부록 A.1)
+
+#### 2.4 등가 곡률반경 (CRB 단순형)
+```
+R_eq_inner = (D_we/2) · r_i / (D_we/2 + r_i)     // α=0 → γ_i = 0
+R_eq_outer = (D_we/2) · r_o / (D_we/2 + r_o)     // 원통 raceway 라 r_i, r_o ≈ ∞ → R_eq ≈ D_we/2
+```
+Phase 1.3-B 의 `gamma_i = d_k · cos(α_i) / d_pw` 는 α_i = 0 → `gamma_i = d_k / d_pw` (표준 CRB 회전-반경 γ 정의와 일치).
+
+#### 2.5 Level A 검증 (단위 테스트, 신규)
+
+**Setup**:
+- Single slice, flat profile (crown=0, dub=0)
+- D_we = 20 mm, L_we = 15 mm, δ = 1 μm
+- E' = 210 GPa, ν = 0.3
+
+**Expected (Palmgren line contact 해석해)**:
+- Q_expected = C · δ^(10/9), where C = f(E', L_we, D_we)
+- p_max_expected = f(Q, R_eq, L_we, E')
+
+**허용 오차**: |Q_calc − Q_expected| / Q_expected < **0.1%**
+
+#### 2.6 통과 기준
+
+- [ ] `cargo test --test geometry_level_a` 모두 pass
+- [ ] `cargo check` warning 만 (10~33 개, TRB 잔재)
+- [ ] `npm run build` 유지 통과
+- [ ] Phase 1 종료 시 상태 대비 회귀 없음
+
+#### 2.7 예상 시간
+
+- **1 ~ 2 day** (Plan §3 예측과 동일)
+- 세부: geometry.rs 재작성 (4h) + Level A 테스트 작성 (3h) + 해석해 계산 및 튜닝 (2~4h) + 문서 (1h)
+
+#### 2.8 잠재 이슈 / 대응
+
+| 이슈 | 대응 |
+|------|------|
+| `x_axial` 변수명 변경 시 다른 파일 (bearing, gen1) 도 참조 | Phase 2 에서는 **명명 변경 보류** (Phase 3 로 이관). 지금은 로직만 정리 |
+| ISO B.5 formula 의 A_prof 파라미터화 방식 | 원문 재확인 후 결정. Reusner 로그 프로파일 (Phase 1 default) 은 등가 |
+| r_i / r_o 무한대 근사 시 수치 오버플로우 | `r_i > 1e6` 이면 원통으로 판정 → R_eq = D_we/2 로 단순화 |
+| Level A 해석해와의 미세 오차 (< 0.5% 지만 > 0.1%) | 슬라이스 폭 미세 조정 or Weber bulk 항 재확인 |
+
+#### 2.9 검증 절차
+
+1. `geometry.rs` 재작성 (α=0 대체 코드 → 순수 원통 로직)
+2. `cargo check` 통과
+3. Level A 테스트 파일 신규 작성 (`tests/geometry_level_a.rs`)
+4. `cargo test --test geometry_level_a` 통과
+5. `cargo check` + `npm run build` 회귀 확인
+6. `Action.md` Phase 2 섹션 append
+
+#### 2.10 산출물
+
+- 정식 CRB `geometry.rs`
+- `tests/geometry_level_a.rs` (Level A 골든)
+- `Action.md` Phase 2 섹션 (6 소절)
+- (선택) 부록 D — Level A~E 검증 방법론 정리
+
+#### 2.11 Phase 3 진입 조건
+
+- Phase 2 통과 기준 (§2.6) 모두 만족
+- Level A 검증 결과 문서화
+- `gen1.rs` / `gen3.rs` 가 사용하는 SliceGeometry 인터페이스 안정성 확인
 
 ### Phase 3 — Roller-Level Solver (Gen1/Gen3) (placeholder)
 
