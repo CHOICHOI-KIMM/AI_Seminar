@@ -279,7 +279,7 @@ $$\varphi_{j} = \frac{2\pi (j-1)}{Z}, \qquad j = 1 \ldots Z$$
 
 > **NOTE (A.2.2)**: 우수좌표계 기준이며 X 축이 베어링 공칭 회전축과 일치한다. 문서 내 모든 그림에서 Y 축은 지면 아래쪽을 향한다.
 
-### 4.5 계보 — ISO A.2 는 Jones(1946/1960) 정식화다
+### 4.5 문헌 계보 — Jones → ISO → Harris & Mindel
 
 **(2026-08-20 확인, Harris *Advanced Concepts* 원서 p.23 육안)**
 
@@ -309,25 +309,161 @@ ISO 16281 Annex A.2 의 식들은 ISO 가 새로 만든 것이 아니라 **A. Jo
 > 그 절은 **90° 스러스트 베어링**이라 `cos α₀ = 0` 이고, (1.3) 에서 `ℜ_i = d_m/2` 가 된다.
 > Vol.1 은 Vol.2 의 특수 케이스다.
 
+#### 5-DOF 원전 — Harris & Mindel (1973)
+
+**(2026-08-20 확보·정독, 원서 p.328 육안 확인)**
+
+T. A. Harris & M. H. Mindel, "Rolling element bearing dynamics", *Wear* **23**(3), 311–337, 1973 (SKF Industries).
+Harris *Advanced Concepts* §3.6 이 5-DOF 의 출처로 지목한 논문이며, 그 §3.3 이 **ACBB 5-DOF 정식화**다.
+
+기호 대응: `e` = `D_pw`, `D` = `D_w`, `f₁` = `r_e/D_w`(외륜), `f₂` = `r_i/D_w`(내륜),
+`p_d` = `G_r op`, `Δ₁…Δ₅` = 5-DOF 변위, `Δ₁ⱼ`·`Δ₂ⱼ` = 볼 j 의 축·반경 간섭 성분.
+
+**간섭 (기하)**
+
+$$\Delta_{1j} = BD\sin\alpha^{\circ} + \Delta_{1} + \bar{r}\left(\Delta_{4}\cos\varphi_{j} + \Delta_{5}\sin\varphi_{j}\right) \tag{81}$$
+
+$$\Delta_{2j} = BD\cos\alpha^{\circ} + \Delta_{2}\sin\varphi_{j} + \Delta_{3}\cos\varphi_{j} \tag{82}$$
+
+$$\bar{r} = \tfrac{1}{2}e + \left(f_{2} - \tfrac{1}{2}\right)D\cos\alpha^{\circ} \tag{83}$$
+
+$$\alpha^{\circ} = \arccos\left(1 - \frac{p_{d}}{2BD}\right) \tag{84}$$
+
+$$B = f_{1} + f_{2} - 1 \tag{85}$$
+
+**평형 (원문 그대로 — `F̄_w2j` 는 마찰력)**
+
+$$F_{1} = \sum_{j=1}^{Z}\left(Q_{2j}\sin\alpha_{2j} + \bar{F}_{w2j}\cos\alpha_{2j}\right) \tag{86}$$
+
+$$F_{2} = \sum_{j=1}^{Z}\left(Q_{2j}\cos\alpha_{2j} - \bar{F}_{w2j}\sin\alpha_{2j}\right)\sin\varphi_{j} \tag{87}$$
+
+$$F_{3} = \sum_{j=1}^{Z}\left(Q_{2j}\cos\alpha_{2j} - \bar{F}_{w2j}\sin\alpha_{2j}\right)\cos\varphi_{j} \tag{88}$$
+
+$$F_{4} = \sum_{j=1}^{Z}\left[\bar{r}\left(Q_{2j}\sin\alpha_{2j} + \bar{F}_{w2j}\cos\alpha_{2j}\right) - f_{2}D\,\bar{F}_{w2j}\right]\cos\varphi_{j} \tag{89}$$
+
+$$F_{5} = \sum_{j=1}^{Z}\left[\bar{r}\left(Q_{2j}\sin\alpha_{2j} + \bar{F}_{w2j}\cos\alpha_{2j}\right) - f_{2}D\,\bar{F}_{w2j}\right]\sin\varphi_{j} \tag{90}$$
+
+**정적 환원형** (`F̄_w2j = 0` — 본 SW 가 구현하는 형태):
+
+$$F_{1} = \sum Q_{j}\sin\alpha_{j}, \qquad
+F_{2} = \sum Q_{j}\cos\alpha_{j}\sin\varphi_{j}, \qquad
+F_{3} = \sum Q_{j}\cos\alpha_{j}\cos\varphi_{j}$$
+
+$$F_{4} = \bar{r}\sum Q_{j}\sin\alpha_{j}\cos\varphi_{j}, \qquad
+F_{5} = \bar{r}\sum Q_{j}\sin\alpha_{j}\sin\varphi_{j}$$
+
+> `F̄_w` 항은 마찰(동역학) 기여이므로 정적 해석에서 0 이다. 후속 단계에서 마찰·고속을 열 때
+> (89)(90) 의 `− f₂ D F̄_w2j` 항이 근거가 된다 — 미리 지워두지 않고 원문을 남겨 둔 이유다.
+
+**ISO 와의 대응**
+
+| Harris & Mindel | ISO 16281 | 일치 |
+|---|---|---|
+| (85) `B = f₁ + f₂ − 1`, `A = BD` | (A.3) `A = r_i + r_e − D_w` | ✅ |
+| (84) `α° = arccos(1 − p_d/(2BD))` | (A.1) | ✅ |
+| (83) `r̄ = ½e + (f₂ − ½)D cos α°` | (A.4) `R_i` | ✅ **문자 그대로 동일** |
+| (81)(82) 간섭 | (A.2) 를 5-DOF 로 편 형태 | ✅ 구조 일치 |
+| (86)(87)(88) | (A.7)(A.6) | ✅ |
+| **(89)(90) 모멘트 팔 `r̄` = `R_i`** | **(A.8) 모멘트 팔 `D_pw/2`** | ❌ **불일치** |
+
+**5-DOF 확장의 근거 확보**: (81) 의 `Δ₄cos φ_j + Δ₅sin φ_j`(틸트) 와 (82) 의 `Δ₂sin φ_j + Δ₃cos φ_j`(반경)
+구조가 Plan §3.4.1 의 대칭 확장과 **동일**함이 확인되었다 (축 라벨링만 다름).
+
+#### 모멘트 팔 — 어느 쪽이 물리적으로 옳은가 (객관 분석)
+
+문헌 3종이 갈리므로 물리로 판정한다.
+
+**① 가상일 논증.** 틸트 `ψ` 에 공액인 일반화 힘은 정의상
+
+$$M = \sum_{j} Q_{j}\,\frac{\partial \delta_{j}}{\partial \psi}$$
+
+ISO (A.2) 에서 `δ_j = √(R_j² + X_j²) − A`, `X_j = A sin α₀ + δ_a − R_i sin ψ cos φ_j` 이므로
+
+$$\frac{\partial \delta_{j}}{\partial \psi}
+= \frac{X_{j}}{L_{j}}\cdot\left(-R_{i}\cos\psi\,\cos\varphi_{j}\right)
+= -\sin\alpha_{j}\cdot R_{i}\cos\psi\,\cos\varphi_{j}$$
+
+여기서 `X_j/L_j = sin α_j` 는 (A.5) 그 자체다. 따라서 미소 `ψ` 에서
+
+$$\boxed{\;M = R_{i}\sum_{j} Q_{j}\sin\alpha_{j}\cos\varphi_{j}\;}$$
+
+**즉 ISO 자신의 키네마틱스 (A.2) 가 요구하는 공액 모멘트는 `R_i` 이지 `D_pw/2` 가 아니다.**
+이는 Harris & Mindel (89)(90) 과 정확히 일치한다.
+
+**② 기하 논증 (독립 경로).** 볼–내륜 접촉의 법선은 볼 중심과 **내륜 홈 곡률중심**을 지난다
+(구가 홈에 닿는 Hertz 접촉의 성질). 즉 접촉력의 작용선이 반경 `R_i` 지점을 통과한다.
+곡률중심 궤적면을 기준으로 모멘트를 취하면 팔이 `R_i` 가 된다.
+`D_pw/2` 를 쓰는 것은 작용점을 **피치원**으로 근사하는 것이다.
+
+**③ 결론.** `R_i` 가 에너지 공액이며 (A.2) 와 정합한다. `D_pw/2` 는 피치반경 근사이고,
+손계산 시대의 단순화로 보인다. Harris & Mindel 이 **컴퓨터 해석 논문**이면서 `r̄` 로 되돌린 것이
+그 방증이다 (논문 자체가 "digital computer programs are required" 로 시작한다).
+
+**편차 크기** (참조기하 `D_w` = 11,5 mm, `r_i` = 0,52 `D_w`, `D_pw` = 70 mm):
+
+| α₀ | `R_i` [mm] | `D_pw/2` [mm] | 차 [mm] | 상대 |
+|---|---|---|---|---|
+| 0° | 35,2300 | 35,0 | 0,2300 | **0,657 %** |
+| 15° | 35,2222 | 35,0 | 0,2222 | 0,635 % |
+| 25° | 35,2085 | 35,0 | 0,2085 | 0,596 % |
+| 40° | 35,1762 | 35,0 | 0,1762 | **0,503 %** |
+| 45° | 35,1626 | 35,0 | 0,1626 | 0,465 % |
+
+편차는 `(r_i − D_w/2) cos α₀ / (D_pw/2)` 이므로 **홈이 깊을수록(`f` 클수록)·`D_pw/D_w` 가 작을수록 커진다.**
+소형 대각도 ACBB 에서는 1 % 를 넘을 수 있다.
+
+> 🚧 **미결 (T-11) — 구현 전 결정 필요**
+>
+> **`D_pw/2` (ISO·Jones 준용)** 와 **`R_i` (Harris & Mindel · 에너지 공액)** 중 무엇을 쓸지 미결이다.
+>
+> - **검증으로 가릴 수 없다.** Level D-1 (Harris Table 7.4) 은 **모멘트가 없는** 하중 케이스라
+>   두 선택이 같은 답을 낸다. 문헌·물리 판단으로만 정해진다.
+> - 영향: 모멘트 지배 하중에서 `ψ` 해가 약 0,5 % 이동하고 하중분포·`Q_max` 가 같은 오더로 바뀐다.
+> - 야코비안: `R_i` 를 쓰면 대칭, `D_pw/2` 를 쓰면 비대칭이 된다.
+> - `M_y`·`M_z` 는 **반드시 같은 팔**을 쓴다 (회전 대칭성). 이는 종속 결과이지 별도 결정이 아니다.
+> - 위 ①②③ 분석은 `R_i` 를 지지한다. 다만 앞서 확정한 방침이 「ISO 원문 준용」이므로,
+>   **규격 준거를 우선할지 물리 정합을 우선할지**가 실제 쟁점이다.
+
 #### M_y 의 모멘트 팔
 
-ISO 는 3-DOF 만 주므로 `M_y` 의 팔이 규정돼 있지 않다. 그러나 **Harris (1.20)(1.21) 은 명시적으로 "moment about the **Y-axis**"** 이며 팔이 `d_m/2` 다. 따라서 `M_y` 도 `D_pw/2` 를 쓰는 것은 자의적 확장이 아니라 문헌 준용이다.
+ISO 는 3-DOF 만 주므로 `M_y` 의 팔이 규정돼 있지 않다. 문헌 두 곳이 각각 답을 준다:
 
-(Harris 는 하중 대칭 시 Z 축 모멘트가 자체평형이라 보고 3-DOF 로 축약한다. 본 SW 의 5-DOF 는 두 성분을 모두 유지한다.)
+- **Harris *Advanced* (1.20)(1.21)** — 명시적으로 "moment about the **Y-axis**", 팔 `d_m/2`
+- **Harris & Mindel (89)(90)** — `F₄`·`F₅` 두 모멘트 성분 모두 팔 `r̄` = `R_i`
+
+**어느 쪽을 택하든 `M_y`·`M_z` 는 같은 팔을 쓴다** — T-11 의 종속 결과이지 별도 결정이 아니다.
+
+(Harris *Adv* 는 하중 대칭 시 Z 축 모멘트가 자체평형이라 보고 3-DOF 로 축약한다.
+본 SW 의 5-DOF 는 두 성분을 모두 유지하며, 이는 Harris & Mindel (89)(90) 과 같은 구조다.)
 
 #### 틸트 항의 `sin` 여부
 
-ISO (A.2) 는 `R_i **sin ψ** cos φ_j`, Harris (1.13) 은 `ℜ_i **θ̄** cos ψ` 로 **선형화**돼 있다. 미스얼라인먼트가 arcmin 급이라 차이는 1e-9 수준이지만, **본 SW 는 ISO 준용으로 `sin` 을 쓴다.** 5-DOF 확장에서도 `sin γ_z`, `sin γ_y` 로 둔다.
+세 문헌이 갈린다:
 
-#### 진짜 5-DOF 정식화는 미확보
+| 문헌 | 틸트 항 |
+|---|---|
+| ISO (A.2) | `R_i sin ψ cos φ_j` — **사인 유지** |
+| Harris *Adv* (1.13) | `ℜ_i θ̄ cos ψ` — 선형 |
+| Harris & Mindel (81) | `r̄ (Δ₄ cos φ_j + Δ₅ sin φ_j)` — 선형 |
 
-Harris *Advanced* §3.6 「Five Degrees of Freedom in Loading」은 그림(3.25~3.27)과 참고문헌만 있고 **식이 없다.** 출처는 **Harris, T. & Mindel, M., "Rolling element bearing dynamics", *Wear* 23(3), 311–337, 1973** 이며 미확보다 → §11 **T-10**.
+미스얼라인먼트가 arcmin 급이라 차이는 1e-9 수준이다.
+**본 SW 는 ISO 준용으로 `sin` 을 쓴다** (2026-08-20 결정). 5-DOF 확장에서도 `sin γ_z`, `sin γ_y` 로 둔다.
 
-§1.2 의 3-DOF 를 5-DOF 로 여는 것은 아래 대칭 확장이며, 3-DOF 구속 시 항등이 보장된다:
+> 다만 5-DOF 에서 두 틸트 성분에 각각 `sin` 을 취하는 형태는 **어느 문헌에도 없다** — 원전 둘 다 선형이다.
+> 엄밀한 5-DOF 회전은 회전행렬이지 성분별 사인이 아니다. arcmin 급에서는 무의미한 차이지만,
+> T-11 결정 시 함께 재검토할 여지가 있다.
+
+#### 5-DOF 확장의 근거
+
+Harris *Advanced* §3.6 「Five Degrees of Freedom in Loading」은 그림(3.25~3.27)과 참고문헌만 있고 식이 없다.
+출처인 **Harris & Mindel (1973)** 은 **2026-08-20 확보 완료** (T-10 ✅ 해소) — 위 (81)~(90) 참조.
+
+본 SW 의 5-DOF 확장은 원전과 구조가 같다:
 ```
-δ_r cos ψ   →  δ_y cos φ_j + δ_z sin φ_j
-θ cos ψ     →  sin γ_z cos φ_j − sin γ_y sin φ_j
+δ_r cos ψ   →  δ_y cos φ_j + δ_z sin φ_j          ← 원전 (82) Δ₂ sin φ + Δ₃ cos φ
+θ cos ψ     →  sin γ_z cos φ_j − sin γ_y sin φ_j  ← 원전 (81) Δ₄ cos φ + Δ₅ sin φ
 ```
+3-DOF 구속(`δ_z = γ_y = 0`) 시 ISO (A.2) 와 항등이 보장된다.
 
 ---
 
@@ -849,6 +985,10 @@ ISO 16281/281 은 예압을 직접 다루지 않는다. `G_r op` 를 **음(陰)�
 | ~~T-5~~ | ~~Harris 식 (7.70) 의 `sin α`~~ | — | ✅ **해소 (2026-08-20)** — p.170 육안 확인. 원서 오식 확정, 구현은 `cos α` 사용 (§9.1 주의 1) |
 | **T-6** | ISO 공인 수치 예제 부재 | Level E 외부 검증 불가 | 제조사 카탈로그 `C_r`, `C_0`, `C_u` 로 역검증 |
 | **T-7** | 고속(`nD_pw > 1e6`) 원심·자이로 정식화가 ISO 에 없음 | 고속 ACBB 정확도 | Jones(1960) / Harris Ch.9 도입 여부는 Plan 에서 결정 |
+| **T-8** | Hamrock-Dowson 타원 계수의 원전 미확인 (CRB 코드 주석 인용에 의존) | P5 유막 정확도 | 원전 또는 Harris Ch.12 로 계수 육안 확인 |
+| **T-9** | ISO/TR 8646:1985 미확보 | 홈 반경이 기준(0,52 / 0,53 `D_w`) 초과 시 `f_c` 감소 보정 불가 | 문헌 확보. 현재는 `GROOVE_RADIUS_OVER_REFERENCE` 경고로 노출 |
+| ~~T-10~~ | ~~5-DOF 정식화 원전 미확보~~ | — | ✅ **해소 (2026-08-20)** — Harris & Mindel (1973) 확보·정독, §4.5 에 (81)~(90) 전개 |
+| **T-11** | **모멘트 팔 `D_pw/2`(ISO·Jones) vs `R_i`(Harris & Mindel · 에너지 공액) 미결** | 모멘트 지배 하중에서 `ψ`·`Q_max` 약 0,5 % 이동. **Level D-1 로 가릴 수 없음** | 문헌·물리 판단 — §4.5 분석 참조 |
 
 ---
 
@@ -911,7 +1051,7 @@ ISO 16281/281 은 예압을 직접 다루지 않는다. `G_r op` 를 **음(陰)�
 9. **Harris, T.A. & Kotzalas, M.N. (2006)** — *Rolling Bearing Analysis, 5th ed.: Essential Concepts of Bearing Technology*, CRC Press. Ch.2 (기하), Ch.6 (접촉응력), Ch.7 (내부하중분포·Sjövall), Ch.8 (예압). `Reference/(Rolling Bearing Analysis, Fifth Edtion) … .pdf`
 10. **Harris, T.A. & Kotzalas, M.N. (2006)** — *Rolling Bearing Analysis, 5th ed.: **Advanced Concepts** of Bearing Technology*, CRC Press. **§1.2 (ACBB 조합하중 정식화 — Jones)**, §3.6 (5-DOF), Ch.2 (운동학), Ch.3 (고속). `Reference/(Rolling Bearing Analysis, Fifth Edition) … Advanced Concepts … .pdf`
 11. **Jones, A.** (1946/1960) — ACBB 정식화 원전. Harris *Advanced* Ch.1 Ref [1]. **미확보** (Harris 경유 인용)
-12. **Harris, T. & Mindel, M.** (1973) — "Rolling element bearing dynamics", *Wear* 23(3), 311–337. 5-DOF 원전. **미확보** (T-10)
+12. **Harris, T.A. & Mindel, M.H.** (1973) — "Rolling element bearing dynamics", *Wear* **23**(3), 311–337, SKF Industries. **ACBB 5-DOF 정식화 원전** (§3.3, 식 81~90). `Reference/1973. (Harris) Rolling element bearing dynamics.pdf` + 통합 MD
 13. **Sjövall, H.** — Harris Ref [4] (Ch.7). `J_r`, `J_a` 적분의 원출처.
 11. **ISO/TR 8646:1985** — `f_c` 감소 보정식 (홈 반경 초과 시). **미확보**
 
