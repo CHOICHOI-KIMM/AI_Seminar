@@ -240,49 +240,72 @@ impl OperatingConditions {
 //  입력 — 해석 설정
 // ═══════════════════════════════════════════════════════════════════
 
-/// 5-DOF 중 어느 자유도를 풀 것인지 (D-1).
+/// 한 자유도의 경계조건.
 ///
-/// `ISO 3-DOF 모드` = δ_z, γ_y 를 0 으로 구속 → ISO 16281 A.2.2 와 항등.
+/// - `Free` — 미지수. 그 방향의 외력(또는 외부 모멘트)이 주어지고 변위가 해가 된다 (**하중 제어**)
+/// - `Prescribed(v)` — 변위를 `v` 로 고정한다. 그 방향의 반력이 결과가 된다 (**변위 제어**)
+///
+/// 단위: `δ_x`·`δ_y`·`δ_z` 는 [mm], `γ_y`·`γ_z` 는 [rad].
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub enum Dof {
+    Free,
+    Prescribed(f64),
+}
+
+impl Dof {
+    pub fn is_free(&self) -> bool {
+        matches!(self, Dof::Free)
+    }
+    /// 구속값 (자유면 0)
+    pub fn value(&self) -> f64 {
+        match self {
+            Dof::Free => 0.0,
+            Dof::Prescribed(v) => *v,
+        }
+    }
+}
+
+/// 5-DOF 각각의 경계조건 (D-1).
+///
+/// `ISO_3DOF` = `δ_z`·`γ_y` 를 0 으로 구속 → ISO 16281 A.2.2 와 항등.
 /// Level D-1 (Harris Table 7.4 대조) 은 이 모드에서 수행한다.
+///
+/// **강체(스페이서) 예압**은 `x: Prescribed(δ_x0)` 로 표현된다 — 별도 기구가 아니라
+/// 같은 구속 메커니즘이다 (P3-1 결정).
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub struct DofMask {
-    pub free_x: bool,
-    pub free_y: bool,
-    pub free_z: bool,
-    pub free_gy: bool,
-    pub free_gz: bool,
+    pub x: Dof,
+    pub y: Dof,
+    pub z: Dof,
+    pub gy: Dof,
+    pub gz: Dof,
 }
 
 impl DofMask {
     /// 5-DOF 전 자유도 해방
     pub const FULL: Self = Self {
-        free_x: true,
-        free_y: true,
-        free_z: true,
-        free_gy: true,
-        free_gz: true,
+        x: Dof::Free,
+        y: Dof::Free,
+        z: Dof::Free,
+        gy: Dof::Free,
+        gz: Dof::Free,
     };
 
     /// ISO 16281 Annex A.2 정식화와 항등인 3-DOF 구속 (δ_a, δ_r, ψ)
     pub const ISO_3DOF: Self = Self {
-        free_x: true,
-        free_y: true,
-        free_z: false,
-        free_gy: false,
-        free_gz: true,
+        x: Dof::Free,
+        y: Dof::Free,
+        z: Dof::Prescribed(0.0),
+        gy: Dof::Prescribed(0.0),
+        gz: Dof::Free,
     };
 
-    pub fn count(&self) -> usize {
-        [
-            self.free_x,
-            self.free_y,
-            self.free_z,
-            self.free_gy,
-            self.free_gz,
-        ]
-        .iter()
-        .filter(|b| **b)
-        .count()
+    pub fn as_array(&self) -> [Dof; 5] {
+        [self.x, self.y, self.z, self.gy, self.gz]
+    }
+
+    pub fn count_free(&self) -> usize {
+        self.as_array().iter().filter(|d| d.is_free()).count()
     }
 }
 
@@ -290,6 +313,27 @@ impl Default for DofMask {
     fn default() -> Self {
         Self::FULL
     }
+}
+
+/// 축방향 예압 모델 (D-2, P3-1 결정).
+///
+/// 두 모델은 **하중 조건이 아니라 경계조건**이 다르다.
+///
+/// | | `Spring` | `Rigid` |
+/// |---|---|---|
+/// | 실물 | 웨이브 와셔·스프링 | 듀플렉스 조합·스페이서·로크너트 |
+/// | 경계조건 | 하중 제어 — `F_a0` 를 외부 축하중에 더한다 | 변위 제어 — `F_a0` 로 역산한 `δ_x0` 를 구속한다 |
+/// | 외부 축하중 | 예압에 더해짐 | 예압 변위 고정, 반력이 변함 |
+///
+/// `Rigid` 는 `δ_x` 를 구속하므로 **외부 축하중을 독립적으로 받을 수 없다**
+/// (실물에서 가능한 이유는 짝 베어링이 반력을 받기 때문이며, 그것은 단열 모델 범위 밖이다).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Default)]
+pub enum PreloadModel {
+    /// 정력(스프링) 예압 — 기본값
+    #[default]
+    Spring,
+    /// 강체(스페이서) 예압 — `F_a0` 로부터 `δ_x0` 를 역산해 구속
+    Rigid,
 }
 
 /// 케이지 위상 스윕 설정 (D-8).
@@ -324,6 +368,9 @@ pub struct SolverParams {
     /// 위상 스윕 (D-8)
     #[serde(default)]
     pub phase_sweep: PhaseSweep,
+    /// 축방향 예압 모델 (D-2). `ClearanceSpec::AxialPreloadN` 일 때만 의미가 있다
+    #[serde(default)]
+    pub preload_model: PreloadModel,
     /// 기본 동정격 반경하중 C_r [N]. `None` 이면 ISO 281 식으로 자체 산출 (P4)
     #[serde(default)]
     pub c_r_n: Option<f64>,
@@ -339,6 +386,7 @@ impl Default for SolverParams {
             max_iterations: 100,
             dof_mask: DofMask::default(),
             phase_sweep: PhaseSweep::default(),
+            preload_model: PreloadModel::default(),
             c_r_n: None,
             c_0r_n: None,
         }
@@ -659,10 +707,26 @@ mod tests {
     #[allow(clippy::assertions_on_constants)]
     #[test]
     fn iso_3dof_mask_constrains_two_dof() {
-        assert_eq!(DofMask::ISO_3DOF.count(), 3);
-        assert_eq!(DofMask::FULL.count(), 5);
-        assert!(!DofMask::ISO_3DOF.free_z);
-        assert!(!DofMask::ISO_3DOF.free_gy);
+        assert_eq!(DofMask::ISO_3DOF.count_free(), 3);
+        assert_eq!(DofMask::FULL.count_free(), 5);
+        assert!(!DofMask::ISO_3DOF.z.is_free());
+        assert!(!DofMask::ISO_3DOF.gy.is_free());
+        assert_eq!(DofMask::ISO_3DOF.z.value(), 0.0);
+    }
+
+    #[test]
+    fn prescribed_dof_carries_value() {
+        let d = Dof::Prescribed(0.012);
+        assert!(!d.is_free());
+        assert!((d.value() - 0.012).abs() < 1e-15);
+        assert!(Dof::Free.is_free());
+        assert_eq!(Dof::Free.value(), 0.0);
+    }
+
+    #[test]
+    fn preload_model_defaults_to_spring() {
+        assert_eq!(PreloadModel::default(), PreloadModel::Spring);
+        assert_eq!(SolverParams::default().preload_model, PreloadModel::Spring);
     }
 
     #[test]

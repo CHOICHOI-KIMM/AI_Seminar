@@ -218,20 +218,20 @@ fn solve_at_phase(
         operating.m_z_nmm / r_i,
     );
 
-    let mask = params.dof_mask;
-    let free = [
-        mask.free_x,
-        mask.free_y,
-        mask.free_z,
-        mask.free_gy,
-        mask.free_gz,
-    ];
+    let dofs = params.dof_mask.as_array();
+    let free: Vec<bool> = dofs.iter().map(|d| d.is_free()).collect();
+    // 구속값을 스케일 공간으로: δ 는 그대로 [mm], γ 는 R_i 를 곱해 길이 차원으로
+    let prescribed: Vec<f64> = dofs
+        .iter()
+        .enumerate()
+        .map(|(i, d)| if i >= 3 { d.value() * r_i } else { d.value() })
+        .collect();
 
     let mut u = initial_guess(&f_ext, geom.z, derived.alpha_0_rad, contact.c_p_n_per_mm15);
-    // 구속 자유도는 0 으로 고정
-    for (i, fr) in free.iter().enumerate() {
-        if !fr {
-            u[i] = 0.0;
+    // 구속 자유도는 지정값으로 고정
+    for i in 0..5 {
+        if !free[i] {
+            u[i] = prescribed[i];
         }
     }
 
@@ -426,18 +426,55 @@ fn solve_dense(a: &mut [f64], b: &mut [f64], n: usize) -> Option<Vec<f64>> {
     Some(x)
 }
 
-/// 축방향 예압을 등가 축하중으로 환산한다 (D-2).
-///
-/// **모델**: 스프링(정력) 예압 — 예압을 상수 축하중으로 본다.
-/// `ClearanceSpec::AxialPreloadN(F_a0)` 이면 `α₀ = α_nom`(클리어런스 0)으로 두고
-/// `F_a0` 를 외부 축하중에 더한다.
-///
-/// 강체(스페이서) 예압은 인접 베어링과의 연성이 필요해 단열 모델 범위 밖이다.
+/// 지정된 예압 하중 `F_a0` [N] (없으면 0).
 fn preload_force(geom: &BallBearingGeometry) -> f64 {
     match geom.clearance {
         ClearanceSpec::AxialPreloadN(f) => f,
         _ => 0.0,
     }
+}
+
+/// 강체(스페이서) 예압에서 구속할 축변위 `δ_x0` [mm] 를 `F_a0` 로부터 역산한다.
+///
+/// 무하중 상태에서 순수 축하중 `F_a0` 만 걸었을 때의 평형 축변위를 구한다.
+/// 즉 **두 예압 모델은 무하중에서 정확히 같은 상태**를 준다 (Level C 판정 항목).
+fn preload_displacement(
+    geom: &BallBearingGeometry,
+    derived: &GeometryDerived,
+    contact: &ContactDerived,
+    params: &SolverParams,
+    f_a0: f64,
+) -> Result<f64, SolverError> {
+    let axial_only = OperatingConditions {
+        f_x_n: 0.0,
+        f_y_n: 0.0,
+        f_z_n: 0.0,
+        m_y_nmm: 0.0,
+        m_z_nmm: 0.0,
+        n_inner_rpm: 0.0,
+        n_outer_rpm: 0.0,
+        temperature_c: 20.0,
+    };
+    let mut p = params.clone();
+    // 축만 자유, 나머지는 0 구속 (순수 축하중 문제)
+    p.dof_mask = DofMask {
+        x: Dof::Free,
+        y: Dof::Prescribed(0.0),
+        z: Dof::Prescribed(0.0),
+        gy: Dof::Prescribed(0.0),
+        gz: Dof::Prescribed(0.0),
+    };
+    p.phase_sweep = PhaseSweep {
+        enabled: false,
+        n_phase: 1,
+    };
+    let eq = solve_at_phase(geom, derived, contact, &axial_only, &p, f_a0, 0.0)?;
+    if !eq.converged {
+        return Err(SolverError::ConvergenceFailure(format!(
+            "강체 예압의 δ_x0 역산이 수렴하지 않았습니다 (F_a0 = {f_a0} N)"
+        )));
+    }
+    Ok(eq.displacement[0])
 }
 
 /// 5-DOF 평형 해석 (위상 스윕 포함).
@@ -454,6 +491,23 @@ pub fn solve_bearing(input: &BearingInput) -> Result<BearingResult, SolverError>
 
     let derived = geometry::compute_geometry_derived(&geom_for_derived)?;
     let contact = hertz::compute_contact_derived(&derived, &input.material)?;
+
+    // 예압 모델 분기 (D-2)
+    //   Spring — F_a0 를 외부 축하중에 더한다 (하중 제어)
+    //   Rigid  — F_a0 로 역산한 δ_x0 를 구속한다 (변위 제어). 축 자유도가 사라지므로
+    //            외부 축하중은 반력으로만 나타난다
+    let mut params = input.solver.clone();
+    let mut spring_force = 0.0;
+    if preload_n != 0.0 {
+        match params.preload_model {
+            PreloadModel::Spring => spring_force = preload_n,
+            PreloadModel::Rigid => {
+                let dx0 =
+                    preload_displacement(&geom_for_derived, &derived, &contact, &params, preload_n)?;
+                params.dof_mask.x = Dof::Prescribed(dx0);
+            }
+        }
+    }
     let summary = geometry::compute_geometry_summary(
         &geom_for_derived,
         &derived,
@@ -467,14 +521,14 @@ pub fn solve_bearing(input: &BearingInput) -> Result<BearingResult, SolverError>
         &derived,
         &contact,
         &input.operating,
-        &input.solver,
-        preload_n,
+        &params,
+        spring_force,
         0.0,
     )?;
 
     // 케이지 위상 스윕 (D-8)
-    let sweep = if input.solver.phase_sweep.enabled {
-        let n = input.solver.phase_sweep.n_phase.max(1);
+    let sweep = if params.phase_sweep.enabled {
+        let n = params.phase_sweep.n_phase.max(1);
         let span = std::f64::consts::TAU / input.geometry.z as f64;
         let mut curve = Vec::with_capacity(n as usize);
         let mut worst_q = (f64::NEG_INFINITY, 0.0);
@@ -486,8 +540,8 @@ pub fn solve_bearing(input: &BearingInput) -> Result<BearingResult, SolverError>
                 &derived,
                 &contact,
                 &input.operating,
-                &input.solver,
-                preload_n,
+                &params,
+                spring_force,
                 phase0,
             )?;
             let p = eq
@@ -641,6 +695,49 @@ mod tests {
         assert!(r.equilibrium.converged);
         assert_eq!(r.equilibrium.displacement[2], 0.0, "δ_z 가 구속되지 않음");
         assert_eq!(r.equilibrium.displacement[3], 0.0, "γ_y 가 구속되지 않음");
+    }
+
+    #[test]
+    fn preload_models_agree_without_external_load() {
+        // 무하중에서 스프링 예압과 강체 예압은 **완전히 같은 해**를 준다 (Level C 항목)
+        let mut a = input(16, 0.0, 0.0);
+        a.geometry.clearance = ClearanceSpec::AxialPreloadN(2_000.0);
+        a.solver.preload_model = PreloadModel::Spring;
+        let mut b = a.clone();
+        b.solver.preload_model = PreloadModel::Rigid;
+
+        let ra = solve_bearing(&a).unwrap();
+        let rb = solve_bearing(&b).unwrap();
+        assert!(ra.equilibrium.converged && rb.equilibrium.converged);
+        let dxa = ra.equilibrium.displacement[0];
+        let dxb = rb.equilibrium.displacement[0];
+        assert!((dxa - dxb).abs() / dxa.abs() < 1e-9, "δ_x0: 스프링 {dxa} vs 강체 {dxb}");
+        assert!(
+            (ra.equilibrium.q_max_n - rb.equilibrium.q_max_n).abs() / ra.equilibrium.q_max_n < 1e-9
+        );
+    }
+
+    #[test]
+    fn preload_models_diverge_under_axial_load() {
+        // 축하중을 걸면 스프링은 δ_x 가 늘고, 강체는 δ_x 가 고정된다
+        let mut a = input(16, 3_000.0, 0.0);
+        a.geometry.clearance = ClearanceSpec::AxialPreloadN(2_000.0);
+        a.solver.preload_model = PreloadModel::Spring;
+        let mut b = a.clone();
+        b.solver.preload_model = PreloadModel::Rigid;
+
+        let mut no_load = a.clone();
+        no_load.operating.f_x_n = 0.0;
+        let dx0 = solve_bearing(&no_load).unwrap().equilibrium.displacement[0];
+
+        let ra = solve_bearing(&a).unwrap();
+        let rb = solve_bearing(&b).unwrap();
+        assert!(ra.equilibrium.displacement[0] > dx0, "스프링: δ_x 가 늘어야 함");
+        assert!(
+            (rb.equilibrium.displacement[0] - dx0).abs() / dx0.abs() < 1e-9,
+            "강체: δ_x 가 δ_x0 에 고정돼야 함"
+        );
+        assert!(ra.equilibrium.q_max_n > rb.equilibrium.q_max_n, "스프링이 더 큰 볼하중");
     }
 
     #[test]
