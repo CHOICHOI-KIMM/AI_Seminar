@@ -279,7 +279,59 @@ $$\varphi_{j} = \frac{2\pi (j-1)}{Z}, \qquad j = 1 \ldots Z$$
 
 > **NOTE (A.2.2)**: 우수좌표계 기준이며 X 축이 베어링 공칭 회전축과 일치한다. 문서 내 모든 그림에서 Y 축은 지면 아래쪽을 향한다.
 
-### 4.5 미지수 구조 — ISO 는 3-DOF 이다
+### 4.5 계보 — ISO A.2 는 Jones(1946/1960) 정식화다
+
+**(2026-08-20 확인, Harris *Advanced Concepts* 원서 p.23 육안)**
+
+ISO 16281 Annex A.2 의 식들은 ISO 가 새로 만든 것이 아니라 **A. Jones 의 고전 정식화**를 그대로 실은 것이다. Harris & Kotzalas, *Rolling Bearing Analysis 5th ed. — **Advanced Concepts of Bearing Technology***, §1.2 「Ball Bearings under Combined Radial, Thrust, and Moment Loads」가 같은 식을 담고 있으며, 원서가 출처를 "developed by Jones [1]" 로 명시한다.
+
+| 물리량 | ISO 16281 | Harris *Advanced* §1.2 | 일치 |
+|---|---|---|---|
+| 곡률중심 반경 | `R_i` — (A.4) | `ℜ_i = d_m/2 + (r_i − D/2) cos α₀` — (1.3) | ✅ |
+| 볼 변형 `δ_j` | (A.2) | (1.11)(1.13) | ✅ |
+| 운전 접촉각 `α_j` | (A.5) | (1.14)(1.15) | ✅ |
+| 축 평형 | (A.7) | (1.18) | ✅ |
+| 반경 평형 | (A.6) | (1.19) | ✅ |
+| 모멘트 평형 | (A.8) — 팔 `D_pw/2` | (1.20)(1.21) — 팔 `d_m/2` | ✅ |
+| 하중–변형 | (39) `Q = c_P δ^1.5` | (1.12) `Q = K_n δ^n`, n = 3/2 | ✅ |
+
+#### ⚠️ 틸트 팔이 두 종류인 것은 오류가 아니다
+
+식을 처음 읽으면 **키네마틱스는 `R_i`(A.2)(A.5)인데 모멘트 팔은 `D_pw/2`(A.8)** 인 것이 ISO 의 실수로 보인다. 가상일 관점에서 둘은 공액이어야 하기 때문이다.
+
+그러나 **Harris *Advanced* (1.13) 과 (1.21) 이 정확히 같은 조합을 쓴다.** 즉 이것은 ISO 의 오식이 아니라 **Jones 정식화의 확립된 규약**이며, 문헌 전체가 그렇게 한다.
+
+- 물리적으로는 비공액이다 → 야코비안이 비대칭이 되고, 모멘트 지배 하중에서 에너지 불일치가 남는다.
+- 크기: `R_i − D_pw/2 = (r_i − D_w/2) cos α₀`. 참조기하(`D_w` 11,5 mm, `r_i` = 0,52 `D_w`, α₀ = 40°, `D_pw` 70 mm) 기준 **약 0,5 %**.
+- **본 SW 는 ISO/Jones 규약을 그대로 따른다** — 키네마틱 팔 `R_i`, 모멘트 팔 `D_pw/2`.
+
+> Harris *Essential Concepts* §7.4.3 의 (7.37)(7.44) 가 키네마틱스에도 `d_m/2` 를 쓰는 것은 모순이 아니다.
+> 그 절은 **90° 스러스트 베어링**이라 `cos α₀ = 0` 이고, (1.3) 에서 `ℜ_i = d_m/2` 가 된다.
+> Vol.1 은 Vol.2 의 특수 케이스다.
+
+#### M_y 의 모멘트 팔
+
+ISO 는 3-DOF 만 주므로 `M_y` 의 팔이 규정돼 있지 않다. 그러나 **Harris (1.20)(1.21) 은 명시적으로 "moment about the **Y-axis**"** 이며 팔이 `d_m/2` 다. 따라서 `M_y` 도 `D_pw/2` 를 쓰는 것은 자의적 확장이 아니라 문헌 준용이다.
+
+(Harris 는 하중 대칭 시 Z 축 모멘트가 자체평형이라 보고 3-DOF 로 축약한다. 본 SW 의 5-DOF 는 두 성분을 모두 유지한다.)
+
+#### 틸트 항의 `sin` 여부
+
+ISO (A.2) 는 `R_i **sin ψ** cos φ_j`, Harris (1.13) 은 `ℜ_i **θ̄** cos ψ` 로 **선형화**돼 있다. 미스얼라인먼트가 arcmin 급이라 차이는 1e-9 수준이지만, **본 SW 는 ISO 준용으로 `sin` 을 쓴다.** 5-DOF 확장에서도 `sin γ_z`, `sin γ_y` 로 둔다.
+
+#### 진짜 5-DOF 정식화는 미확보
+
+Harris *Advanced* §3.6 「Five Degrees of Freedom in Loading」은 그림(3.25~3.27)과 참고문헌만 있고 **식이 없다.** 출처는 **Harris, T. & Mindel, M., "Rolling element bearing dynamics", *Wear* 23(3), 311–337, 1973** 이며 미확보다 → §11 **T-10**.
+
+§1.2 의 3-DOF 를 5-DOF 로 여는 것은 아래 대칭 확장이며, 3-DOF 구속 시 항등이 보장된다:
+```
+δ_r cos ψ   →  δ_y cos φ_j + δ_z sin φ_j
+θ cos ψ     →  sin γ_z cos φ_j − sin γ_y sin φ_j
+```
+
+---
+
+### 4.6 미지수 구조 — ISO 는 3-DOF 이다
 
 | 미지수 | 대응 방정식 |
 |---|---|
@@ -294,7 +346,7 @@ $$\varphi_{j} = \frac{2\pi (j-1)}{Z}, \qquad j = 1 \ldots Z$$
 
 > 이 선택이 `types.rs` 와 솔버 구조를 가르는 최대 분기점이다 → §12 Plan 결정 항목 D-1.
 
-### 4.6 볼 하중
+### 4.7 볼 하중
 
 $$Q_{j} = c_{P}\,\delta_{j}^{3/2}$$
 
@@ -857,7 +909,10 @@ ISO 16281/281 은 예압을 직접 다루지 않는다. `G_r op` 를 **음(陰)�
 7. **ISO/TR 10657:2021** — 정정격하중 배경. `Reference/ISO_TR_10657_2021(en).pdf`
 8. **ISO 17956:2025** — `Reference/ISO_17956_2025.pdf`
 9. **Harris, T.A. & Kotzalas, M.N. (2006)** — *Rolling Bearing Analysis, 5th ed.: Essential Concepts of Bearing Technology*, CRC Press. Ch.2 (기하), Ch.6 (접촉응력), Ch.7 (내부하중분포·Sjövall), Ch.8 (예압). `Reference/(Rolling Bearing Analysis, Fifth Edtion) … .pdf`
-10. **Sjövall, H.** — Harris Ref [4] (Ch.7). `J_r`, `J_a` 적분의 원출처.
+10. **Harris, T.A. & Kotzalas, M.N. (2006)** — *Rolling Bearing Analysis, 5th ed.: **Advanced Concepts** of Bearing Technology*, CRC Press. **§1.2 (ACBB 조합하중 정식화 — Jones)**, §3.6 (5-DOF), Ch.2 (운동학), Ch.3 (고속). `Reference/(Rolling Bearing Analysis, Fifth Edition) … Advanced Concepts … .pdf`
+11. **Jones, A.** (1946/1960) — ACBB 정식화 원전. Harris *Advanced* Ch.1 Ref [1]. **미확보** (Harris 경유 인용)
+12. **Harris, T. & Mindel, M.** (1973) — "Rolling element bearing dynamics", *Wear* 23(3), 311–337. 5-DOF 원전. **미확보** (T-10)
+13. **Sjövall, H.** — Harris Ref [4] (Ch.7). `J_r`, `J_a` 적분의 원출처.
 11. **ISO/TR 8646:1985** — `f_c` 감소 보정식 (홈 반경 초과 시). **미확보**
 
 ---
