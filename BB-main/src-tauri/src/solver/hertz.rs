@@ -350,6 +350,31 @@ pub fn single_raceway_contact(
     (q, b, p_max, h_bulk, k_hertz)
 }
 
+// ─── [P1 이관] rib_contact.rs 에서 이관 (2026-08-20) ───────────────────
+// ACBB 점접촉에서 χ = a/b 비선형 방정식(ISO 16281 식 E.1)의 **초기 추정값** 및
+// 검산용. 최종 χ 는 P2 에서 (E.1) 을 직접 풀어 확정한다.
+// 계수 1.0339/0.6360, 1.5277/0.6023, 1.0003/0.5968 는 Harris & Kotzalas 5th ed.
+// 식 (6.33)~(6.35) (Brewe-Hamrock 회귀) 와 일치함을 원서 대조로 확인.
+// 주의: 반환되는 F_e, E_e 는 완전타원적분의 **회귀 근사**이지 정확값이 아니다.
+
+/// Hamrock-Brewe approximation for elliptical Hertz coefficients.
+/// r_x, r_y: equivalent radii [mm] (r_y / r_x >= 1)
+/// Returns (k_e, F_e, E_e):
+///   k_e: ellipticity ratio a/b
+///   F_e: complete elliptic integral of the first kind (approx)
+///   E_e: complete elliptic integral of the second kind (approx)
+pub fn hertz_elliptical_coefficients(r_x: f64, r_y: f64) -> (f64, f64, f64) {
+    // Ensure ratio >= 1
+    let (rx, ry) = if r_y >= r_x { (r_x, r_y) } else { (r_y, r_x) };
+    let ratio = ry / rx;
+
+    let k_e = 1.0339 * ratio.powf(0.6360);
+    let f_e = 1.5277 + 0.6023 * ratio.ln();
+    let e_e = 1.0003 + 0.5968 / ratio;
+
+    (k_e, f_e, e_e)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

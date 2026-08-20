@@ -1,18 +1,12 @@
-// CRB Contact Analysis — Tauri Commands
-// Phase 1.3-B 하이브리드 stub 상태.
-// 살아있는 command: slice geometry, single-slice Hertz, Gen1/Gen3 roller solve, bearing equilibrium
-// 제거된 command (Phase 2~7 에서 재활성화):
-//   - compute_rib       (D1: rib contact 제외 → 영구 제거)
-//   - solve_transient   (Phase 7)
-//   - parse_load_csv    (Phase 7)
-//   - run_hmehl         (Phase 7)
+// BB Contact Analysis — Tauri Commands
+// BB Phase 1 (2026-08-20): 롤러 전용 command 영구 삭제.
+//   - solve_roller_gen1 / _for_load / solve_roller_gen3 / _for_load  (슬라이스·빔 — 볼에 개념 없음)
+//   - compute_rib / solve_transient / parse_load_csv / run_hmehl     (이전 단계에서 이미 제거)
+// 남은 command 는 아직 CRB(선접촉) 코드 위에서 동작한다. ACBB 화는 P2(hertz)·P3(bearing) 에서.
 
-use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
 use crate::solver::bearing;
-use crate::solver::gen1;
-use crate::solver::gen3;
 use crate::solver::geometry::compute_slices;
 use crate::solver::hertz::{combined_elastic_modulus, compute_slice_contact};
 use crate::solver::types::*;
@@ -67,160 +61,6 @@ pub fn compute_hertz_single_slice(
     ))
 }
 
-// ─── Gen1 Solver Commands ──────────────────────────────────────────
-
-#[derive(Serialize)]
-pub struct Gen1Result {
-    pub slice_results: Vec<SliceContactResult>,
-    pub q_total: f64,
-    pub delta_rigid: f64,
-}
-
-/// Solve single roller with Gen1 (independent slices) given delta_rigid directly.
-/// CRB: cos_alpha_diff = 1.0 (α_i = α_o = 0).
-#[tauri::command]
-pub fn solve_roller_gen1(input: BearingInput, delta_rigid: f64) -> Result<Gen1Result, String> {
-    input.validate().map_err(|e| e.to_string())?;
-
-    let slices = compute_slices(
-        &input.macro_geom,
-        &input.raceway_geom,
-        &input.roller_profile,
-        &input.raceway_profile_inner,
-        &input.raceway_profile_outer,
-        input.solver.n_slices,
-    )
-    .map_err(|e| e.to_string())?;
-
-    // CRB: raceway taper angle = 0 → cos_alpha_diff = 1.0
-    let cos_alpha_diff = 1.0;
-    let (slice_results, q_total) = gen1::solve_gen1_roller(&slices, delta_rigid, &input.material, cos_alpha_diff);
-
-    Ok(Gen1Result {
-        slice_results,
-        q_total,
-        delta_rigid,
-    })
-}
-
-/// Solve single roller with Gen1 for a target normal load Q [N].
-#[tauri::command]
-pub fn solve_roller_gen1_for_load(
-    input: BearingInput,
-    q_target: f64,
-) -> Result<Gen1Result, String> {
-    input.validate().map_err(|e| e.to_string())?;
-
-    let slices = compute_slices(
-        &input.macro_geom,
-        &input.raceway_geom,
-        &input.roller_profile,
-        &input.raceway_profile_inner,
-        &input.raceway_profile_outer,
-        input.solver.n_slices,
-    )
-    .map_err(|e| e.to_string())?;
-
-    let cos_alpha_diff = 1.0; // CRB
-    let (slice_results, q_total, delta_rigid) =
-        gen1::solve_gen1_for_load(&slices, q_target, &input.material, &input.solver, cos_alpha_diff)
-            .map_err(|e| e.to_string())?;
-
-    Ok(Gen1Result {
-        slice_results,
-        q_total,
-        delta_rigid,
-    })
-}
-
-// ─── Gen3 Solver Commands ──────────────────────────────────────────
-
-#[derive(Serialize)]
-pub struct Gen3Result {
-    pub slice_results: Vec<SliceContactResult>,
-    pub q_total: f64,
-    pub delta_rigid: f64,
-    pub beam_deflection: Vec<f64>,
-    pub max_deflection: f64,
-}
-
-/// Solve single roller with Gen3 (beam-coupled) given delta_rigid directly.
-#[tauri::command]
-pub fn solve_roller_gen3(input: BearingInput, delta_rigid: f64) -> Result<Gen3Result, String> {
-    input.validate().map_err(|e| e.to_string())?;
-
-    let slices = compute_slices(
-        &input.macro_geom,
-        &input.raceway_geom,
-        &input.roller_profile,
-        &input.raceway_profile_inner,
-        &input.raceway_profile_outer,
-        input.solver.n_slices,
-    )
-    .map_err(|e| e.to_string())?;
-
-    let cos_alpha_diff = 1.0; // CRB
-    let (slice_results, q_total) =
-        gen3::solve_gen3_roller(&slices, delta_rigid, &input.material, &input.solver, cos_alpha_diff)
-            .map_err(|e| e.to_string())?;
-
-    let beam_deflection: Vec<f64> = slice_results
-        .iter()
-        .zip(slices.iter())
-        .map(|(r, s)| delta_rigid - r.delta_k - s.delta_z_total_outer
-            - s.delta_z_total_inner * cos_alpha_diff)
-        .collect();
-    let max_deflection = beam_deflection.iter().map(|w| w.abs()).fold(0.0, f64::max);
-
-    Ok(Gen3Result {
-        slice_results,
-        q_total,
-        delta_rigid,
-        beam_deflection,
-        max_deflection,
-    })
-}
-
-/// Solve single roller with Gen3 for a target normal load Q [N].
-#[tauri::command]
-pub fn solve_roller_gen3_for_load(
-    input: BearingInput,
-    q_target: f64,
-) -> Result<Gen3Result, String> {
-    input.validate().map_err(|e| e.to_string())?;
-
-    let slices = compute_slices(
-        &input.macro_geom,
-        &input.raceway_geom,
-        &input.roller_profile,
-        &input.raceway_profile_inner,
-        &input.raceway_profile_outer,
-        input.solver.n_slices,
-    )
-    .map_err(|e| e.to_string())?;
-
-    let cos_alpha_diff = 1.0; // CRB
-    let (slice_results, q_total, delta_rigid) =
-        gen3::solve_gen3_for_load(&slices, q_target, &input.material, &input.solver, cos_alpha_diff)
-            .map_err(|e| e.to_string())?;
-
-    let beam_deflection: Vec<f64> = slice_results
-        .iter()
-        .zip(slices.iter())
-        .map(|(r, s)| delta_rigid - r.delta_k - s.delta_z_total_outer
-            - s.delta_z_total_inner * cos_alpha_diff)
-        .collect();
-    let max_deflection = beam_deflection.iter().map(|w| w.abs()).fold(0.0, f64::max);
-
-    Ok(Gen3Result {
-        slice_results,
-        q_total,
-        delta_rigid,
-        beam_deflection,
-        max_deflection,
-    })
-}
-
 // ─── Bearing Equilibrium Commands ────────────────────────────────────
 
 /// Solve full bearing equilibrium (CRB: 3-DOF δx/δy/γx) for given operating conditions.
@@ -245,8 +85,8 @@ pub async fn solve_bearing_dual(app: AppHandle, input: BearingInput) -> Result<D
     .map_err(|e| format!("Task join error: {e}"))?
 }
 
-// ─── Phase 1 stub: 아래 command 는 CRB Phase 후속 단계에서 재활성화 ───
-// compute_rib      : D1 (rib contact 제외) → 영구 제거
-// solve_transient  : Phase 7 (transient dynamics)
-// parse_load_csv   : Phase 7 (LoadTimePoint 재작성 후)
-// run_hmehl        : Phase 7 (HMEHL)
+// ─── BB 후속 단계 신규 command (예정) ───────────────────────────────
+// solve_ball_contact   : P2 (점접촉 타원 Hertz)
+// solve_bearing_5dof   : P3 (5-DOF 평형 + 위상 스윕)
+// compute_life         : P4 (ISO 16281 §5.2)
+// compute_film         : P5 (Hamrock-Dowson 타원접촉)
