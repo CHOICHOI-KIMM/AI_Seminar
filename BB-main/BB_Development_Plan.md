@@ -249,7 +249,12 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 4. `geometry.rs` 재작성 — `A`(A.3), `α₀`(A.1), `R_i`(A.4), `γ`, `Σρ_i/Σρ_e`(E.4)(E.5), `F_i(ρ)/F_e(ρ)`(E.6)(E.7)
 5. **`hertz.rs`·`bearing.rs` 를 `mod.rs` 에서 일시 비활성화** — `types.rs` 를 ACBB 로 재작성하면 두 모듈이 즉시 컴파일 불가가 된다(둘 다 `SliceGeometry`·`SliceContactResult`·`RollerProfile` 소비). 재작성은 각각 P2·P3 이므로 그때까지 주석 처리. 이에 따라 `commands.rs` 의 `compute_slice_geometry`·`compute_hertz_single_slice`·`solve_bearing`·`solve_bearing_dual` 4개 command 와 `lib.rs` 등록도 함께 해제한다.
    → **P1 종료 시점의 상태**: 컴파일되는 솔버는 `types`+`geometry` 뿐, Tauri command 는 preset 7종만. 앱은 빌드되나 해석 기능은 일시적으로 0. (CRB 가 자기 Phase 1 에서 쓴 하이브리드 stub 과 동일 수법)
-6. **단위 경계 계층 신설** (D-10) — `commands` 에 `μm·kN·° ↔ mm·N·rad` 변환을 한 곳으로 모음
+6. ~~**단위 경계 계층 신설** — `commands` 에 `μm·kN·° ↔ mm·N·rad` 변환을 모음~~
+   → **불필요해져 취소** (P1-S3 결정). 단일 구조체를 내부 단위로 두고 **필드명에 단위 접미사**
+   (`_mm`·`_n`·`_nmm`·`_rad`·`_mpa`)를 붙이는 방식을 택했으므로 JSON 계약 자체가 mm·N·rad 다.
+   변환은 UI 표시 시점에만 일어나며 Rust 쪽에 변환 계층이 존재하지 않는다.
+   **환산 상수의 유일한 허용 장소는 `util.rs` 의 명시적 변환 함수**(현재 `sphere_mass_g` 의
+   mm³→cm³ 하나뿐)이며, 이를 Level A 의 A-8 테스트가 기계적으로 강제한다.
 7. `mod.rs` 정리, 프론트엔드 `@ts-nocheck` stub 로 빌드 그린 확보
 8. TypeScript 타입 미러 갱신 (축 이름은 ISO 규약, D-7)
 
@@ -271,7 +276,7 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 | **단위 청정성 (D-10)** | `solver/` 전체에 `1000.0`·`1e3`·`1e-3` 환산 상수가 **0회** 등장 | grep 0건 |
 | **축 명명 (D-7)** | 필드명이 `d_x`(축) / `d_y`,`d_z`(반경) / `g_y`,`g_z` 인지 | 일치 |
 
-**DoD**: Level A 전 항목 통과, 삭제 모듈이 어디에서도 참조되지 않음, 단위 환산이 `commands` 밖에 없음
+**DoD**: Level A 전 항목 통과, 삭제 모듈이 어디에서도 참조되지 않음, 환산 상수가 `util.rs` 밖에 없음(A-8 로 기계 검증)
 
 ---
 

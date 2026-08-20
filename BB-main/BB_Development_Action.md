@@ -375,3 +375,122 @@ cargo test          42 → 12 passed, 0 failed
 **코드 영향 없음** — 문서만 수정. P1-S2 에서 이미 `DofMask::ISO_3DOF` / `FULL` 상수를 `types.rs` 에 정의해 둔 상태라, 분할된 계획이 자료구조와 그대로 대응한다.
 
 ---
+
+## 260820 — P1-S3: geometry.rs 재작성 + util.rs 신설 + Level A ✅ **Phase 1 완료**
+
+**커밋** `f52bfeb` — 8 files changed, 1,039 insertions(+), 601 deletions(-)
+
+### 사용자 결정 (착수 전 확인)
+
+| 항목 | 결정 |
+|---|---|
+| 단위 경계 (P1-S2 미확정분) | **현행 유지 + 필드명에 단위 접미사** — wire 타입 분리 안 함 |
+| S3 범위 | **GeometryDerived + GeometrySummary** |
+| 재사용 3건 배치 | **신규 `util.rs` 신설** |
+| Level A 배치 | **`tests/geometry_level_a.rs` 통합테스트** |
+
+### types.rs — 단위 접미사 일괄 적용
+
+`d_w → d_w_mm`, `f_x → f_x_n`, `m_z → m_z_nmm`, `alpha_nom → alpha_nom_rad`,
+`e_ball → e_ball_mpa`, `sum_rho_i → sum_rho_i_per_mm`, `q → q_n` 등 **33개 필드**.
+enum variant 도 `DiametralMm` / `InitialAngleRad` / `AxialPreloadN`.
+무차원(`nu`·`gamma`·`z`·`f_rho_i`)은 접미사 없음 — 규약을 파일 헤더에 명시.
+
+### util.rs 신설
+
+접촉 형상·베어링 종류와 무관한 순수 함수만 둔다.
+
+| 함수 | 비고 |
+|---|---|
+| `combined_elastic_modulus_mpa` | CRB 는 GPa 반환 + 소비처 15중 `* 1000.0` 이던 것을 MPa 로 통일 |
+| `harris_e_prime_mpa` | `E′ = 2E*` (Hamrock-Dowson·카탈로그 규약) — P5 대비 |
+| `combine_curvature_mm` | CRB `geometry.rs` 에서 이관 |
+| `sphere_mass_g` | mm³→cm³ 환산을 담는 **유일한** 장소 (D-10 예외 지점) |
+| `cubic_spline_interpolate` | CRB `geometry.rs` 에서 이관 |
+
+### geometry.rs — 백지 재작성 (Theory §2)
+
+`compute_geometry_derived` (A.3 A / A.1 α₀ / A.4 R_i / γ / E.4~E.7 Σρ·F(ρ)) ·
+`compute_geometry_summary` (오스큘레이션·볼 질량·n·D_pw) ·
+`collect_geometry_alerts` (`HIGH_SPEED` D-3, `GROOVE_RADIUS_OVER_REFERENCE` T-9)
+
+### ⚠ 발견 — 식 (A.1) 의 정의역
+
+**`α₀ = arccos(1 − G_r op/(2A))` 는 `G_r op ≥ 0` 에서만 정의된다.** 음수를 넣으면 arccos 인수가 1 을 넘는다.
+
+즉 **ACBB 예압을 "음의 클리어런스"로 표현할 수 없다.** CRB/TRB 감각으로는 자연스러운 표현이지만 ISO 정식화가 허용하지 않는다. 조용히 0 으로 처리하면 예압이 사라진 채 계산되므로, **명시적으로 거부하고 `AxialPreloadN` 사용을 안내**하도록 했다. Plan §3.5 의 `ClearanceSpec` 설계는 유지된다 (`AxialPreloadN` 이 정공법이었음).
+
+### Level A 검증 (16개)
+
+| ID | 항목 |
+|---|---|
+| A-1 | `A = 0,05 D_w` (Annex B.2 참조기하 항등) |
+| A-2 | α₀ ↔ G_r op 왕복(6점) · 단조성 · G=0 → α₀=0 |
+| A-3 | `R_i > D_pw/2` (D-9, CRB 의 `d_pw/2` 과소평가 확인) · α₀ 증가 시 단조 감소 |
+| **A-4** | **Σρ·F(ρ) 를 개별 주곡률로 독립 조립해 대조** · 부호 · [0,1) · 차원(스케일 불변) |
+| A-5 | Annex B.2 참조 홈반경 · 오스큘레이션 |
+| A-6 | 정의역 가드 4종 (예압 / 음수 / 과대 클리어런스 / 홈반경) |
+| A-7 | 고속 경고 경계(14 000 vs 15 000 rpm) · 홈반경 초과 경고 |
+| **A-8** | **D-10 규약 기계 검증** — 환산 연산 부재 + `pub f64` 필드 단위 접미사 강제 |
+
+**A-4 가 동어반복을 피한 방식**: ISO 축약형 (E.4)~(E.7) 을 베끼지 않고, 개별 주곡률에서 조립한다.
+
+```
+볼:   ρ_1x = ρ_1y = 2/D_w
+내륜: ρ_2x = +2γ/(D_w(1−γ)),  ρ_2y = −1/r_i
+외륜: ρ_2x = −2γ/(D_w(1+γ)),  ρ_2y = −1/r_e
+Σρ = ρ_1x + ρ_1y + ρ_2x + ρ_2y,   F(ρ) = (ρ_2x − ρ_2y)/Σρ
+```
+
+Harris Ch.6 조립 경로와 ISO 축약형이 rel. err < 1e-12 로 일치.
+
+**A-8 은 규약 자체를 기계 강제**한다. `include_str!` 로 솔버 소스를 읽어 ① 환산 연산(`* 1000.0`·`/ 1e-3` 등)이 없는지 ② `pub … : f64` 필드가 전부 단위 접미사를 갖는지 검사한다. `util.rs` 만 예외.
+
+> **자체검증 테스트가 처음에 실제로 실패했다.** 둘 다 판정 heuristic 이 거칠어 난 오탐이었다 —
+> `n_inner_rpm: 1000.0`(회전속도 값)을 환산 상수로, `free_x: bool` 을 유차원 필드로 잡았다.
+> **연산자 인접**(`* 1000.0`)만 보고 **`: f64`** 만 검사하도록 좁혀 해결. 검증 코드도 검증이 필요하다는 사례.
+
+### commands.rs / lib.rs
+
+`compute_geometry` command 신설·등록 — **P1-S2 이후 처음으로 해석 command 부활**.
+
+### 계획 변경 — Phase 1 작업 6 취소
+
+Plan Phase 1 의 「단위 경계 계층 신설(`commands` 에 변환을 모음)」은 **불필요해져 취소**했다. 단일 구조체 + 필드명 접미사 방식을 택했으므로 JSON 계약 자체가 mm·N·rad 이고, Rust 쪽에 변환 계층이 존재하지 않는다. Plan 본문에 취소선과 사유를 남기고 DoD 문구도 「환산 상수가 `util.rs` 밖에 없음(A-8 로 기계 검증)」으로 교체했다.
+
+→ **P1-S2 의 「오케스트레이터 판단 사항」은 이 결정으로 해소됨.** 사용자가 필드명 접미사 방식을 택하면서 단일 구조체 노선이 확정되었다.
+
+### 검증 — 숫자 소명
+
+```
+cargo build --lib   green
+cargo clippy        warning 0
+cargo test          12 → 43 passed, 0 failed
+```
+
+| 항목 | 증감 |
+|---|---|
+| `types.rs` 유닛 (기존) | 12 |
+| `util.rs` 유닛 (신규) | **+9** |
+| `geometry.rs` 유닛 (신규) | **+6** |
+| `tests/geometry_level_a.rs` (신규) | **+16** |
+| **합계** | 12 + 31 = **43** ✓ |
+
+clippy 경고 6건은 전부 테스트 코드였고, 2건(`assertions_on_constants`)은 상수 마스크 회귀 가드라 사유 주석과 함께 `#[allow]` 처리했다.
+
+### Phase 1 DoD 판정
+
+| 항목 | 결과 |
+|---|---|
+| Level A 전 항목 통과 | ✅ 16/16 |
+| 삭제 모듈이 어디에서도 참조되지 않음 | ✅ 빌드 green |
+| 환산 상수가 `util.rs` 밖에 없음 | ✅ A-8 기계 검증 |
+
+**Phase 1 완료.** 현재 컴파일되는 솔버: `types` · `util` · `geometry`. Tauri command: `compute_geometry` + preset 7종.
+
+### 다음
+
+**Phase 2** — 점접촉 타원 Hertz (Theory §3, §6). `hertz.rs` 재작성·재활성화, 완전타원적분 `K(χ)`·`E(χ)` AGM 신규 구현, `χ` 비선형식 (E.1) 솔버, `c_P` (40), 접촉타원 `a`·`b`·`p_H,max` (Harris 6.38~6.46).
+Level B 는 **Harris Table 6.1 대조 + ISO 식(36) ↔ Harris 식(6.42) 독립 교차**가 핵심.
+
+---
