@@ -17,6 +17,10 @@
 > - **유지**: Level 1 베어링 5-DOF 평형, 입출력 인터페이스, 윤활·수명 계층의 공통 부분
 > - **교체**: Level 2/3 (슬라이스 선접촉) → 단일 점접촉 (타원 Hertz + 하중 의존 접촉각)
 > - **폐기**: gen1.rs / gen3.rs / beam.rs / rib_contact.rs (slice·beam·rib 계열)
+>
+> ⚠️ **좌표계가 CRB 와 다르다 (Plan D-7)**: BB 는 **ISO 규약 — X = 회전축**, Y·Z = 반경방향. CRB 는 Z = 샤프트축이다. CRB 코드를 참고할 때 축 이름을 그대로 옮기면 안 된다 (`CRB X→BB Y`, `CRB Y→BB Z`, `CRB Z→BB X`).
+>
+> ⚠️ **단위 (Plan D-10)**: 솔버 내부는 **mm · N · rad**. μm·kN·° 변환은 `commands` 경계에서만. 솔버 안에 `1000.0` 이 등장하면 안 된다.
 
 ---
 
@@ -146,12 +150,16 @@ Manual/                    — 기능별 매뉴얼 (마크다운)
 - [ ] `cargo test` 통과 (src-tauri/)
 - [ ] `cargo clippy` 경고 없음
 
-### 수치 검증 레벨
-- **Level A**: Single-slice Hertz vs analytical (<0.1% error)
-- **Level B**: Single-roller Gen3 vs FEA (ANSYS/ABAQUS, <3%)
-- **Level C**: Gen1↔Gen3 cross-validation (zero misalignment + flat profile에서 수렴)
-- **Level D**: Full bearing vs Bearinx/MESYS/MASTA (<5%)
-- **Level E**: Experimental (strain gauge/displacement sensor)
+### 수치 검증 레벨 (BB 기준 — Plan §5)
+- **Level A**: 기하 (A, α₀, R_i, Σρ, F(ρ)) — 해석적 항등
+- **Level B**: 점접촉 — Harris Table 6.1 + **ISO 식(36) ↔ Harris 식(6.42) 독립 교차**
+- **Level C**: 평형 해석해 (순수 축하중 대칭성, 예압 균등)
+- **Level D-1**: 통합 — **Harris Table 7.4** (3-DOF 구속 모드, 오차 ≤ 5 %)
+- **Level D-2**: 5-DOF 해방 — 축퇴 항등성 (구속 해와 rel. err < 1e-8)
+- **Level E**: 수명 — ISO 표 재현 + 제조사 카탈로그 `C_r` 역검증
+- **Level F**: 윤활 — h_min 범위·κ≈Λ^1.3·운동학
+
+> CRB/TRB 시절의 Level 정의(Gen1↔Gen3 교차, FEA 대조 등)는 폐기됨.
 
 ---
 
