@@ -1,13 +1,15 @@
 pub mod types;
 pub mod util;
 pub mod geometry;
+pub mod hertz;
 
 // ─── BB Phase 1-S3 (2026-08-20) ──────────────────────────────────────
 // util     : 접촉 형상 무관 수치·물성 유틸 (E*, 곡률합성, 스플라인, 구 질량)
 // geometry : ACBB 기하 전처리 (A·α₀·R_i·γ·Σρ·F(ρ))  — Theory §2
 //
+// hertz    : 점접촉 타원 Hertz (χ·c_P·a·b·p_H)  — Theory §3, §6
+//
 // ─── 아직 CRB 데이터 모델을 소비 — 재작성 시 활성화 ────────────────────
-// pub mod hertz;            // P2   : 점접촉 타원 Hertz    (Theory §3, §6)
 // pub mod bearing;          // P3-1 : 평형 (3-DOF 구속 검증)  (Theory §4)
 //
 // ─── BB Phase 4~5 에서 ACBB 기준 재작성 후 활성화 ─────────────────────

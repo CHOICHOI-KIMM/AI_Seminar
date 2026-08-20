@@ -416,6 +416,39 @@ pub struct GeometryDerived {
     pub g_r_op_mm: f64,
 }
 
+/// 점접촉 전처리 결과 (Theory §3, §6). **하중과 무관**하다.
+///
+/// `χ` 는 기하만으로 결정되고 `c_P` 도 그로부터 나오므로, 해석 시작 시 1회만
+/// 계산해 캐시한다. CRB 의 슬라이스 강성이 하중 의존이던 것과 근본적으로 다르다.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContactDerived {
+    /// 내륜 접촉타원 형상비 χ = a/b — 식 (E.1) 의 해
+    pub chi_inner: f64,
+    /// 외륜 접촉타원 형상비 χ = a/b
+    pub chi_outer: f64,
+    /// 제1종 완전타원적분 K(χ_i) — 식 (E.2)
+    pub k_ellip_inner: f64,
+    /// 제2종 완전타원적분 E(χ_i) — 식 (E.3)
+    pub e_ellip_inner: f64,
+    /// 제1종 완전타원적분 K(χ_e)
+    pub k_ellip_outer: f64,
+    /// 제2종 완전타원적분 E(χ_e)
+    pub e_ellip_outer: f64,
+    /// 무차원 장반경 계수 a* — Harris 식 (6.44)
+    pub a_star_inner: f64,
+    /// 무차원 단반경 계수 b* — Harris 식 (6.45)
+    pub b_star_inner: f64,
+    /// 무차원 접근량 계수 δ* — Harris 식 (6.46)
+    pub delta_star_inner: f64,
+    pub a_star_outer: f64,
+    pub b_star_outer: f64,
+    pub delta_star_outer: f64,
+    /// 등가 탄성계수 E* [MPa]
+    pub e_star_mpa: f64,
+    /// 점접촉 스프링상수 c_P [N/mm^(3/2)] — 식 (40). `Q = c_P δ^(3/2)`
+    pub c_p_n_per_mm15: f64,
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  결과
 // ═══════════════════════════════════════════════════════════════════

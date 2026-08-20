@@ -7,7 +7,6 @@
 //   solve_bearing / solve_bearing_dual                    (CRB 3-DOF 평형)
 //
 // ─── BB 후속 단계 신규 command (예정) ───────────────────────────────
-// solve_ball_contact   : P2    (점접촉 타원 Hertz)
 // solve_bearing_5dof   : P3    (5-DOF 평형 + 위상 스윕)
 // compute_life         : P4    (ISO 16281 §5.2)
 // compute_film         : P5    (Hamrock-Dowson 타원접촉)
@@ -15,6 +14,7 @@
 use tauri::{AppHandle, Emitter};
 
 use crate::solver::geometry;
+use crate::solver::hertz;
 use crate::solver::types::*;
 
 /// Tauri event 기반 진행률 리포터.
@@ -58,6 +58,82 @@ pub fn compute_geometry(input: BearingInput) -> Result<GeometryResponse, String>
     Ok(GeometryResponse {
         derived,
         summary,
+        alerts,
+    })
+}
+
+// ─── P2: 점접촉 타원 Hertz ────────────────────────────────────────────
+
+/// 점접촉 전처리 + 주어진 볼 하중에서의 접촉타원·응력.
+#[derive(serde::Serialize)]
+pub struct ContactResponse {
+    pub derived: ContactDerived,
+    /// 요청 하중 [N] (없으면 0)
+    pub q_n: f64,
+    /// 총 탄성변형 δ [mm] — 식 (38)
+    pub delta_mm: f64,
+    pub a_inner_mm: f64,
+    pub b_inner_mm: f64,
+    pub p_max_inner_mpa: f64,
+    pub a_outer_mm: f64,
+    pub b_outer_mm: f64,
+    pub p_max_outer_mpa: f64,
+    pub alerts: Vec<Alert>,
+}
+
+/// ACBB 점접촉 해석 (Theory §3, §6).
+///
+/// `q_n` 은 볼 1개에 걸리는 법선하중 [N]. 0 이면 전처리(χ·c_P)만 수행한다.
+#[tauri::command]
+pub fn compute_contact(input: BearingInput, q_n: f64) -> Result<ContactResponse, String> {
+    input.validate().map_err(|e| e.to_string())?;
+    let geo = geometry::compute_geometry_derived(&input.geometry).map_err(|e| e.to_string())?;
+    let derived =
+        hertz::compute_contact_derived(&geo, &input.material).map_err(|e| e.to_string())?;
+
+    let delta_mm = hertz::delta_from_q(derived.c_p_n_per_mm15, q_n);
+    let (a_i, b_i, p_i) = hertz::contact_ellipse(
+        derived.e_star_mpa,
+        geo.sum_rho_i_per_mm,
+        derived.a_star_inner,
+        derived.b_star_inner,
+        q_n,
+    );
+    let (a_e, b_e, p_e) = hertz::contact_ellipse(
+        derived.e_star_mpa,
+        geo.sum_rho_e_per_mm,
+        derived.a_star_outer,
+        derived.b_star_outer,
+        q_n,
+    );
+
+    let mut alerts = Vec::new();
+    let p_worst = p_i.max(p_e);
+    if p_worst > hertz::SIGMA_HU_MPA {
+        alerts.push(Alert {
+            level: if p_worst > 4_000.0 {
+                AlertLevel::Critical
+            } else {
+                AlertLevel::Warning
+            },
+            code: "CONTACT_STRESS_OVER_FATIGUE_LIMIT".into(),
+            message: format!(
+                "최대 접촉응력 {p_worst:.0} MPa 가 ISO 281 Annex B.3.1 권장 피로한계                  {:.0} MPa 를 초과합니다",
+                hertz::SIGMA_HU_MPA
+            ),
+        });
+    }
+
+    Ok(ContactResponse {
+        derived,
+        q_n,
+        delta_mm,
+        a_inner_mm: a_i,
+        b_inner_mm: b_i,
+        p_max_inner_mpa: p_i,
+        a_outer_mm: a_e,
+        b_outer_mm: b_e,
+        p_max_outer_mpa: p_e,
         alerts,
     })
 }

@@ -137,6 +137,146 @@ pub fn cubic_spline_interpolate(points: &[(f64, f64)], x: f64) -> f64 {
     t1 + t2 + t3 + t4
 }
 
+// ═══════════════════════════════════════════════════════════════════
+//  완전타원적분  (BB Phase 2, 2026-08-20)
+// ═══════════════════════════════════════════════════════════════════
+//
+// ISO 16281 식 (E.2)(E.3) / Harris 식 (6.31)(6.32):
+//
+//   K = ∫₀^{π/2} [1 − (1 − 1/χ²) sin²φ]^{−1/2} dφ
+//   E = ∫₀^{π/2} [1 − (1 − 1/χ²) sin²φ]^{+1/2} dφ
+//
+// 여기서 모듈러스 파라미터는 m = 1 − 1/χ² (0 ≤ m < 1) 이다.
+//
+// 저장소에 기존 구현이 전혀 없어 신규 작성했다 (P1 조사 확인).
+// `hertz_elliptical_coefficients` 의 Brewe-Hamrock 은 **회귀 근사**이지
+// 타원적분이 아니다 — 혼동 금지.
+//
+// 본선은 AGM(산술–기하평균), 교차검증은 Gauss-Legendre 구적이다 (P2 결정).
+
+/// 완전타원적분 K(m), E(m) — **AGM 본선 경로**.
+///
+/// `m = 1 − 1/χ²` ∈ [0, 1). AGM 은 2차 수렴이라 배정밀도에서 5~6회 반복이면
+/// 기계정밀도에 도달한다.
+///
+/// K = π / (2·AGM(1, √(1−m)))
+/// E = K · (1 − ½ Σ 2ⁿ cₙ²),  c₀ = √m
+pub fn elliptic_k_e_agm(m: f64) -> (f64, f64) {
+    assert!((0.0..1.0).contains(&m), "타원적분 모듈러스 m 은 [0,1) 이어야 합니다: {m}");
+    let mut a = 1.0_f64;
+    let mut b = (1.0 - m).sqrt();
+    let mut c = m.sqrt();
+    let mut sum = 0.5 * c * c; // n = 0 항: ½·2⁰·c₀²
+    let mut pow2 = 1.0_f64;
+
+    for _ in 0..60 {
+        if c.abs() < 1e-17 {
+            break;
+        }
+        let a_next = 0.5 * (a + b);
+        let b_next = (a * b).sqrt();
+        c = 0.5 * (a - b);
+        a = a_next;
+        b = b_next;
+        pow2 *= 2.0;
+        sum += 0.5 * pow2 * c * c;
+    }
+
+    let k = std::f64::consts::FRAC_PI_2 / a;
+    let e = k * (1.0 - sum);
+    (k, e)
+}
+
+/// `K(m) − E(m)`. 작은 m 에서의 자릿수 소실을 급수로 회피한다.
+///
+/// `K − E = (π/2)[ m/2 + 3m²/16 + 15m³/128 + … ]`
+///
+/// (E.1) 의 F(ρ) 계산에서 이 차이가 분자에 들어가므로, χ → 1 (m → 0) 근방에서
+/// 그냥 빼면 유효숫자가 전부 날아간다. **급수전개 분기** (P2 결정).
+pub fn elliptic_k_minus_e(m: f64) -> f64 {
+    const SERIES_LIMIT: f64 = 1.0e-4;
+    if m < SERIES_LIMIT {
+        // 계수: n≥1 에서 cₙ(1 + 1/(2n−1)) · (π/2),  cₙ = [(2n)!/(2^{2n}(n!)²)]²
+        std::f64::consts::FRAC_PI_2
+            * m
+            * (0.5 + m * (3.0 / 16.0 + m * (15.0 / 128.0)))
+    } else {
+        let (k, e) = elliptic_k_e_agm(m);
+        k - e
+    }
+}
+
+/// Gauss-Legendre 노드·가중치를 런타임 계산 (Newton on Pₙ).
+///
+/// 하드코딩 상수를 쓰지 않아 전사 오류 여지가 없다. 구간은 [−1, 1].
+fn gauss_legendre_nodes(n: usize) -> (Vec<f64>, Vec<f64>) {
+    let mut x = vec![0.0; n];
+    let mut w = vec![0.0; n];
+    let nf = n as f64;
+    for i in 0..n {
+        // 초기 추정 (Abramowitz-Stegun 근사)
+        let mut z = (std::f64::consts::PI * (i as f64 + 0.75) / (nf + 0.5)).cos();
+        let mut pp = 0.0;
+        for _ in 0..100 {
+            // Pₙ(z) 를 점화식으로 평가
+            let (mut p0, mut p1) = (1.0_f64, 0.0_f64);
+            for j in 0..n {
+                let p2 = p1;
+                p1 = p0;
+                let jf = j as f64;
+                p0 = ((2.0 * jf + 1.0) * z * p1 - jf * p2) / (jf + 1.0);
+            }
+            pp = nf * (z * p0 - p1) / (z * z - 1.0);
+            let dz = p0 / pp;
+            z -= dz;
+            if dz.abs() < 1e-16 {
+                break;
+            }
+        }
+        x[i] = z;
+        w[i] = 2.0 / ((1.0 - z * z) * pp * pp);
+    }
+    (x, w)
+}
+
+/// 완전타원적분 K(m), E(m) — **Gauss-Legendre 교차검증 경로**.
+///
+/// AGM 과 유도 경로가 완전히 달라 동어반복이 아니다.
+/// m → 1 에서 피적분함수가 φ = π/2 근방에 첨예해지므로,
+/// 구간을 π/2 쪽으로 **기하급수적으로 조밀하게** 분할한다.
+pub fn elliptic_k_e_quadrature(m: f64) -> (f64, f64) {
+    assert!((0.0..1.0).contains(&m), "타원적분 모듈러스 m 은 [0,1) 이어야 합니다: {m}");
+    const ORDER: usize = 24;
+    const PANELS: usize = 24;
+    let (xs, ws) = gauss_legendre_nodes(ORDER);
+
+    // [0, π/2] 를 π/2 쪽으로 기하 등비 분할
+    let half_pi = std::f64::consts::FRAC_PI_2;
+    let mut edges = Vec::with_capacity(PANELS + 1);
+    for i in 0..=PANELS {
+        let t = i as f64 / PANELS as f64;
+        // t → 1 근방을 조밀하게: 지수 3
+        edges.push(half_pi * (1.0 - (1.0 - t).powi(3)));
+    }
+
+    let mut k_acc = 0.0;
+    let mut e_acc = 0.0;
+    for p in 0..PANELS {
+        let (lo, hi) = (edges[p], edges[p + 1]);
+        let mid = 0.5 * (lo + hi);
+        let half = 0.5 * (hi - lo);
+        for j in 0..ORDER {
+            let phi = mid + half * xs[j];
+            let s = phi.sin();
+            let base = 1.0 - m * s * s;
+            let sq = base.max(0.0).sqrt();
+            k_acc += ws[j] * half / sq;
+            e_acc += ws[j] * half * sq;
+        }
+    }
+    (k_acc, e_acc)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -186,6 +326,77 @@ mod tests {
         assert!((got - expected).abs() / expected < 1e-12);
         // 크기 감각: 지름 11.5 mm 강구는 약 6.25 g
         assert!(got > 6.0 && got < 6.5);
+    }
+
+    // ─── 완전타원적분 ───────────────────────────────────────────────
+
+    #[test]
+    fn elliptic_at_zero_modulus_is_half_pi() {
+        // m = 0 (χ = 1): K = E = π/2 — 원형 접촉
+        let (k, e) = elliptic_k_e_agm(0.0);
+        assert!((k - std::f64::consts::FRAC_PI_2).abs() < 1e-15, "K={k}");
+        assert!((e - std::f64::consts::FRAC_PI_2).abs() < 1e-15, "E={e}");
+    }
+
+    #[test]
+    fn elliptic_agm_matches_quadrature() {
+        // 서로 다른 유도 경로(AGM vs Gauss-Legendre) 교차검증
+        for m in [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99, 0.999] {
+            let (k1, e1) = elliptic_k_e_agm(m);
+            let (k2, e2) = elliptic_k_e_quadrature(m);
+            assert!(
+                ((k1 - k2) / k1).abs() < 1e-10,
+                "m={m}: K AGM {k1} vs 구적 {k2}"
+            );
+            assert!(
+                ((e1 - e2) / e1).abs() < 1e-10,
+                "m={m}: E AGM {e1} vs 구적 {e2}"
+            );
+        }
+    }
+
+    #[test]
+    fn elliptic_known_values() {
+        // 표준 참조값 (m = 1/2): K = 1.854074677301372, E = 1.350643881047676
+        let (k, e) = elliptic_k_e_agm(0.5);
+        assert!((k - 1.854_074_677_301_372).abs() < 1e-13, "K={k}");
+        assert!((e - 1.350_643_881_047_676).abs() < 1e-13, "E={e}");
+    }
+
+    #[test]
+    fn elliptic_monotonic() {
+        // m 증가 시 K 는 증가, E 는 감소
+        let mut prev = (0.0, f64::INFINITY);
+        for m in [0.0, 0.2, 0.4, 0.6, 0.8, 0.95] {
+            let (k, e) = elliptic_k_e_agm(m);
+            assert!(k > prev.0, "K 단조성 위반 m={m}");
+            assert!(e < prev.1, "E 단조성 위반 m={m}");
+            prev = (k, e);
+        }
+    }
+
+    #[test]
+    fn k_minus_e_series_matches_direct() {
+        // 급수 분기 경계 부근에서 급수와 직접 차이가 이어져야 한다
+        for m in [1e-6, 1e-5, 5e-5, 9.9e-5, 1.01e-4, 1e-3, 1e-2] {
+            let series = elliptic_k_minus_e(m);
+            let (k, e) = elliptic_k_e_agm(m);
+            let direct = k - e;
+            let tol = if m < 1e-4 { 1e-6 } else { 1e-12 };
+            assert!(
+                ((series - direct) / direct).abs() < tol,
+                "m={m}: 급수 {series} vs 직접 {direct}"
+            );
+        }
+    }
+
+    #[test]
+    fn k_minus_e_leading_term() {
+        // K − E → (π/4) m  (m → 0)
+        let m = 1e-8;
+        let got = elliptic_k_minus_e(m);
+        let expected = std::f64::consts::FRAC_PI_4 * m;
+        assert!(((got - expected) / expected).abs() < 1e-7, "got={got}");
     }
 
     #[test]

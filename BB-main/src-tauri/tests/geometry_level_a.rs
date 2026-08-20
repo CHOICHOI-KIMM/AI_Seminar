@@ -352,9 +352,10 @@ fn a8_no_unit_conversion_constants_outside_util() {
     // 판정 대상은 **연산자에 인접한** 배율 상수다 (`* 1000.0`, `/ 1e-3` 등).
     // 단순한 수치 리터럴(회전속도 1000.0 rpm 같은 값)은 환산이 아니다.
     // `#[cfg(test)]` 이후는 픽스처라 검사에서 제외한다.
-    let sources: [(&str, &str); 3] = [
+    let sources: [(&str, &str); 4] = [
         ("types.rs", include_str!("../src/solver/types.rs")),
         ("geometry.rs", include_str!("../src/solver/geometry.rs")),
+        ("hertz.rs", include_str!("../src/solver/hertz.rs")),
         ("mod.rs", include_str!("../src/solver/mod.rs")),
     ];
     let magnitudes = ["1000.0", "1_000.0", "1e3", "1e-3", "0.001"];
@@ -386,10 +387,15 @@ fn a8b_dimensional_fields_carry_unit_suffix() {
     let dimensionless = [
         "nu", "hrc", "gamma", "f_rho_i", "f_rho_e", "percent",
         "osculation_inner", "osculation_outer", "convergence_tol", "residual_norm",
+        // ContactDerived — χ·타원적분·무차원 계수는 전부 무차원
+        "chi_inner", "chi_outer",
+        "k_ellip_inner", "e_ellip_inner", "k_ellip_outer", "e_ellip_outer",
+        "a_star_inner", "b_star_inner", "delta_star_inner",
+        "a_star_outer", "b_star_outer", "delta_star_outer",
     ];
     let suffixes = [
         "_mm", "_n", "_nmm", "_rad", "_mpa", "_per_mm", "_g_cm3", "_rpm", "_c",
-        "_ms", "_g", "_mm_per_min",
+        "_ms", "_g", "_mm_per_min", "_n_per_mm15",
     ];
 
     let mut offenders = Vec::new();
