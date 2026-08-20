@@ -71,21 +71,20 @@ CRB 의 Level 2(롤러 축방향 하중분포) + Level 3(슬라이스 Hertz) 이
 
 ### 3.2 모듈 처분
 
-| 파일 | 처분 | Phase |
-|---|---|---|
-| `types.rs` | 재작성 | P1 |
-| `geometry.rs` | 재작성 | P1 |
-| `hertz.rs` | 재작성 (선접촉 → 점접촉) | P2 |
-| `bearing.rs` | 재작성 (5-DOF + α_j) | P3 |
-| `life.rs` | 재작성 (ISO §5.3 → §5.2) | P4 |
-| `static_rating.rs` | 계수 교체 (ISO 76 볼) | P4 |
-| `lubrication.rs` | **부분 재사용** (§3.3) | P5 |
-| `gen1.rs` | **삭제** | P1 |
-| `gen3.rs` | **삭제** | P1 |
-| `beam.rs` | **삭제** | P1 |
-| `rib_contact.rs` | **삭제** (단, §3.3 의 2개 함수는 이관 후 삭제) | P1/P2 |
-| `hmehl.rs` | **삭제** | P1 |
-| `transient.rs`, `transient_io.rs`, `wec_risk.rs` | **삭제** | P1 |
+> **시드 시점 `mod.rs` 실태 (2026-08-20 조사)**: 아래 "시드 상태" 열은 BB 시드(CRB Phase 4 스냅샷) 시점에 **실제로 컴파일되고 있었는지** 를 뜻한다. 비활성 모듈은 CRB 화 과정에서 주석 처리된 상태로, **컴파일된 적이 없다.**
+
+| 파일 | 시드 상태 | 처분 | Phase |
+|---|---|---|---|
+| `types.rs` | 활성 | 재작성 | P1 |
+| `geometry.rs` | 활성 | 재작성 | P1 |
+| `hertz.rs` | 활성 | **P1 에서 일시 비활성화** → 재작성 후 재활성화 | P1(비활성)/P2 |
+| `bearing.rs` | 활성 | **P1 에서 일시 비활성화** → 재작성 후 재활성화 | P1(비활성)/P3 |
+| `life.rs` | **비활성** | 재활성화 + 재작성 (ISO §5.3 → §5.2) | P4 |
+| `static_rating.rs` | **비활성** | 재활성화 + 계수 교체 (ISO 76 볼) | P4 |
+| `lubrication.rs` | **비활성** | 재활성화 + 부분 재사용 (§3.3) | P5 |
+| `gen1.rs`, `gen3.rs`, `beam.rs` | 활성 | **삭제 완료** | P1 ✅ |
+| `rib_contact.rs` | 비활성 | **삭제 완료** (`hertz_elliptical_coefficients` 이관 후) | P1 ✅ |
+| `hmehl.rs`, `transient.rs`, `transient_io.rs`, `wec_risk.rs` | 비활성 | **삭제 완료** | P1 ✅ |
 
 ### 3.3 CRB 에서 그대로 재사용 가능한 자산 (조사 완료)
 
@@ -101,6 +100,8 @@ CRB 의 Level 2(롤러 축방향 하중분포) + Level 3(슬라이스 Hertz) 이
 | Newton-Raphson 수치 유틸, 수렴 판정 | `bearing.rs` | 참고 재사용 | 구조만 |
 | Tauri command 배선, 결과 직렬화 패턴 | `lib.rs`, `commands` | 유지 | |
 
+> ⚠️ **재사용 자산 2개가 비활성 모듈 안에 있다 (2026-08-20 조사)**: `hamrock_dowson_elliptical`(`lubrication.rs`)과 `κ`·`ν₁`·`e_C`(`life.rs`)는 시드 시점에 `mod.rs` 에서 주석 처리돼 **컴파일된 적이 없다.** 따라서 P4·P5 는 "이관"이 아니라 **"재활성화 → 컴파일 통과 → 검증"** 순서로 시작해야 하며, 그 비용을 Phase 산정에 포함해야 한다. (`hertz_elliptical_coefficients` 는 P1 에서 이관 완료 — 순수 함수라 무비용이었다.)
+>
 > ⚠️ 반대로 **재사용하면 안 되는 것**: `a_ISO` 롤러 계수(1.5859/1.3993/1.2348, 지수 0.4·−9.185) — 볼은 (31)~(33) 의 2.5671/2.2649/1.9987, 지수 0.83·1/3·−9.3 이다 (Theory §7.8). `C_u` 롤러 계수 0.2453·`C_0/8.2` → 볼은 0.2288·`C_0/22`.
 
 ### 3.4 좌표계 · 단위 규약 (D-7 ~ D-10)
@@ -246,9 +247,14 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 2. `rib_contact.rs` 에서 `hertz_elliptical_coefficients` 를 `hertz.rs` 로 이관 후 파일 삭제
 3. `types.rs` 재작성 — §3.4 스케치 확정. 슬라이스·프로파일·rib·Gen 모드 필드 전면 제거
 4. `geometry.rs` 재작성 — `A`(A.3), `α₀`(A.1), `R_i`(A.4), `γ`, `Σρ_i/Σρ_e`(E.4)(E.5), `F_i(ρ)/F_e(ρ)`(E.6)(E.7)
-5. **단위 경계 계층 신설** (D-10) — `commands` 에 `μm·kN·° ↔ mm·N·rad` 변환을 한 곳으로 모음
-6. `mod.rs` 정리, 프론트엔드 `@ts-nocheck` stub 로 빌드 그린 확보
-7. TypeScript 타입 미러 갱신 (축 이름은 ISO 규약, D-7)
+5. **`hertz.rs`·`bearing.rs` 를 `mod.rs` 에서 일시 비활성화** — `types.rs` 를 ACBB 로 재작성하면 두 모듈이 즉시 컴파일 불가가 된다(둘 다 `SliceGeometry`·`SliceContactResult`·`RollerProfile` 소비). 재작성은 각각 P2·P3 이므로 그때까지 주석 처리. 이에 따라 `commands.rs` 의 `compute_slice_geometry`·`compute_hertz_single_slice`·`solve_bearing`·`solve_bearing_dual` 4개 command 와 `lib.rs` 등록도 함께 해제한다.
+   → **P1 종료 시점의 상태**: 컴파일되는 솔버는 `types`+`geometry` 뿐, Tauri command 는 preset 7종만. 앱은 빌드되나 해석 기능은 일시적으로 0. (CRB 가 자기 Phase 1 에서 쓴 하이브리드 stub 과 동일 수법)
+6. **단위 경계 계층 신설** (D-10) — `commands` 에 `μm·kN·° ↔ mm·N·rad` 변환을 한 곳으로 모음
+7. `mod.rs` 정리, 프론트엔드 `@ts-nocheck` stub 로 빌드 그린 확보
+8. TypeScript 타입 미러 갱신 (축 이름은 ISO 규약, D-7)
+
+> ⚠️ **grep 에 안 걸리는 μm 스케일 매직넘버 3건** (2026-08-20 조사). mm 전환 시 놓치면 Jacobian·수렴이 조용히 깨진다 — P3 재작성 시 반드시 확인:
+> `bearing.rs:58 FD_STEP_DISP = 0.01 [μm]` → `1e-5` / `bearing.rs:218 .clamp(5.0, 30.0)` → `0.005~0.03` / `bearing.rs:284 .max(1e3) // 1 kN·mm`
 
 **산출물**: `cargo build` + `npm run build` 통과, Level A 통과
 
@@ -272,7 +278,8 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 ### Phase 2 — 점접촉 Hertz (Theory §3, §6)
 
 **작업**
-1. 완전타원적분 `K(χ)`, `E(χ)` — AGM 및 수치적분 2방식 구현 (교차검증용)
+0. `hertz.rs` 재작성 후 `mod.rs` 에서 **재활성화**, `commands.rs` 에 점접촉 command 신설
+1. 완전타원적분 `K(χ)`, `E(χ)` — AGM 및 수치적분 2방식 구현 (교차검증용). **저장소에 기존 구현이 없음이 확인됨** — `rib_contact.rs` 의 Brewe-Hamrock 은 회귀 근사이지 정확값이 아니다
 2. `χ` 솔버 — (E.1) 비선형 방정식. Brewe-Hamrock (6.33) 을 초기값으로
 3. `c_P` (40) — 하중 무관 상수로 캐시
 4. `Q = c_P δ^1.5` / 역함수 `δ = (Q/c_P)^(2/3)`
@@ -297,6 +304,7 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 ### Phase 3 — 5-DOF 평형 솔버 (Theory §4)
 
 **작업**
+0. `bearing.rs` 재작성 후 `mod.rs` 에서 **재활성화**, `commands.rs` 에 5-DOF command 신설
 1. `bearing.rs` 재작성 — 5-DOF 구조 + **DofMask 구속** 지원 (§3.5)
 2. `δ_j`·`α_j` 의 5-DOF 일반화 — **§3.4.1 의 식 그대로**. 틸트 팔은 `R_i` (D-9)
 3. 잔차 5개: `F_x, F_y, F_z, M_y, M_z`

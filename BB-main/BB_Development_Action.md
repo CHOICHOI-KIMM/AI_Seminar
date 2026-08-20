@@ -161,3 +161,101 @@ ISO Figure A.1 a) (PDF p.28) 렌더링으로 축 삼각대 육안 확인: `Z ⊗
 **다음**: P1 착수 (사용자 승인 대기)
 
 ---
+
+## 260820 — Phase 1 착수: 사전 조사 + 빌드 베이스라인
+
+**실행 규약** (사용자 확정): 조사만 병렬·구현은 단일 / 빌드·검증 실패는 자동수정 3회 후 중단(수식·설계 판단 필요 시 즉시 중단) / 스테이지별 커밋, push 없음 / 빌드 환경 선워밍.
+
+### 빌드 베이스라인 (삭제 전)
+
+| 항목 | 결과 |
+|---|---|
+| `cargo build --lib` | green, 2분 08초 |
+| `npm install` | green (`esbuild` win32-x64 정상) |
+| `cargo test` | **73 passed, 0 failed** — lib 52 / geometry_level_a 7 / bearing_level_d 8 / bearing_smoke 3 / roller_level_c 3 |
+
+### 조사 결과 — Plan 전제 오류 2건 발견
+
+**① `mod.rs` 실태가 Plan §3.2/§3.3 과 다름.** 삭제 대상 8개 중 5개(`rib_contact`·`hmehl`·`transient`·`transient_io`·`wec_risk`)가 이미 주석 처리돼 컴파일 대상이 아니었고, **남길 예정이던 `life`·`static_rating`·`lubrication` 도 함께 비활성** 상태였다. 실제 빌드되던 솔버 모듈은 `types`·`geometry`·`hertz`·`gen1`·`gen3`·`beam`·`bearing` 7개뿐.
+
+→ **Plan §3.3 의 "그대로 재사용" 자산 2개가 죽은 코드 안에 있다.** `hamrock_dowson_elliptical`(`lubrication.rs:2562`), `κ`·`ν₁`·`e_C`(`life.rs`) 는 컴파일된 적이 없어 재활성화 시 컴파일 여부가 미검증이다. P4·P5 는 "이관"이 아니라 "되살려서 컴파일 통과"부터 시작해야 한다.
+
+**② Phase 순서 의존이 Plan 에 미명시.** `types.rs` 를 ACBB 로 재작성하면 `hertz.rs`·`bearing.rs` 가 즉시 컴파일 불가가 된다(둘 다 `SliceGeometry`·`SliceContactResult`·`RollerProfile` 소비). 두 모듈의 재작성은 각각 P2·P3 일정이므로, **P1 에서 두 모듈을 일시 비활성화**하는 절차가 필요하다 (CRB 가 자기 Phase 1 에서 쓴 하이브리드 stub 과 동일 수법).
+
+→ 두 건 모두 Plan 본문에 반영함 (§3.2 활성/비활성 열, §3.3 단서, Phase 1/2/3 절차).
+
+### 조사 결과 — 구현에 직접 쓰는 사실
+
+**역참조**: 남길 솔버 모듈이 삭제 대상을 참조하는 곳 **0건**. 파손은 `mod.rs`·`commands.rs`·`lib.rs`·`tests/roller_level_c.rs` 4곳에서만 발생. 프론트엔드에서 `solve_roller_gen1/gen3*` 를 `invoke` 하는 코드도 **0건** → 신규 파손 없음. 단 `parse_load_csv`·`solve_transient`·`run_hmehl` 3건은 **삭제 이전부터 이미 런타임 파손** 상태(Rust 쪽 미등록).
+
+**타원적분 부재**: `K(χ)`·`E(χ)` 의 정확한 수치 계산 코드가 저장소 전체에 **0건**. `rib_contact.rs:125` 의 Brewe-Hamrock **회귀 근사**가 유일(주석은 "complete elliptic integral" 이라 오인 소지). → P2 에서 AGM 신규 구현 확정.
+
+**단위 실태** (D-10 근거 보강): 환산 상수 총 400건(활성 모듈 87건). 경계(`commands.rs`)에는 GPa→MPa 2건뿐이고 **kN→N 은 `bearing.rs` 안에 4중 중복**(L81/160/184/320), **GPa→MPa 는 전 모듈 15중 중복**.
+
+같은 물리량 단위 혼용: 힘 `kN`↔`N`(같은 struct 안 공존), 각도 `arcmin`/`deg`/`rad`/`degrees` **4종**, 유막 `μm`↔`nm`(같은 struct), 강성 `[N/mm/μm]`↔`[N/μm]`, 속도 `rpm`↔`rad/s`.
+
+**⚠ grep 에 안 걸리는 μm 스케일 매직넘버 3건** — 놓치면 Jacobian·수렴이 조용히 깨진다:
+
+| 위치 | 값 | mm 전환 시 |
+|---|---|---|
+| `bearing.rs:58` | `FD_STEP_DISP = 0.01 // [μm]` | `1e-5` 여야 함 |
+| `bearing.rs:218` | `.clamp(5.0, 30.0)` (step limit, μm) | `0.005~0.03` |
+| `bearing.rs:284` | `.max(1e3) // 1 kN·mm` | 모멘트 잔차 정규화 기준 |
+
+**물리식에 박힌 단위 3대 지점**: `hertz.rs` 시그니처(입력 μm / 출력 μm / 강성 `N/mm/μm`), `gen3.rs` Newton Jacobian `1e-3` 스케일(삭제됨), `bearing.rs:107` tilt 항(`1000.0 * γ * sinψ`).
+
+**`@ts-nocheck` 13개 파일**이 프론트 타입 안전망을 무력화 중 → 단위 변경이 프론트에 **조용히** 전파된다. P6 에서 해제가 리팩터링 안전망의 선행 조건.
+
+**되살릴 것 / 새로 만들 것**: `PreloadMode` enum(`types.rs:343`)은 TRB 잔재로 남아 있으나 입력과 연결이 끊긴 상태 → D-2 로 **재연결**. `f_a`(축하중)와 접촉각 필드는 CRB 가 D4 로 **완전 삭제** → 신규 추가 필요. `BearingEquilibrium.displacement: [f64; 5]`(`types.rs:1077`)는 이미 5칸이고 CRB 가 3개만 채우던 dead slot 구조라, **BB 5-DOF 로 가면 오히려 해소되는 방향**.
+
+**추가 수확**: `lubrication.rs:96` 에 `nvm_central_film`(Nijenbanning-Venner-Moes 1994, 타원접촉 4-regime 통합식, `rx`·`ry` 직접 입력)이 존재 → P5 에서 Hamrock-Dowson 의 교차검증 상대로 쓸 수 있어 **T-8 우회 수단**이 된다.
+
+---
+
+## 260820 — P1-S1: 롤러 전용 모듈 삭제
+
+**커밋** `62dcc4c` — 15 files changed, 69 insertions(+), 7,927 deletions(-)
+
+### 삭제
+
+| 대상 | 행수 | 사유 |
+|---|---|---|
+| `solver/{gen1,gen3,beam}.rs` | 2,001 | 슬라이스·빔 커플링 — 볼은 단일 점접촉이라 개념 소멸 |
+| `solver/rib_contact.rs` | 896 | 볼베어링에 rib 없음 |
+| `solver/{hmehl,transient,transient_io,wec_risk}.rs` | 4,481 | 초기 범위 밖 (Plan §2.2) |
+| `tests/roller_level_c.rs` | 150 | Gen1↔Gen3 교차검증 — 볼에 대응 개념 없음 |
+
+### 이관 (삭제 전 보존)
+
+`hertz_elliptical_coefficients` → `hertz.rs`. 의존성 0의 순수 함수라 import 추가 불필요. 주석에 **"반환되는 F_e, E_e 는 회귀 근사이지 정확값이 아니다"** 를 명시 — 원본 주석이 "complete elliptic integral" 이라 오인 소지가 있었다. 용도는 P2 의 χ 초기추정값·검산.
+
+### 참조 정리
+
+`solver/mod.rs`(선언 3줄 삭제 + 사유 주석 BB 기준 갱신) / `commands.rs`(use 2줄 + Gen1·Gen3 command 4개 + `Gen1Result`·`Gen3Result` struct) / `lib.rs`(command 등록 4건) / `Cargo.toml`(고아 의존성 `sprs`·`rustfft`·`csv`·`rand`·`rand_distr` 제거, `nalgebra` 는 P3 5×5 Newton 선형해 용도로 존치)
+
+### 검증 — 숫자 소명
+
+```
+cargo build --lib   green (58초)
+cargo test          73 → 42 passed, 0 failed
+```
+
+감소 **31건 전량 소명**:
+
+| 출처 | 개수 |
+|---|---|
+| `gen1.rs` 내부 유닛 테스트 | 11 |
+| `gen3.rs` 내부 유닛 테스트 | 13 |
+| `beam.rs` 내부 유닛 테스트 | 4 |
+| `tests/roller_level_c.rs` | 3 |
+| **합계** | **31** = 73 − 42 ✓ |
+
+나머지 5개 삭제 파일(`rib_contact` 21 / `hmehl` 40 / `transient` 9 / `transient_io` 4 / `wec_risk` 4 = 78개 테스트)은 이미 `mod.rs` 비활성이라 애초에 컴파일·실행 대상이 아니었음. **깨진 것 0건.**
+
+> **기록 규약**: 이후 모든 스테이지도 「증감 전량 소명」 형식을 유지한다. 테스트 수가 줄었을 때 *깨진 것* 과 *지운 것* 을 구분할 수 없으면 검증이 성립하지 않는다.
+
+### 다음
+
+**P1-S2 (types.rs 재작성) 진입 전 사용자 확인 대기.** 위 전제 오류 ② 때문에 `hertz.rs`·`bearing.rs` 를 P1 에서 일시 비활성화해야 하며, 그 결과 P1 종료 시점에 컴파일되는 솔버는 `types`+`geometry` 뿐이고 Tauri command 는 preset 7종만 남는다(해석 기능 일시 0).
+
+---
