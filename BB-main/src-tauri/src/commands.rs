@@ -7,12 +7,12 @@
 //   solve_bearing / solve_bearing_dual                    (CRB 3-DOF 평형)
 //
 // ─── BB 후속 단계 신규 command (예정) ───────────────────────────────
-// solve_bearing_5dof   : P3    (5-DOF 평형 + 위상 스윕)
 // compute_life         : P4    (ISO 16281 §5.2)
 // compute_film         : P5    (Hamrock-Dowson 타원접촉)
 
 use tauri::{AppHandle, Emitter};
 
+use crate::solver::bearing;
 use crate::solver::geometry;
 use crate::solver::hertz;
 use crate::solver::types::*;
@@ -136,4 +136,20 @@ pub fn compute_contact(input: BearingInput, q_n: f64) -> Result<ContactResponse,
         p_max_outer_mpa: p_e,
         alerts,
     })
+}
+
+// ─── P3-1: 5-DOF 평형 ─────────────────────────────────────────────────
+
+/// ACBB 5-DOF 정적 평형 (Theory §4).
+///
+/// `SolverParams::dof_mask` 로 자유도를 구속할 수 있다 (`ISO_3DOF` 등).
+/// `phase_sweep.enabled` 이면 케이지 위상 스윕 결과가 함께 반환된다.
+#[tauri::command]
+pub async fn solve_bearing(app: AppHandle, input: BearingInput) -> Result<BearingResult, String> {
+    let _reporter = TauriReporter { app };
+    tauri::async_runtime::spawn_blocking(move || {
+        bearing::solve_bearing(&input).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| format!("Task join error: {e}"))?
 }

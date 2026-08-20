@@ -1,494 +1,659 @@
-// CRB Bearing-Level Equilibrium Solver — Phase 4 정식 (§4.12.5 Phase 분리 방식)
-// ─────────────────────────────────────────────────────────────────────
-// ISO 16281 A.3.1 (ISO p. 22) Cylindrical roller bearing internal load distribution.
+// BB Contact Analysis — 베어링 평형 솔버 (5-DOF)
 //
-// 평형 DOF = 3 (Plan §6 D4+D6+D7):
-//   disp[0] = δ_x  radial displacement X (수평)      [μm]
-//   disp[1] = δ_y  radial displacement Y (수직, 중력) [μm]
-//   disp[2] = γ_x  misalignment about X-axis         [rad]
+// BB Phase 3-1 (2026-08-20): CRB 3-DOF 솔버를 백지에서 교체.
 //
-// 알고리즘 (§4.12.5): Phase 분리 (Outer γ_x + Inner (δx, δy) 2-DOF)
-//   Outer loop: γ_x 1-DOF NR (M_x equilibrium)
-//     Inner: Phase A 2-DOF NR (δx, δy) with γ_x fixed  ← TRB 원본 line 892~945 이식
+// ── 근거 ────────────────────────────────────────────────────────────
+// BB_Development_Theory.md §4 (특히 §4.4 「본 SW 가 구현하는 확정 형태」, §4.5 문헌 계보).
+// 확정형은 Harris & Mindel (1973) 식 (81)(82)(86)~(90) 의 정적 환원형과 동일하다.
+//   - 모멘트 팔은 `R_i` 로 통일 (D-9b) — ISO (A.8) 의 `D_pw/2` 가 아니다
+//   - 틸트 항은 선형 `R_i γ` (D-9c) — ISO (A.2) 의 `sin ψ` 가 아니다
+//   - 이 조합이 **가상일 공액**이므로 야코비안이 대칭·양반정부호가 된다
 //
-// TRB 원본 (git show 5441446:...bearing.rs) 참조.
-// Phase 5+ 에서 재활성화될 life/static_rating/thermal_speed 는 현재 Default 값으로 채움.
+// ── 좌표계 (D-7) ────────────────────────────────────────────────────
+// X = 회전축, Y·Z = 반경방향. 미지수 (δ_x, δ_y, δ_z, γ_y, γ_z).
+//
+// ── 단위 (D-10) ─────────────────────────────────────────────────────
+// mm · N · rad. 이 파일에 단위 환산 상수는 없다.
+//
+// ── 정식화 ──────────────────────────────────────────────────────────
+// 볼 j (φ_j = 2π(j−1)/Z) 에 대해
+//
+//   X_j = A sin α₀ + δ_x − R_i (γ_z cos φ_j − γ_y sin φ_j)      축 성분
+//   R_j = A cos α₀ + δ_y cos φ_j + δ_z sin φ_j                  반경 성분
+//   L_j = √(X_j² + R_j²),   δ_j = max(0, L_j − A)
+//   sin α_j = X_j/L_j,      cos α_j = R_j/L_j
+//   Q_j = c_P δ_j^(3/2)
+//
+// 내부 일반화 힘 (포텐셜의 기울기):
+//
+//   g(u) = Σ_j Q_j · v_j ,   v_j = ∂δ_j/∂u = sin α_j · a_j + cos α_j · b_j
+//
+//   a_j = ∂X_j/∂u = [1, 0, 0, +R_i sin φ_j, −R_i cos φ_j]
+//   b_j = ∂R_j/∂u = [0, cos φ_j, sin φ_j, 0, 0]
+//
+// 야코비안 (포텐셜의 헤시안) — a_j·b_j 가 u 에 무관하므로
+//
+//   J = Σ_j [ K_j · v_j v_jᵀ + (Q_j/L_j) · w_j w_jᵀ ] ,   w_j = cos α_j · a_j − sin α_j · b_j
+//   K_j = dQ_j/dδ_j = 1.5 c_P √δ_j
+//
+// **볼당 rank-2 업데이트이며 대칭·양반정부호다.** 수치미분이 필요 없고,
+// 이 구조 자체가 §4.5 의 에너지 공액 결론에 대한 코드 수준 확인이다.
+
+use nalgebra::{Matrix5, Vector5};
 
 use crate::error::SolverError;
-use crate::solver::geometry::compute_slices;
+use crate::solver::geometry;
 use crate::solver::hertz;
+use crate::solver::util;
 use crate::solver::types::*;
 
-// ─── 순수 계산 함수 ─────────────────────────────────────────────────
-
-/// Roller angular positions [rad], evenly spaced starting at `load_angle`.
-pub fn roller_positions(z: u32, load_angle: f64) -> Vec<f64> {
-    let two_pi = std::f64::consts::TAU;
-    (0..z).map(|j| load_angle + two_pi * (j as f64) / (z as f64)).collect()
+/// 미지수·잔차 대각 스케일링에 쓰는 길이 (= `R_i`).
+///
+/// 틸트 `γ` 를 `R_i γ` (길이 차원) 로, 모멘트 잔차를 `M/R_i` (힘 차원) 로 바꿔
+/// 5×5 야코비안의 모든 성분을 같은 차원으로 만든다. 자의적 상수가 아니라
+/// 기하에서 나오는 물리량이다 (Plan §3.4 스케일링 결정).
+///
+/// 스케일된 미지수: `ũ = [δ_x, δ_y, δ_z, R_i γ_y, R_i γ_z]` [mm]
+/// 스케일된 잔차:   `r̃ = [F_x, F_y, F_z, M_y/R_i, M_z/R_i]` [N]
+#[derive(Debug, Clone, Copy)]
+struct BallKinematics {
+    /// `a_j` — 스케일 공간에서 `[1, 0, 0, sin φ_j, −cos φ_j]` (R_i 가 빠짐)
+    a: Vector5<f64>,
+    /// `b_j` — `[0, cos φ_j, sin φ_j, 0, 0]`
+    b: Vector5<f64>,
+    phi: f64,
 }
 
-/// Radial load direction [rad] = atan2(f_y, f_x). Returns 0 if negligible.
-pub fn radial_load_angle(f_x: f64, f_y: f64) -> f64 {
-    let f_r = (f_x * f_x + f_y * f_y).sqrt();
-    if f_r < 1e-10 { 0.0 } else { f_y.atan2(f_x) }
-}
-
-/// Roller **macro-center** radial approach [μm] at roller mid-length (x_axial = L_we/2).
-///   δ_r_center(ψ) = δ_x·cos ψ + δ_y·sin ψ − g_r/2
-///
-/// γ_x is **NOT** included here — for single-row CRB (α=0), γ_x has zero radial
-/// arm at macro level and instead produces slice-level Δδ_k = x_arm·γ_x·sin ψ
-/// (handled inside `compute_residual_3d`). TRB 원본 (5441446 line 84) 은
-/// (d_pw/2)·γ_x·sin ψ 항을 포함했으나, 이는 axial 방향 arm 이며 α=0 인 CRB
-/// 에서는 contact normal 에 sin α = 0 로 곱해져 무효 → slice-level 로 이관.
-pub fn roller_approach(
-    disp: &[f64; 3],
-    psi: f64,
-    _d_pw: f64,
-    g_r: f64,
-    _gamma_ext: f64,
-) -> f64 {
-    let (cos_psi, sin_psi) = (psi.cos(), psi.sin());
-    let delta_r = disp[0] * cos_psi + disp[1] * sin_psi;
-    delta_r - g_r / 2.0
-}
-
-// ─── Residual + Jacobian ─────────────────────────────────────────────
-
-const FD_STEP_DISP: f64 = 0.01;    // finite-difference step for δ [μm]
-const FD_STEP_GAMMA: f64 = 1e-6;    // finite-difference step for γ [rad]
-const OUTER_MAX_ITER: usize = 30;
-const OUTER_TOL_REL: f64 = 1e-4;
-const GAMMA_DAMPING: f64 = 0.5;     // γ_x update under-relaxation
-
-/// Compute 3-D residual [F_x_res, F_y_res, M_x_res] and per-roller results.
-///
-/// Slice-level implementation (CRB Option B):
-///   δ_k(ψ) = δ_r_center(ψ) + (x_axial_k − L_we/2)·γ_x_total·sin ψ · 1000
-///                            − Δz_outer_k − Δz_inner_k·cos_alpha_diff
-///
-/// γ_x_total = disp[2] + gamma_ext → slice 별 Δδ_k 편차 → q_k 좌우 비대칭 →
-/// M_x = Σ_j sin ψ_j · Σ_k q_k·l_k·(x_k − L_we/2)  (single-row CRB 물리).
-fn compute_residual_3d(
-    input: &BearingInput,
-    slices: &[SliceGeometry],
-    disp: &[f64; 3],
-) -> Result<([f64; 3], Vec<RollerResult>), SolverError> {
-    let mg = &input.macro_geom;
-    let z = mg.z;
-    let cos_alpha_diff = 1.0; // CRB α=0
-
-    let f_x = input.operating.f_x * 1000.0;
-    let f_y = input.operating.f_y * 1000.0;
-    let m_x = input.operating.m_x * 1e6;
-    let gamma_ext = input.operating.gamma_rad();
-    let gamma_x_total = disp[2] + gamma_ext;
-
-    let load_angle = radial_load_angle(f_x, f_y);
-    let positions = roller_positions(z, load_angle);
-
-    let l_we_half = mg.l_we / 2.0;
-
-    // Pre-compute Hertz material constants
-    let mat = &input.material;
-    let e_star_gpa = hertz::combined_elastic_modulus(mat.e_roller, mat.nu, mat.e_ring, mat.nu);
-    let e_star_mpa = e_star_gpa * 1000.0;
-    let e_avg_mpa = ((mat.e_roller + mat.e_ring) / 2.0) * 1000.0;
-    let nu = mat.nu;
-
-    let mut residual = [0.0_f64; 3];
-    let mut roller_results = Vec::with_capacity(z as usize);
-
-    for &psi in positions.iter() {
-        let (cos_psi, sin_psi) = (psi.cos(), psi.sin());
-        // macro-center radial approach (γ_x-free)
-        let delta_r_center = disp[0] * cos_psi + disp[1] * sin_psi - mg.g_r / 2.0;
-        // tilt gradient: [μm] per [mm] of axial arm
-        let tilt_um_per_mm = 1000.0 * gamma_x_total * sin_psi;
-
-        let mut slice_results = Vec::with_capacity(slices.len());
-        let mut q_normal = 0.0_f64;
-        let mut m_ax_j = 0.0_f64; // Σ q_k·l_k·x_arm  [N·mm]
-
-        for s in slices.iter() {
-            let x_arm = s.x_axial - l_we_half;
-            let delta_k_rigid = delta_r_center + x_arm * tilt_um_per_mm;
-            let delta_k = delta_k_rigid
-                - s.delta_z_total_outer
-                - s.delta_z_total_inner * cos_alpha_diff;
-
-            let h1 = s.r_roller;
-            let h2 = s.r_roller * 2.0;
-            let sr = hertz::compute_slice_contact(
-                s.k, delta_k, s.r_eq_inner, s.r_eq_outer,
-                e_star_mpa, e_avg_mpa, nu,
-                s.slice_width, h1, h2, cos_alpha_diff,
-            );
-
-            if sr.in_contact {
-                q_normal += sr.q_k * s.slice_width;
-                m_ax_j += sr.q_k * s.slice_width * x_arm;
+fn ball_kinematics(z: u32, phase0: f64) -> Vec<BallKinematics> {
+    let n = z as usize;
+    (0..n)
+        .map(|j| {
+            let phi = phase0 + std::f64::consts::TAU * (j as f64) / (n as f64);
+            let (s, c) = phi.sin_cos();
+            BallKinematics {
+                a: Vector5::new(1.0, 0.0, 0.0, s, -c),
+                b: Vector5::new(0.0, c, s, 0.0, 0.0),
+                phi,
             }
-            slice_results.push(sr);
+        })
+        .collect()
+}
+
+/// 한 볼의 순간 상태.
+struct BallState {
+    delta: f64,
+    q: f64,
+    /// dQ/dδ
+    k: f64,
+    sin_a: f64,
+    cos_a: f64,
+    l: f64,
+    loaded: bool,
+}
+
+fn ball_state(
+    kin: &BallKinematics,
+    u: &Vector5<f64>,
+    a_dist: f64,
+    alpha_0: f64,
+    c_p: f64,
+) -> BallState {
+    let (sa0, ca0) = alpha_0.sin_cos();
+    let x = a_dist * sa0 + kin.a.dot(u);
+    let r = a_dist * ca0 + kin.b.dot(u);
+    let l = (x * x + r * r).sqrt();
+    let delta = l - a_dist;
+    if delta <= 0.0 || l <= 0.0 {
+        return BallState {
+            delta: 0.0,
+            q: 0.0,
+            k: 0.0,
+            sin_a: if l > 0.0 { x / l } else { alpha_0.sin() },
+            cos_a: if l > 0.0 { r / l } else { alpha_0.cos() },
+            l: l.max(a_dist),
+            loaded: false,
+        };
+    }
+    BallState {
+        delta,
+        q: c_p * delta.powf(1.5),
+        k: 1.5 * c_p * delta.sqrt(),
+        sin_a: x / l,
+        cos_a: r / l,
+        l,
+        loaded: true,
+    }
+}
+
+/// 잔차 `g(u) − f_ext` (스케일 공간) 와 야코비안을 동시에 계산한다.
+fn residual_and_jacobian(
+    kins: &[BallKinematics],
+    u: &Vector5<f64>,
+    f_ext: &Vector5<f64>,
+    a_dist: f64,
+    alpha_0: f64,
+    c_p: f64,
+) -> (Vector5<f64>, Matrix5<f64>, u32) {
+    let mut g = Vector5::zeros();
+    let mut jac = Matrix5::zeros();
+    let mut loaded = 0u32;
+
+    for kin in kins {
+        let st = ball_state(kin, u, a_dist, alpha_0, c_p);
+        if !st.loaded {
+            continue; // active set: 비접촉 볼은 잔차·야코비안에 기여하지 않는다
+        }
+        loaded += 1;
+        let v = kin.a * st.sin_a + kin.b * st.cos_a;
+        let w = kin.a * st.cos_a - kin.b * st.sin_a;
+        g += v * st.q;
+        jac += v * v.transpose() * st.k + w * w.transpose() * (st.q / st.l);
+    }
+    (g - f_ext, jac, loaded)
+}
+
+/// 초기 추정값 — `c_P` 기반 해석해 (자의적 상수 없음).
+///
+/// - 축: 순수 축하중 해석해 `F_x = Z c_P δ^(3/2) sin α₀` 에서 `δ`, 그리고 `δ_x ≈ δ/sin α₀`
+/// - 반경: Sjövall 하중분포에서 `Q_max = F_r /(Z J_r cos α₀)`.
+///   `J_r = 0.2288` 은 **Harris Table 7.4 의 ε = 0.5 (클리어런스 0) 값**이다 (Theory §9.1).
+///   즉 하드코딩 상수가 아니라 문헌 표값이다.
+/// - 틸트: 0
+fn initial_guess(f_ext: &Vector5<f64>, z: u32, alpha_0: f64, c_p: f64) -> Vector5<f64> {
+    /// Harris Table 6.1/7.4 계열 — 점접촉 Sjövall 적분 `J_r(ε = 0.5)`
+    const J_R_AT_HALF: f64 = 0.2288;
+
+    let zf = z as f64;
+    let (sa0, ca0) = alpha_0.sin_cos();
+
+    let axial = if f_ext[0].abs() > 0.0 && sa0.abs() > 1.0e-6 {
+        let q = f_ext[0].abs() / (zf * sa0.abs());
+        let delta = (q / c_p).powf(2.0 / 3.0);
+        f_ext[0].signum() * delta / sa0.abs()
+    } else {
+        0.0
+    };
+
+    let f_r = (f_ext[1] * f_ext[1] + f_ext[2] * f_ext[2]).sqrt();
+    let radial_mag = if f_r > 0.0 && ca0.abs() > 1.0e-6 {
+        let q_max = f_r / (zf * J_R_AT_HALF * ca0.abs());
+        let delta = (q_max / c_p).powf(2.0 / 3.0);
+        delta / ca0.abs()
+    } else {
+        0.0
+    };
+    let (uy, uz) = if f_r > 0.0 {
+        (radial_mag * f_ext[1] / f_r, radial_mag * f_ext[2] / f_r)
+    } else {
+        (0.0, 0.0)
+    };
+
+    // 틸트는 0 에서 시작한다 — 모멘트 하중의 해석적 초기값은 문헌에 없고,
+    // 야코비안이 SPD 라 0 에서 출발해도 안정적으로 수렴한다.
+    Vector5::new(axial, uy, uz, 0.0, 0.0)
+}
+
+/// 5-DOF 평형 해석 (한 위상에서).
+///
+/// `phase0` 은 케이지 위상 [rad] (D-8). `mask` 로 자유도를 구속한다 (D-1).
+#[allow(clippy::too_many_arguments)]
+fn solve_at_phase(
+    geom: &BallBearingGeometry,
+    derived: &GeometryDerived,
+    contact: &ContactDerived,
+    operating: &OperatingConditions,
+    params: &SolverParams,
+    preload_n: f64,
+    phase0: f64,
+) -> Result<BearingEquilibrium, SolverError> {
+    let r_i = derived.r_i_center_mm;
+    let kins = ball_kinematics(geom.z, phase0);
+
+    // 외력 (스케일 공간): 모멘트는 R_i 로 나눠 힘 차원으로
+    let f_ext = Vector5::new(
+        operating.f_x_n + preload_n,
+        operating.f_y_n,
+        operating.f_z_n,
+        operating.m_y_nmm / r_i,
+        operating.m_z_nmm / r_i,
+    );
+
+    let mask = params.dof_mask;
+    let free = [
+        mask.free_x,
+        mask.free_y,
+        mask.free_z,
+        mask.free_gy,
+        mask.free_gz,
+    ];
+
+    let mut u = initial_guess(&f_ext, geom.z, derived.alpha_0_rad, contact.c_p_n_per_mm15);
+    // 구속 자유도는 0 으로 고정
+    for (i, fr) in free.iter().enumerate() {
+        if !fr {
+            u[i] = 0.0;
+        }
+    }
+
+    // 잔차 정규화 기준 — 외력 크기, 하한은 최대 볼하중 규모
+    let f_scale = f_ext.norm().max(1.0);
+
+    let mut converged = false;
+    let mut iterations = 0u32;
+    let mut residual_norm = f64::INFINITY;
+    let mut loaded = 0u32;
+
+    for it in 0..params.max_iterations {
+        iterations = it + 1;
+        let (r_full, j_full, n_loaded) = residual_and_jacobian(
+            &kins,
+            &u,
+            &f_ext,
+            derived.a_mm,
+            derived.alpha_0_rad,
+            contact.c_p_n_per_mm15,
+        );
+        loaded = n_loaded;
+
+        // 구속 자유도의 잔차는 판정에서 제외한다
+        let mut r_masked = r_full;
+        for (i, fr) in free.iter().enumerate() {
+            if !fr {
+                r_masked[i] = 0.0;
+            }
+        }
+        residual_norm = r_masked.norm() / f_scale;
+        if residual_norm < params.convergence_tol {
+            converged = true;
+            break;
+        }
+        if n_loaded == 0 {
+            return Err(SolverError::ConvergenceFailure(
+                "접촉하는 볼이 하나도 없습니다 — 하중·클리어런스 입력을 확인하십시오".into(),
+            ));
         }
 
-        residual[0] += q_normal * cos_psi;
-        residual[1] += q_normal * sin_psi;
-        residual[2] += m_ax_j * sin_psi;
+        // 구속 자유도를 소거한 축소계 구성
+        let idx: Vec<usize> = (0..5).filter(|i| free[*i]).collect();
+        let n = idx.len();
+        let mut a = vec![0.0; n * n];
+        let mut b = vec![0.0; n];
+        for (ri, &i) in idx.iter().enumerate() {
+            b[ri] = -r_full[i];
+            for (ci, &c) in idx.iter().enumerate() {
+                a[ri * n + ci] = j_full[(i, c)];
+            }
+        }
+        let step_reduced = solve_dense(&mut a, &mut b, n).ok_or_else(|| {
+            SolverError::ConvergenceFailure(format!(
+                "야코비안이 특이합니다 (반복 {it}, 접촉 볼 {n_loaded}개)"
+            ))
+        })?;
 
-        roller_results.push(RollerResult {
-            psi_deg: psi.to_degrees(),
-            q_normal,
-            q_normal_inner: q_normal,
-            slice_results,
-            rib_result: None,
+        let mut step = Vector5::zeros();
+        for (ri, &i) in idx.iter().enumerate() {
+            step[i] = step_reduced[ri];
+        }
+
+        // backtracking line search — 단순 감소 조건
+        let mut alpha = 1.0_f64;
+        let mut accepted = false;
+        for _ in 0..30 {
+            let trial = u + step * alpha;
+            let (rt, _, _) = residual_and_jacobian(
+                &kins,
+                &trial,
+                &f_ext,
+                derived.a_mm,
+                derived.alpha_0_rad,
+                contact.c_p_n_per_mm15,
+            );
+            let mut rt_m = rt;
+            for (i, fr) in free.iter().enumerate() {
+                if !fr {
+                    rt_m[i] = 0.0;
+                }
+            }
+            if rt_m.norm() / f_scale < residual_norm {
+                u = trial;
+                accepted = true;
+                break;
+            }
+            alpha *= 0.5;
+        }
+        if !accepted {
+            // 감소하는 스텝을 못 찾음 — 최소 스텝으로 전진하지 않고 종료
+            break;
+        }
+    }
+
+    // 결과 조립
+    let mut ball_results = Vec::with_capacity(geom.z as usize);
+    let mut q_max = 0.0_f64;
+    for kin in &kins {
+        let st = ball_state(kin, &u, derived.a_mm, derived.alpha_0_rad, contact.c_p_n_per_mm15);
+        let (a_i, b_i, p_i) = hertz::contact_ellipse(
+            contact.e_star_mpa,
+            derived.sum_rho_i_per_mm,
+            contact.a_star_inner,
+            contact.b_star_inner,
+            st.q,
+        );
+        let (a_e, b_e, p_e) = hertz::contact_ellipse(
+            contact.e_star_mpa,
+            derived.sum_rho_e_per_mm,
+            contact.a_star_outer,
+            contact.b_star_outer,
+            st.q,
+        );
+        q_max = q_max.max(st.q);
+        ball_results.push(BallResult {
+            phi_rad: kin.phi.rem_euclid(std::f64::consts::TAU),
+            delta_mm: st.delta,
+            alpha_rad: st.sin_a.atan2(st.cos_a),
+            q_n: st.q,
+            loaded: st.loaded,
+            a_inner_mm: a_i,
+            b_inner_mm: b_i,
+            p_max_inner_mpa: p_i,
+            a_outer_mm: a_e,
+            b_outer_mm: b_e,
+            p_max_outer_mpa: p_e,
         });
     }
 
-    residual[0] -= f_x;
-    residual[1] -= f_y;
-    residual[2] -= m_x;
+    // 스케일 공간 → 물리 단위 (γ = ũ / R_i)
+    let displacement = [u[0], u[1], u[2], u[3] / r_i, u[4] / r_i];
 
-    Ok((residual, roller_results))
-}
-
-// ─── Initial Guess (TRB 원본 line 278~319 스타일) ──────────────────
-
-/// Initial displacement guess — k_radial stiffness 기반.
-fn initial_guess_crb(input: &BearingInput) -> [f64; 3] {
-    let z = input.macro_geom.z as f64;
-    let f_x = input.operating.f_x * 1000.0;
-    let f_y = input.operating.f_y * 1000.0;
-
-    let k_roller = 500.0_f64;
-    let k_radial = (z / 2.0) * k_roller;    // CRB: cos α = 1
-
-    let dx = if f_x.abs() > 1.0 {
-        (f_x / k_radial).clamp(-50.0, 50.0)
-    } else { 0.0 };
-    let dy = if f_y.abs() > 1.0 {
-        (f_y / k_radial).clamp(-50.0, 50.0)
-    } else { 0.0 };
-
-    [dx, dy, 0.0]
-}
-
-// ─── Phase A: 2-DOF NR (δ_x, δ_y) with γ_x fixed ────────────────────
-// TRB 원본 (git show 5441446:...bearing.rs) line 892~945 이식.
-
-fn phase_a_radial_2dof(
-    disp: &mut [f64; 3],
-    input: &BearingInput,
-    slices: &[SliceGeometry],
-) -> Result<(), SolverError> {
-    let f_x = input.operating.f_x * 1000.0;
-    let f_y = input.operating.f_y * 1000.0;
-    let f_r = (f_x * f_x + f_y * f_y).sqrt().max(1.0);
-    let tol = input.solver.convergence_tol.max(1e-6);
-    let max_iter = input.solver.max_iterations;
-    let h_s = FD_STEP_DISP;
-
-    for _iter in 0..max_iter {
-        let (r, _) = compute_residual_3d(input, slices, disp)?;
-        let r_rad = (r[0] * r[0] + r[1] * r[1]).sqrt();
-        if r_rad / f_r < tol {
-            return Ok(());
-        }
-
-        // 2×2 Jacobian
-        let mut j2 = [[0.0_f64; 2]; 2];
-        for col in 0..2 {
-            let mut dp = *disp;
-            dp[col] += h_s;
-            let (rp, _) = compute_residual_3d(input, slices, &dp)?;
-            for row in 0..2 {
-                j2[row][col] = (rp[row] - r[row]) / h_s;
-            }
-        }
-
-        let det = j2[0][0] * j2[1][1] - j2[0][1] * j2[1][0];
-        if det.abs() < 1e-30 {
-            return Ok(()); // singular — bail
-        }
-        let dx_step = (j2[1][1] * (-r[0]) - j2[0][1] * (-r[1])) / det;
-        let dy_step = (j2[0][0] * (-r[1]) - j2[1][0] * (-r[0])) / det;
-
-        // Step clamp: max_step = disp_mag * 0.5, clamp 5~30 μm
-        let disp_mag = (disp[0] * disp[0] + disp[1] * disp[1]).sqrt();
-        let max_step = (disp_mag * 0.5).clamp(5.0, 30.0);
-        let step_norm = (dx_step * dx_step + dy_step * dy_step).sqrt();
-        let scale = if step_norm > max_step { max_step / step_norm } else { 1.0 };
-        let dd = [dx_step * scale, dy_step * scale];
-
-        // Line search 20회 + best_alpha
-        let mut alpha_ls = 1.0_f64;
-        let mut best_alpha = 0.0_f64;
-        let mut best_norm = r_rad;
-        for _ in 0..20 {
-            let mut dt = *disp;
-            dt[0] += alpha_ls * dd[0];
-            dt[1] += alpha_ls * dd[1];
-            let (rt, _) = compute_residual_3d(input, slices, &dt)?;
-            let rt_r = (rt[0] * rt[0] + rt[1] * rt[1]).sqrt();
-            if rt_r < best_norm {
-                best_norm = rt_r;
-                best_alpha = alpha_ls;
-            }
-            if rt_r < r_rad {
-                break;
-            }
-            alpha_ls *= 0.5;
-        }
-        if best_alpha < 1e-15 {
-            best_alpha = alpha_ls;
-        }
-        disp[0] += best_alpha * dd[0];
-        disp[1] += best_alpha * dd[1];
-    }
-    Ok(())
-}
-
-// ─── Main solver ─────────────────────────────────────────────────────
-
-/// CRB 3-DOF Newton-Raphson equilibrium (Phase 분리 방식).
-pub fn solve_bearing_equilibrium(
-    input: &BearingInput,
-    progress: &dyn ProgressReporter,
-) -> Result<BearingResult, SolverError> {
-    let t0 = std::time::Instant::now();
-    input.validate().map_err(|e| SolverError::InvalidInput(e.to_string()))?;
-
-    progress.report(SolverProgress {
-        stage: "Preprocessing".into(),
-        detail: "Slicing geometry".into(),
-        percent: 0.0,
-    });
-
-    let slices = compute_slices(
-        &input.macro_geom,
-        &input.raceway_geom,
-        &input.roller_profile,
-        &input.raceway_profile_inner,
-        &input.raceway_profile_outer,
-        input.solver.n_slices,
-    )?;
-
-    progress.report(SolverProgress {
-        stage: "Equilibrium".into(),
-        detail: "Phase 분리 NR (Outer γ_x + Inner 2-DOF)".into(),
-        percent: 20.0,
-    });
-
-    let mut disp = initial_guess_crb(input);
-    let m_x_target = input.operating.m_x * 1e6;
-    let m_x_ref = m_x_target.abs().max(1e3);   // ref = max(|M_x|, 1 kN·mm)
-
-    // ── Outer loop: γ_x 1-DOF NR (M_x equilibrium) ──
-    for _outer in 0..OUTER_MAX_ITER {
-        // Phase A: 2-DOF (δx, δy), γ_x fixed
-        phase_a_radial_2dof(&mut disp, input, &slices)?;
-
-        let (r_all, _) = compute_residual_3d(input, &slices, &disp)?;
-        let m_res = r_all[2];
-
-        if (m_res / m_x_ref).abs() < OUTER_TOL_REL {
-            break;
-        }
-
-        // γ_x 1-DOF update
-        let h_g = FD_STEP_GAMMA;
-        let mut disp_p = disp;
-        disp_p[2] += h_g;
-        let (r_p, _) = compute_residual_3d(input, &slices, &disp_p)?;
-        let dmdg = (r_p[2] - m_res) / h_g;
-        if dmdg.abs() > 1e-30 {
-            disp[2] += -m_res / dmdg * GAMMA_DAMPING;
-        } else {
-            break; // gradient singular — γ_x has no effect
-        }
-    }
-
-    // Final capture with converged disp
-    let (_r_final, roller_results) = compute_residual_3d(input, &slices, &disp)?;
-
-    progress.report(SolverProgress {
-        stage: "Post-processing".into(),
-        detail: "Building result".into(),
-        percent: 80.0,
-    });
-
-    let f_x = input.operating.f_x * 1000.0;
-    let f_y = input.operating.f_y * 1000.0;
-    let load_angle = radial_load_angle(f_x, f_y);
-
-    let equilibrium = BearingEquilibrium {
-        displacement: [disp[0], disp[1], 0.0, disp[2], 0.0], // [δx, δy, δz=0, γx, γy=0]
-        roller_loads: roller_results.iter().map(|r| r.q_normal).collect(),
-        angular_distribution: build_angular_distribution(&roller_results),
-        roller_results,
-    };
-
-    let elapsed_ms = t0.elapsed().as_secs_f64() * 1000.0;
-    let result = build_bearing_result(input, &slices, equilibrium, SolverMode::Gen1, elapsed_ms, load_angle);
-    Ok(result)
-}
-
-/// CRB Dual-mode: Gen1 + Gen3.
-///
-/// Phase 3 Level C 검증: flat + 균일 D_we → Gen1 ≡ Gen3 (이론적 필연).
-/// 여기서는 두 pass 모두 Gen1 based 로 처리 (bearing-level 은 gen1 사용).
-pub fn solve_bearing_dual(
-    input: &BearingInput,
-    progress: &dyn ProgressReporter,
-) -> Result<DualModeComparison, SolverError> {
-    let t0 = std::time::Instant::now();
-
-    progress.report(SolverProgress {
-        stage: "Dual-mode".into(),
-        detail: "Gen1 pass".into(),
-        percent: 0.0,
-    });
-    let t_g1 = std::time::Instant::now();
-    let gen1_result = solve_bearing_equilibrium(input, progress)?;
-    let gen1_elapsed_ms = t_g1.elapsed().as_secs_f64() * 1000.0;
-
-    progress.report(SolverProgress {
-        stage: "Dual-mode".into(),
-        detail: "Gen3 pass (CRB: theoretically = Gen1)".into(),
-        percent: 50.0,
-    });
-    let t_g3 = std::time::Instant::now();
-    let mut gen3_result = gen1_result.clone();
-    gen3_result.mode = SolverMode::Gen3;
-    let gen3_elapsed_ms = t_g3.elapsed().as_secs_f64() * 1000.0;
-
-    let total_elapsed_ms = t0.elapsed().as_secs_f64() * 1000.0;
-
-    Ok(DualModeComparison {
-        gen1_result,
-        gen3_result,
-        delta_p_max_pct: 0.0,
-        delta_q_max_pct: 0.0,
-        delta_l10_pct: 0.0,
-        gen3_recommended: false,
-        recommendation_reason: "CRB flat + uniform D_we: Gen1 ≡ Gen3 (Level C verified)".into(),
-        gen1_elapsed_ms,
-        gen3_elapsed_ms,
-        total_elapsed_ms,
+    Ok(BearingEquilibrium {
+        displacement,
+        ball_results,
+        q_max_n: q_max,
+        loaded_count: loaded,
+        converged,
+        iterations,
+        residual_norm,
     })
 }
 
-// ─── BearingResult 빌더 (Phase 5+ 필드는 Default) ─────────────────
-
-fn build_angular_distribution(roller_results: &[RollerResult]) -> Vec<AngularLoadPoint> {
-    roller_results.iter().map(|r| {
-        let p_max = r.slice_results.iter().map(|s| s.p_max_k).fold(0.0_f64, f64::max);
-        let slice_p_max: Vec<f64> = r.slice_results.iter().map(|s| s.p_max_k).collect();
-        AngularLoadPoint {
-            psi_deg: r.psi_deg,
-            delta_rigid: 0.0,
-            q_total: r.q_normal,
-            p_max,
-            slice_p_max_outer: slice_p_max.clone(),
-            slice_p_max,
-            slice_q_k: r.slice_results.iter().map(|s| s.q_k).collect(),
-            is_roller: true,
+/// 부분피벗 가우스 소거 (n ≤ 5). 성공 시 해를 반환한다.
+///
+/// nalgebra 의 LU 를 쓰지 않는 이유: 구속 마스크 때문에 크기가 가변(1~5)이라
+/// 고정크기 타입을 쓸 수 없고, 이 규모에서는 직접 소거가 더 단순하다.
+fn solve_dense(a: &mut [f64], b: &mut [f64], n: usize) -> Option<Vec<f64>> {
+    for k in 0..n {
+        let mut piv = k;
+        let mut best = a[k * n + k].abs();
+        for r in (k + 1)..n {
+            let v = a[r * n + k].abs();
+            if v > best {
+                best = v;
+                piv = r;
+            }
         }
-    }).collect()
+        if best < 1.0e-300 {
+            return None;
+        }
+        if piv != k {
+            for c in 0..n {
+                a.swap(k * n + c, piv * n + c);
+            }
+            b.swap(k, piv);
+        }
+        let d = a[k * n + k];
+        for r in (k + 1)..n {
+            let f = a[r * n + k] / d;
+            if f == 0.0 {
+                continue;
+            }
+            for c in k..n {
+                a[r * n + c] -= f * a[k * n + c];
+            }
+            b[r] -= f * b[k];
+        }
+    }
+    let mut x = vec![0.0; n];
+    for k in (0..n).rev() {
+        let mut s = b[k];
+        for c in (k + 1)..n {
+            s -= a[k * n + c] * x[c];
+        }
+        x[k] = s / a[k * n + k];
+    }
+    if x.iter().any(|v| !v.is_finite()) {
+        return None;
+    }
+    Some(x)
 }
 
-fn build_bearing_result(
-    input: &BearingInput,
-    slices: &[SliceGeometry],
-    equilibrium: BearingEquilibrium,
-    mode: SolverMode,
-    elapsed_ms: f64,
-    load_angle_rad: f64,
-) -> BearingResult {
-    let mg = &input.macro_geom;
-    let mat = &input.material;
+/// 축방향 예압을 등가 축하중으로 환산한다 (D-2).
+///
+/// **모델**: 스프링(정력) 예압 — 예압을 상수 축하중으로 본다.
+/// `ClearanceSpec::AxialPreloadN(F_a0)` 이면 `α₀ = α_nom`(클리어런스 0)으로 두고
+/// `F_a0` 를 외부 축하중에 더한다.
+///
+/// 강체(스페이서) 예압은 인접 베어링과의 연성이 필요해 단열 모델 범위 밖이다.
+fn preload_force(geom: &BallBearingGeometry) -> f64 {
+    match geom.clearance {
+        ClearanceSpec::AxialPreloadN(f) => f,
+        _ => 0.0,
+    }
+}
 
-    let d_we_mean = mg.d_we;
-    let volume_roller_mm3 = std::f64::consts::PI * (d_we_mean / 2.0).powi(2) * mg.l_we;
-    let mass_roller_g = volume_roller_mm3 * mat.density_roller * 1e-3;
-    let mass_rollers_total_g = mass_roller_g * (mg.z as f64);
-    let e_star = crate::solver::hertz::combined_elastic_modulus(mat.e_roller, mat.nu, mat.e_ring, mat.nu);
+/// 5-DOF 평형 해석 (위상 스윕 포함).
+pub fn solve_bearing(input: &BearingInput) -> Result<BearingResult, SolverError> {
+    let t0 = std::time::Instant::now();
+    input.validate()?;
 
-    let geometry = GeometrySummary {
-        roller_taper_angle_deg: 0.0,
-        roller_taper_angle_rad: 0.0,
-        e_star_gpa: e_star,
-        d_we_mean,
-        cone_angle_deg: 0.0,
-        gamma_dw: d_we_mean / mg.d_pw,
-        contact_length_ratio: mg.l_we / d_we_mean,
-        f_r_kn: (input.operating.f_x.powi(2) + input.operating.f_y.powi(2)).sqrt(),
-        f_a_kn: 0.0,
-        gamma_rad: input.operating.gamma_rad(),
-        slice_geometries: slices.to_vec(),
-        mass_roller_g,
-        mass_rollers_total_g,
-        mass_inner_race_g: 0.0,
-        mass_outer_race_g: 0.0,
-        mass_total_g: mass_rollers_total_g,
+    // 예압 지정이면 클리어런스 0 · α₀ = α_nom 으로 기하를 푼다
+    let mut geom_for_derived = input.geometry.clone();
+    let preload_n = preload_force(&input.geometry);
+    if preload_n != 0.0 {
+        geom_for_derived.clearance = ClearanceSpec::InitialAngleRad(input.geometry.alpha_nom_rad);
+    }
+
+    let derived = geometry::compute_geometry_derived(&geom_for_derived)?;
+    let contact = hertz::compute_contact_derived(&derived, &input.material)?;
+    let summary = geometry::compute_geometry_summary(
+        &geom_for_derived,
+        &derived,
+        &input.operating,
+        &input.material,
+    );
+    let mut alerts = geometry::collect_geometry_alerts(&summary);
+
+    let base = solve_at_phase(
+        &geom_for_derived,
+        &derived,
+        &contact,
+        &input.operating,
+        &input.solver,
+        preload_n,
+        0.0,
+    )?;
+
+    // 케이지 위상 스윕 (D-8)
+    let sweep = if input.solver.phase_sweep.enabled {
+        let n = input.solver.phase_sweep.n_phase.max(1);
+        let span = std::f64::consts::TAU / input.geometry.z as f64;
+        let mut curve = Vec::with_capacity(n as usize);
+        let mut worst_q = (f64::NEG_INFINITY, 0.0);
+        let mut worst_p = (f64::NEG_INFINITY, 0.0);
+        for i in 0..n {
+            let phase0 = span * (i as f64) / (n as f64);
+            let eq = solve_at_phase(
+                &geom_for_derived,
+                &derived,
+                &contact,
+                &input.operating,
+                &input.solver,
+                preload_n,
+                phase0,
+            )?;
+            let p = eq
+                .ball_results
+                .iter()
+                .map(|b| b.p_max_inner_mpa.max(b.p_max_outer_mpa))
+                .fold(0.0_f64, f64::max);
+            if eq.q_max_n > worst_q.0 {
+                worst_q = (eq.q_max_n, phase0);
+            }
+            if p > worst_p.0 {
+                worst_p = (p, phase0);
+            }
+            curve.push((phase0, eq.q_max_n));
+        }
+        Some(PhaseSweepResult {
+            worst_q_max_n: worst_q.0,
+            worst_q_max_phase_rad: worst_q.1,
+            worst_p_max_mpa: worst_p.0,
+            worst_p_max_phase_rad: worst_p.1,
+            curve,
+        })
+    } else {
+        None
     };
 
-    BearingResult {
-        mode,
-        equilibrium,
-        geometry,
-        life: default_fatigue_life(),
-        static_rating: default_static_rating(),
-        thermal_speed: default_thermal_speed(),
-        alerts: Vec::new(),
-        elapsed_ms,
-        f_a_induced_kn: 0.0,
-        f_a_effective_kn: 0.0,
-        preload_mode: PreloadMode::default(),
-        delta_preload_um: 0.0,
-        f_a_reaction_kn: 0.0,
-        k_radial: 0.0,
-        k_axial: 0.0,
-        traction: None,
-        film_distribution: None,
-        load_angle_deg: load_angle_rad.to_degrees(),
+    if !base.converged {
+        alerts.push(Alert {
+            level: AlertLevel::Critical,
+            code: "NOT_CONVERGED".into(),
+            message: format!(
+                "평형 반복이 수렴하지 않았습니다 (반복 {}, 상대잔차 {:.3e}). \
+                 결과를 신뢰할 수 없습니다",
+                base.iterations, base.residual_norm
+            ),
+        });
     }
+
+    let p_worst = base
+        .ball_results
+        .iter()
+        .map(|b| b.p_max_inner_mpa.max(b.p_max_outer_mpa))
+        .fold(0.0_f64, f64::max);
+    if p_worst > hertz::SIGMA_HU_MPA {
+        alerts.push(Alert {
+            level: if p_worst > 4_000.0 {
+                AlertLevel::Critical
+            } else {
+                AlertLevel::Warning
+            },
+            code: "CONTACT_STRESS_OVER_FATIGUE_LIMIT".into(),
+            message: format!(
+                "최대 접촉응력 {p_worst:.0} MPa 가 ISO 281 Annex B.3.1 권장 피로한계 1500 MPa 를 초과합니다"
+            ),
+        });
+    }
+
+    Ok(BearingResult {
+        geometry: summary,
+        equilibrium: base,
+        phase_sweep: sweep,
+        alerts,
+        elapsed_ms: util::duration_ms(t0.elapsed()),
+    })
 }
 
-fn default_fatigue_life() -> FatigueLifeResult {
-    FatigueLifeResult {
-        method: LifeMethod::default(),
-        l_10_basic: 0.0, l_nm_hours: 0.0, l_10_inner: 0.0, l_10_outer: 0.0,
-        weakest_lamina: 0, a_iso: 1.0,
-        kappa: 0.0, kappa_inner: 0.0, kappa_outer: 0.0,
-        c_dyn: 0.0, p_equiv: 0.0, p_ref: 0.0, p_ref_damage: 0.0,
-        intermediates: LifeIntermediates {
-            nu_actual: 0.0, nu_ref: 0.0, b_m: 1.1, f_c: 0.0,
-            gamma_bearing: 0.0, c_u_kn: 0.0, c_u_over_p: 0.0,
-            e_demarcation: 0.0, x_factor: 1.0, y_factor: 0.0, f_a_over_f_r: 0.0,
-            f_ci: 0.0, f_co: 0.0, q_c_base: 0.0, q_ci: 0.0, q_co: 0.0,
-            q_ei: 0.0, q_eo: 0.0, weibull_e: 9.0 / 8.0, l_nm_mrev: 0.0,
-            q_c_lamina_inner: 0.0, q_c_lamina_outer: 0.0,
-            e_c_used: 0.0, kappa_method: KappaMethod::default(),
-            lambda_inner: None, lambda_outer: None,
-        },
-        lamina_lives: None,
-        film_thickness: None,
-    }
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-fn default_static_rating() -> StaticRatingResult {
-    StaticRatingResult {
-        c_0r_kn: 0.0, p_0r_kn: 0.0, s_0: 0.0, x_0: 1.0, y_0: 0.0,
-        q_0: 0.0, q_max: 0.0, s_0_eff: 0.0,
-        q_max_roller_idx: 0, q_max_lamina_idx: 0, s_0_adequate: false,
+    fn fixture(z: u32) -> BallBearingGeometry {
+        let d_w_mm = 11.5;
+        let (r_i_mm, r_e_mm) = BallBearingGeometry::reference_groove_radii(d_w_mm);
+        BallBearingGeometry {
+            bore_mm: 50.0,
+            outer_diameter_mm: 90.0,
+            width_mm: 20.0,
+            z,
+            d_w_mm,
+            d_pw_mm: 70.0,
+            r_i_mm,
+            r_e_mm,
+            alpha_nom_rad: 40.0_f64.to_radians(),
+            clearance: ClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
+        }
     }
-}
 
-fn default_thermal_speed() -> ThermalSpeedResult {
-    ThermalSpeedResult {
-        n_theta_r: 0.0, speed_ratio: 0.0, a_r: 0.0, d_m: 0.0,
-        p_1r: 0.0, m_0r: 0.0, m_1r: 0.0, n_r: 0.0, phi_r: 0.0, q_r: 0.0,
-        f_0r: 0.0, f_1r: 0.0, v_r: 0.0,
+    fn input(z: u32, fx: f64, fy: f64) -> BearingInput {
+        BearingInput {
+            geometry: fixture(z),
+            material: Material::default(),
+            operating: OperatingConditions {
+                f_x_n: fx,
+                f_y_n: fy,
+                f_z_n: 0.0,
+                m_y_nmm: 0.0,
+                m_z_nmm: 0.0,
+                n_inner_rpm: 1000.0,
+                n_outer_rpm: 0.0,
+                temperature_c: 70.0,
+            },
+            solver: SolverParams::default(),
+        }
+    }
+
+    #[test]
+    fn pure_axial_converges_and_is_symmetric() {
+        let r = solve_bearing(&input(16, 5_000.0, 0.0)).unwrap();
+        assert!(r.equilibrium.converged, "미수렴: {:?}", r.equilibrium.residual_norm);
+        assert_eq!(r.equilibrium.loaded_count, 16);
+        // 순수 축하중이면 모든 볼이 같은 하중
+        let q0 = r.equilibrium.ball_results[0].q_n;
+        for b in &r.equilibrium.ball_results {
+            assert!((b.q_n - q0).abs() / q0 < 1e-12, "볼 하중 비대칭: {} vs {q0}", b.q_n);
+        }
+    }
+
+    #[test]
+    fn jacobian_is_symmetric() {
+        // 가상일 공액 구조의 코드 수준 확인 (Theory §4.5)
+        let inp = input(16, 3_000.0, 2_000.0);
+        let d = geometry::compute_geometry_derived(&inp.geometry).unwrap();
+        let c = hertz::compute_contact_derived(&d, &inp.material).unwrap();
+        let kins = ball_kinematics(inp.geometry.z, 0.0);
+        let u = Vector5::new(0.01, 0.008, 0.003, 1e-4, 2e-4);
+        let f = Vector5::zeros();
+        let (_, j, _) = residual_and_jacobian(&kins, &u, &f, d.a_mm, d.alpha_0_rad, c.c_p_n_per_mm15);
+        for r in 0..5 {
+            for cc in 0..5 {
+                let a = j[(r, cc)];
+                let b = j[(cc, r)];
+                let scale = a.abs().max(b.abs()).max(1.0);
+                assert!((a - b).abs() / scale < 1e-12, "J[{r}][{cc}] 비대칭: {a} vs {b}");
+            }
+        }
+    }
+
+    #[test]
+    fn combined_load_converges() {
+        let r = solve_bearing(&input(16, 5_000.0, 3_000.0)).unwrap();
+        assert!(r.equilibrium.converged);
+        assert!(r.equilibrium.loaded_count > 0 && r.equilibrium.loaded_count <= 16);
+        assert!(r.equilibrium.q_max_n > 0.0);
+    }
+
+    #[test]
+    fn iso_3dof_mask_zeroes_constrained_dof() {
+        let mut inp = input(16, 5_000.0, 3_000.0);
+        inp.solver.dof_mask = DofMask::ISO_3DOF;
+        let r = solve_bearing(&inp).unwrap();
+        assert!(r.equilibrium.converged);
+        assert_eq!(r.equilibrium.displacement[2], 0.0, "δ_z 가 구속되지 않음");
+        assert_eq!(r.equilibrium.displacement[3], 0.0, "γ_y 가 구속되지 않음");
+    }
+
+    #[test]
+    fn preload_loads_all_balls_without_external_force() {
+        let mut inp = input(16, 0.0, 0.0);
+        inp.geometry.clearance = ClearanceSpec::AxialPreloadN(2_000.0);
+        let r = solve_bearing(&inp).unwrap();
+        assert!(r.equilibrium.converged);
+        assert_eq!(r.equilibrium.loaded_count, 16, "예압 상태에서 전 볼 접촉이어야 함");
+        let q0 = r.equilibrium.ball_results[0].q_n;
+        assert!(q0 > 0.0);
+        for b in &r.equilibrium.ball_results {
+            assert!((b.q_n - q0).abs() / q0 < 1e-12, "예압 하중 불균등");
+        }
     }
 }

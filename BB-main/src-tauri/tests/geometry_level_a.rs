@@ -352,10 +352,11 @@ fn a8_no_unit_conversion_constants_outside_util() {
     // 판정 대상은 **연산자에 인접한** 배율 상수다 (`* 1000.0`, `/ 1e-3` 등).
     // 단순한 수치 리터럴(회전속도 1000.0 rpm 같은 값)은 환산이 아니다.
     // `#[cfg(test)]` 이후는 픽스처라 검사에서 제외한다.
-    let sources: [(&str, &str); 4] = [
+    let sources: [(&str, &str); 5] = [
         ("types.rs", include_str!("../src/solver/types.rs")),
         ("geometry.rs", include_str!("../src/solver/geometry.rs")),
         ("hertz.rs", include_str!("../src/solver/hertz.rs")),
+        ("bearing.rs", include_str!("../src/solver/bearing.rs")),
         ("mod.rs", include_str!("../src/solver/mod.rs")),
     ];
     let magnitudes = ["1000.0", "1_000.0", "1e3", "1e-3", "0.001"];

@@ -24,6 +24,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::compute_geometry,
             commands::compute_contact,
+            commands::solve_bearing,
             presets::list_presets,
             presets::save_preset,
             presets::load_preset,

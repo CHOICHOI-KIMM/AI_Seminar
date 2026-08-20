@@ -58,6 +58,17 @@ pub fn sphere_mass_g(d_w_mm: f64, density_g_cm3: f64) -> f64 {
     volume_mm3 * density_g_cm3 / MM3_PER_CM3
 }
 
+/// 경과시간 → 밀리초.
+///
+/// 물리 단위 환산은 아니지만, D-10 의 「환산 상수는 `util.rs` 안에만」 규칙을
+/// 예외 없이 유지하기 위해 여기에 둔다 (Level A 의 A-8 이 기계 검증한다).
+pub fn duration_ms(d: std::time::Duration) -> f64 {
+    d.as_secs_f64() * MS_PER_SECOND
+}
+
+/// 초 → 밀리초.
+const MS_PER_SECOND: f64 = 1000.0;
+
 /// 자연 3차 스플라인 보간 (Thomas 알고리즘).
 ///
 /// `points` 는 x 오름차순이어야 한다. 정의역 밖은 끝값으로 클램프한다.
