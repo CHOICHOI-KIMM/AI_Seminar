@@ -2,8 +2,8 @@
 
 Angular Contact Ball Bearing (ACBB) 내부 접촉 해석 도구 (Tauri 2.0 + Rust + React).
 
-- 이론 정리: [BB_Development_Theory.md](BB_Development_Theory.md) *(작성 중)*
-- 작업 계획: BB_Development_Plan.md *(Theory 승인 후 작성)*
+- 이론 정리: [BB_Development_Theory.md](BB_Development_Theory.md)
+- 작업 계획: [BB_Development_Plan.md](BB_Development_Plan.md) · 작업 로그: [BB_Development_Action.md](BB_Development_Action.md)
 - 아키텍처: [CLAUDE.md](CLAUDE.md), [Master_plan.md](Master_plan.md)
 - 모태 SW: CRB-main (`d:/AI/AI_Seminar_CRB/CRB-main`) — TRB → CRB 전환 선례는 [_crb_archive/](_crb_archive/) 참조
 

@@ -5,7 +5,8 @@
 > **본 프로젝트는 CRB-main (`d:/AI/AI_Seminar_CRB/CRB-main`) 의 SW 체계를 모태로 신규 개발 중인 BB(Angular Contact Ball Bearing) 해석 SW 임.**
 >
 > - 이론 정리: [BB_Development_Theory.md](BB_Development_Theory.md)
-> - 작업 계획서: BB_Development_Plan.md *(Theory 승인 후 작성)*
+> - 작업 계획서: [BB_Development_Plan.md](BB_Development_Plan.md)
+> - 작업 로그: [BB_Development_Action.md](BB_Development_Action.md)
 > - TRB → CRB 전환 선례: [_crb_archive/](_crb_archive/)
 
 ---
