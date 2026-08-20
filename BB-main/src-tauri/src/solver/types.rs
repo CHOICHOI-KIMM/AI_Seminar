@@ -7,9 +7,13 @@
 //       미지수 (δ_x, δ_y, δ_z, γ_y, γ_z) / 잔차 (F_x, F_y, F_z, M_y, M_z)
 //       구속 δ_z = γ_y = 0 → ISO 3-DOF (A.6)(A.7)(A.8) 과 항등
 //  D-8  볼 각위치: φ_j = 2π(j−1)/Z 고정 원점. 케이지 위상 스윕은 별도 옵션
-//  D-9  틸트 모멘트 팔: R_i (식 A.4). d_pw/2 아님
+//  D-9  틸트 모멘트 팔: R_i (식 A.4). d_pw_mm/2 아님
 //  D-10 단위: 본 파일의 모든 값은 **mm · N · rad · MPa** (솔버 내부 단위).
 //       μm·kN·° 는 UI 표시 전용이며 이 파일에 등장하지 않는다.
+//       **모든 유차원 필드는 이름에 단위 접미사를 붙인다** (`_mm`, `_n`, `_nmm`,
+//       `_rad`, `_mpa`, `_per_mm`, `_g_cm3`, `_rpm`, `_c`). 무차원 필드(`nu`,
+//       `gamma`, `z`, `f_rho_i`)는 접미사 없음. 프론트엔드·JSON 을 거치며
+//       단위가 오독되는 것을 이름 수준에서 차단한다 (P1-S3 결정).
 //
 // ── 수식 근거 ───────────────────────────────────────────────────────
 //  BB_Development_Theory.md. 식 번호는 ISO 16281:2025 (A.x / 숫자) 기준.
@@ -53,70 +57,70 @@ impl ProgressReporter for NoopReporter {
 pub enum ClearanceSpec {
     /// 직경으로 측정한 반경 운전 클리어런스 `G_r op` [mm].
     /// **직경 기준**임에 주의 (식 A.1 의 분모가 2A). 음수면 예압 상태.
-    Diametral(f64),
+    DiametralMm(f64),
     /// 초기 접촉각 `α₀` [rad] 직접 지정. ACBB 사양서가 통상 이 형태.
-    InitialAngle(f64),
+    InitialAngleRad(f64),
     /// 축방향 예압 하중 `F_a0` [N]. P3 에서 사전 해석으로 `δ_x0` 를 역산한다.
-    AxialPreload(f64),
+    AxialPreloadN(f64),
 }
 
 /// ACBB 매크로 기하. 모든 길이 [mm].
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BallBearingGeometry {
     /// 내경 d [mm]
-    pub bore: f64,
+    pub bore_mm: f64,
     /// 외경 D [mm]
-    pub outer_diameter: f64,
+    pub outer_diameter_mm: f64,
     /// 폭 B [mm]
-    pub width: f64,
+    pub width_mm: f64,
     /// 볼 수 Z
     pub z: u32,
     /// 볼 직경 D_w [mm]
-    pub d_w: f64,
+    pub d_w_mm: f64,
     /// 볼 세트 피치직경 D_pw [mm]
-    pub d_pw: f64,
-    /// 내륜 홈 단면 곡률반경 r_i [mm].
+    pub d_pw_mm: f64,
+    /// 내륜 홈 단면 곡률반경 r_i_mm [mm].
     /// ISO 16281 Annex B.2 참조기하 기본값 = 0,52 D_w
-    pub r_i: f64,
-    /// 외륜 홈 단면 곡률반경 r_e [mm].
+    pub r_i_mm: f64,
+    /// 외륜 홈 단면 곡률반경 r_e_mm [mm].
     /// ISO 16281 Annex B.2 참조기하 기본값 = 0,53 D_w
-    pub r_e: f64,
+    pub r_e_mm: f64,
     /// 공칭 접촉각 α [rad]. **ISO 281 정격하중 계산 전용.**
     /// 내부 하중분포에는 초기 접촉각 α₀ 를 쓴다 (ISO 16281 Clause 3.5 NOTE).
-    pub alpha_nom: f64,
+    pub alpha_nom_rad: f64,
     /// 클리어런스 / 예압
     pub clearance: ClearanceSpec,
 }
 
 impl BallBearingGeometry {
     /// ISO 16281 Annex B.2 참조 홈 반경 (사양 미상 시 기본값).
-    pub fn reference_groove_radii(d_w: f64) -> (f64, f64) {
-        (0.52 * d_w, 0.53 * d_w)
+    pub fn reference_groove_radii(d_w_mm: f64) -> (f64, f64) {
+        (0.52 * d_w_mm, 0.53 * d_w_mm)
     }
 
     pub fn validate(&self) -> Result<(), SolverError> {
         let e = |m: &str| Err(SolverError::InvalidGeometry(m.to_string()));
-        if self.d_w <= 0.0 {
+        if self.d_w_mm <= 0.0 {
             return e("볼 직경 D_w 는 양수여야 합니다");
         }
-        if self.d_pw <= self.d_w {
+        if self.d_pw_mm <= self.d_w_mm {
             return e("피치직경 D_pw 는 볼 직경 D_w 보다 커야 합니다");
         }
         if self.z < 3 {
             return e("볼 수 Z 는 3 이상이어야 합니다");
         }
         // 홈 반경은 볼 반경보다 커야 접촉이 성립 (오목면)
-        if self.r_i <= self.d_w / 2.0 || self.r_e <= self.d_w / 2.0 {
-            return e("홈 곡률반경 r_i, r_e 는 볼 반경 D_w/2 보다 커야 합니다");
+        if self.r_i_mm <= self.d_w_mm / 2.0 || self.r_e_mm <= self.d_w_mm / 2.0 {
+            return e("홈 곡률반경 r_i_mm, r_e_mm 는 볼 반경 D_w/2 보다 커야 합니다");
         }
-        // A = r_i + r_e − D_w 가 양수여야 α₀ 정의 가능 (식 A.3)
-        if self.r_i + self.r_e - self.d_w <= 0.0 {
-            return e("A = r_i + r_e − D_w 가 양수가 아닙니다");
+        // A = r_i_mm + r_e_mm − D_w 가 양수여야 α₀ 정의 가능 (식 A.3)
+        if self.r_i_mm + self.r_e_mm - self.d_w_mm <= 0.0 {
+            return e("A = r_i_mm + r_e_mm − D_w 가 양수가 아닙니다");
         }
-        if self.outer_diameter <= self.bore {
+        if self.outer_diameter_mm <= self.bore_mm {
             return e("외경 D 는 내경 d 보다 커야 합니다");
         }
-        if let ClearanceSpec::InitialAngle(a) = self.clearance {
+        if let ClearanceSpec::InitialAngleRad(a) = self.clearance {
             if !(0.0..std::f64::consts::FRAC_PI_2).contains(&a) {
                 return e("초기 접촉각 α₀ 는 [0, π/2) 범위여야 합니다");
             }
@@ -136,36 +140,36 @@ impl BallBearingGeometry {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Material {
     /// 볼 탄성계수 [MPa]. ISO 16281 Clause 4 NOTE 1: 강 = 207 000 MPa
-    pub e_ball: f64,
+    pub e_ball_mpa: f64,
     /// 레이스웨이 탄성계수 [MPa]
-    pub e_ring: f64,
+    pub e_ring_mpa: f64,
     /// 포아송비. ISO 16281 Clause 4 NOTE 6: 강 = 0,3
     pub nu: f64,
     /// 경도 [HRC] — 정적정격·마이크로피팅 판정용 (P4)
     pub hrc: f64,
     /// 볼 밀도 [g/cm³]
-    pub density_ball: f64,
+    pub density_ball_g_cm3: f64,
     /// 링 밀도 [g/cm³]
-    pub density_ring: f64,
+    pub density_ring_g_cm3: f64,
 }
 
 impl Default for Material {
     /// ISO 16281 Clause 4 NOTE 1 / NOTE 6 의 강(steel) 기준값.
     fn default() -> Self {
         Self {
-            e_ball: 207_000.0,
-            e_ring: 207_000.0,
+            e_ball_mpa: 207_000.0,
+            e_ring_mpa: 207_000.0,
             nu: 0.3,
             hrc: 60.0,
-            density_ball: 7.85,
-            density_ring: 7.85,
+            density_ball_g_cm3: 7.85,
+            density_ring_g_cm3: 7.85,
         }
     }
 }
 
 impl Material {
     pub fn validate(&self) -> Result<(), SolverError> {
-        if self.e_ball <= 0.0 || self.e_ring <= 0.0 {
+        if self.e_ball_mpa <= 0.0 || self.e_ring_mpa <= 0.0 {
             return Err(SolverError::InvalidInput(
                 "탄성계수는 양수여야 합니다 [MPa]".into(),
             ));
@@ -189,18 +193,18 @@ impl Material {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OperatingConditions {
     /// 축하중 F_x [N] (X = 회전축). ISO 식 (A.7) 의 F_a
-    pub f_x: f64,
+    pub f_x_n: f64,
     /// 반경하중 F_y [N] (Y). ISO 식 (A.6) 의 F_r
-    pub f_y: f64,
+    pub f_y_n: f64,
     /// 반경하중 F_z [N] (Z). 5-DOF 확장 성분
     #[serde(default)]
-    pub f_z: f64,
+    pub f_z_n: f64,
     /// 모멘트 M_y [N·mm] (about Y). 5-DOF 확장 성분
     #[serde(default)]
-    pub m_y: f64,
+    pub m_y_nmm: f64,
     /// 모멘트 M_z [N·mm] (about Z). ISO 식 (A.8) 의 M_z
     #[serde(default)]
-    pub m_z: f64,
+    pub m_z_nmm: f64,
     /// 내륜 회전속도 [r/min]
     pub n_inner_rpm: f64,
     /// 외륜 회전속도 [r/min]. 통상 0 (고정)
@@ -218,12 +222,12 @@ fn default_temperature() -> f64 {
 impl OperatingConditions {
     /// 반경하중 합성 크기 [N]
     pub fn radial_magnitude(&self) -> f64 {
-        (self.f_y * self.f_y + self.f_z * self.f_z).sqrt()
+        (self.f_y_n * self.f_y_n + self.f_z_n * self.f_z_n).sqrt()
     }
 
     /// 반경하중 방향각 [rad] (Y축 기준, Z 방향으로 양)
     pub fn radial_angle(&self) -> f64 {
-        self.f_z.atan2(self.f_y)
+        self.f_z_n.atan2(self.f_y_n)
     }
 
     /// 상대 회전속도 [r/min]. 링 사이의 상대 각속도.
@@ -322,10 +326,10 @@ pub struct SolverParams {
     pub phase_sweep: PhaseSweep,
     /// 기본 동정격 반경하중 C_r [N]. `None` 이면 ISO 281 식으로 자체 산출 (P4)
     #[serde(default)]
-    pub c_r: Option<f64>,
+    pub c_r_n: Option<f64>,
     /// 기본 정정격 반경하중 C_0r [N]. `None` 이면 ISO 76 식으로 자체 산출 (P4)
     #[serde(default)]
-    pub c_0r: Option<f64>,
+    pub c_0r_n: Option<f64>,
 }
 
 impl Default for SolverParams {
@@ -335,8 +339,8 @@ impl Default for SolverParams {
             max_iterations: 100,
             dof_mask: DofMask::default(),
             phase_sweep: PhaseSweep::default(),
-            c_r: None,
-            c_0r: None,
+            c_r_n: None,
+            c_0r_n: None,
         }
     }
 }
@@ -392,24 +396,24 @@ impl BearingInput {
 /// 것과 달리, 볼은 이 구조체가 확정되면 반복 비용이 O(Z) 로 끝난다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeometryDerived {
-    /// A = r_i + r_e − D_w [mm] — 식 (A.3). 곡률중심 간 거리
-    pub a_dist: f64,
+    /// A = r_i_mm + r_e_mm − D_w [mm] — 식 (A.3). 곡률중심 간 거리
+    pub a_mm: f64,
     /// 초기 접촉각 α₀ [rad] — 식 (A.1)
-    pub alpha_0: f64,
-    /// R_i [mm] — 식 (A.4). **틸트 모멘트 팔** (D-9, d_pw/2 아님)
-    pub r_i_center: f64,
+    pub alpha_0_rad: f64,
+    /// R_i [mm] — 식 (A.4). **틸트 모멘트 팔** (D-9, d_pw_mm/2 아님)
+    pub r_i_center_mm: f64,
     /// γ = D_w cos α / D_pw — Clause 4
     pub gamma: f64,
     /// 내륜 접촉 곡률합 Σρ_i [1/mm] — 식 (E.4)
-    pub sum_rho_i: f64,
+    pub sum_rho_i_per_mm: f64,
     /// 외륜 접촉 곡률합 Σρ_e [1/mm] — 식 (E.5)
-    pub sum_rho_e: f64,
+    pub sum_rho_e_per_mm: f64,
     /// 내륜 상대 곡률차 F_i(ρ) — 식 (E.6)
     pub f_rho_i: f64,
     /// 외륜 상대 곡률차 F_e(ρ) — 식 (E.7)
     pub f_rho_e: f64,
     /// 등가 반경 클리어런스 G_r op [mm] (입력 지정 방식과 무관하게 환산된 값)
-    pub g_r_op: f64,
+    pub g_r_op_mm: f64,
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -420,33 +424,33 @@ pub struct GeometryDerived {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BallResult {
     /// 각위치 φ_j [rad] (D-8: φ_1 = 0 이 Y축 방향)
-    pub phi: f64,
+    pub phi_rad: f64,
     /// 총 탄성변형 δ_j [mm] — 식 (A.2). 비접촉이면 0
-    pub delta: f64,
+    pub delta_mm: f64,
     /// 운전 접촉각 α_j [rad] — 식 (A.5)
-    pub alpha: f64,
+    pub alpha_rad: f64,
     /// 볼 하중 Q_j [N] — 식 (39)
-    pub q: f64,
+    pub q_n: f64,
     /// 접촉 여부 (식 A.2 우변 > 0)
     pub loaded: bool,
     /// 내륜 접촉타원 장반경 a [mm] — Harris (6.38). P2 이전에는 0
     #[serde(default)]
-    pub a_inner: f64,
+    pub a_inner_mm: f64,
     /// 내륜 접촉타원 단반경 b [mm] — Harris (6.40)
     #[serde(default)]
-    pub b_inner: f64,
+    pub b_inner_mm: f64,
     /// 내륜 최대 접촉응력 [MPa] — Harris (6.25)
     #[serde(default)]
-    pub p_max_inner: f64,
+    pub p_max_inner_mpa: f64,
     /// 외륜 접촉타원 장반경 a [mm]
     #[serde(default)]
-    pub a_outer: f64,
+    pub a_outer_mm: f64,
     /// 외륜 접촉타원 단반경 b [mm]
     #[serde(default)]
-    pub b_outer: f64,
+    pub b_outer_mm: f64,
     /// 외륜 최대 접촉응력 [MPa]
     #[serde(default)]
-    pub p_max_outer: f64,
+    pub p_max_outer_mpa: f64,
 }
 
 /// 5-DOF 평형해 (D-7 좌표계).
@@ -457,7 +461,7 @@ pub struct BearingEquilibrium {
     /// 볼별 결과 (φ_j 오름차순)
     pub ball_results: Vec<BallResult>,
     /// 최대 볼 하중 Q_max [N]
-    pub q_max: f64,
+    pub q_max_n: f64,
     /// 하중을 받는 볼 수
     pub loaded_count: u32,
     pub converged: bool,
@@ -470,11 +474,11 @@ pub struct BearingEquilibrium {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PhaseSweepResult {
     /// 최악 Q_max [N] 와 그때의 φ₀ [rad]
-    pub worst_q_max: f64,
-    pub worst_q_max_phase: f64,
+    pub worst_q_max_n: f64,
+    pub worst_q_max_phase_rad: f64,
     /// 최악 최대접촉응력 [MPa] 와 그때의 φ₀ [rad]
-    pub worst_p_max: f64,
-    pub worst_p_max_phase: f64,
+    pub worst_p_max_mpa: f64,
+    pub worst_p_max_phase_rad: f64,
     /// (φ₀, Q_max) 전 이력
     pub curve: Vec<(f64, f64)>,
 }
@@ -496,24 +500,24 @@ pub struct Alert {
 /// 자동 산출된 기하 요약 (UI 표시·검산용).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeometrySummary {
-    pub a_dist: f64,
+    pub a_mm: f64,
     /// 초기 접촉각 [rad] (표시는 UI 에서 ° 로 변환)
-    pub alpha_0: f64,
-    pub r_i_center: f64,
+    pub alpha_0_rad: f64,
+    pub r_i_center_mm: f64,
     pub gamma: f64,
-    pub sum_rho_i: f64,
-    pub sum_rho_e: f64,
+    pub sum_rho_i_per_mm: f64,
+    pub sum_rho_e_per_mm: f64,
     pub f_rho_i: f64,
     pub f_rho_e: f64,
-    pub g_r_op: f64,
-    /// 오스큘레이션 f_i = r_i / D_w
+    pub g_r_op_mm: f64,
+    /// 오스큘레이션 f_i = r_i_mm / D_w
     pub osculation_inner: f64,
-    /// 오스큘레이션 f_e = r_e / D_w
+    /// 오스큘레이션 f_e = r_e_mm / D_w
     pub osculation_outer: f64,
     /// 볼 1개 질량 [g]
     pub ball_mass_g: f64,
     /// n·D_pw [mm/min] — ISO 16281 A.4 의 고속 판정 지표 (D-3)
-    pub n_dpw: f64,
+    pub n_dpw_mm_per_min: f64,
 }
 
 /// 정상상태 해석 결과 최상위.
@@ -541,28 +545,28 @@ mod tests {
     /// 경계치수 d/D/B 는 ISO 15 치수계열 7210 형번 기준이나,
     /// Z 와 D_w 는 제조사별 값이라 **가정값**이다 (실 카탈로그 미확인).
     fn fixture() -> BallBearingGeometry {
-        let d_w = 11.5;
-        let (r_i, r_e) = BallBearingGeometry::reference_groove_radii(d_w);
+        let d_w_mm = 11.5;
+        let (r_i_mm, r_e_mm) = BallBearingGeometry::reference_groove_radii(d_w_mm);
         BallBearingGeometry {
-            bore: 50.0,
-            outer_diameter: 90.0,
-            width: 20.0,
+            bore_mm: 50.0,
+            outer_diameter_mm: 90.0,
+            width_mm: 20.0,
             z: 16,
-            d_w,
-            d_pw: 70.0,
-            r_i,
-            r_e,
-            alpha_nom: 40.0_f64.to_radians(),
-            clearance: ClearanceSpec::InitialAngle(40.0_f64.to_radians()),
+            d_w_mm,
+            d_pw_mm: 70.0,
+            r_i_mm,
+            r_e_mm,
+            alpha_nom_rad: 40.0_f64.to_radians(),
+            clearance: ClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
         }
     }
 
     #[test]
     fn reference_groove_radii_matches_annex_b2() {
-        // ISO 16281 Annex B.2: r_i = 0,52 D_w, r_e = 0,53 D_w
-        let (r_i, r_e) = BallBearingGeometry::reference_groove_radii(10.0);
-        assert!((r_i - 5.2).abs() < 1e-12);
-        assert!((r_e - 5.3).abs() < 1e-12);
+        // ISO 16281 Annex B.2: r_i_mm = 0,52 D_w, r_e_mm = 0,53 D_w
+        let (r_i_mm, r_e_mm) = BallBearingGeometry::reference_groove_radii(10.0);
+        assert!((r_i_mm - 5.2).abs() < 1e-12);
+        assert!((r_e_mm - 5.3).abs() < 1e-12);
     }
 
     #[test]
@@ -573,14 +577,14 @@ mod tests {
     #[test]
     fn rejects_ball_larger_than_pitch() {
         let mut g = fixture();
-        g.d_pw = g.d_w;
+        g.d_pw_mm = g.d_w_mm;
         assert!(g.validate().is_err());
     }
 
     #[test]
     fn rejects_groove_radius_below_ball_radius() {
         let mut g = fixture();
-        g.r_i = g.d_w / 2.0 - 1e-9;
+        g.r_i_mm = g.d_w_mm / 2.0 - 1e-9;
         assert!(g.validate().is_err());
     }
 
@@ -593,10 +597,10 @@ mod tests {
 
     #[test]
     fn a_distance_is_positive_for_reference_geometry() {
-        // A = r_i + r_e − D_w = (0,52 + 0,53 − 1) D_w = 0,05 D_w
+        // A = r_i_mm + r_e_mm − D_w = (0,52 + 0,53 − 1) D_w = 0,05 D_w
         let g = fixture();
-        let a = g.r_i + g.r_e - g.d_w;
-        assert!((a - 0.05 * g.d_w).abs() < 1e-12);
+        let a = g.r_i_mm + g.r_e_mm - g.d_w_mm;
+        assert!((a - 0.05 * g.d_w_mm).abs() < 1e-12);
         assert!(a > 0.0);
     }
 
@@ -604,11 +608,12 @@ mod tests {
     fn material_default_matches_iso_notes() {
         // ISO 16281 Clause 4 NOTE 1 / NOTE 6
         let m = Material::default();
-        assert!((m.e_ball - 207_000.0).abs() < 1e-9);
+        assert!((m.e_ball_mpa - 207_000.0).abs() < 1e-9);
         assert!((m.nu - 0.3).abs() < 1e-12);
         assert!(m.validate().is_ok());
     }
 
+    #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn material_rejects_invalid_poisson() {
         let mut m = Material::default();
@@ -616,6 +621,9 @@ mod tests {
         assert!(m.validate().is_err());
     }
 
+    // 상수 마스크의 회귀 가드. clippy 는 const 폴딩이라 경고하지만,
+    // 누가 ISO_3DOF 의 자유도를 바꾸면 여기서 잡힌다.
+    #[allow(clippy::assertions_on_constants)]
     #[test]
     fn iso_3dof_mask_constrains_two_dof() {
         assert_eq!(DofMask::ISO_3DOF.count(), 3);
@@ -627,11 +635,11 @@ mod tests {
     #[test]
     fn radial_magnitude_and_angle_are_consistent() {
         let op = OperatingConditions {
-            f_x: 0.0,
-            f_y: 3.0,
-            f_z: 4.0,
-            m_y: 0.0,
-            m_z: 0.0,
+            f_x_n: 0.0,
+            f_y_n: 3.0,
+            f_z_n: 4.0,
+            m_y_nmm: 0.0,
+            m_z_nmm: 0.0,
             n_inner_rpm: 1000.0,
             n_outer_rpm: 0.0,
             temperature_c: 70.0,
@@ -641,6 +649,7 @@ mod tests {
         assert!((op.relative_speed_rpm() - 1000.0).abs() < 1e-12);
     }
 
+    #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn solver_params_reject_bad_settings() {
         let mut p = SolverParams::default();
@@ -668,11 +677,11 @@ mod tests {
             geometry: fixture(),
             material: Material::default(),
             operating: OperatingConditions {
-                f_x: 5000.0,
-                f_y: 2000.0,
-                f_z: 0.0,
-                m_y: 0.0,
-                m_z: 0.0,
+                f_x_n: 5000.0,
+                f_y_n: 2000.0,
+                f_z_n: 0.0,
+                m_y_nmm: 0.0,
+                m_z_nmm: 0.0,
                 n_inner_rpm: 1500.0,
                 n_outer_rpm: 0.0,
                 temperature_c: 70.0,
@@ -681,8 +690,8 @@ mod tests {
         };
         let json = serde_json::to_string(&input).unwrap();
         let back: BearingInput = serde_json::from_str(&json).unwrap();
-        assert!((back.operating.f_x - 5000.0).abs() < 1e-12);
-        assert!((back.geometry.d_w - 11.5).abs() < 1e-12);
+        assert!((back.operating.f_x_n - 5000.0).abs() < 1e-12);
+        assert!((back.geometry.d_w_mm - 11.5).abs() < 1e-12);
         assert_eq!(back.solver.dof_mask, DofMask::FULL);
         assert!(back.validate().is_ok());
     }

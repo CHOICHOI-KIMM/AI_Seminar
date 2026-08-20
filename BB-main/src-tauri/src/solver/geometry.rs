@@ -1,523 +1,287 @@
+// BB Contact Analysis — ACBB 기하 전처리
+//
+// BB Phase 1-S3 (2026-08-20): CRB(슬라이스·프로파일) 기하를 백지에서 재작성.
+//
+// ── 근거 ────────────────────────────────────────────────────────────
+// BB_Development_Theory.md §2. 식 번호는 ISO 16281:2025 기준.
+//   (A.1) α₀ = arccos(1 − G_r op /(2A))
+//   (A.3) A  = r_i + r_e − D_w
+//   (A.4) R_i = D_pw/2 + (r_i − D_w/2) cos α₀
+//   (E.4) Σρ_i, (E.5) Σρ_e, (E.6) F_i(ρ), (E.7) F_e(ρ)
+//
+// ── 성격 ────────────────────────────────────────────────────────────
+// 여기 계산되는 값은 **전부 하중과 무관**하다 (Theory §8 1단계).
+// 해석 시작 시 1회 계산해 캐시하면 이후 반복 비용은 O(Z) 로 끝난다.
+//
+// ── 단위 (D-10) ─────────────────────────────────────────────────────
+// mm · N · rad. 이 파일에 단위 환산 상수는 없다.
+// 볼 질량의 mm³→cm³ 환산만 `util::sphere_mass_g` 에 격리되어 있다.
+
 use crate::error::SolverError;
 use crate::solver::types::*;
+use crate::solver::util;
 
-/// Compute slice geometries by dividing roller effective length into n equal segments.
+/// 입력의 `ClearanceSpec` 을 (등가 직경 클리어런스 [mm], 초기 접촉각 [rad]) 로 환산.
 ///
-/// CRB (Cylindrical Roller Bearing) — Phase 2 정식 알고리즘.
-/// ISO 16281 Clause 4 NOTE 3 (ISO p. 4): "For rollers of cylindrical and spherical roller
-/// bearings, Lwe is defined along the roller axis."
-///
-/// 원통 roller 이므로:
-///   - Roller 반경 균일: r_roller_k = D_we / 2 (모든 slice 동일)
-///   - Roller 축 = raceway 축 = shaft 축 (α = 0)
-///   - Slice 위치 x_axial 은 소단 → 대단 방향, roller 축 따라 균등 분할 (부록 A.2)
-///   - Pitch diameter d_pwk 는 모든 slice 동일 (테이퍼 없으므로 x_centered 항 소멸)
-///
-/// 등가 곡률반경 (γ = D_we / D_pw, α = 0 대입):
-///   R_eq_inner = (D_we_eff/2) · (1 - γ_i)   ← inner ring 접촉 (roller vs concave inner)
-///   R_eq_outer = (D_we_eff/2) · (1 + γ_o)   ← outer ring 접촉 (roller vs concave outer)
-///
-/// Raceway 가 원통 (r_i, r_o >> D_we) 이면 transverse 곡률은 무시 (line contact).
-pub fn compute_slices(
-    macro_geom: &MacroGeometry,
-    raceway_geom: &RacewayGeometry,
-    roller_profile: &RollerProfile,
-    raceway_profile_inner: &RacewayProfile,
-    raceway_profile_outer: &RacewayProfile,
-    n_slices: usize,
-) -> Result<Vec<SliceGeometry>, SolverError> {
-    if n_slices == 0 {
-        return Err(SolverError::InvalidInput("n_slices must be > 0".into()));
-    }
-
-    let l_we = macro_geom.l_we;
-    let slice_width = l_we / n_slices as f64;
-    let r_roller = macro_geom.d_we / 2.0;        // CRB: 모든 slice 균일
-    let d_we = macro_geom.d_we;
-    let d_pw = macro_geom.d_pw;
-
-    let slices = (0..n_slices)
-        .map(|k| {
-            // x_axial: slice k 의 중심 좌표 [mm], 소단(0) → 대단(L_we) 방향, roller 축 따라
-            let x_axial = (k as f64 + 0.5) * slice_width;
-
-            // Profile corrections per contact surface [μm]
-            let dz_roller = roller_profile_correction(x_axial, roller_profile, l_we);
-            let dz_inner = raceway_profile_correction(x_axial, raceway_profile_inner, l_we);
-            let dz_outer = raceway_profile_correction(x_axial, raceway_profile_outer, l_we);
-
-            // Effective roller radius adjusted by profile [mm]
-            let r_roller_eff_inner = r_roller - (dz_roller + dz_inner) / 1000.0;
-            let r_roller_eff_outer = r_roller - (dz_roller + dz_outer) / 1000.0;
-            let d_k_eff_inner = 2.0 * r_roller_eff_inner;
-            let d_k_eff_outer = 2.0 * r_roller_eff_outer;
-
-            // CRB orbital curvature (α = 0 → cos(α) = 1):
-            //   γ_i = D_k_eff / D_pw  (inner conforming)
-            //   γ_o = D_k_eff / D_pw  (outer conforming, 반대 부호)
-            //   R_eq_inner = (D_k_eff/2)·(1 - γ_i)   [roller vs concave inner]
-            //   R_eq_outer = (D_k_eff/2)·(1 + γ_o)   [roller vs concave outer]
-            let gamma_i = d_k_eff_inner / d_pw;
-            let gamma_o = d_k_eff_outer / d_pw;
-            let r_eq_inner_conforming = (d_k_eff_inner / 2.0) * (1.0 - gamma_i);
-            let r_eq_outer_conforming = (d_k_eff_outer / 2.0) * (1.0 + gamma_o);
-
-            // Transverse raceway curvature (r_i, r_o) 반영:
-            //   flat raceway (r → ∞) 이면 line contact 로 환원 (R_transverse = ∞)
-            //   실제 R_eq = R_conforming · r_race / (R_conforming + r_race)
-            //   단, r_race 가 매우 크면 (>1e6) 원통 근사 → R_eq = R_conforming
-            let r_eq_inner = combine_curvature(r_eq_inner_conforming, raceway_geom.r_i);
-            let r_eq_outer = combine_curvature(r_eq_outer_conforming, raceway_geom.r_o);
-
-            SliceGeometry {
-                k,
-                x_axial,
-                r_roller,
-                r_inner_race: raceway_geom.r_i,
-                r_outer_race: raceway_geom.r_o,
-                r_eq_inner,
-                r_eq_outer,
-                delta_z_total_inner: dz_roller + dz_inner,
-                delta_z_total_outer: dz_roller + dz_outer,
-                slice_width,
+/// 식 (A.1) 과 그 역: `G_r op = 2A (1 − cos α₀)`
+fn resolve_clearance(
+    clearance: ClearanceSpec,
+    a_mm: f64,
+) -> Result<(f64, f64), SolverError> {
+    match clearance {
+        ClearanceSpec::DiametralMm(g) => {
+            // (A.1) 은 G_r op ≥ 0 에서만 정의된다. G < 0 이면 arccos 인수가 1 을
+            // 넘어 정의역을 벗어난다 — ISO 16281 은 음의 클리어런스(예압)를
+            // 클리어런스로 표현하지 않는다. ACBB 의 예압은 축방향 하중으로 준다.
+            if g < 0.0 {
+                return Err(SolverError::InvalidInput(format!(
+                    "음의 운전 클리어런스({g} mm)는 식 (A.1) 의 정의역 밖입니다.                      ACBB 예압은 ClearanceSpec::AxialPreloadN 으로 지정하십시오 (P3 지원)"
+                )));
             }
-        })
-        .collect();
-
-    let _ = d_we; // reserved for future use (asymmetric row); silences unused warning cleanly
-    Ok(slices)
-}
-
-/// Combine two curvature radii in series.
-/// 1/R_eq = 1/R_roller + 1/R_race
-/// If r_race is very large (> 1e6 mm ≈ ∞, i.e. flat / 원통 raceway), returns r_roller unchanged.
-fn combine_curvature(r_roller: f64, r_race: f64) -> f64 {
-    if r_race.abs() > 1.0e6 {
-        r_roller
-    } else {
-        r_roller * r_race / (r_roller + r_race)
+            let arg = 1.0 - g / (2.0 * a_mm);
+            if !(-1.0..=1.0).contains(&arg) {
+                return Err(SolverError::InvalidGeometry(format!(
+                    "운전 클리어런스 G_r op = {g} mm 가 A = {a_mm} mm 에 비해 과대합니다 \
+                     (식 A.1 의 arccos 인수 {arg} 가 [−1, 1] 밖)"
+                )));
+            }
+            Ok((g, arg.acos()))
+        }
+        ClearanceSpec::InitialAngleRad(alpha_0) => {
+            // (A.1) 역산
+            let g = 2.0 * a_mm * (1.0 - alpha_0.cos());
+            Ok((g, alpha_0))
+        }
+        ClearanceSpec::AxialPreloadN(_) => Err(SolverError::InvalidInput(
+            "축방향 예압(F_a0) → α₀ 역산은 P3 평형 솔버에서 지원합니다. \
+             P1 단계에서는 DiametralMm 또는 InitialAngleRad 로 지정하십시오"
+                .into(),
+        )),
     }
 }
 
-/// Compute roller profile correction at axial position x [mm].
-/// Returns correction in [μm].
-fn roller_profile_correction(x: f64, profile: &RollerProfile, l_we: f64) -> f64 {
-    let half_l = l_we / 2.0;
-    let x_centered = x - half_l; // centered coordinate
+/// 하중 무관 기하 전처리 (Theory §2).
+pub fn compute_geometry_derived(
+    geom: &BallBearingGeometry,
+) -> Result<GeometryDerived, SolverError> {
+    geom.validate()?;
 
-    // Crown correction
-    let dz_crown = crown_correction(x_centered, &profile.crown_type, half_l, profile.delta_c);
+    let d_w = geom.d_w_mm;
+    let d_pw = geom.d_pw_mm;
+    let r_i = geom.r_i_mm;
+    let r_e = geom.r_e_mm;
 
-    // Dub-off correction
-    let dz_dub = dub_off_correction(x, profile, l_we);
+    // (A.3) 곡률중심 간 거리
+    let a_mm = r_i + r_e - d_w;
 
-    dz_crown + dz_dub
+    // (A.1) 초기 접촉각 + 등가 클리어런스
+    let (g_r_op_mm, alpha_0_rad) = resolve_clearance(geom.clearance, a_mm)?;
+
+    // (A.4) 내륜 홈 곡률중심 반경 — **틸트 모멘트 팔** (D-9)
+    let r_i_center_mm = d_pw / 2.0 + (r_i - d_w / 2.0) * alpha_0_rad.cos();
+
+    // Clause 4: γ = D_w cos α / D_pw  (공칭 접촉각 α 사용, T-2 참조)
+    let gamma = d_w * geom.alpha_nom_rad.cos() / d_pw;
+    if gamma >= 1.0 {
+        return Err(SolverError::InvalidGeometry(
+            "γ = D_w cos α / D_pw 가 1 이상입니다 (식 E.4/E.6 의 1−γ 가 0 이하)".into(),
+        ));
+    }
+
+    // (E.4)(E.5) 곡률합 [1/mm]
+    let ki = gamma / (1.0 - gamma);
+    let ke = gamma / (1.0 + gamma);
+    let ci = d_w / (2.0 * r_i);
+    let ce = d_w / (2.0 * r_e);
+
+    let den_i = 2.0 + ki - ci;
+    let den_e = 2.0 - ke - ce;
+    if den_i <= 0.0 || den_e <= 0.0 {
+        return Err(SolverError::InvalidGeometry(
+            "곡률합의 분모가 0 이하입니다 — 홈 반경이 볼 반경에 지나치게 가깝습니다".into(),
+        ));
+    }
+
+    let sum_rho_i_per_mm = 2.0 / d_w * den_i;
+    let sum_rho_e_per_mm = 2.0 / d_w * den_e;
+
+    // (E.6)(E.7) 상대 곡률차. (E.7) 분자 첫 항은 음수임에 주의.
+    let f_rho_i = (ki + ci) / den_i;
+    let f_rho_e = (-ke + ce) / den_e;
+
+    Ok(GeometryDerived {
+        a_mm,
+        alpha_0_rad,
+        r_i_center_mm,
+        gamma,
+        sum_rho_i_per_mm,
+        sum_rho_e_per_mm,
+        f_rho_i,
+        f_rho_e,
+        g_r_op_mm,
+    })
 }
 
-/// Crown correction based on crown type.
-/// x_centered: distance from roller center [mm]
-/// half_l: half of effective length [mm]
-/// delta_c: crown drop [μm] — MASTER PARAMETER that determines the profile shape.
+/// UI 표시·검산용 기하 요약.
 ///
-/// For each crown type, the type-specific parameter is derived from delta_c:
-///   - Parabolic: c₂ = δ_c / half_l²
-///   - Circular:  R_crown = half_l² / (2·δ_c/1000)  [mm]
-///   - Logarithmic: A_log = δ_c / ln(1/(1-ref²)), ref=0.9
-///   - Custom: uses data directly (δ_c ignored)
-fn crown_correction(x_centered: f64, crown_type: &CrownType, half_l: f64, delta_c: f64) -> f64 {
-    if delta_c <= 0.0 && !matches!(crown_type, CrownType::Custom { .. } | CrownType::Polynomial { .. }) {
-        return 0.0;
-    }
-    let hl2 = half_l * half_l;
-
-    match crown_type {
-        CrownType::Logarithmic { .. } => {
-            // Derive A_log from delta_c at reference position (90% of half-length)
-            let ref_ratio: f64 = 0.9;
-            let a_log = delta_c / (1.0 / (1.0 - ref_ratio * ref_ratio)).ln();
-            let ratio = (x_centered / half_l).powi(2);
-            if ratio >= 0.999 {
-                return delta_c;
-            }
-            a_log * (1.0 / (1.0 - ratio)).ln()
-        }
-        CrownType::Circular { .. } => {
-            // Derive R_crown from delta_c: δ_c/1000 ≈ half_l²/(2R) → R = half_l²/(2·δ_c/1000)
-            let r_crown = hl2 / (2.0 * delta_c / 1000.0);
-            let x2 = x_centered * x_centered;
-            let r2 = r_crown * r_crown;
-            if x2 >= r2 {
-                return delta_c;
-            }
-            (r_crown - (r2 - x2).sqrt()) * 1000.0
-        }
-        CrownType::Parabolic { .. } => {
-            // Derive c₂ from delta_c: δ_c = c₂·half_l² → c₂ = δ_c/half_l²
-            let c2 = delta_c / hl2;
-            c2 * x_centered * x_centered
-        }
-        CrownType::Custom { profile } => {
-            if profile.len() < 2 {
-                return 0.0;
-            }
-            cubic_spline_interpolate(profile, x_centered + half_l)
-        }
-        CrownType::Polynomial { coeffs } => {
-            // Measured profile convention: negative = concave (crown shape).
-            // Solver convention: positive delta_z = gap increase (crown drop).
-            // Negate to convert measured → solver convention.
-            let x = x_centered;
-            let p1 = coeffs.first().copied().unwrap_or(0.0);
-            let p2 = coeffs.get(1).copied().unwrap_or(0.0);
-            let p3 = coeffs.get(2).copied().unwrap_or(0.0);
-            let p4 = coeffs.get(3).copied().unwrap_or(0.0);
-            let p5 = coeffs.get(4).copied().unwrap_or(0.0);
-            -(((p1 * x + p2) * x + p3) * x + p4) * x - p5
-        }
+/// `n·D_pw` 는 ISO 16281 A.4 의 고속 판정 지표다 (D-3).
+/// 1×10⁶ mm/min 을 넘으면 정적 평형 가정 범위 밖이다.
+pub fn compute_geometry_summary(
+    geom: &BallBearingGeometry,
+    derived: &GeometryDerived,
+    operating: &OperatingConditions,
+    material: &Material,
+) -> GeometrySummary {
+    GeometrySummary {
+        a_mm: derived.a_mm,
+        alpha_0_rad: derived.alpha_0_rad,
+        r_i_center_mm: derived.r_i_center_mm,
+        gamma: derived.gamma,
+        sum_rho_i_per_mm: derived.sum_rho_i_per_mm,
+        sum_rho_e_per_mm: derived.sum_rho_e_per_mm,
+        f_rho_i: derived.f_rho_i,
+        f_rho_e: derived.f_rho_e,
+        g_r_op_mm: derived.g_r_op_mm,
+        osculation_inner: geom.r_i_mm / geom.d_w_mm,
+        osculation_outer: geom.r_e_mm / geom.d_w_mm,
+        ball_mass_g: util::sphere_mass_g(geom.d_w_mm, material.density_ball_g_cm3),
+        n_dpw_mm_per_min: operating.relative_speed_rpm().abs() * geom.d_pw_mm,
     }
 }
 
-/// Dub-off correction at axial position x [mm].
-/// Returns additional correction in [μm].
-/// CRB: dub-off 양쪽 대칭 — 단일 (delta_dub, l_dub) 로 양 끝 동일 적용 (부록 A.1).
-fn dub_off_correction(x: f64, profile: &RollerProfile, l_we: f64) -> f64 {
-    let mut dz = 0.0;
+/// ISO 16281 A.4 고속 판정 임계값 [mm/min] (D-3).
+pub const N_DPW_STATIC_LIMIT: f64 = 1.0e6;
 
-    // Small end dub-off (x near 0)
-    if profile.l_dub > 0.0 && x < profile.l_dub {
-        let ratio = 1.0 - x / profile.l_dub;
-        dz += profile.delta_dub * ratio * ratio;
+/// 기하·운전조건에서 나오는 경고를 수집한다.
+pub fn collect_geometry_alerts(summary: &GeometrySummary) -> Vec<Alert> {
+    let mut alerts = Vec::new();
+
+    if summary.n_dpw_mm_per_min > N_DPW_STATIC_LIMIT {
+        alerts.push(Alert {
+            level: AlertLevel::Warning,
+            code: "HIGH_SPEED".into(),
+            message: format!(
+                "n·D_pw = {:.3e} mm/min 이 ISO 16281 A.4 의 정적 가정 한계 1e6 을 초과합니다. \
+                 원심력·자이로 모멘트가 하중분포를 바꿀 수 있으나 본 해석은 정적 평형만 다룹니다",
+                summary.n_dpw_mm_per_min
+            ),
+        });
     }
 
-    // Large end dub-off (x near l_we) — 대칭 적용
-    let x_from_large = l_we - x;
-    if profile.l_dub > 0.0 && x_from_large < profile.l_dub {
-        let ratio = 1.0 - x_from_large / profile.l_dub;
-        dz += profile.delta_dub * ratio * ratio;
+    // Annex B.2 참조기하에서 크게 벗어난 홈 반경은 ISO 281 f_c 표의 전제를 깬다 (T-9)
+    if summary.osculation_inner > 0.52 || summary.osculation_outer > 0.53 {
+        alerts.push(Alert {
+            level: AlertLevel::Warning,
+            code: "GROOVE_RADIUS_OVER_REFERENCE".into(),
+            message: format!(
+                "홈 반경비가 ISO 281 §5.1.1 전제(f_i ≤ 0,52 / f_e ≤ 0,53)를 초과합니다 \
+                 (f_i = {:.4}, f_e = {:.4}). f_c 감소 보정이 필요하나 ISO/TR 8646 미확보 상태입니다 (T-9)",
+                summary.osculation_inner, summary.osculation_outer
+            ),
+        });
     }
 
-    dz
-}
-
-/// Raceway profile correction at axial position x [mm].
-/// Returns correction in [μm].
-fn raceway_profile_correction(x: f64, profile: &RacewayProfile, l_we: f64) -> f64 {
-    let half_l = l_we / 2.0;
-    let x_centered = x - half_l;
-
-    // Simple parabolic crowning
-    let dz_crown = if half_l > 0.0 {
-        profile.delta_rw * (x_centered / half_l).powi(2)
-    } else {
-        0.0
-    };
-
-    // Custom profile override
-    let dz_custom = match &profile.custom_profile {
-        Some(data) if data.len() >= 2 => cubic_spline_interpolate(data, x),
-        _ => 0.0,
-    };
-
-    // Polynomial profile (negate: measured negative = concave → solver positive = gap)
-    let dz_poly = match &profile.polynomial_coeffs {
-        Some(coeffs) if !coeffs.is_empty() => {
-            let xc = x - half_l;
-            let p1 = coeffs.first().copied().unwrap_or(0.0);
-            let p2 = coeffs.get(1).copied().unwrap_or(0.0);
-            let p3 = coeffs.get(2).copied().unwrap_or(0.0);
-            let p4 = coeffs.get(3).copied().unwrap_or(0.0);
-            let p5 = coeffs.get(4).copied().unwrap_or(0.0);
-            -(((p1 * xc + p2) * xc + p3) * xc + p4) * xc - p5
-        }
-        _ => 0.0,
-    };
-
-    dz_crown + dz_custom + dz_poly
-}
-
-/// Natural cubic spline interpolation using Thomas algorithm.
-/// data_points: sorted (x, y) pairs
-/// x: interpolation point
-pub fn cubic_spline_interpolate(data_points: &[(f64, f64)], x: f64) -> f64 {
-    let n = data_points.len();
-    if n == 0 {
-        return 0.0;
-    }
-    if n == 1 {
-        return data_points[0].1;
-    }
-
-    // Clamp to data range
-    if x <= data_points[0].0 {
-        return data_points[0].1;
-    }
-    if x >= data_points[n - 1].0 {
-        return data_points[n - 1].1;
-    }
-
-    if n == 2 {
-        // Linear interpolation
-        let (x0, y0) = data_points[0];
-        let (x1, y1) = data_points[1];
-        let t = (x - x0) / (x1 - x0);
-        return y0 + t * (y1 - y0);
-    }
-
-    // Compute intervals
-    let m = n - 1; // number of intervals
-    let h: Vec<f64> = (0..m).map(|i| data_points[i + 1].0 - data_points[i].0).collect();
-
-    // Build tridiagonal system for second derivatives (natural spline: S''(0) = S''(n) = 0)
-    let mut alpha = vec![0.0; m + 1];
-    for i in 1..m {
-        alpha[i] = (3.0 / h[i]) * (data_points[i + 1].1 - data_points[i].1)
-            - (3.0 / h[i - 1]) * (data_points[i].1 - data_points[i - 1].1);
-    }
-
-    // Thomas algorithm (solve tridiagonal)
-    let mut c = vec![0.0; n];
-    let mut l = vec![1.0; n];
-    let mut mu = vec![0.0; n];
-    let mut z = vec![0.0; n];
-
-    for i in 1..m {
-        l[i] = 2.0 * (data_points[i + 1].0 - data_points[i - 1].0) - h[i - 1] * mu[i - 1];
-        mu[i] = h[i] / l[i];
-        z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
-    }
-
-    // Back substitution
-    for j in (0..m).rev() {
-        c[j] = z[j] - mu[j] * c[j + 1];
-    }
-
-    // Compute b and d coefficients
-    let b: Vec<f64> = (0..m)
-        .map(|i| {
-            (data_points[i + 1].1 - data_points[i].1) / h[i]
-                - h[i] * (c[i + 1] + 2.0 * c[i]) / 3.0
-        })
-        .collect();
-    let d: Vec<f64> = (0..m).map(|i| (c[i + 1] - c[i]) / (3.0 * h[i])).collect();
-
-    // Find interval
-    let mut idx = 0;
-    for i in 0..m {
-        if x >= data_points[i].0 && x <= data_points[i + 1].0 {
-            idx = i;
-            break;
-        }
-    }
-
-    // Evaluate spline
-    let dx = x - data_points[idx].0;
-    data_points[idx].1 + b[idx] * dx + c[idx] * dx * dx + d[idx] * dx * dx * dx
+    alerts
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn make_test_geometry() -> (MacroGeometry, RacewayGeometry, RollerProfile, RacewayProfile) {
-        // CRB 테스트 지오메트리 (Phase 1: NU 시리즈 유사 파라미터)
-        let macro_geom = MacroGeometry {
-            d: 50.0,
-            outer_diameter: 90.0,
-            t: 20.0,
-            z: 20,
-            d_we: 9.0,       // 균일 원통 roller diameter
-            l_we: 15.0,
-            d_pw: 70.0,
-            g_r: 10.0,
-        };
-        let raceway_geom = RacewayGeometry {
-            r_i: 1.0e9,      // 원통 raceway — transverse 곡률 무한대 근사
-            r_o: 1.0e9,
-            d_uc: 0.0,
-            l_uc: 0.0,
-        };
-        let roller_profile = RollerProfile {
-            crown_type: CrownType::Parabolic { c2: 0.01 },
-            delta_c: 5.0,
-            delta_dub: 10.0,  // 양쪽 대칭
-            l_dub: 2.0,
-            sigma_roller: 0.15,
-        };
-        let raceway_profile = RacewayProfile {
-            delta_rw: 0.0,
-            w_a: 0.0,
-            ra: 0.3,
-            custom_profile: None,
-            polynomial_coeffs: None,
-        };
-        (macro_geom, raceway_geom, roller_profile, raceway_profile)
-    }
-
-    #[test]
-    fn test_uniform_slicing() {
-        let (mg, rg, rp, rwp) = make_test_geometry();
-        let slices = compute_slices(&mg, &rg, &rp, &rwp, &rwp, 10).unwrap();
-
-        assert_eq!(slices.len(), 10);
-        assert!((slices[0].slice_width - 1.5).abs() < 1e-10); // 15 / 10
-        assert!((slices[0].x_axial - 0.75).abs() < 1e-10);    // center of first slice
-        assert!((slices[9].x_axial - 14.25).abs() < 1e-10);   // center of last slice
-    }
-
-    #[test]
-    fn test_uniform_radius_crb() {
-        // CRB: 모든 slice 의 roller 반경이 균일 (= d_we/2)
-        let (mg, rg, rp, rwp) = make_test_geometry();
-        let slices = compute_slices(&mg, &rg, &rp, &rwp, &rwp, 10).unwrap();
-        let r_expected = mg.d_we / 2.0;
-        for s in &slices {
-            assert!((s.r_roller - r_expected).abs() < 1e-10);
+    fn fixture() -> BallBearingGeometry {
+        let d_w_mm = 11.5;
+        let (r_i_mm, r_e_mm) = BallBearingGeometry::reference_groove_radii(d_w_mm);
+        BallBearingGeometry {
+            bore_mm: 50.0,
+            outer_diameter_mm: 90.0,
+            width_mm: 20.0,
+            z: 16,
+            d_w_mm,
+            d_pw_mm: 70.0,
+            r_i_mm,
+            r_e_mm,
+            alpha_nom_rad: 40.0_f64.to_radians(),
+            clearance: ClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
         }
     }
 
     #[test]
-    fn test_equivalent_radius() {
-        let (mg, rg, rp, rwp) = make_test_geometry();
-        let slices = compute_slices(&mg, &rg, &rp, &rwp, &rwp, 10).unwrap();
-
-        for s in &slices {
-            // R_eq = r1*r2 / (r1+r2) should be positive and < min(r1, r2)
-            assert!(s.r_eq_inner > 0.0);
-            assert!(s.r_eq_inner < s.r_roller.min(s.r_inner_race));
-        }
+    fn axial_preload_is_rejected_with_explicit_message() {
+        let mut g = fixture();
+        g.clearance = ClearanceSpec::AxialPreloadN(500.0);
+        let err = compute_geometry_derived(&g).unwrap_err();
+        assert!(format!("{err}").contains("P3"));
     }
 
     #[test]
-    fn test_cubic_spline_linear_data() {
-        // Spline through linear data should reproduce linear function
-        let data = vec![(0.0, 0.0), (5.0, 10.0), (10.0, 20.0)];
-        let y = cubic_spline_interpolate(&data, 2.5);
-        assert!((y - 5.0).abs() < 1e-6);
+    fn oversized_clearance_is_rejected() {
+        let mut g = fixture();
+        // A = 0.05 D_w = 0.575 mm → G_r op > 4A 면 arccos 인수가 −1 미만
+        g.clearance = ClearanceSpec::DiametralMm(10.0);
+        assert!(compute_geometry_derived(&g).is_err());
     }
 
     #[test]
-    fn test_cubic_spline_quadratic_data() {
-        // Spline through quadratic y=x² at x=0,1,2,3,4
-        let data: Vec<(f64, f64)> = (0..=4).map(|x| (x as f64, (x * x) as f64)).collect();
-        let y = cubic_spline_interpolate(&data, 1.5);
-        assert!((y - 2.25).abs() < 0.1); // should be close to 2.25
+    fn gamma_uses_nominal_contact_angle() {
+        let g = fixture();
+        let d = compute_geometry_derived(&g).unwrap();
+        let expected = g.d_w_mm * g.alpha_nom_rad.cos() / g.d_pw_mm;
+        assert!((d.gamma - expected).abs() < 1e-15);
     }
 
     #[test]
-    fn test_cubic_spline_boundary_clamp() {
-        let data = vec![(1.0, 5.0), (3.0, 7.0), (5.0, 3.0)];
-        assert!((cubic_spline_interpolate(&data, 0.0) - 5.0).abs() < 1e-10); // clamp low
-        assert!((cubic_spline_interpolate(&data, 6.0) - 3.0).abs() < 1e-10); // clamp high
-    }
-
-    #[test]
-    fn test_parabolic_crown() {
-        // δ_c is master: Parabolic Δz = (δ_c/half_l²) * x²
-        let delta_c = 5.0; // μm
-        let half_l = 7.5;
-        // At edge (x = half_l): should return δ_c
-        let dz = crown_correction(half_l, &CrownType::Parabolic { c2: 0.0 }, half_l, delta_c);
-        assert!((dz - delta_c).abs() < 1e-10);
-
-        // Center should be zero
-        let dz_center = crown_correction(0.0, &CrownType::Parabolic { c2: 0.0 }, half_l, delta_c);
-        assert!(dz_center.abs() < 1e-10);
-
-        // Mid-point (x = half_l/2): should be δ_c/4
-        let dz_mid = crown_correction(half_l / 2.0, &CrownType::Parabolic { c2: 0.0 }, half_l, delta_c);
-        assert!((dz_mid - delta_c / 4.0).abs() < 1e-10);
-
-        // δ_c = 0 → flat profile
-        let dz_flat = crown_correction(half_l, &CrownType::Parabolic { c2: 0.0 }, half_l, 0.0);
-        assert!(dz_flat.abs() < 1e-10);
-    }
-
-    #[test]
-    fn test_dub_off_crb_symmetric() {
-        // CRB: dub-off 대칭 — 양 끝에서 같은 값
-        let profile = RollerProfile {
-            crown_type: CrownType::Parabolic { c2: 0.0 },
-            delta_c: 0.0,
-            delta_dub: 15.0,
-            l_dub: 2.5,
-            sigma_roller: 0.15,
+    fn summary_osculation_and_mass() {
+        let g = fixture();
+        let d = compute_geometry_derived(&g).unwrap();
+        let op = OperatingConditions {
+            f_x_n: 0.0,
+            f_y_n: 0.0,
+            f_z_n: 0.0,
+            m_y_nmm: 0.0,
+            m_z_nmm: 0.0,
+            n_inner_rpm: 1500.0,
+            n_outer_rpm: 0.0,
+            temperature_c: 70.0,
         };
-        let l_we = 15.0;
-
-        // At x=0 (small end edge): full dub-off
-        let dz_small = dub_off_correction(0.0, &profile, l_we);
-        assert!((dz_small - 15.0).abs() < 1e-10);
-
-        // At x=l_we (large end edge): 대칭 → same value
-        let dz_large = dub_off_correction(l_we, &profile, l_we);
-        assert!((dz_large - 15.0).abs() < 1e-10);
-
-        // At center: no dub-off
-        let dz_center = dub_off_correction(l_we / 2.0, &profile, l_we);
-        assert!(dz_center.abs() < 1e-10);
+        let s = compute_geometry_summary(&g, &d, &op, &Material::default());
+        assert!((s.osculation_inner - 0.52).abs() < 1e-12);
+        assert!((s.osculation_outer - 0.53).abs() < 1e-12);
+        assert!((s.n_dpw_mm_per_min - 1500.0 * 70.0).abs() < 1e-9);
+        assert!(s.ball_mass_g > 6.0 && s.ball_mass_g < 6.5);
     }
 
     #[test]
-    fn test_zero_slices_error() {
-        let (mg, rg, rp, rwp) = make_test_geometry();
-        assert!(compute_slices(&mg, &rg, &rp, &rwp, &rwp, 0).is_err());
+    fn high_speed_alert_fires_only_above_limit() {
+        let g = fixture();
+        let d = compute_geometry_derived(&g).unwrap();
+        let mk = |rpm: f64| OperatingConditions {
+            f_x_n: 0.0,
+            f_y_n: 0.0,
+            f_z_n: 0.0,
+            m_y_nmm: 0.0,
+            m_z_nmm: 0.0,
+            n_inner_rpm: rpm,
+            n_outer_rpm: 0.0,
+            temperature_c: 70.0,
+        };
+        // n·D_pw = rpm × 70. 한계 1e6 → rpm = 14286
+        let below = compute_geometry_summary(&g, &d, &mk(14_000.0), &Material::default());
+        let above = compute_geometry_summary(&g, &d, &mk(15_000.0), &Material::default());
+        assert!(!collect_geometry_alerts(&below)
+            .iter()
+            .any(|a| a.code == "HIGH_SPEED"));
+        assert!(collect_geometry_alerts(&above)
+            .iter()
+            .any(|a| a.code == "HIGH_SPEED"));
     }
 
     #[test]
-    fn test_roller_inertia_cylinder() {
-        // Cylindrical roller (R_max = R_min) → I = (1/2)mR²
-        let rho = 7850.0; // kg/m³
-        let r = 5.0;      // mm → 0.005 m
-        let l = 10.0;     // mm → 0.010 m
-        let i = compute_roller_inertia(r, r, l, rho);
-        let r_m = r * 1e-3;
-        let l_m = l * 1e-3;
-        let mass = rho * std::f64::consts::PI * r_m * r_m * l_m;
-        let i_expected = 0.5 * mass * r_m * r_m;
-        assert!((i - i_expected).abs() / i_expected < 1e-6,
-            "Cylinder: I={:.6e}, expected={:.6e}", i, i_expected);
-    }
-
-    #[test]
-    fn test_roller_inertia_tapered() {
-        // Tapered roller: R_max > R_min, I should be between cylinder limits
-        let rho = 7850.0;
-        let r_min = 4.0;  // mm
-        let r_max = 5.0;  // mm
-        let l = 10.0;     // mm
-        let i = compute_roller_inertia(r_max, r_min, l, rho);
-        let i_small = compute_roller_inertia(r_min, r_min, l, rho);
-        let i_large = compute_roller_inertia(r_max, r_max, l, rho);
-        assert!(i > i_small && i < i_large,
-            "Tapered I={:.6e} should be between {:.6e} and {:.6e}", i, i_small, i_large);
-    }
-}
-
-/// Compute moment of inertia for a tapered (frustum) roller about its spin axis.
-///
-/// Uses the exact frustum formula:
-///   I = (π/10) × ρ × L × (R_max⁵ − R_min⁵) / (R_max − R_min)
-/// For cylinder (R_max = R_min): I = (1/2) × m × R²
-///
-/// # Arguments
-/// * `r_max_mm` — Large-end radius [mm]
-/// * `r_min_mm` — Small-end radius [mm]
-/// * `l_mm` — Roller effective length [mm]
-/// * `rho_kg_m3` — Material density [kg/m³] (bearing steel ~7850)
-///
-/// # Returns
-/// Moment of inertia [kg·m²]
-pub fn compute_roller_inertia(r_max_mm: f64, r_min_mm: f64, l_mm: f64, rho_kg_m3: f64) -> f64 {
-    let r_max = r_max_mm * 1e-3; // [m]
-    let r_min = r_min_mm * 1e-3;
-    let l = l_mm * 1e-3;
-
-    if (r_max - r_min).abs() < 1e-12 {
-        // Cylindrical roller: I = (1/2) × ρ × π × R⁴ × L
-        0.5 * rho_kg_m3 * std::f64::consts::PI * r_max.powi(4) * l
-    } else {
-        // Frustum: I = (π/10) × ρ × L × (R_max⁵ − R_min⁵) / (R_max − R_min)
-        std::f64::consts::PI / 10.0 * rho_kg_m3 * l
-            * (r_max.powi(5) - r_min.powi(5)) / (r_max - r_min)
+    fn negative_diametral_clearance_is_rejected() {
+        // 식 (A.1) 은 G_r op ≥ 0 에서만 정의된다 (arccos 인수 ≤ 1).
+        // ACBB 예압은 클리어런스가 아니라 축방향 하중으로 준다.
+        let mut g = fixture();
+        g.clearance = ClearanceSpec::DiametralMm(-0.02);
+        let err = compute_geometry_derived(&g).unwrap_err();
+        assert!(format!("{err}").contains("AxialPreloadN"));
     }
 }

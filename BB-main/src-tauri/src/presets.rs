@@ -219,28 +219,28 @@ pub fn ensure_default_preset(app: AppHandle) -> Result<(), String> {
 /// 홈 반경은 ISO 16281 Annex B.2 참조기하 (r_i = 0,52 D_w, r_e = 0,53 D_w).
 /// 단위는 전부 솔버 내부 단위 mm · N · rad (Plan D-10).
 fn default_bearing_input() -> BearingInput {
-    let d_w = 11.5; // [mm] 가정값
-    let (r_i, r_e) = BallBearingGeometry::reference_groove_radii(d_w);
+    let d_w_mm = 11.5; // [mm] 가정값
+    let (r_i_mm, r_e_mm) = BallBearingGeometry::reference_groove_radii(d_w_mm);
     BearingInput {
         geometry: BallBearingGeometry {
-            bore: 50.0,
-            outer_diameter: 90.0,
-            width: 20.0,
+            bore_mm: 50.0,
+            outer_diameter_mm: 90.0,
+            width_mm: 20.0,
             z: 16, // 가정값
-            d_w,
-            d_pw: 70.0, // (d + D) / 2
-            r_i,
-            r_e,
-            alpha_nom: 40.0_f64.to_radians(),
-            clearance: ClearanceSpec::InitialAngle(40.0_f64.to_radians()),
+            d_w_mm,
+            d_pw_mm: 70.0, // (d + D) / 2
+            r_i_mm,
+            r_e_mm,
+            alpha_nom_rad: 40.0_f64.to_radians(),
+            clearance: ClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
         },
         material: Material::default(),
         operating: OperatingConditions {
-            f_x: 5_000.0,  // [N] 축하중
-            f_y: 2_000.0,  // [N] 반경하중 (Y)
-            f_z: 0.0,
-            m_y: 0.0,
-            m_z: 0.0,
+            f_x_n: 5_000.0, // [N] 축하중
+            f_y_n: 2_000.0, // [N] 반경하중 (Y)
+            f_z_n: 0.0,
+            m_y_nmm: 0.0,
+            m_z_nmm: 0.0,
             n_inner_rpm: 1_500.0,
             n_outer_rpm: 0.0,
             temperature_c: 70.0,
