@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Bash",
+      "Read",
+      "Write",
+      "Bash(/tmp/analysis.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(python marker_convert.py \"ISO 76_2006.pdf\" \"ISO_76_2006.md\")",
+      "Bash(python marker_convert.py \"ISO_16281_2025\\(en\\).pdf\" \"ISO_16281_2025.md\")",
+      "Bash(python marker_convert.py \"ISO_17956_2025.pdf\" \"ISO_17956_2025.md\")",
+      "Bash(python marker_convert.py \"ISO15312_2018_EN.pdf\" \"ISO_15312_2018.md\")",
+      "Bash(python marker_convert.py \"ISOTR1281-1_2008.pdf\" \"ISO_TR_1281-1_2008.md\")",
+      "Bash(python marker_convert.py \"ISOTR1281-2_2008.pdf\" \"ISO_TR_1281-2_2008.md\")",
+      "Bash(python marker_convert.py \"ISO_TR_10657_2021\\(en\\).pdf\" \"ISO_TR_10657_2021.md\")",
+      "Bash(python -c \"kappa=2.0; c1,c2=1.2348,0.071739; bracket=1.5859-c1/\\(kappa**c2\\); x=1.0*0.1; inner=1.0-bracket*\\(x**0.4\\); a=0.1*\\(inner**\\(-9.185\\)\\); print\\(f''bracket={bracket:.6f} inner={inner:.6f} a_iso={a:.6f}''\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(gh auth status)",
+      "Bash(gh repo create TRB --private --source=. --description \"TRB Contact Analysis System — Tapered Roller Bearing internal contact analysis tool\")",
+      "Edit(~/.claude/skills/visual-generator/**)"
+    ],
+    "additionalDirectories": [
+      "d:\\SW\\TRB\\.claude\\plans"
+    ]
+  }
+}

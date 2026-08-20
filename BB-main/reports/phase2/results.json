@@ -1,0 +1,32 @@
+[
+  {
+    "name": "level_a_compute_slices_uniform_slice_width",
+    "quantity": "Slice 폭 총합 vs L_we [mm]",
+    "input_summary": "L_we=42.0, n_slices=30",
+    "expected": "42.0",
+    "solver": "42.0",
+    "rel_err": 0.0,
+    "tol": 0.001,
+    "passed": true
+  },
+  {
+    "name": "level_a_compute_slices_x_axial_symmetric",
+    "quantity": "x_axial 대칭성 편차 [mm]",
+    "input_summary": "L_we=42.0, n_slices=30",
+    "expected": "0.0",
+    "solver": "7.105427357601002e-15",
+    "rel_err": 1.691768418476429e-16,
+    "tol": 0.001,
+    "passed": true
+  },
+  {
+    "name": "level_a_end_to_end_pipeline_valid",
+    "quantity": "30 slices × (b, p_max) 모두 유효 (finite, positive)",
+    "input_summary": "q=500.0, n_slices=30",
+    "expected": "all finite & positive",
+    "solver": "OK",
+    "rel_err": 0.0,
+    "tol": 0.001,
+    "passed": true
+  }
+]
