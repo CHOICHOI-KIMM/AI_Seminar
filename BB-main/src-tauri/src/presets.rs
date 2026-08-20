@@ -184,7 +184,10 @@ pub fn delete_preset(app: AppHandle, name: String) -> Result<(), String> {
 pub fn ensure_default_preset(app: AppHandle) -> Result<(), String> {
     let dir = presets_dir(&app)?;
 
-    // Only create default if no presets exist
+    // 프리셋이 하나도 없을 때만 기본값 생성.
+    // NOTE (BB P1-S2): CRB 시절 프리셋 JSON 은 BearingInput 스키마가 달라
+    // load_preset 에서 역직렬화 오류가 난다. 사용자 결정에 따라 마이그레이션은
+    // 제공하지 않으며, 구 프리셋은 폐기 대상이다 (파일 삭제는 사용자 몫).
     let has_presets = fs::read_dir(&dir)
         .map_err(|e| e.to_string())?
         .any(|e| {
@@ -204,116 +207,44 @@ pub fn ensure_default_preset(app: AppHandle) -> Result<(), String> {
 
     let default_input = default_bearing_input();
     let json = serde_json::to_string_pretty(&default_input).map_err(|e| e.to_string())?;
-    let path = dir.join("NU 240 (CRB Default).json");
+    let path = dir.join("7210 (ACBB Default).json");
     fs::write(&path, json).map_err(|e| e.to_string())?;
     Ok(())
 }
 
-/// Construct the default BearingInput for CRB (Phase 1 stub — NU 240 유사 파라미터).
-/// Phase 1.5 (defaults) 에서 정식 값 확정 예정.
+/// ACBB 기본 프리셋 (BB Phase 1-S2, 2026-08-20).
+///
+/// 경계치수 d/D/B 는 ISO 15 치수계열 7210 형번 기준.
+/// **Z 와 D_w 는 제조사별 값이라 가정값이다** (실 카탈로그 미확인 — Plan T-6 참조).
+/// 홈 반경은 ISO 16281 Annex B.2 참조기하 (r_i = 0,52 D_w, r_e = 0,53 D_w).
+/// 단위는 전부 솔버 내부 단위 mm · N · rad (Plan D-10).
 fn default_bearing_input() -> BearingInput {
+    let d_w = 11.5; // [mm] 가정값
+    let (r_i, r_e) = BallBearingGeometry::reference_groove_radii(d_w);
     BearingInput {
-        macro_geom: MacroGeometry {
-            d: 200.0,
-            outer_diameter: 360.0,
-            t: 58.0,
-            z: 18,
-            d_we: 44.0,      // 균일 원통 roller diameter
-            l_we: 42.0,
-            d_pw: 280.0,
-            g_r: 30.0,
+        geometry: BallBearingGeometry {
+            bore: 50.0,
+            outer_diameter: 90.0,
+            width: 20.0,
+            z: 16, // 가정값
+            d_w,
+            d_pw: 70.0, // (d + D) / 2
+            r_i,
+            r_e,
+            alpha_nom: 40.0_f64.to_radians(),
+            clearance: ClearanceSpec::InitialAngle(40.0_f64.to_radians()),
         },
-        raceway_geom: RacewayGeometry {
-            r_i: 1.0e9,       // 원통 raceway (transverse 곡률 무한대 근사)
-            r_o: 1.0e9,
-            d_uc: 0.0,
-            l_uc: 0.0,
-        },
-        roller_profile: RollerProfile {
-            crown_type: CrownType::Logarithmic { a_log: 0.0 },
-            delta_c: 5.0,
-            delta_dub: 0.0,   // 양쪽 대칭 (D1: rib 없음, 부록 A.1)
-            l_dub: 0.0,
-            sigma_roller: 0.15,
-        },
-        raceway_profile_inner: RacewayProfile {
-            delta_rw: 0.0,
-            w_a: 0.0,
-            ra: 0.15,
-            custom_profile: None,
-            polynomial_coeffs: None,
-        },
-        raceway_profile_outer: RacewayProfile {
-            delta_rw: 0.0,
-            w_a: 0.0,
-            ra: 0.15,
-            custom_profile: None,
-            polynomial_coeffs: None,
-        },
-        material: Material {
-            e_roller: 210.0,
-            e_ring: 210.0,
-            nu: 0.3,
-            hrc: 61.0,
-            density_roller: 7.85,
-            density_ring: 7.85,
-        },
+        material: Material::default(),
         operating: OperatingConditions {
-            f_x: 100.0,
-            f_y: -500.0,      // -Y = 중력 방향 (D5)
-            m_x: 0.0,         // single-plane misalignment 축 (D6)
-            n_inner_rpm: 500.0,
+            f_x: 5_000.0,  // [N] 축하중
+            f_y: 2_000.0,  // [N] 반경하중 (Y)
+            f_z: 0.0,
+            m_y: 0.0,
+            m_z: 0.0,
+            n_inner_rpm: 1_500.0,
             n_outer_rpm: 0.0,
-            gamma: 0.0,
-            t_op: 60.0,
-            nu_40: 68.0,
-            nu_100: 8.0,
-            alpha_pv: 20.0,
-            lubrication_type: LubricationType::Oil,
-            starvation_factor: 1.0,
-            rho_oil: 850.0,
-            design_life_hours: 100.0,
-            lubrication_model: LubricationModel::Method1_DH, film_decay_enabled: false, film_decay_time_hours: 0.0, skew_angle_deg: 0.0, replenishment_rate_nm_s: 0.0, surface_finish: SurfaceFinish::Standard, additive_type: AdditiveType::None,
-            tau_eyring: 5.0,
-            z_roelands: 0.67,
-            traction_model: TractionModel::Eyring,
-            carreau_eta_inf_ratio: 0.005,
-            carreau_lambda_s: 1.0e-7,
-            carreau_n: 0.5,
-            carreau_a: 2.0,
-            friction_model: FrictionModel::PalmgrenLike,
-            thermal_correction: ThermalCorrection::Aihara1987,
-            hysteresis_loss_factor: 0.005,
-            // skf_trb_series 제거 (CRB Phase 7 에서 SKF 대응 검토)
-            skf_lubrication: SkfLubricationEnum::OilBath,
-            skf_y_factor: 1.6,
-            k_fluid: 0.15,
-            beta_visc: 0.04,
-            roughness_input_mode: RoughnessInputMode::Rq,
-            rq_inner: 0.3,
-            rq_outer: 0.3,
-            rq_roller: 0.15,
+            temperature_c: 70.0,
         },
-        solver: SolverParams {
-            run_mode: RunMode::Single(SolverMode::Gen1),
-            n_slices: 30,
-            beam_type: BeamType::Timoshenko,
-            convergence_tol: 1e-4,
-            max_iterations: 200,
-            angular_increment_deg: 2.0,
-            life_method: LifeMethod::Iso16281,
-            e_c: 0.0, // auto (ISO 281 Annex A)
-            contamination_level: ContaminationLevel::NormalCleanliness,
-            oil_supply_method: OilSupplyMethod::OilBath,
-            c_r_kn: Some(59.5),
-            c_0r_kn: Some(59.8),
-            f_s_min: 1.0,
-            rib_contact_mode: RibContactMode::PostProcess,
-            f_0r: 3.0,
-            f_1r: 0.0004,
-            kappa_method: KappaMethod::ViscosityRatio,
-            use_split_contact: false,
-        },
-        transient: None,
+        solver: SolverParams::default(),
     }
 }

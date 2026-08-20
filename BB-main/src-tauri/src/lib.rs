@@ -22,10 +22,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::compute_slice_geometry,
-            commands::compute_hertz_single_slice,
-            commands::solve_bearing,
-            commands::solve_bearing_dual,
             presets::list_presets,
             presets::save_preset,
             presets::load_preset,
