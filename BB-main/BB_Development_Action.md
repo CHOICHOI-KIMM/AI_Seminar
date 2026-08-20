@@ -259,3 +259,93 @@ cargo test          73 → 42 passed, 0 failed
 **P1-S2 (types.rs 재작성) 진입 전 사용자 확인 대기.** 위 전제 오류 ② 때문에 `hertz.rs`·`bearing.rs` 를 P1 에서 일시 비활성화해야 하며, 그 결과 P1 종료 시점에 컴파일되는 솔버는 `types`+`geometry` 뿐이고 Tauri command 는 preset 7종만 남는다(해석 기능 일시 0).
 
 ---
+
+## 260820 — P1-S2: types.rs ACBB 재작성
+
+**커밋** `0960393` — 8 files changed, 596 insertions(+), 2,610 deletions(-). `types.rs` 1,940행 → 587행.
+
+### 사용자 결정 (착수 전 확인)
+
+| 항목 | 결정 |
+|---|---|
+| 재작성 방식 | **백지에서 신규 작성** (기존 파일 편집 아님) |
+| 파일 구성 | **단일 `types.rs` 유지** (input/result 분할 안 함) |
+| 결과 타입 범위 | **P1~P3 에 필요한 것만** — 수명(P4)·윤활(P5) 타입은 미정의 |
+| 프리셋 호환 | **폐기 + 기본 프리셋 신규** (마이그레이션 미제공) |
+
+### 새 데이터 모델
+
+| 타입 | 내용 |
+|---|---|
+| `BallBearingGeometry` | D_w, D_pw, Z, r_i, r_e, α_nom, `ClearanceSpec` + `validate()` + Annex B.2 참조 홈반경 헬퍼 |
+| `ClearanceSpec` | `Diametral`(직경 기준 G_r op) / `InitialAngle`(α₀) / `AxialPreload`(F_a0) |
+| `Material` | **탄성계수 MPa 통일**. 기본값 ISO 16281 Clause 4 NOTE 1/6 (207 000 MPa, ν = 0,3) |
+| `OperatingConditions` | F_x(축)·F_y·F_z·M_y·M_z, ISO 좌표계, [N]·[N·mm] |
+| `DofMask` | `FULL`(5-DOF) / `ISO_3DOF`(δ_z = γ_y = 0) 상수 |
+| `PhaseSweep` | D-8 케이지 위상 스윕 (기본 36분할, 기본 비활성) |
+| `GeometryDerived` | A·α₀·R_i·γ·Σρ_i·Σρ_e·F_i(ρ)·F_e(ρ)·G_r op 캐시 |
+| `BallResult` | φ_j·δ_j·α_j·Q_j·loaded + 내/외륜 a·b·p_max (P2 에서 채움) |
+| `BearingEquilibrium` | `displacement: [f64; 5]` = [δ_x, δ_y, δ_z, γ_y, γ_z] |
+| `PhaseSweepResult`, `GeometrySummary`, `BearingResult`, `Alert` | 결과 계층 |
+
+**CRB 가 삭제했던 것 2건 복원**
+- 축방향 예압 (`ClearanceSpec::AxialPreload`) — CRB 는 D4 로 `preload_mode`·`delta_preload_um` 를 제거했었음
+- 축하중 `f_x` 와 2축 모멘트 `m_y`·`m_z` — CRB 는 D4(f_a 제거)·D6(m_y 제거) 상태였음
+
+**암묵 계약 제거**: `Material` 의 탄성계수를 GPa → **MPa** 로 변경. CRB 는 GPa 로 보관하고 소비처 15곳이 각자 `* 1000.0` 을 곱하는 구조였다 (D-10 위반 1호).
+
+**단위 (D-10)**: 파일 전체가 mm·N·rad·MPa. 환산 상수 **0건**.
+
+### 모듈 일시 비활성 (Plan Phase 1 작업 5)
+
+`geometry`(P1-S3) / `hertz`(P2) / `bearing`(P3) 을 `mod.rs` 에서 주석 처리. 세 모듈 모두 CRB 데이터 모델(`SliceGeometry`·`SliceContactResult`·`RollerProfile`)을 소비하므로 `types.rs` 교체와 동시에 컴파일 불가가 된다.
+
+연쇄 조치: `commands.rs` 의 `compute_slice_geometry`·`compute_hertz_single_slice`·`solve_bearing`·`solve_bearing_dual` 4개 command 제거, `lib.rs` 등록 해제. `TauriReporter` 는 P1-S3 이후 재사용을 위해 존치.
+
+> **현재 상태**: 컴파일되는 솔버 모듈은 `types` 하나, 등록된 Tauri command 는 preset 7종뿐. 앱은 빌드되나 **해석 기능은 일시적으로 0**. P1-S3 → P2 → P3 순으로 하나씩 재활성화된다.
+>
+> `geometry.rs`·`hertz.rs` 파일 자체는 **디스크에 보존** (모듈 선언만 주석 처리) — 재작성 시 원본 대조 가능.
+
+### 프리셋
+
+`default_bearing_input()` 을 ACBB 로 교체, 기본 파일명 `NU 240 (CRB Default).json` → `7210 (ACBB Default).json`.
+
+경계치수 d/D/B = 50/90/20 은 ISO 15 치수계열 기준이나 **Z = 16, D_w = 11,5 mm 는 가정값**이며 실 카탈로그 미확인임을 코드 주석과 테스트 픽스처 양쪽에 명시했다 (T-6 과 연결). 구 CRB 프리셋은 스키마가 달라 `load_preset` 에서 역직렬화 오류로 노출되며, 사용자 결정에 따라 마이그레이션은 제공하지 않는다.
+
+### 검증 — 숫자 소명
+
+```
+cargo build --lib   green
+cargo test          42 → 12 passed, 0 failed
+```
+
+| 항목 | 증감 |
+|---|---|
+| `geometry.rs` 유닛 (모듈 비활성으로 미실행) | −11 |
+| `hertz.rs` 유닛 (모듈 비활성으로 미실행) | −13 |
+| `tests/geometry_level_a.rs` 삭제 | −3 |
+| `tests/bearing_level_d.rs` 삭제 | −7 |
+| `tests/bearing_smoke.rs` 삭제 | −8 |
+| 신규 `types.rs` 유닛 | **+12** |
+| **합계** | 42 − 42 + 12 = **12** ✓ |
+
+통합테스트 3개는 CRB 슬라이스 기하·3-DOF 평형 검증이라 ACBB 에 대응 개념이 없어 삭제. BB 의 Level A 는 P1-S3, Level C·D 는 P3 에서 신규 작성한다.
+
+신규 12개 테스트: Annex B.2 참조 홈반경 / 픽스처 유효성 / 기하 검증 4종(D_pw ≤ D_w, 홈반경 < 볼반경, Z < 3, A > 0) / 재질 기본값·포아송비 / `ISO_3DOF` 마스크 자유도 수 / 반경하중 합성·방향각·상대속도 / 솔버 파라미터 검증 3종 / serde 왕복.
+
+### ⚠ 오케스트레이터 판단 사항 (사용자 확인 필요)
+
+**단위 경계를 별도 타입으로 분리하지 않았다.** D-10 구현 방식이 두 갈래였다:
+
+1. `BearingInputWire`(μm·kN·°) + `BearingInput`(mm·N·rad) 2벌 + 변환 `impl`
+2. **단일 구조체를 내부 단위로 두고 UI 가 표시할 때만 환산** ← 채택
+
+채택 근거: D-10 의 실질 목표(솔버 안에 `1000.0` 부재)를 구조체 중복 없이 달성하고, 프론트엔드는 P6 에서 어차피 재작성이라 JSON 계약 변경 비용이 0이다. 프론트 `FieldGroup` 이 이미 `unit` prop 으로 표시 단위를 받는 구조라 표시 환산은 거기서 처리된다.
+
+**대가**: JSON 에 저장되는 값이 mm·N 이 된다 (기존은 μm·kN). 프리셋을 폐기하기로 했으므로 현재 손해는 없으나, 이후 "JSON 은 kN 으로" 로 방침이 바뀌면 되돌리는 비용이 발생한다. **번복 시 가장 싼 시점은 지금이다.**
+
+### 다음
+
+**P1-S3**: `geometry.rs` 재작성 (A·α₀·R_i·γ·Σρ·F(ρ) — Theory §2) + Level A 검증 + 모듈 재활성화.
+
+---
