@@ -1,11 +1,21 @@
-# CLAUDE.md - CRB Contact Analysis System
+# CLAUDE.md - BB Contact Analysis System
 
 > Simple is Best 원칙은 글로벌 CLAUDE.md 참조
 >
-> **본 프로젝트는 [TRB-main](../TRB-main/) 의 SW 체계를 모태로 신규 개발 중인 CRB(Cylindrical Roller Bearing) 해석 SW 임.**
-> 작업 계획서: [CRB_Development_Plan.md](CRB_Development_Plan.md)
+> **본 프로젝트는 CRB-main (`d:/AI/AI_Seminar_CRB/CRB-main`) 의 SW 체계를 모태로 신규 개발 중인 BB(Angular Contact Ball Bearing) 해석 SW 임.**
 >
-> 현재 본 CLAUDE.md / Master_plan.md / Manual 내용은 **TRB-main 의 복제본** 상태이며, Phase 1 이후 CRB 기준으로 점진 갱신 예정.
+> - 이론 정리: [BB_Development_Theory.md](BB_Development_Theory.md)
+> - 작업 계획서: BB_Development_Plan.md *(Theory 승인 후 작성)*
+> - TRB → CRB 전환 선례: [_crb_archive/](_crb_archive/)
+
+---
+
+> ⚠️ **현재 상태 (Phase 0)**: 코드 본체·Master_plan.md·Manual/ 는 아직 **CRB(원통롤러) 알고리즘 그대로** 이며, 본 문서의 아래 내용 또한 CRB 기준 서술임. BB 기준 재작성은 Plan 확정 후 Phase 1 부터 진행.
+>
+> **핵심 방향** — 볼은 선접촉이 아니므로 슬라이싱 자체가 불필요:
+> - **유지**: Level 1 베어링 5-DOF 평형, 입출력 인터페이스, 윤활·수명 계층의 공통 부분
+> - **교체**: Level 2/3 (슬라이스 선접촉) → 단일 점접촉 (타원 Hertz + 하중 의존 접촉각)
+> - **폐기**: gen1.rs / gen3.rs / beam.rs / rib_contact.rs (slice·beam·rib 계열)
 
 ---
 

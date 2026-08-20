@@ -511,7 +511,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "crb-contact-analysis"
+name = "bb-contact-analysis"
 version = "0.1.0"
 dependencies = [
  "approx 0.5.1",

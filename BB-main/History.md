@@ -1,5 +1,7 @@
 # History
 
+> ⚠️ **BB 프로젝트 경고 (260820)**: 아래 이력은 전부 **TRB/CRB 시절의 기록**이며 BB 작업 이력이 아님. 참고용으로 보존함. BB 이력은 본 문서 상단에 새로 누적한다.
+
 | 날짜 | 시간 | 결과 | 요약 |
 |------|------|------|------|
 | 2026-05-25 | - | success | **검증 매트릭스 확장 — Cruz/Marques 2021 + Hu 2025 추가 (4번째/5번째 베어링 시리즈)**: 사용자 요청 "검증 확장해봐"로 publication 검증 강화. (1) **Cruz/Marques 2021 진단** `diag_cruz_marques_2021_hm801349_validation`: Koyo HM801349/310 (d_m=61.5, Z=19, α=20°, inch-series large-angle) tandem TRB, axle pinion application. Preload backward-calc 사용 (2083/5279/8336 N from paper §3.4.1). BH+Aihara × 2 tandem + seal estimate 0.10 Nm: **mid preload (5279 N) +14~+17%, high preload (8336 N) -7%, low preload (2083 N) +55% (BH IVR over)**. 4번째 베어링 시리즈 + 2번째 application 컨텍스트. (2) **Hu 2025 진단** `diag_hu_2025_hh926749_low_speed_limit`: Timken HH926749/10 (d_we=43, l=48, α_o=12°, α_i=7°, Z≈25) paired TRB, 19-inch TBM disc cutter, grease lubrication, ~100 rpm 저속. **결과 ratio 0.48-0.70** — BH+Aihara raceway-only가 측정 50-70% 표현, 잔여 30-50%는 sliding/boundary/grease churning. **운전 범위 경계 명시적 입증** — "BH+Aihara is appropriate for medium-to-high speed EHL regime; low-speed grease-lubricated heavy-preload requires explicit boundary friction". (3) **Paper §4.5 (Cruz-Marques) + §4.6 (Hu 2025) 신설** (영문/한글 양쪽): 검증 매트릭스가 3 → 5 베어링 시리즈, 1 → 3 application 컨텍스트로 확장. Operating envelope boundary가 honest limitation으로 publication 신뢰성 강화. (4) cargo test 324/324 통과 (2 신규 진단). |

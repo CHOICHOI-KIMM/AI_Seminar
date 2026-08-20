@@ -1,5 +1,10 @@
 # CRB Contact Analysis System
 
+> ⚠️ **BB 프로젝트 경고 (260820)**: 본 문서는 TRB → CRB 계보에서 상속된 **롤러 베어링 기준** 서술임 (Gen1/Gen3 슬라이싱, 선접촉). ACBB 기준 재작성 전까지 **수식·구조체 정의를 BB 근거로 사용하지 말 것.** BB 근거는 [BB_Development_Theory.md](BB_Development_Theory.md) 만 사용.
+
+---
+
+
 **Dual-Mode Slicing: Gen1 (Independent) + Gen3 (Beam-Coupled)**
 
 > ⚠️ **NOTE (Phase 0 직후)**: 본 문서는 [TRB-main/Master_plan.md](../TRB-main/Master_plan.md) 의 복제본 상태이며, 아래 모든 식/구조체는 **TRB 기준**으로 작성되어 있음. CRB 기준 재작성은 Phase 1 이후 단계적으로 진행. CRB ↔ TRB 차이점 요약은 [CRB_Development_Plan.md](CRB_Development_Plan.md) 참조.

@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "crb-contact-analysis",
+  "productName": "bb-contact-analysis",
   "version": "0.1.0",
-  "identifier": "com.crb.contact-analysis",
+  "identifier": "com.bb.contact-analysis",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5175",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "CRB Contact Analysis",
+        "title": "BB Contact Analysis",
         "width": 1280,
         "height": 800,
         "resizable": true,

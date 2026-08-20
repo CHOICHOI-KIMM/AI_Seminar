@@ -1,7 +1,7 @@
 [package]
-name = "crb-contact-analysis"
+name = "bb-contact-analysis"
 version = "0.1.0"
-description = "CRB Contact Analysis System - Dual-Mode Slicing (Gen1/Gen3)"
+description = "BB Contact Analysis System - Angular Contact Ball Bearing (ACBB)"
 authors = ["you"]
 license = ""
 repository = ""
