@@ -11,11 +11,37 @@
 - Phase 완료 시 **DoD 체크리스트 결과**와 **검증 Level 통과 여부**를 반드시 남긴다
 - 계획과 달라진 결정은 **사유와 함께** 기록한다 (Plan 본문도 함께 갱신)
 - 미해결 항목(T-list) 상태 변화는 여기와 Theory §11 양쪽에 반영한다
+- **헤딩 계층**: `# Phase n` (Phase 경계) → `## 날짜 — 기록 제목` / `## 📋 Pn 정리` → `### 소절`.
+  Phase 가 늘어나도 이 3단을 유지한다
 - **Phase 종료 시 「Pn 정리」 절을 그 Phase 기록 맨 뒤에 남긴다.** 성격은 **다음 Phase 인계서** —
   세션이 끊겨도 이 절 하나만 읽고 다음 Phase 에 착수할 수 있어야 한다.
   스테이지 상세는 그대로 두고, 정리 절은 핵심만 적은 뒤 상세 항목을 참조로 가리킨다
 
 ---
+
+## Phase 인덱스
+
+| Phase | 범위 | 상태 | 검증 Level | 인계서 |
+|---|---|---|---|---|
+| **0** | 개설 · Theory · Plan · 규약 확정 | ✅ | — | — |
+| **1** | 데이터 모델 + 기하 (`types`·`util`·`geometry`) | ✅ | **A** 16/16 | [P1 정리](#-p1-정리--phase-2-인계서) |
+| **2** | 점접촉 타원 Hertz (`hertz`) | ✅ | **B** 12/12 | [P2 정리](#-p2-정리--phase-3-인계서) |
+| **3-1** | 평형 — 3-DOF 구속 검증 | ⬜ | C, **D-1** | 🚦 무인 중단 게이트 |
+| **3-2** | 평형 — 5-DOF 해방 검증 | ⬜ | D-2 | |
+| **4** | 정격하중 · 수명 | ⬜ | E | |
+| **5** | 윤활 | ⬜ | F | |
+| **6** | 프론트엔드 | ⬜ | 빌드·lint | |
+
+**굵은 Level 은 외부 문헌 골든값 대조**다 — B: Harris Table 6.1, D-1: Harris Table 7.4.
+ISO 16281:2025 에는 수치 예제가 없어(전문 검색 0건) 이 둘이 전부다.
+
+**현재 상태**: 솔버 `types`·`util`·`geometry`·`hertz` / command `compute_geometry`·`compute_contact` + preset 7종 / 테스트 71 passed · clippy 0
+
+---
+
+# Phase 0 — 프로젝트 개설 · 이론 · 계획
+
+> 워크트리 개설부터 Theory·Plan 확정, 좌표계·단위 규약(D-7~D-10) 결정까지.
 
 ## 260820 — 프로젝트 개설
 
@@ -165,6 +191,11 @@ ISO Figure A.1 a) (PDF p.28) 렌더링으로 축 삼각대 육안 확인: `Z ⊗
 **다음**: P1 착수 (사용자 승인 대기)
 
 ---
+
+# Phase 1 — 데이터 모델 + 기하
+
+> 상태: ✅ **완료** (Level A 통과) · 커밋 `f52bfeb`
+> 스테이지: S1(삭제) → S2(types.rs) → S3(geometry.rs + Level A)
 
 ## 260820 — Phase 1 착수: 사전 조사 + 빌드 베이스라인
 
@@ -499,12 +530,12 @@ Level B 는 **Harris Table 6.1 대조 + ISO 식(36) ↔ Harris 식(6.42) 독립 
 
 ---
 
-# 📋 P1 정리 — Phase 2 인계서
+## 📋 P1 정리 — Phase 2 인계서
 
 > Phase 1 종료 시점(2026-08-20, 커밋 `7b917d9`)의 상태. **P2 착수자는 이 절만 읽으면 된다.**
 > 경위·근거가 필요하면 위의 P1 상세 기록 5개 항목을 참조: 「P1 착수」 · 「P1-S1」 · 「P1-S2」 · 「P1-S3」 · 「Plan 수정(Phase 3 분할)」.
 
-## 1. 현재 코드 상태
+### 1. 현재 코드 상태
 
 ```
 src-tauri/src/solver/
@@ -527,7 +558,7 @@ cargo test --test geometry_level_a  # Level A 단독
 cargo clippy --lib --tests
 ```
 
-## 2. P2 가 지켜야 할 규약 (어기면 A-8 테스트가 잡는다)
+### 2. P2 가 지켜야 할 규약 (어기면 A-8 테스트가 잡는다)
 
 | ID | 규약 |
 |---|---|
@@ -541,7 +572,7 @@ cargo clippy --lib --tests
 ① 환산 연산(`* 1000.0`·`/ 1e-3` 등) 부재 ② `pub … : f64` 필드의 단위 접미사를 강제한다.
 P2 에서 `hertz.rs` 를 재활성화하면 **A-8 의 검사 대상 목록에 `hertz.rs` 를 추가할 것.**
 
-## 3. P2 가 바로 쓸 자산
+### 3. P2 가 바로 쓸 자산
 
 **`util.rs`**
 
@@ -567,7 +598,7 @@ P2 에서 `hertz.rs` 를 재활성화하면 **A-8 의 검사 대상 목록에 `h
 
 **`BallResult`** 에 P2 결과 자리가 이미 있다 — `a_inner_mm`·`b_inner_mm`·`p_max_inner_mpa` 및 outer 3종.
 
-## 4. P2 착수 시 첫 할 일
+### 4. P2 착수 시 첫 할 일
 
 1. `hertz.rs` 를 ACBB 점접촉으로 백지 재작성 (선접촉 Hertz·Weber bulk 전량 폐기)
 2. `solver/mod.rs` 에서 `pub mod hertz;` 주석 해제
@@ -575,7 +606,7 @@ P2 에서 `hertz.rs` 를 재활성화하면 **A-8 의 검사 대상 목록에 `h
 4. `commands.rs` 에 점접촉 command 신설 + `lib.rs` 등록
 5. `tests/contact_level_b.rs` 신규 — Level B 검증
 
-## 5. P2 의 지뢰
+### 5. P2 의 지뢰
 
 | 항목 | 내용 |
 |---|---|
@@ -587,7 +618,7 @@ P2 에서 `hertz.rs` 를 재활성화하면 **A-8 의 검사 대상 목록에 `h
 | **T-2 미해결** | `γ` 를 공칭 `α` 로 고정할지 운전 `α_j` 로 갱신할지 ISO 무규정. 현재 구현은 **공칭 α 고정**(ISO 준거). 고하중 민감도는 P2/P3 에서 정량화 |
 | **비활성 모듈은 CRB 코드** | `hertz.rs`·`bearing.rs` 는 참고용으로 디스크에 남아 있을 뿐 ACBB 와 무관하다. 수식은 Theory 에서 직접 옮길 것 |
 
-## 6. Level B 검증 설계 (Plan §5, Phase 2)
+### 6. Level B 검증 설계 (Plan §5, Phase 2)
 
 ★ **외부 문헌 검증 2곳 중 하나** (다른 하나는 P3-1 의 Level D-1).
 
@@ -602,7 +633,7 @@ P2 에서 `hertz.rs` 를 재활성화하면 **A-8 의 검사 대상 목록에 `h
 
 **ISO ↔ Harris 교차가 통과해야 P3 진행.** Level A 의 A-4 가 곡률합을 독립 조립으로 검증한 것과 같은 논리 — 구현식을 베껴 비교하면 동어반복이다.
 
-## 7. 미해결 항목 현황 (Theory §11)
+### 7. 미해결 항목 현황 (Theory §11)
 
 | ID | 상태 |
 |---|---|
@@ -616,7 +647,7 @@ P2 에서 `hertz.rs` 를 재활성화하면 **A-8 의 검사 대상 목록에 `h
 | **T-8** H-D 타원 계수 원전 미확인 | 열림 — P5 착수 전 해소 |
 | **T-9** ISO/TR 8646 미확보 | 열림 — 홈반경 초과 시 `f_c` 보정 불가. `GROOVE_RADIUS_OVER_REFERENCE` 경고로 노출 중 |
 
-## 8. Phase 1 에서 확정된 것 (되돌리려면 비용이 큰 순)
+### 8. Phase 1 에서 확정된 것 (되돌리려면 비용이 큰 순)
 
 1. **좌표계 ISO 규약** (D-7) — Theory 전 수식이 이 전제 위에 있다
 2. **단위 mm·N·rad + 필드명 접미사** (D-10) — JSON 계약·프론트·A-8 이 모두 여기 묶여 있다
@@ -625,6 +656,10 @@ P2 에서 `hertz.rs` 를 재활성화하면 **A-8 의 검사 대상 목록에 `h
 5. **`bearing.rs` 는 5-DOF 1회 구현** (D-1) — P3-1/P3-2 는 검증 분할이지 구현 분할이 아니다
 
 ---
+
+# Phase 2 — 점접촉 타원 Hertz
+
+> 상태: ✅ **완료** (Level B 통과) · 커밋 `6776252`
 
 ## 260820 — P2: 점접촉 타원 Hertz ✅ **Level B 통과**
 
@@ -745,5 +780,107 @@ cargo test             43 → 71 passed, 0 failed
 ### 다음
 
 **P3-1** — 3-DOF 구속 평형 (Level C + Level D-1 Harris Table 7.4). **무인 중단 게이트**가 걸린 단계다.
+
+---
+
+## 📋 P2 정리 — Phase 3 인계서
+
+> Phase 2 종료 시점(2026-08-20, 커밋 `d9889d6`)의 상태. **P3-1 착수자는 이 절만 읽으면 된다.**
+> 경위·근거는 위의 「P2」 기록과 [P1 정리](#-p1-정리--phase-2-인계서) 참조.
+> **P1 정리의 §2 규약(D-7·D-10·접미사·D-8·D-9)은 그대로 유효하다** — 여기서 반복하지 않는다.
+
+### 1. 현재 코드 상태
+
+```
+src-tauri/src/solver/
+  types.rs      ✅ ACBB 데이터 모델 + ContactDerived
+  util.rs       ✅ 형상 무관 유틸 + 완전타원적분(AGM · Gauss-Legendre)
+  geometry.rs   ✅ 기하 전처리 (Theory §2)
+  hertz.rs      ✅ 점접촉 타원 Hertz (Theory §3, §6)
+  bearing.rs    ⛔ 비활성 — CRB 3-DOF 코드. **P3 의 재작성 대상**
+  life.rs / static_rating.rs / lubrication.rs
+                ⛔ 비활성 — 시드 시점부터 컴파일된 적 없음. P4·P5 대상
+```
+
+command: `compute_geometry` · `compute_contact` + preset 7종.
+테스트 **71 passed** (types 12 · util 15 · geometry 6 · hertz 10 · Level A 16 · Level B 12), clippy 0.
+
+```
+cargo test                          # 전체
+cargo test --test contact_level_b   # Level B 단독
+cargo test --test geometry_level_a  # Level A 단독
+```
+
+### 2. P3-1 이 바로 쓸 자산
+
+**`hertz.rs`** — 평형 솔버가 반복마다 호출할 것
+
+| 함수 | 용도 |
+|---|---|
+| `compute_contact_derived(&GeometryDerived, &Material)` | `χ`·`K`·`E`·`a*`·`b*`·`δ*`·`E*`·`c_P` 를 한 번에. **하중 무관이므로 반복 밖에서 1회** |
+| `q_from_delta(c_p, δ)` | 식 (39). 평형 잔차의 핵심 |
+| `delta_from_q(c_p, Q)` | 역함수 |
+| `contact_ellipse(E*, Σρ, a*, b*, Q)` | `(a, b, p_max)`. 결과 조립용 |
+| `SIGMA_HU_MPA` | 1 500 MPa 판정 기준 |
+
+**`geometry.rs`** — `compute_geometry_derived` 가 `A`·`α₀`·`R_i`·`Σρ`·`F(ρ)` 를 준다.
+**`types.rs`** — `BearingEquilibrium.displacement: [f64; 5]`, `BallResult`, `DofMask::{FULL, ISO_3DOF}`, `PhaseSweep`, `PhaseSweepResult` 가 **이미 정의되어 있다.** 새로 만들 자료구조는 없다.
+
+### 3. P3-1 착수 시 첫 할 일
+
+1. `bearing.rs` 를 5-DOF 구조로 백지 재작성 (CRB 3-DOF 코드 폐기)
+2. `solver/mod.rs` 에서 `pub mod bearing;` 주석 해제
+3. **`tests/geometry_level_a.rs` 의 A-8 `sources` 배열에 `bearing.rs` 추가** ← 잊으면 D-10 검증에 구멍이 난다
+4. `commands.rs` 에 평형 command 신설 + `lib.rs` 등록
+5. `tests/equilibrium_level_c.rs` · `tests/equilibrium_level_d1.rs` 신규
+
+> P2 에서 3번을 실제로 빠뜨릴 뻔했고, A-8 이 `c_p_n_per_mm15` 를 잡아내며 드러났다.
+> 새 필드가 접미사 규약을 어기면 **테스트가 잡는다** — 실패하면 규약대로 고칠 것.
+
+### 4. P3-1 의 지뢰
+
+| 항목 | 내용 |
+|---|---|
+| **T-3 비접촉 클리핑** | 식 (A.2) 우변 `< 0 → 0` 은 **비평활**이다. Newton 이 이 경계에서 진동할 수 있다. active set 또는 스무딩 — Level C 에서 조기 노출된다 |
+| **`atan2` 필수** | 식 (A.5) 의 분모(반경 성분)가 음수가 될 수 있다. `atan` 을 쓰면 사분면이 깨진다 |
+| **틸트 팔은 `R_i`** | `d_pw/2` 아님 (D-9). `GeometryDerived.r_i_center_mm` 를 쓸 것 |
+| **`c_P` 를 반복 안에서 재계산 금지** | 하중 무관이다. P2 에서 캐시 구조를 만들어 뒀다 |
+| **CRB `bearing.rs` 의 μm 매직넘버** | `FD_STEP_DISP = 0.01 [μm]` → mm 로는 `1e-5`, `.clamp(5.0, 30.0)` → `0.005~0.03`, `.max(1e3)` [kN·mm]. **grep 에 안 걸린다.** 참고만 하고 값은 mm·N 로 다시 정할 것 |
+| **위상 스윕은 검증 필수** | Harris Table 7.4 의 `Q_max` 대조 기준이다 (D-8). 편의 기능이 아니다 |
+| **Harris (7.70) 은 오식** | `sin α` 로 인쇄돼 있으나 `cos α` 가 맞다 (T-5 해소 완료). 구현은 `Q_max = F_r/(J_r·Z·cos α)` |
+| **ISO 의 0,065 % 편차** | `1,48` 이 `π/√4,5` 의 절사라 (36)+(37) 경로와 `c_P` 경로가 규격상 어긋난다. 평형 검증 허용치를 이보다 빡빡하게 잡지 말 것 |
+
+### 5. Level C / D-1 검증 설계 (Plan Phase 3-1)
+
+**Level C — 해석해 (`DofMask::ISO_3DOF` 구속)**
+순수 축하중 대칭성 · 축하중 해석해 잔차 < 1e-10 · 예압 무하중 균등 · 회전 불변성 · 위상 스윕 주기성
+
+**Level D-1 — Harris Table 7.4** ★ 외부 문헌 검증 2곳 중 나머지 하나
+- 골든값은 Theory §9.1 에 전사 완료 (14행 + `ε = ∞`)
+- `F_r tan α / F_a` 스윕 → `J_r(ε)` · `J_a(ε)` · `Q_max` 대조
+- **판정 오차 ≤ 5 %.** Harris 는 모든 볼의 접촉각을 동일하다고 가정하므로 완전 일치는 원리상 불가
+- `Q_max` 는 **위상 스윕 최악값**을 쓴다 (D-8)
+
+> 🚦 **P3-1 통과 시점이 무인 중단 게이트다.** 14개 점 오차를 보고한 뒤 P3-2 진행 여부를 확인받는다.
+> 오차가 5 % 를 넘을 때 원인이 수식 해석인지 구현인지는 **자의적으로 판단하지 않는다.**
+
+### 6. 미해결 항목 현황 (Theory §11)
+
+| ID | 상태 |
+|---|---|
+| ~~T-1~~ · ~~T-4~~ · ~~T-5~~ | ✅ 해소 (원문 육안 확인) |
+| **T-2** `γ` 갱신 여부 | 열림 — 현재 공칭 α 고정(ISO 준거). P3 에서 고하중 민감도로 판단 |
+| **T-3** 클리핑 비평활 | 열림 — **P3-1 의 구현 과제** |
+| **T-6** ISO 수치예제 부재 | 열림 — P4 카탈로그 역검증. 기본 프리셋 `Z`·`D_w` 도 가정값 |
+| **T-7** 고속 정식화 부재 | 보류 — P3-2 에서 경고만 |
+| **T-8** H-D 타원 계수 원전 미확인 | 열림 — P5 착수 전 해소 |
+| **T-9** ISO/TR 8646 미확보 | 열림 — `GROOVE_RADIUS_OVER_REFERENCE` 경고로 노출 중 |
+
+### 7. Phase 2 에서 확정된 것
+
+1. **χ 는 ISO (E.1) 근찾기로 구한다** — Brewe-Hamrock 은 검산 전용. ISO §6.1 이 비교가능성을 위해 §6.2 식집합 사용을 요구하므로 근거가 있다
+2. **타원적분은 AGM 본선 · Gauss-Legendre 교차** — 두 경로가 Table 6.1 전 범위에서 1e-10 이내 일치
+3. **`χ`·`c_P` 는 하중 무관 캐시** — P3 의 반복 비용을 `O(Z)` 로 유지하는 전제
+4. **ISO ↔ Harris 는 전사 검증이지 물리 교차가 아니다** — Theory §6.2 정정 완료
 
 ---
