@@ -100,6 +100,7 @@
 
 **Theory §6 확장** — 접촉타원 반경 `a`, `b`, 무차원 계수 `a*`, `b*`, `δ*`, Brewe-Hamrock 근사, Table 6.1 (24행).
 → **Harris (6.42) `δ` 와 ISO (36) `δ_i` 가 같은 물리량**임을 확인. 서로 다른 두 표준의 독립 경로가 되므로 Level B 의 핵심 검증으로 채택.
+> ⚠️ **후속 정정 (P2 선조사)**: 두 식은 대수적으로 **동일**했다. 물리 모델 교차가 아니라 전사·구현 검증이다 — 아래 「P2」 항목 참조.
 
 **CRB 재사용 자산 조사 완료** (코드 직접 확인)
 
@@ -622,5 +623,127 @@ P2 에서 `hertz.rs` 를 재활성화하면 **A-8 의 검사 대상 목록에 `h
 3. **롤러 모듈 8개 영구 삭제** — 복구는 git 이력에서만 가능
 4. **프리셋 스키마 교체** — 구 CRB 프리셋은 역직렬화 불가 (마이그레이션 미제공)
 5. **`bearing.rs` 는 5-DOF 1회 구현** (D-1) — P3-1/P3-2 는 검증 분할이지 구현 분할이 아니다
+
+---
+
+## 260820 — P2: 점접촉 타원 Hertz ✅ **Level B 통과**
+
+**커밋** `6776252`
+
+### 사용자 결정 (선조사 후 확정)
+
+| 항목 | 결정 |
+|---|---|
+| χ 결정 경로 | **ISO (E.1) 근찾기 본선**, Brewe-Hamrock 은 초기구간·검산 |
+| 타원적분 수치법 | **AGM 본선 + Gauss-Legendre 교차** |
+| χ → 1 특이점 | **급수전개 분기** |
+| Level B 대조 방향 | **양방향** (역방향 솔버검증 + 정방향 구적검증) |
+
+### 🔍 선조사 — ISO 와 Harris 는 같은 식이다
+
+착수 전 Harris Ch.6 원문(p.127, 렌더 육안 확인)을 정독한 결과:
+
+**① ISO (E.1) = Harris (6.30).** 정리하면 둘 다
+```
+F(ρ) = [(χ²+1)E − 2K] / [(χ²−1)E]
+```
+Harris 는 이를 **정방향**(χ 가정 → F(ρ) 계산)으로 써서 Table 6.1 을 만들었다 — 원문:
+「By assuming the values of the elliptical eccentricity parameter κ, it is possible to calculate corresponding values of F(ρ) and thus create a table of κ vs. F(ρ).」
+ISO 는 같은 식을 **역방향** 근찾기로 쓴다. 같은 식의 두 사용법일 뿐이다.
+
+**② ISO (36) = Harris (6.42).** 전개하면 둘 다
+```
+δ = [9·Σρ·Q²·K³ / (8π²·E*²·χ²·E)]^(1/3)
+```
+
+→ **Theory §6.2 의 「독립 교차검증 경로」는 과장이었다.** 물리 모델 교차가 아니라 **전사·구현 검증**이다. P2 의 유일한 외부 골든값은 **Harris Table 6.1** 뿐이다.
+Theory §6.2 / §9.2, Plan Phase 2 · §5, CLAUDE.md 를 모두 정정했다 (별도 커밋).
+
+**③ Harris 는 타원적분의 수치해법을 주지 않는다.** (6.31)(6.32) 는 정의식일 뿐. 직접 골라야 했다.
+
+**④ χ → 1 에서 (E.1) 이 0/0 이다.** Table 6.1 첫 행(F(ρ)=0)이 정확히 그 지점. 극한은 유한하지만 부동소수점으로는 깨진다.
+
+### util.rs — 완전타원적분 신설
+
+저장소에 기존 구현이 **0건**이었다 (P1 조사에서 확인).
+
+| 함수 | 내용 |
+|---|---|
+| `elliptic_k_e_agm` | AGM 본선. 2차 수렴, 5~6회 반복으로 기계정밀도 |
+| `elliptic_k_minus_e` | `K−E` 급수 분기 (`m < 1e-4`): `(π/2)[m/2 + 3m²/16 + 15m³/128]` |
+| `gauss_legendre_nodes` | 노드·가중치를 **런타임 Newton 계산** — 하드코딩 상수 0, 전사 오류 여지 없음 |
+| `elliptic_k_e_quadrature` | π/2 쪽 기하 등비 24패널 × 24차 GL. `m → 1` 의 첨예함 대응 |
+
+### hertz.rs — 백지 재작성
+
+`f_rho_from_chi` (0/0 회피 형태) · `solve_chi` (구간보장 + Illinois 가속) ·
+`dimensionless_contact_coefficients` (6.44~6.46) · `compute_contact_derived` ·
+`spring_constant_c_p` (40) · `q_from_delta`/`delta_from_q` (39) ·
+`single_contact_deflection_iso` (36)(37) / `_harris` (6.42) ·
+`contact_ellipse` (6.38)(6.40)(6.25)
+
+선접촉 Hertz·Weber bulk 는 전량 폐기. `ContactDerived` 를 `types.rs` 에 신설.
+
+### ⭐ 발견 — ISO 의 `1,48` 은 `π/√4,5` 의 절사
+
+식 (38) 에서 `c_P` 를 유도하면 계수가 `π/√4,5 = 1,480 961…` 이 나온다. ISO (40) 은 이를 **`1,48` 로 절사**했다.
+
+```
+상대편차 6,5e-4  →  δ 에 약 0,043 %,  Q 에 약 0,065 % 전파
+```
+
+즉 **ISO 안에서 (36)+(37) 경로와 (39)+(40) 경로가 0,065 % 어긋난다.** 구현 오류가 아니라 규격 자체의 반올림이다. B-6 테스트로 이 사실을 고정하고, B-6b 의 허용치 `1e-3` 이 왜 그 값인지 근거를 주석에 남겼다. Theory §3.4 에도 반영.
+
+### Level B 검증 (tests/contact_level_b.rs, 12개)
+
+| ID | 항목 | 실측 |
+|---|---|---|
+| B-1 | `K=E=π/2` (χ=1) · K 발산·E→1 (m→1) | 통과 |
+| B-2 | AGM ↔ Gauss-Legendre, Table 6.1 전 범위 | rel. err < 1e-10 |
+| **B-3** | **Table 6.1 역방향 22행** (솔버 + AGM) | **최대 3,159e-4** |
+| **B-4** | **Table 6.1 정방향 22행** (구적 경로) | **최대 3,159e-4** |
+| B-4b | χ 솔버 왕복 | < 1e-12 |
+| B-5 | ISO(36) ↔ Harris(6.42) 전사 대조 | < 1e-10 |
+| B-6 | `1,48` = `π/√4,5` 절사 확인 | 상대편차 6,5e-4 |
+| B-6b | (36)+(37) 합 vs `c_P` 경로 | < 1e-3 |
+| B-6c | `Q ∝ δ^1.5` 지수 | 8배 하중 → 4배 변형 |
+| **B-7** | **Brewe-Hamrock 오차** | **E 2,05 % / F 2,82 %** |
+| B-8 | 접촉타원 물리 정합 (`a/b=χ`, 볼반경 미만, `p_i>p_e`, `p ∝ Q^(1/3)`) | 통과 |
+| B-8b | `σ_Hu = 1500 MPa` 상수 | 통과 |
+
+**B-7 이 특히 값어치 있다.** Harris 원문이 명시한 오차 상한(E < 2 %, F < 2,6 %)과 독립 계산이 **사실상 일치**했다. 회귀식을 회귀식으로 비교하는 순환을 피하려고, BH 의 κ 를 역산해 얻은 비율로 (6.34)(6.35) 를 평가한 뒤 **정확한 타원적분과** 대조했다. 초안에 있던 순환 테스트는 `hertz.rs` 에서 제거하고 사유를 주석으로 남겼다.
+
+### commands.rs
+
+`compute_contact` 신설·등록. 접촉응력이 `σ_Hu` 초과 시 `CONTACT_STRESS_OVER_FATIGUE_LIMIT` Alert (4 000 MPa 초과는 Critical).
+
+### 검증 — 숫자 소명
+
+```
+cargo build / clippy   green, warning 0
+cargo test             43 → 71 passed, 0 failed
+```
+
+| 항목 | 증감 |
+|---|---|
+| `util.rs` 유닛 (타원적분 6개 추가) | +6 |
+| `hertz.rs` 유닛 (신규 10개, 순환 테스트 1개 제거) | +10 |
+| `tests/contact_level_b.rs` (신규) | **+12** |
+| **합계** | 43 + 28 = **71** ✓ |
+
+**A-8 이 새 필드를 실제로 잡아냈다.** `hertz.rs` 를 검사 대상에 추가하자 `c_p_n_per_mm15` 가 접미사 목록에 없어 실패했고, `_n_per_mm15` 를 추가해 해소했다. P1 정리 §2 에 적어둔 「hertz.rs 재활성화 시 A-8 sources 에 추가할 것」 지시가 그대로 작동했다.
+
+### Phase 2 DoD 판정
+
+| 항목 | 결과 |
+|---|---|
+| Level B 전 항목 통과 | ✅ 12/12 |
+| Harris Table 6.1 대조 (P2 유일 외부 골든값) | ✅ 최대 3,159e-4 |
+
+**Phase 2 완료.** 솔버 모듈: `types` · `util` · `geometry` · `hertz`. Command: `compute_geometry` · `compute_contact` + preset 7종.
+
+### 다음
+
+**P3-1** — 3-DOF 구속 평형 (Level C + Level D-1 Harris Table 7.4). **무인 중단 게이트**가 걸린 단계다.
 
 ---

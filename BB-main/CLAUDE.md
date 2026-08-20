@@ -152,7 +152,7 @@ Manual/                    — 기능별 매뉴얼 (마크다운)
 
 ### 수치 검증 레벨 (BB 기준 — Plan §5)
 - **Level A**: 기하 (A, α₀, R_i, Σρ, F(ρ)) — 해석적 항등
-- **Level B**: 점접촉 — Harris Table 6.1 + **ISO 식(36) ↔ Harris 식(6.42) 독립 교차**
+- **Level B**: 점접촉 — **Harris Table 6.1 (양방향)** + AGM↔Gauss-Legendre 교차 + ISO 내부 일관성
 - **Level C**: 평형 해석해 (순수 축하중 대칭성, 예압 균등)
 - **Level D-1**: 통합 — **Harris Table 7.4** (3-DOF 구속 모드, 오차 ≤ 5 %)
 - **Level D-2**: 5-DOF 해방 — 축퇴 항등성 (구속 해와 rel. err < 1e-8)

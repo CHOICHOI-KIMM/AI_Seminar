@@ -298,11 +298,12 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 | `K`, `E` 극한 | `χ = 1` 에서 `K = E = π/2` | rel. err < 1e-12 |
 | `K`, `E` 2방식 | AGM vs 수치적분 | rel. err < 1e-10 |
 | **`a*`, `b*`, `δ*`** | **Harris Table 6.1 (24행) 대조** (Theory §6.5) | rel. err < 1e-3 |
-| **ISO ↔ Harris 교차** | ISO (36) `δ_i` vs Harris (6.42) `δ` — **서로 다른 두 표준의 독립 경로** | rel. err < 1 % |
+| ISO ↔ Harris 전사 대조 | ISO (36) `δ_i` vs Harris (6.42) `δ`. ⚠ **두 식은 대수적으로 동일**하므로 물리 교차가 아니라 **전사·구현 검증**이다 | rel. err < 1e-10 |
+| **ISO 내부 일관성** | (36)+(37) 합 vs (39)+(40) 의 `c_P` 경로. ISO 의 `1,48` 이 `π/√4,5` 의 절사라 **0,065 % 편차가 규격상 존재**한다 | rel. err < 1e-3 |
 | `c_P` 차원 | `Q = c_P δ^1.5` 단위 N/mm^1.5 | 일치 |
 | Brewe-Hamrock 근사 | 자체 `χ` 솔버 대비 `1 ≤ χ ≤ 10` | 오차 < 3 % (Harris 명시 범위) |
 
-**DoD**: Level B 전 항목 통과. 특히 **ISO ↔ Harris 교차 일치**가 확인되어야 P3 진행
+**DoD**: Level B 전 항목 통과. 특히 **Harris Table 6.1 대조**가 통과해야 P3 진행 — 이것이 P2 의 유일한 외부 골든값이다
 
 ---
 
@@ -451,7 +452,7 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 | Level | Phase | 대상 | 외부 근거 |
 |---|---|---|---|
 | A | P1 | 기하 | 해석적 항등 |
-| **B** | P2 | 점접촉 | **Harris Table 6.1 + ISO↔Harris 교차** |
+| **B** | P2 | 점접촉 | **Harris Table 6.1 (양방향)** |
 | C | **P3-1** | 평형 해석해 (`ISO_3DOF` 구속) | 대칭성·해석해 |
 | **D-1** | **P3-1** | 통합 (3-DOF 구속) ★ 중단 게이트 | **Harris Table 7.4** |
 | D-2 | **P3-2** | 5-DOF 해방 | 축퇴 항등성 |
