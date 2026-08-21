@@ -294,9 +294,17 @@ $$\varphi_{j} = \frac{2\pi (j-1)}{Z}, \qquad j = 1 \ldots Z$$
 > F_x = Σ Q_j sin α_j
 > F_y = Σ Q_j cos α_j cos φ_j
 > F_z = Σ Q_j cos α_j sin φ_j
-> M_y = −R_i Σ Q_j sin α_j sin φ_j
-> M_z = +R_i Σ Q_j sin α_j cos φ_j
+> M_y = +R_i Σ Q_j sin α_j sin φ_j
+> M_z = −R_i Σ Q_j sin α_j cos φ_j
 > ```
+>
+> > ⚠️ **정정 (2026-08-21, P3-2 보강 검증)**: 위 `M_y`·`M_z` 두 줄은 원래
+> > `M_y = −…`, `M_z = +…` 로 **부호가 반대로 인쇄**되어 있었다. 같은 블록의
+> > 운동학 `X_j = … − R_i(γ_z cos φ_j − γ_y sin φ_j)` 와 가상일 공액을 취하면
+> > `∂δ_j/∂γ_y = sin α_j · (+R_i sin φ_j)` 이므로 `M_y = +R_i Σ Q sin α sin φ` 다.
+> > **코드(`bearing.rs`)는 처음부터 옳았고 이 문서만 틀렸다.** Level D-3e 가
+> > 두 규약을 오차 1,7e-14 대 2,0 으로 갈라 확정했고, Harris & Mindel (89)(90)
+> > 과의 독립 대조(D-3d, 1,4e-14)도 코드 쪽을 지지한다.
 >
 > 이 형태는 **가상일 공액**이므로 야코비안이 대칭이다.
 > `δ_z = γ_y = 0` 구속 시 ISO (A.2)(A.5)(A.6)(A.7) 과 항등이며, (A.8) 과는 팔만 다르다.
