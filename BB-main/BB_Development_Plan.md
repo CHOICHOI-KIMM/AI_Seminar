@@ -32,7 +32,7 @@
 
 ## 2. 범위
 
-> 🏷️ **계열 / 변종 층위 (§3.6.9)**: 코드·문서·커맨드 이름의 `BB` 는 **볼 계열(family)** 을 뜻하고,
+> 🏷️ **계열 / 변종 층위 (§3.6.1.3)**: 코드·문서·커맨드 이름의 `BB` 는 **볼 계열(family)** 을 뜻하고,
 > 아래 범위는 **변종(variant) 층위**의 서술이다. 층위가 다를 뿐 모순이 아니다.
 > 변종은 `BallBearingKind { Acbb, Dgbb, FourPoint }` 로 구분하며, **현재 검증 완료 범위는 `Acbb` 뿐**이다.
 > `Dgbb` 는 솔버 코어가 이미 동작하나 수명 계수 미확보, `FourPoint` 는 평형 미구현이라
@@ -268,7 +268,416 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 > 리브 접촉 로직이 곳곳에 남아 있다. 모든 파일 헤더에 `// CRB Phase 1.4 stub … Phase 6
 > 에서 정식 재작성 예정` 주석이 붙어 있고, 그 "Phase 6" 이 지금의 **신 Phase 4** 다.
 
-#### 3.6.1 왜 바꾸는가 — TRB ↔ ACBB 물리 대비
+> **읽는 순서**
+>
+> | § | 무엇을 답하는가 |
+> |---|---|
+> | **3.6.1** | **먼저 읽어야 하는 것** — 세 SW(TRB·CRB·BB)를 언젠가 합친다는 전제에서 나오는 설계 기준. 충돌 지점, 공통↔전용 경계, 명명 규약, 지금 지불할 비용 |
+> | **3.6.2** | 왜 바꾸는가 — TRB 와 ACBB 의 물리가 어떻게 다르고, 그것이 화면에 어떻게 나타나는가 |
+> | **3.6.3** | 지금 무엇이 있는가 — 전 44파일 진단, 구조 다이어그램, 대체 판정, 상태·타입 현황 |
+> | **3.6.4** | 무엇을 만드는가 — 탭 구성, **각 뷰가 어느 Level 을 눈으로 검증하는가**, 데이터 흐름 |
+> | **3.6.5** | 어떤 순서로 만드는가 — Phase 4 작업 분해 |
+>
+> 3.6.1 을 앞에 둔 이유는 **명명·경계 결정이 3.6.3~3.6.5 의 모든 선택을 제약**하기 때문이다.
+> 뒤에 두면 「왜 이 이름인가」를 매번 앞으로 되짚어야 한다.
+
+#### 3.6.1 통합을 전제로 한 설계 기준
+
+> 조사일 2026-08-21. CRB 저장소(`d:/AI/AI_Seminar_CRB/CRB-main`) 전수 조사 결과.
+> 세 SW(TRB · CRB · BB)를 **언젠가 하나로 합친다**는 전제에서 나오는 기준을 먼저 못박는다.
+> 이 절의 결정이 §3.6.3~3.6.5 의 모든 선택을 제약한다.
+
+> ### 📌 확정 사항 (2026-08-21)
+>
+> | 항목 | 결정 | 이유 |
+> |---|---|---|
+> | **프론트 재작성 범위** | **BB 전용** (원안 유지) | 「가벼운 개별 개발」이 현 단계의 목적. CRB 프론트는 별도로 |
+> | **통합 대비 수준** | **레벨 1 — 경계만 지키기** | 추상화 장치를 만들지 않는다. 통합 때 **조용히 틀릴 것만** 지금 막는다 |
+> | **규약 SSOT** | **BB (ISO X축 · N·mm·rad)** | 유일하게 규격 근거가 있고 기계 검사로 강제된다 (3.6.1.8) |
+> | **통합 목표 형태** | **단일 앱 + 베어링 종류 선택** | 3.6.1.5 |
+> | **중복 9 830줄** | **BB 에서 삭제** | 발견 ② · 3.6.1.7 |
+> | **`displacement`** | **named struct 로 지금 변경** | 충돌 3 · 3.6.1.7 |
+> | **BB 계열 내부 변종** | **`BallBearingKind` enum** (ACBB·DGBB·4PCBB). 폴더 분리 없음 | §3.6.1.3 |
+> | **명명·접두사 층위** | **계열 `bb_`** · 파일 평탄화 · 전용물만 `Bb` 접두 | §3.6.1.6 |
+> | **경계 강제** | **ESLint `no-restricted-imports` + A-8 확장 3항목** | §3.6.1.6 |
+
+
+##### 3.6.1.1 현황과 두 가지 발견
+
+세 SW 는 **TRB(원본) → CRB(파생) → BB(파생)** 계보다. 지금은 **경량화를 위해 개별 개발**하되,
+추후 **하나의 SW 로 통합**해 「베어링 종류를 고르면 바로 결과를 보는」 형태를 목표로 한다.
+
+파생 방식은 CRB Plan Phase 0 이 규정한 **「전체 복사 후 이름만 바꾸고 diff 로 갈라내기」**다.
+조사에서 이 방식의 현재 상태가 두 가지 형태로 드러났다.
+
+> 🔴 **발견 ① — CRB `src/` 와 BB `src/` 는 byte-identical 이다.**
+> `diff -rq` 가 차이를 하나도 내지 않는다. 41개 프론트 파일의 줄수가 전부 일치하고
+> `package.json` 은 `"name"` 한 줄(`crb-app` ↔ `bb-app`)만 다르다.
+> **BB 는 Rust 솔버만 포팅했고 프론트는 CRB 사본 그대로**다.
+>
+> → §3.6.3.1 의 인벤토리(11 067줄 · `@ts-nocheck` 13 · 죽은 `invoke` 6종)는
+> **CRB 에도 글자 그대로 적용된다.** 신 Phase 4 는 BB 전용으로 진행하기로 했으나,
+> 그 산출물이 **CRB 프론트 재작성의 사실상 설계도**라는 점은 기록해 둔다.
+
+> 🔴 **발견 ② — `life.rs`(1085) · `static_rating.rs`(304) · `lubrication.rs`(8441) 합계 9 830줄이 두 저장소에 완전히 동일한 사본으로 존재하며, 양쪽 모두 비활성이다.**
+> 세 파일 모두 **롤러 기준 TRB 판**이고 `solver/mod.rs` 에서 주석 처리되어 컴파일되지 않는다.
+> BB 는 신 P5(수명)·P6(윤활)에서 **ISO 16281 §5.2 볼 식으로 새로 쓴다.**
+> → **BB 저장소에서 삭제한다** (Plan 이 명시한 「주석처리 금지, 삭제」 원칙, P1 과 동일). git 에 남는다.
+
+
+**선례가 주는 교훈 — CRB Plan §2.1·§2.2 의 사전 판정 vs 실제**
+
+
+CRB Plan 은 TRB→CRB 전환 시 모듈별 변경강도를 🔴대규모 / 🟡중간 / 🟢불변 3색으로 사전 판정했다.
+**「무엇을 공통으로 뒀는가」의 실제 선례**이므로 그 정확도를 대조한다.
+
+| CRB Plan 예측 | 실제 (BB 시점) |
+|---|---|
+| `hertz.rs` 「🟢 거의 불변」 | BB 와 **1 013줄 차이** — line ↔ point contact 는 사실상 별개 |
+| `gen1.rs` 「🟢 거의 불변」 | BB 에 **아예 없다** |
+| `ProfileView` 「🟢 거의 불변」 | `@ts-nocheck` stub 로 전락 |
+| `ResultCharts`·`ContourMap`·`ComparisonView` 「🟢 불변」 | 실제 파일은 **2줄짜리 re-export 껍데기** |
+
+> **「전체 복사 후 diff 로 갈라내기」는 3번째 파생에서 이미 한계에 도달했다.**
+> 증거는 발견 ② — 동일 사본 9 830줄이 양쪽에서 비활성인 채 중복 유지되고 있었다.
+> 사전 「🟢 불변」 판정이 네 건이나 빗나간 이유는 **접촉 물리가 바뀌면 그 위에 얹힌 모든 것이 바뀌기 때문**이며,
+> 이는 §3.6.2 대비표가 이미 예고한 바다.
+
+
+##### 3.6.1.2 충돌 지점 (확인된 8건)
+
+| # | 항목 | CRB | BB | 심각도 | 해소 시점 |
+|---|---|---|---|:---:|---|
+| 1 | **커맨드 이름** | `solve_bearing` · `compute_slice_geometry` · `presets::*` | 동일 이름 | 🟠 | 통합 (`generate_handler!` 즉시 충돌). `solve_roller_*` 6종은 이름에 `roller` 가 있어 **충돌 없음** |
+| 2 | **`BearingResult`** | `mode`·`life`·`static_rating`·`thermal_speed`·`f_a_induced_kn` | `phase_sweep`·`elapsed_ms` | 🟠 | 통합 |
+| 3 | 🔴 **`displacement: [f64;5]`** | `[δx, δy, **δz=0**, γx, **γy=0**]` — **실제로는 3-DOF**, `bearing.rs:325` 에서 2칸을 하드코딩 0 으로 패딩 | `[δx, δy, δz, γy, γz]` — 진짜 5-DOF | 🔴🔴 | **지금** (레벨 1) |
+| 4 | **단위** | 입력 kN → 내부 **N + μm** → 출력 **kN + μm + `N/μm`** 혼성 | **N·mm·rad 엄격** (D-10, A-8 기계검사) | 🔴 | 통합 (SSOT 는 지금 명문화) |
+| 5 | **좌표계** | **X=수평 radial, Y=수직(중력), Z=샤프트축** (`types.rs:34` D5) | **X=회전축**, Y·Z 반경 (ISO 16281, D-7) | 🔴 | 통합 (SSOT 는 지금 명문화) |
+| 6 | **각도 입력 단위** | `gamma` 가 **arcmin** → rad → **μm/mm** 3단 환산 (`types.rs:456`, `bearing.rs:106`) | rad 단일 | 🟡 | 통합 |
+| 7 | **프리셋 저장소** | `app_data_dir()/presets` 고정, 페이로드는 `BearingInput` 직렬화. **베어링 종류 필드 없음** | 동일 (사본) | 🔴 | **지금** — 같은 디렉터리에서 섞이고 serde 가 조용히 잘못 역직렬화한다 |
+| 8 | **프로젝트 파일** | `.trb.json`, `PROJECT_VERSION = 1`, **베어링 종류 필드 없음** | 동일 (사본) | 🟠 | **지금** |
+
+**3번이 가장 위험하다.** 두 배열이 모양이 같아 컴파일러도 TypeScript 도 구분하지 못하는데,
+**인덱스 3이 CRB 는 `γx`, BB 는 `γy`** 다. 게다가 CRB 의 `[2]`·`[4]` 는 항상 0 인 죽은 슬롯이라
+인덱스를 맞추려는 시도 자체가 무의미하다. → **배열을 named struct 로 바꾸는 것이 유일한 방어**다.
+
+
+##### 3.6.1.3 BB 계열 내부 확장 — ACBB · DGBB · 4PCBB
+
+> **확정 (2026-08-21)**: `BB` 는 **계열(family) 이름**이고, 변종은 **`BallBearingKind` enum 한 개**로
+> 구분한다. 변종별 폴더·모듈을 파지 않는다.
+
+
+**① 명명 층위는 3단이다**
+
+```
+계열 (family)        변종 (variant)              배열 (arrangement)
+─────────────        ──────────────────          ──────────────────
+Ball  →  BB          ACBB · DGBB · 4PCBB         단열 · DB / DF / DT
+Roller → CRB·TRB     CRB · TRB · SRB · NRB       단열 · 복열
+```
+
+현재 이름들(`bb-app`, `BallBearingGeometry`, `BB_Development_*.md`, `bb_` 커맨드 접두)은
+**계열 층위**다. Plan §2 가 범위를 "단열 ACBB" 로 좁혀 적은 것과 코드 이름 사이에 층위 불일치가
+있었으므로 여기서 정리한다 — **코드는 계열 이름, 범위 문서는 변종 이름**이며 모순이 아니다.
+
+
+**② 근거 — 현 솔버는 이미 DGBB 를 푼다**
+
+| 근거 | 내용 |
+|---|---|
+| **Level C-7 픽스처** | 「반경하중이면 반대편 볼이 뜬다」를 재현하려고 **α₀ = 0 · 클리어런스 0** 으로 교체했고, Action 에 「고전적 반경 하중구간은 **DGBB** 에서 나타난다」로 기록했다 |
+| **`geometry.rs` (A.1)** | `α₀ = arccos(1 − G_r / 2A)` — `G_r = 0` 이면 `α₀ = 0`. **DGBB 는 ACBB 의 α₀ = 0 특수해**다 |
+| **ISO 16281** | Annex A.2 는 "radial ball bearings" 로 **DGBB·ACBB 를 함께** 다룬다. 분기가 규격에도 없다 |
+
+즉 `bearing.rs` · `hertz.rs` · `geometry.rs` 는 **그대로 DGBB 에 쓰인다.**
+
+
+**③ 변종별 차이 — 코어가 아니라 주변부다**
+
+| 항목 | ACBB | DGBB | 4PCBB |
+|---|---|---|---|
+| 초기 접촉각 `α₀` | ≠ 0 (공칭각 지정) | **0** (클리어런스에서 유도) | ≠ 0, **볼당 2쌍** |
+| 궤도 곡률중심 | 궤도당 **1개** | 궤도당 **1개** | 궤도당 **2개** (고딕 아치) |
+| 볼당 접촉점 | 2 (내·외륜) | 2 | **최대 4**, 하중에 따라 **2점 ↔ 4점 전환** |
+| 점접촉 Hertz | 동일 | 동일 | 동일 |
+| 5-DOF 평형식 | 현행 | **현행 그대로** | **신규** (접촉쌍이 2배, 전환 판정 필요) |
+| ISO 281 `X`/`Y` | Table 3 (α 별) | Table 3 (α = 0 행) | ISO §5.1 근사 |
+| `f_c` 표 열 | 접촉각별 | α = 0 | 근사 |
+| **현 코드 재사용률** | — | **≈ 100 %** | **기하·접촉 100 %, 평형 신규** |
+
+> **DGBB 에 필요한 것은 수명 계수(`X`/`Y`/`f_c` 열 선택)와 UI 기본값뿐이며, 둘 다 신 P5(수명)·P4(프론트) 범위 안에 있다.**
+> 4PCBB 만 새 평형 모듈(`four_point.rs`)이 필요하고, 그것도 `hertz.rs`·`util.rs` 를 그대로 쓴다.
+
+
+**④ 왜 폴더를 파지 않는가**
+
+`bb/acbb/`·`bb/dgbb/` 로 미리 나누면 DGBB 착수 시 **거의 동일한 코드가 복사**된다.
+그것이 §3.6.1.1 이 기록한 **이 프로젝트가 세 번 물린 방식**(TRB → CRB → BB 전체 복사)이다.
+변종 간 재사용률이 ≈ 100 % 인데 폴더를 나누는 것은 **중복을 제도화**하는 것과 같다.
+
+**대신 이렇게 한다.**
+
+```rust
+/// 볼베어링 변종 (계열 = BB). 기하·접촉·평형은 공유하고, 변종은 데이터로 구분한다.
+pub enum BallBearingKind {
+    /// 각접촉 — α₀ ≠ 0. 현재 검증 완료 범위
+    Acbb,
+    /// 심구 — α₀ = 0 인 Acbb 의 특수해. 솔버 코어 동일
+    Dgbb,
+    /// 4점접촉 — 궤도당 곡률중심 2개, 볼당 최대 4접촉. 평형 모듈 신규 필요
+    FourPoint,
+}
+```
+
+- 지금은 `Acbb` 만 **검증 완료**다. `Dgbb` 는 코어가 이미 동작하나 **수명 계수 미확보**,
+  `FourPoint` 는 **평형 미구현**이다. 이 상태를 `validate()` 에서 명시적으로 거부해
+  「되는 줄 알았는데 안 되는」 상황을 막는다.
+- 배열(DB/DF/DT 복열)은 **직교하는 축**이며 Theory §8.2 확장 후보 1번이다. 변종 enum 과 별도 필드로 둔다.
+
+---
+
+
+##### 3.6.1.4 공통 ↔ 전용 경계 (4계층)
+
+**① 솔버 모듈**
+
+| 판정 | 모듈 | 근거 |
+|---|---|---|
+| **공통 (통합 시 crate 후보)** | ~~`life.rs`(1085)~~ · ~~`static_rating.rs`(304)~~ · ~~`lubrication.rs`(8441)~~ | **CRB·BB 에 byte-identical 사본.** BB 에서는 삭제 — 볼 식으로 새로 쓴다 (발견 ②) |
+| **공통 후보** | `transient*.rs` · `wec_risk.rs` · `hmehl.rs` | 시간적분·위험도·EHL 프레임은 형상 무관. BB 는 P1 에서 이미 삭제 |
+| **의미공통·형태상이** | `hertz.rs` · `bearing.rs` | 개념은 같으나 line↔point contact, DOF·잔차식 상이. **CRB Plan 은 `hertz.rs` 를 「🟢 거의 불변」으로 예측했으나 실제 1 013줄 차이** |
+| **롤러 전용** | `geometry.rs`(슬라이스·크라우닝) · `gen1.rs` · `gen3.rs` · `beam.rs` · `rib_contact.rs` | 볼에 대응물 없음 |
+| **볼 전용** | `util.rs`(432, BB only) | CRB 에 대응물 없음 |
+
+**② 타입** (CRB `types.rs` 67항목 기준)
+
+| 판정 | 대표 타입 |
+|---|---|
+| **공통** | `SolverProgress`·`ProgressReporter`·`Alert`·`AlertLevel`·`Material`·윤활/마찰 열거형 11종·`LubricationRegime`·`RiskLevel`·`SolverMode`·`RunMode`·`LifeMethod`·`StaticRatingResult`·`ThermalSpeedResult` |
+| **의미공통·형태상이** | `MacroGeometry`·`OperatingConditions`·`BearingInput`·`BearingEquilibrium`·`GeometrySummary`·`BearingResult`·`FatigueLifeResult`·`AngularLoadPoint` |
+| **롤러 전용** | `SliceGeometry`·`SliceContactResult`·`RollerProfile`·`CrownType`·`RacewayProfile`·`Rib*` 4종·`RollerResult`·`BeamType`·`RollerKinematicState`·`SkfTrbSeriesEnum` |
+
+> ⚠️ CRB `GeometrySummary` 에 **TRB 잔재**가 남아 있다 — `roller_taper_angle_deg`·`cone_angle_deg`
+> 가 CRB 에서 항상 0 이다. `BearingResult.f_a_induced_kn` 주석도 "paired TRB arrangement" 를
+> 그대로 언급한다. **파생이 두 세대 지나면서 죽은 필드가 누적되고 있다.**
+
+**③ 커맨드**
+
+| 판정 | 커맨드 |
+|---|---|
+| **이름 충돌** | `solve_bearing` · `compute_slice_geometry` · `presets::*`(7종) |
+| 충돌 없음 | `solve_roller_gen1/gen3` 계열 6종 — 이름에 `roller` 가 박혀 있다 |
+| **의미공통** | `compute_hertz_single_slice` — 유일하게 `BearingInput` 비의존, 순수 스칼라 시그니처 |
+
+**④ 프론트 뷰** — §3.6.3.1 등급과 통합 관점을 겹치면
+
+| 통합 판정 | 컴포넌트 |
+|---|---|
+| **공통** | `AlertPanel` · `ProgressBar` · `charts/PlotWithCopy` · `charts/plotlyDefaults` · `shared/DetailTable` · `CanvasArea`(셸) · `ResultsCard`(셸) · `InputPanel`(아코디언·프리셋·검증 **프레임워크만**) |
+| **공통 (분할 후)** | `LoadDistChart` → **`LoadDistPolar`(공통) + `ContactDetailPanel`(전용)** — 3.6.1.1 |
+| **베어링 전용** | BB: Contact Ellipse · BB 축단면 / CRB·TRB: 슬라이스 분포 · `ProfileView` / TRB: 리브 접촉 |
+
+
+**`LoadDistChart` — 「3종 공통」 가설의 실제 판정**
+
+**`LoadDistChart` 가 이 교훈의 축소판이다.** 「3종 공통」 가설은 **부분 성립**한다:
+
+| 구간 | 내용 | 볼 적용 |
+|---|---|---|
+| 극좌표 envelope · barpolar · 전동체 인덱스 막대 | `psi_deg` vs `Q` | ✅ **그대로** — 전동체 각위치별 하중은 3종 공통 개념 |
+| 변위·강성 테이블 | `displacement[2]`(δz) 등 | ⚠️ **CRB 에서 이미 항상 0 인 죽은 표시.** BB 는 인덱스 의미가 다르다 |
+| `slice_results.map(p_max_k)` · `SliceContactTable` · "Slices in contact" | 슬라이스 상세 | ❌ 롤러 전용 |
+| `RibContactDetail` | 리브 힘·타원반경·스핀모멘트 | ❌❌ **이중 사장** — 리브는 CRB 에서 영구 삭제 대상인데 UI 에 남아 있다 |
+
+455줄 중 앞 절반만 공통이고 뒤 절반은 볼은 물론 **현재 CRB 에서도 유효하지 않다.**
+→ **`LoadDistPolar`(공통) + `ContactDetailPanel`(전용) 로 분할**한다 (3.6.1.7).
+
+---
+
+
+##### 3.6.1.5 통합 아키텍처 — 단일 앱 + 베어링 종류 선택
+
+```mermaid
+graph TB
+  subgraph UI["단일 Tauri 앱"]
+    SEL["베어링 종류 셀렉터<br/>TRB · CRB · BB"]:::sel
+    subgraph SHELL["공통 셸 (베어링 무관)"]
+      IPF["InputPanel 프레임<br/>아코디언·프리셋·필드검증"]
+      CAF["CanvasArea 탭 셸"]
+      RCF["ResultsCard 셸"]
+      APF["AlertPanel · ProgressBar"]
+      PWC["PlotWithCopy · plotlyDefaults · DetailTable"]
+    end
+    subgraph SHARED["공통 뷰"]
+      LDP["LoadDistPolar<br/>전동체별 Q(φ) — 3종 공통"]
+      GEO["Geometry 요약표"]
+      D3["3D 셸 (전동체 메쉬만 교체)"]
+    end
+    subgraph OWN["베어링 전용 뷰"]
+      BBV["BB : Contact Ellipse · 축단면 α₀↔α_j"]:::bb
+      CRV["CRB : 슬라이스 분포 · Profile"]:::crb
+      TRV["TRB : + 리브 접촉"]:::trb
+    end
+  end
+  subgraph CORE["Rust — 공통 crate"]
+    LIFE["life · static_rating · lubrication<br/>(베어링별 식으로 재작성 후 통합)"]
+    COMMON["Alert · Material · SolverProgress<br/>Displacement(named) · 하중 입력"]
+  end
+  subgraph SOLV["Rust — 베어링별 솔버"]
+    SBB["bb::solve<br/>점접촉 · 5-DOF"]:::bb
+    SCRB["crb::solve<br/>선접촉 · 3-DOF"]:::crb
+    STRB["trb::solve<br/>선접촉 + 리브"]:::trb
+  end
+  SEL --> SHELL
+  SEL --> OWN
+  SHELL --> SHARED
+  SHELL -->|"invoke(kind)"| SOLV
+  SOLV --> CORE
+  SHARED --> CORE
+
+  classDef sel fill:#3a2a12,stroke:#e67e22,color:#f5cba7
+  classDef bb fill:#123524,stroke:#27ae60,color:#a9dfbf
+  classDef crb fill:#12283a,stroke:#2980b9,color:#aed6f1
+  classDef trb fill:#2a1a30,stroke:#8e44ad,color:#d7bde2
+```
+
+핵심은 **`SEL` 하나가 「입력 폼 · 탭 구성 · 결과 뷰 · 호출 커맨드」 네 가지를 동시에 바꾼다**는 것이다.
+그러려면 결과 타입이 **판별 가능**해야 한다 → 3.6.1.7 의 `kind` 판별자.
+
+
+##### 3.6.1.6 명명 규약
+
+> **원칙**: 「중립 이름 + 폴더로만 구분」은 이 프로젝트에서 **세 번 실패했다.**
+>
+> | 사례 | 결과 |
+> |---|---|
+> | `src/` 전 파일이 `types/bearing.ts`·`InputPanel/index.tsx` 같은 중립명 | **CRB 인 줄 알았는데 TRB** 였고, §3.6.3.1 를 쓰면서야 발견 |
+> | `.trb.json` | BB 저장소가 **TRB 확장자로 저장** 중 |
+> | `SkfTrbSeriesEnum` · `roller_taper_angle_deg` | CRB 에 TRB 이름·죽은 필드가 남아 항상 0 |
+>
+> → **전용물에는 이름 자체에 소속을 박는다.** 접두사 층위는 **계열(`bb`)** 로 한다 —
+> 변종이 늘어도 이름을 바꿀 필요가 없고, 솔버가 실제로 볼 계열 공통이므로 정확하다.
+
+
+**① 대상별 규칙**
+
+| 대상 | 규칙 | 예 | 근거 |
+|---|---|---|---|
+| **Tauri 커맨드** | **`bb_` 접두 필수** | `bb_solve_bearing` · `bb_compute_geometry` · `bb_compute_contact` · `bb_preset_*` | **전역 평면 네임스페이스** — Rust 모듈 경로가 통하지 않아 `generate_handler!` 에서 즉시 충돌한다. 선택이 아니라 하드 제약 |
+| **Rust 모듈** | **`solver/common/` ↔ `solver/bb/` 로 분리** | `solver/common/{util,types}.rs`<br/>`solver/bb/{types,geometry,hertz,bearing}.rs` | **프론트(`src/common` ↔ `src/bb`)와 대칭**을 이룬다. BB Rust 에도 진짜 공통물이 있다 — `util.rs`(E*·곡률합성·타원적분·Gauss-Legendre·스플라인)는 **접촉 형상과 무관**하다. `commands.rs`·`presets.rs` 는 Tauri 계층이라 최상위 유지 |
+| **crate lib 이름** | `app_lib` → **`bb_core`** | `use bb_core::solver::…` | Tauri 템플릿 기본값이라 유일하게 중립적이었다. 통합 시 crate 를 나누면 세 번 충돌한다 |
+| **Rust 타입** | **`Bearing` → `Bb` 치환** + 중립명에 **`Bb` 접두**. 공통물과 이름에 `Ball` 이 든 것은 무접두 | `BearingInput`→**`BbInput`** · `BearingResult`→**`BbResult`** · `GeometrySummary`→**`BbGeometrySummary`**<br/>유지: `Alert`·`Material`·`BallBearingGeometry`·`BallResult` | **14개 타입이 이름 중립 + CRB 에도 같은 개념 존재**. 모듈 경로는 컴파일 시점만 구분하고 **hover·에러메시지·스택트레이스·생성 TS·grep 에는 맨 이름만 나온다** — `index.tsx` 문제와 같은 구조. `Bearing` 접두는 어차피 정보가 0 이므로(전부 베어링) 치환이 자연스럽다 |
+| **프론트 폴더** | `src/common/` ↔ `src/bb/` | — | §3.6.1.7 |
+| **프론트 파일** | **평탄화** + **전용물에만 `Bb` 접두**. 하위 파일이 여럿인 것만 폴더 | `src/common/LoadDistPolar.tsx`<br/>`src/bb/BbContactEllipseView.tsx`<br/>`src/bb/BbSectionView.tsx` | `index.tsx` 관행은 에디터 탭·검색결과에서 **전부 `index.tsx` 로 보여** 구분이 불가능하다. 현 16개 중 하위파일이 있는 것은 `InputPanel`·`TransientView` 둘뿐 |
+| **프론트 타입** | `src/common/types.ts` + `src/bb/types.ts` | — | `types/bearing.ts` 784줄을 대체 |
+| **테스트** | 현 `<대상>_level_<등급>.rs` 유지 | `equilibrium_level_d3.rs` | `tests/` 는 crate 내부라 충돌하지 않는다 |
+| **문서** | `BB_Development_*.md` 유지 (**계열**) | — | 변종이 늘어도 문서를 쪼갤 이유가 없다. 범위는 본문에 명시 |
+| **프로젝트 파일** | `.bb.json` + **`bearing_kind` 필드**(변종까지) | `{"bearing_family":"bb","bearing_kind":"acbb",…}` | 충돌 8. 확장자는 계열, 필드는 변종 |
+| **프리셋** | `presets/bb/` 하위 + 페이로드에 `kind` | — | 충돌 7 — 같은 디렉터리에서 섞이면 serde 가 조용히 잘못 읽는다 |
+
+> **접두 판정 규칙**: 「이름만 보고 어느 계열인지 알 수 없고, **다른 계열에도 같은 개념이 존재**하면」 → `Bb` 접두.
+> 이름에 이미 `Ball` 이 있거나 계열 무관이면 → 무접두.
+>
+> | 분류 | 타입 | 조치 |
+> |---|---|:---:|
+> | 진짜 공통 (6) | `SolverProgress` · `ProgressReporter`/`NoopReporter` · `Material` · `Alert` · `AlertLevel` · `SolverError` | 무접두, **`solver/common/` 으로 이동** |
+> | 이름에 계열 있음 (2) | `BallBearingGeometry` · `BallResult` | 무접두, `bb/` |
+> | 🔴 중립명 (14) | `BearingInput` · `BearingResult` · `BearingEquilibrium` · `GeometryDerived` · `GeometrySummary` · `ContactDerived` · `SolverParams` · `OperatingConditions` · `ClearanceSpec` · `PreloadModel` · `PhaseSweep` · `PhaseSweepResult` · `Dof` · `DofMask` | **`Bb` 접두**, `bb/` |
+>
+> ⚠️ `Displacement`·`DofMask` 는 BB 가 규약 SSOT 이나(§3.6.1.8) **물리적 위치는 `bb/`** 에 둔다.
+> CRB·TRB 가 실제로 채택하는 시점에 `common/` 으로 승격한다 — 쓰는 곳이 하나뿐인데 미리 공통에 두면 근거 없는 추상화가 된다.
+
+
+**② 기계적 강제 — 규율이 아니라 도구가 지킨다**
+
+Level A-8(단위 접미사 기계 검사)이 **실제 오류를 3회 잡았다**(`c_p_n_per_mm15` 누락, `elapsed_ms` 환산,
+`* 1000.0` 혼입). 같은 방식을 경계에도 적용한다.
+
+| 장치 | 검사 내용 | 위치 |
+|---|---|---|
+| **ESLint `no-restricted-imports`** | `src/common/**` 이 `src/bb/**` 를 import 하면 **에러** | `eslint.config.js` |
+| **A-8 확장 ①** | `Displacement` 의 전 필드가 단위 접미사를 갖는가 (`dx_mm`·`ry_rad`) | `tests/geometry_level_a.rs` |
+| **A-8 확장 ②** | `BearingInput`·`BearingResult` 에 `kind` 판별자가 존재하는가 | 〃 |
+| **A-8 확장 ③** | 솔버 소스에 `trb`·`roller`·`slice`·`rib` 식별자가 남아 있지 않은가 | 〃 |
+
+> ③ 이 특히 중요하다. CRB 가 `SkfTrbSeriesEnum`·`roller_taper_angle_deg` 를 두 세대째 끌고 있는 것이
+> **사람 규율로는 못 막는다**는 증거다.
+
+
+**③ `Displacement` named struct 의 부수 효과**
+
+현재 `displacement: [f64; 5]` 는 배열이라 **D-10 단위 접미사 검사(A-8)를 우회**하고 있다.
+named struct 로 바꾸면 `pub … : f64` 가 되어 자동으로 검사 대상이 된다:
+
+```rust
+/// 5-DOF 평형 변위 (D-7 좌표계: X = 회전축).
+/// ⚠ CRB 의 `[f64;5]` 는 `[δx, δy, δz=0, γx, γy=0]` 로 **인덱스 3의 의미가 다르다**.
+///    배열을 쓰면 타입 검사를 통과하면서 조용히 틀린다 (§3.6.1.2 충돌 3).
+pub struct Displacement {
+    pub dx_mm: f64,
+    pub dy_mm: f64,
+    pub dz_mm: f64,
+    pub ry_rad: f64,
+    pub rz_rad: f64,
+}
+```
+
+**의도치 않게 얻는 이득이다** — 지금 배열은 단위 검사의 사각지대였다.
+
+---
+
+
+##### 3.6.1.7 레벨 1 — 지금 지불할 비용
+
+**원칙**: 「가벼운 개별 개발」이 목적이므로 **추상화 장치를 만들지 않는다.**
+대신 **통합 시점에 조용히 틀릴 수 있는 것만** 지금 막는다.
+
+| 항목 | 조치 | 비용 | 왜 지금인가 | 단계 |
+|---|---|:---:|---|:---:|
+| **중복 삭제** | `life.rs`·`static_rating.rs`·`lubrication.rs` 9 830줄 제거 | 0 | 발견 ②. 비활성 롤러 코드이며 BB 는 볼 식으로 새로 쓴다. **「살아있는 코드」로 오해될 위험 제거** | P4-S0 |
+| **`displacement` named struct** | `[f64;5]` → `Displacement { dx, dy, dz, ry, rz }` | 필드 5 + 호출부·테스트 | **충돌 3 의 유일한 방어.** 인덱스 3이 CRB 는 `γx`, BB 는 `γy` 인데 타입으로 안 잡힌다. **프론트 타입을 지금 쓰므로 지금이 가장 싸다** | P4-S0 |
+| **폴더 경계** | `src/common/` ↔ `src/bb/` 분리 | 거의 0 | S1 에서 어차피 전 파일을 옮긴다. 나중에 나누려면 다시 옮겨야 한다 | P4-S1 |
+| **`kind` 판별자** | `BearingInput`·`BearingResult` 에 `kind: 'BB'` (Rust `#[serde(tag)]`) | 거의 0 | **충돌 2·7 을 컴파일러·serde 가 대신 잡는다** | P4-S1 |
+| **프리셋 태그** | 저장 JSON 에 `bearing_type` + 서브디렉터리 분리 | 작음 | 충돌 7 — 지금 안 넣으면 **이미 저장된 프리셋이 통합 후 잘못 읽힌다** | P4-S5 |
+| **프로젝트 파일** | `.trb.json` → `.bb.json`, `bearing_type` 필드 | 작음 | 충돌 8 | P4-S5 |
+| **`LoadDistChart` 분할** | `LoadDistPolar`(공통) + 전용 패널 | 작음 | S4 에서 어차피 재작성한다. 분할해 두면 통합 시 공통부를 그대로 든다 | P4-S4 |
+| **명명 규약** | 커맨드 `bb_` 접두 · 파일 평탄화 · 전용물 `Bb` 접두 (§3.6.1.6) | 작음 | **커맨드는 전역 평면 네임스페이스라 접두가 하드 제약.** 지금 BB 커맨드는 3개뿐이고 프론트가 아직 호출하지 않아 비용 ≈ 0 | P4-S1 |
+| **경계 기계 강제** | ESLint `no-restricted-imports` + A-8 확장 3항목 (§3.6.1.6) | 작음 | A-8 이 이미 실제 오류를 3회 잡았다. **규율로는 못 막는다** — CRB 가 TRB 식별자를 두 세대째 끌고 있는 것이 증거 | P4-S1 |
+| **규약 명문화** | 「BB 가 좌표·단위 SSOT」 고정 | 0 | 3.6.1.8 | 완료 |
+
+**지금 하지 않는 것** (통합 시점으로 보류): 커맨드 네임스페이스 분리 · 공통 crate 추출 ·
+베어링 디스크립터 레지스트리 · TRB/CRB 의 좌표·단위 이관 · 베어링별 비교 기능.
+
+
+##### 3.6.1.8 규약 SSOT 와 보류 목록
+
+> ### 📌 **BB 규약이 통합 SW 의 표준이다**
+>
+> | 항목 | 표준 | 근거 |
+> |---|---|---|
+> | **좌표계** | **X = 회전축**, Y·Z 반경 (우수좌표계) | **ISO 16281 A.2.2 규약.** CRB 의 `Z = 샤프트축`은 TRB 승계일 뿐 규격 근거가 없다 |
+> | **단위** | 솔버 내부 **N · mm · rad**. μm·kN·° 환산은 `commands` 경계에서만 | D-10. **Level A-8 이 솔버 소스를 `include_str!` 해 기계 검사**한다 — 세 SW 중 유일하게 강제되고 있다 |
+> | **자유도** | `(δx, δy, δz, γy, γz)` 5-DOF, **named struct** | CRB 는 3-DOF 를 5칸에 패딩 중이라 확장이 필요한 쪽이다 |
+>
+> 통합 시 **TRB·CRB 가 맞추는 부담을 진다.** CRB 는 kN·μm·arcmin 3단 환산과
+> `N/μm` 혼성 단위(`k_radial`)를 쓰고 있어 이관 작업이 작지 않다 — 이 사실을 여기 기록해 둔다.
+
+**통합 착수 시점으로 보류하는 결정**
+
+| # | 결정 | 선택지 |
+|---|---|---|
+| U-1 | 커맨드 네임스페이스 | `bb::solve_bearing` 접두 ↔ `solve_bearing(kind, input)` 단일 진입 |
+| U-2 | 공통 crate 추출 범위 | 수명·정정격만 ↔ 윤활·과도·위험도 포함 |
+| U-3 | 저장소 형태 | 모노레포 통합 ↔ 워크스페이스 crate 분리 유지 |
+| U-4 | CRB·TRB 의 좌표·단위 이관 시기 | 통합 직전 일괄 ↔ 각 SW Phase 중 점진 |
+| U-5 | 베어링별 비교 기능 | 선택만 ↔ 나란히 비교 (결과 스키마 요구가 크게 달라짐) |
+| U-6 | CRB 프론트 재작성 | 본 Phase 4 산출물을 이식 ↔ CRB 에서 독립 수행 |
+
+
+---
+
+#### 3.6.2 왜 바꾸는가 — TRB ↔ ACBB 물리 대비
 
 프론트의 모든 뷰는 **롤러 선접촉**을 전제로 설계되어 있다. 볼로 바뀌면 그 전제가 사라진다.
 
@@ -279,7 +688,7 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 | 3 | **회전축** | **Z** 축 | **X** 축 (ISO 규약, D-7) | 3D 뷰·단면도의 좌표 전면 교체. `CRB X→BB Y`, `CRB Y→BB Z`, `CRB Z→BB X` |
 | 4 | **평형 자유도** | 결과 표시는 사실상 반경 위주 | **5-DOF** `(δ_x, δ_y, δ_z, γ_y, γ_z)` | 결과 카드가 **5성분 + 접촉각 범위 + 수렴정보**로 재구성 |
 | 5 | **해석 모드** | Gen1(독립 슬라이스) ↔ Gen3(빔 결합) **이중 모드** | **단일 모드** (D-1) | `ComparisonView`·`DualModeToggle`·`RollerComparisonChart` 의 **존재 이유 소멸** |
-| 6 | **리브 접촉** | 대단부 리브 = **타원 점접촉** (별도 뷰) | 리브 없음 | 뷰는 죽지만 **코드는 산다** — 이 저장소에서 유일하게 타원 점접촉 히트맵을 그린다 (§3.6.5) |
+| 6 | **리브 접촉** | 대단부 리브 = **타원 점접촉** (별도 뷰) | 리브 없음 | 뷰는 죽지만 **코드는 산다** — 이 저장소에서 유일하게 타원 점접촉 히트맵을 그린다 (§3.6.3.3) |
 | 7 | **프로파일** | 크라우닝 `Δz(x)` — 로그/원호/포물선/커스텀 **곡선** | **오스큘레이션 스칼라 2개** `f_i = r_i/D_w`, `f_e = r_e/D_w` | **그릴 자유도 자체가 없다.** `ProfileView` 는 개조 불가 |
 | 8 | **수명** | 슬라이스(라미나)별 수명 적산 | 볼별 `Q_ci`/`Q_ce` → ISO 16281 §5.2 | `LifeChart` 는 신 **P5** 에서 신규. 지금은 대상 아님 |
 | 9 | **윤활** | HMEHL · 마이크로피팅 · 리브 EHL · 슬라이스 유막 | 점접촉 Hamrock-Dowson (`κ`, `Λ`) | `LubricationView` 2 439줄이 **전부 폐기 모듈 참조**. 신 **P6** 에서 신규 |
@@ -288,7 +697,26 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 > **요약**: 1·2·7 이 이번 Phase 의 핵심이다. 「축방향 분포가 사라지고 타원 형상이 들어오며,
 > 접촉각이 상수에서 변수가 된다」 — 이 세 문장이 프론트 변경안 전체를 결정한다.
 
-#### 3.6.2 현행 인벤토리 (전 44파일, 11 067줄)
+**이 표는 볼 계열 전체(§3.6.1.3)에 적용된다.** DGBB 는 `α₀ = 0` 인 특수해라 **10행 전부 그대로**이고,
+4PCBB 만 1행(접촉 형태)에서 갈라진다 — 궤도당 곡률중심이 2개라 **볼당 접촉이 최대 4개**가 되므로
+접촉타원 뷰가 볼당 2개 → 4개로 늘어난다. 나머지 9행은 4PCBB 에도 그대로 성립한다.
+즉 **지금 만드는 뷰는 볼 계열 전체의 자산**이며, 변종 확장 시 추가되는 것은 타원 개수뿐이다.
+
+> ### 🔎 이 표가 CRB Plan 의 오판을 설명한다
+>
+> §3.6.1.1 이 기록한 「🟢 불변」 예측 4건의 빗나감은 우연이 아니다.
+> **1행(접촉 형태)이 바뀌면 그 위에 얹힌 모든 것이 바뀐다** — `hertz.rs`(6행 근처)도,
+> `ProfileView`(7행)도, `ResultCharts`(1행)도 전부 1행의 종속물이었다.
+> 모듈을 하나씩 보고 「이건 안 바뀌겠지」라고 판단했기 때문에 빗나갔고,
+> **물리 대비표를 먼저 그렸다면 예측할 수 있었다.**
+
+
+#### 3.6.3 현행 진단
+
+> §3.6.1 의 경계·명명 기준과 §3.6.2 의 물리 대비를 **현재 코드에 실제로 대어 본 결과**다.
+> 등급 A(재활용) / B(개조) / C(대체) / D(삭제) 는 §3.6.1.4 의 공통↔전용 경계와 일관되게 매겼다.
+
+##### 3.6.3.1 인벤토리 (전 44파일, 11 067줄)
 
 `invoke` 열의 ~~취소선~~ 은 **등록 해제된 죽은 커맨드**다. 등급은 A 재활용 / B 개조 / C 대체 / D 삭제.
 
@@ -301,7 +729,7 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 | `charts/PlotWithCopy.tsx` | 158 | | | **A** | Plotly 래퍼 + 우클릭 데이터 복사(TSV/CSV/JSON) |
 | `charts/plotlyDefaults.ts` | 35 | | | **A** | `darkLayout` / `plotConfig` / viridis |
 | `shared/DetailTable.tsx` | 26 | | | **A** | 순수 표시 컴포넌트 |
-| `CanvasArea/index.tsx` | 89 | | | **B** | 탭 셸 유지. 11탭 중 4개 제거 + 신설 (§3.6.4) |
+| `CanvasArea/index.tsx` | 89 | | | **B** | 탭 셸 유지. 11탭 중 4개 제거 + 신설 (§3.6.4.1) |
 | `GeometryView/index.tsx` | 326 | ✓ | | **B** | `DetailTable` 나열 구조 유지. `l_we`·`d_we`·리브·크라우닝 행 → `A`·`α₀`·`f_i/f_e`·`Σρ`·`γ`·`g_r_op`·`n·D_pw` (BB `GeometrySummary` 와 거의 1:1) |
 | `ResultsCard/index.tsx` | 492 | ✓ | | **B** | 접이식 사이드바 셸 유지. 표시 물리량 교체 (5-DOF 변위·`α_j` 범위·`Q_max`·`loaded_count`·`p_max`) |
 | `BearingView3D/index.tsx` | 262 | ✓ | | **B** | R3F/three 뼈대 유지. 테이퍼 롤러 메쉬 → `sphereGeometry`, 축 Z→X |
@@ -310,8 +738,8 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 | `charts/LoadDistChart.tsx` | 455 | ✓ | | **B** | 원주방향 `Q(ψ)` 극좌표/막대 골격 우수. `rollers[].q_total` → `ball_results[].q_n`, 축방향 서브플롯 제거, **`α_j(φ)` 곡선 추가** |
 | `charts/StressContourChart.tsx` | 508 | | | **B** | 히트맵 인프라 유지. (슬라이스 × 접촉폭) 격자 → 단일 타원 내 `p(x,y)`, 내/외륜 탭 유지 |
 | `charts/RibContactDetailChart.tsx` | 354 | ✓ | | **B ⭐** | **이 저장소에서 유일하게 이미 타원 점접촉 히트맵을 그린다.** 리브 접촉 → 볼–궤도 접촉 치환이 최단 경로 |
-| `ProfileView/index.tsx` | 590 | ✓ | | **C** | 대비표 #7 — 그릴 자유도 자체가 없음 (§3.6.5) |
-| `SectionView2D/index.tsx` | 447 | ✓ | | **C** | 형상 계산부(사다리꼴 롤러·리브·γ 경사축) 약 200줄 폐기. **치수선 헬퍼는 살릴 값어치 있음** (§3.6.5) |
+| `ProfileView/index.tsx` | 590 | ✓ | | **C** | 대비표 #7 — 그릴 자유도 자체가 없음 (§3.6.3.3) |
+| `SectionView2D/index.tsx` | 447 | ✓ | | **C** | 형상 계산부(사다리꼴 롤러·리브·γ 경사축) 약 200줄 폐기. **치수선 헬퍼는 살릴 값어치 있음** (§3.6.3.3) |
 | `LubricationView/index.tsx` | **2439** | ✓ | ~~`run_hmehl`~~ | **C** | 최대 파일이자 최대 사망자. 참조 모듈 전부 폐기. 신 P6 에서 요약 카드 수준으로 신규 |
 | `charts/LifeChart.tsx` | 349 | ✓ | | **C** | `result.life` 없음. 신 P5 에서 레이아웃만 참고 |
 | `charts/ContactPatchChart.tsx` | 145 | | | **C** | 슬라이스를 x축으로 쓰는 패치 컨투어. `RibContactDetailChart` 로 대체됨 |
@@ -348,7 +776,8 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 > ⚠️ **등록만 되고 아무도 호출하지 않는 커맨드 2종**: `compute_geometry` · `compute_contact`.
 > 신 `GeometryView` 와 접촉타원 뷰의 **연결 지점**이다.
 
-#### 3.6.3 구조 다이어그램
+
+##### 3.6.3.2 구조 다이어그램
 
 **현행** — 붉은 노드가 죽은 경로다.
 
@@ -440,34 +869,8 @@ graph LR
   class G,L,D3,IP,RC,CA,ST mod
 ```
 
-#### 3.6.4 탭 구성 — 3안 병기
 
-현행 11탭 중 **4탭이 즉시 사망**(`Profile`·`Thermal Speed`·`Comparison`·`Transient`)하고
-2탭이 **후속 Phase 로 이월**(`Life`→P5, `Lubrication`→P6)한다. 남는 5탭을 어떻게 구성할지 3안.
-
-| 현행 탭 | 안 A (5탭 · 이월 숨김) | 안 B (7탭 · 자리 확보) | 안 C (4탭 · 초집중) |
-|---|---|---|---|
-| Geometry | ✅ 개조 | ✅ 개조 | ✅ 개조 |
-| Profile | ➡ **Contact Ellipse 로 교체** | ➡ **Contact Ellipse 로 교체** | ➡ **Contact Ellipse 로 교체** |
-| Section | 🔄 **BB 축단면 신규** | 🔄 **BB 축단면 신규** | 🔄 **BB 축단면 신규** |
-| 3D View | ✅ 개조 | ✅ 개조 | ❌ 이번엔 제외 |
-| Load Distribution | ✅ 개조 (+`α_j(φ)`) | ✅ 개조 (+`α_j(φ)`) | ✅ 개조 (+`α_j(φ)`) |
-| Stress Contour | 🔀 Contact Ellipse 에 흡수 | 🔀 Contact Ellipse 에 흡수 | 🔀 흡수 |
-| Lubrication | ❌ 숨김 (P6 에서 부활) | ⏳ 빈 탭 "P6 예정" | ❌ 숨김 |
-| Life | ❌ 숨김 (P5 에서 부활) | ⏳ 빈 탭 "P5 예정" | ❌ 숨김 |
-| Thermal Speed / Comparison / Transient | ❌ 삭제 | ❌ 삭제 | ❌ 삭제 |
-| **결과 탭 수** | **5** | **7** | **4** |
-
-| | 장점 | 단점 |
-|---|---|---|
-| **안 A** | 화면에 **동작하는 것만** 남아 검증에 집중된다. 빈 탭이 없어 「이건 왜 비어 있지」가 생기지 않는다 | P5·P6 에서 `CanvasArea` 와 `CanvasTab` 타입을 다시 건드린다 (각 2줄) |
-| **안 B** | 최종 형태가 처음부터 보인다. P5·P6 는 컴포넌트만 갈아끼우면 됨 | **빈 탭 2개가 계속 보인다.** 검증용 화면에 노이즈. 「미구현」 표시를 별도로 만들어야 함 |
-| **안 C** | 가장 빠르다. 3D 는 미세한 수치 차이를 못 읽으므로 검증 가치가 낮다 | 볼 배치·접촉각의 **공간적 직관**을 잃는다. 3D 개조는 262줄로 크지 않다 |
-
-> **권장: 안 A.** 「접촉/하중을 먼저 눈으로 검증한다」가 이 Phase 의 목적이므로,
-> 화면에 **검증 가능한 것만** 두는 편이 목적에 맞다. P5·P6 의 탭 추가 비용은 각 2줄이다.
-
-#### 3.6.5 대체 판정 상세 — `ProfileView` 와 `SectionView2D`
+##### 3.6.3.3 대체 판정 상세 — `ProfileView` 와 `SectionView2D`
 
 **`ProfileView` (590줄) — 개조 불가, 삭제**
 
@@ -510,7 +913,8 @@ BB 에서 이 뷰의 기반이 **전부 소멸**한다:
 → **새 파일로 작성하되 `Annotations`/치수선 헬퍼와 `viewBox` 셋업은 복사**한다.
 형상 계산부 약 200줄은 통째로 버린다.
 
-#### 3.6.6 상태 · 타입 변경
+
+##### 3.6.3.4 상태 · 타입 현황과 변경 방침
 
 **`store.ts` (80줄) — 구조 유지, 사망 항목만 제거**
 
@@ -539,15 +943,124 @@ BB `BearingResult` 에 **하나도 없다**. 현재 `BearingResult` 는
 > 신 P5(수명)·P6(윤활)에서 `BearingResult` 에 필드가 **추가**되면 TS 타입을 다시 손대야 한다.
 > 방지책은 P4-S1 착수 전에 결정한다.
 
-#### 3.6.7 작업 분해 (신 Phase 4)
+
+#### 3.6.4 뷰 · 탭 구성과 검증 임무
+
+> 신 Phase 4 의 목적은 **「접촉/하중 해석을 눈으로 먼저 검증」**이다.
+> 따라서 탭 구성보다 먼저 정해야 할 것은 **각 뷰가 어느 검증 Level 을 대신 보는가**다 (3.6.4.2).
+> 검증 임무가 없는 뷰는 이번 Phase 에 넣지 않는다.
+
+##### 3.6.4.1 탭 구성 — 3안 병기
+
+현행 11탭 중 **4탭이 즉시 사망**(`Profile`·`Thermal Speed`·`Comparison`·`Transient`)하고
+2탭이 **후속 Phase 로 이월**(`Life`→P5, `Lubrication`→P6)한다. 남는 5탭을 어떻게 구성할지 3안.
+
+| 현행 탭 | 안 A (5탭 · 이월 숨김) | 안 B (7탭 · 자리 확보) | 안 C (4탭 · 초집중) |
+|---|---|---|---|
+| Geometry | ✅ 개조 | ✅ 개조 | ✅ 개조 |
+| Profile | ➡ **Contact Ellipse 로 교체** | ➡ **Contact Ellipse 로 교체** | ➡ **Contact Ellipse 로 교체** |
+| Section | 🔄 **BB 축단면 신규** | 🔄 **BB 축단면 신규** | 🔄 **BB 축단면 신규** |
+| 3D View | ✅ 개조 | ✅ 개조 | ❌ 이번엔 제외 |
+| Load Distribution | ✅ 개조 (+`α_j(φ)`) | ✅ 개조 (+`α_j(φ)`) | ✅ 개조 (+`α_j(φ)`) |
+| Stress Contour | 🔀 Contact Ellipse 에 흡수 | 🔀 Contact Ellipse 에 흡수 | 🔀 흡수 |
+| Lubrication | ❌ 숨김 (P6 에서 부활) | ⏳ 빈 탭 "P6 예정" | ❌ 숨김 |
+| Life | ❌ 숨김 (P5 에서 부활) | ⏳ 빈 탭 "P5 예정" | ❌ 숨김 |
+| Thermal Speed / Comparison / Transient | ❌ 삭제 | ❌ 삭제 | ❌ 삭제 |
+| **결과 탭 수** | **5** | **7** | **4** |
+
+| | 장점 | 단점 |
+|---|---|---|
+| **안 A** | 화면에 **동작하는 것만** 남아 검증에 집중된다. 빈 탭이 없어 「이건 왜 비어 있지」가 생기지 않는다 | P5·P6 에서 `CanvasArea` 와 `CanvasTab` 타입을 다시 건드린다 (각 2줄) |
+| **안 B** | 최종 형태가 처음부터 보인다. P5·P6 는 컴포넌트만 갈아끼우면 됨 | **빈 탭 2개가 계속 보인다.** 검증용 화면에 노이즈. 「미구현」 표시를 별도로 만들어야 함 |
+| **안 C** | 가장 빠르다. 3D 는 미세한 수치 차이를 못 읽으므로 검증 가치가 낮다 | 볼 배치·접촉각의 **공간적 직관**을 잃는다. 3D 개조는 262줄로 크지 않다 |
+
+> **권장: 안 A.** 「접촉/하중을 먼저 눈으로 검증한다」가 이 Phase 의 목적이므로,
+> 화면에 **검증 가능한 것만** 두는 편이 목적에 맞다. P5·P6 의 탭 추가 비용은 각 2줄이다.
+
+
+##### 3.6.4.2 검증 매핑 — 뷰 ↔ Level
+
+수치 시험은 **틀린 값**을 잡는다. 그림은 **틀린 모양**을 잡는다. 둘은 겹치지 않는다.
+아래는 각 뷰가 어느 Level 결과를 육안으로 재확인하고, **깨졌을 때 화면에 어떤 징후로 나타나는가**다.
+
+| 뷰 | 육안으로 재확인하는 것 | 대응 Level | 깨졌을 때의 징후 |
+|---|---|---|---|
+| `GeometryView` | `A` · `α₀` · `Σρ_i/e` · `F(ρ)` · `R_i` · `γ` · `n·D_pw` | **A** (16) | `Σρ` 가 음수 · `α₀` 가 공칭각과 다름 · 오스큘레이션이 0,5 미만 |
+| `LoadDistPolar` — `Q_j(φ)` 극좌표 | 하중구간의 **방위**와 폭 · 대칭성 · 위상 주기 | **C-4**(회전 불변) · **C-5**(위상 스윕) · **C-7**(하중구간) · **D-2b/2c**(방향 불변) | 하중구간이 하중 방향과 어긋남 · 위상 스윕 주기가 `2π/Z` 가 아님 · 반경하중인데 전 볼 균등 |
+| `LoadDistPolar` — `α_j(φ)` 곡선 | **접촉각이 볼마다 다르고 하중에 따라 변한다**는 사실 자체 | **D-1**(α 40,2°→39,5°) · **C-2**(하중하 `α_j > α₀`) | `α_j` 가 전부 같은 값이면 틸트가 반영되지 않은 것 |
+| **Contact Ellipse** | `a`/`b` 실제 축척 · 타원비 · `p_max` · 1500 MPa 초과 표시 · 궤도 홈폭 침범 | **B**(Harris Table 6.1) · **B-3**(1973 Fig. 15 실기) | 타원비가 1 에 가까움(χ 해 오류) · 내·외륜 타원이 뒤바뀜 |
+| **BB 축단면** (`α₀` ↔ `α_j` 겹쳐그리기) | 하중 후 접촉각이 벌어지는 방향 · `A = r_i + r_e − D_w` · `δ_x` | **D-1** · **D-2d**(틸트축 정합) | `α_j` 선이 `α₀` 와 겹치면 하중이 안 걸린 것 · 틸트 방향이 모멘트와 반대 |
+| `ResultsCard` (5-DOF 5성분) | 대칭 하중에서 `δ_z`·`γ_y` 가 0 인가 · 수렴 반복수·잔차 | **D-2a**(축퇴 항등성) · **C-8**(수렴 보고) | 0 이어야 할 성분이 유한값 → 대칭성 붕괴 |
+| `AlertPanel` | `HIGH_SPEED` · `CONTACT_STRESS_OVER_FATIGUE_LIMIT` · `NOT_CONVERGED` | **D-2f**(경계 동작) · **C-8** | 경고가 상시 켜짐 / 상시 꺼짐 |
+
+> ### 🔎 이 표가 필요한 이유 — 실제 사례
+>
+> P3-2 보강에서 **Theory §4.4 의 모멘트 부호 오기**를 잡는 데 `d3e` 라는 **전용 시험을 따로 설계**해야 했다.
+> 만약 `LoadDistPolar` 가 있었다면 어땠을까 — `M_y` 부호가 반대면 `γ_y` 가 반대로 서므로
+> **최대하중 볼이 정반대 방위에 선다.** 극좌표 그림에서 즉시 보이는 종류다.
+> 「시각화가 검증 수단」(§4 Phase 순서 변경 사유 ③)은 이 표가 있어야 근거가 된다.
+
+##### 3.6.4.3 데이터 흐름 — command → store → view
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as 사용자
+    participant IP as InputPanel
+    participant ST as store (useReducer)
+    participant RS as Rust (bb_* commands)
+    participant V as 뷰
+
+    Note over ST,RS: 앱 시작
+    RS->>ST: bb_preset_ensure_default · bb_preset_get_last
+    ST->>ST: SET_INPUT
+
+    Note over U,V: ① 하중 무관 — 풀지 않고도 본다
+    U->>IP: 기하 입력 변경
+    IP->>ST: UPDATE_INPUT
+    ST->>RS: bb_compute_geometry(input)
+    RS-->>V: BbGeometrySummary + alerts
+    Note right of V: GeometryView · 축단면(무하중 α₀)
+
+    Note over U,V: ② 평형 해석
+    U->>IP: Solve
+    IP->>ST: SET_LOADING
+    IP->>RS: bb_solve_bearing(input)
+    RS-->>ST: solver-progress 이벤트 (스트림)
+    ST-->>V: ProgressBar
+    RS-->>ST: BbResult
+    ST->>ST: SET_RESULT
+    ST-->>V: LoadDistPolar · Contact Ellipse · ResultsCard · AlertPanel · 축단면(α_j)
+
+    Note over U,V: ③ 단일 접촉점 탐색 (선택)
+    U->>V: Contact Ellipse 에서 Q 슬라이더 조작
+    V->>RS: bb_compute_contact(input, q_n)
+    RS-->>V: a · b · p_max · δ
+```
+
+**세 커맨드의 역할이 다르다** — 지금 코드만 봐서는 구분되지 않으므로 여기 명시한다.
+
+| 커맨드 | 하중 의존 | 언제 호출하나 | 비고 |
+|---|:---:|---|---|
+| `bb_compute_geometry` | ✗ | 기하 입력이 바뀔 때마다 | **평형을 풀지 않고** 기하·경고를 미리 본다. Level A 를 화면으로 확인하는 경로 |
+| `bb_solve_bearing` | ✓ | Solve 버튼 | 5-DOF 평형 + 위상 스윕. `ball_results[]` 에 볼별 `a`·`b`·`p_max` 가 **이미 들어 있다** |
+| `bb_compute_contact` | ✓ (스칼라 `Q`) | 사용자가 임의 `Q` 를 넣어볼 때 | **평형과 무관한 단일 접촉점 계산.** 평형 결과를 그리는 데는 필요 없다 |
+
+> ⚠️ `bb_compute_contact` 를 접촉타원 뷰의 **주 데이터원으로 쓰면 안 된다.**
+> 평형 해의 `Q_j` 는 이미 `BbResult.ball_results[]` 에 있고, 거기서 나온 `a`·`b`·`p_max` 를 그려야
+> **화면과 검증 결과가 같은 숫자**가 된다. `bb_compute_contact` 는 what-if 탐색 전용이다.
+
+---
+
+#### 3.6.5 작업 분해 (신 Phase 4)
 
 | 단계 | 내용 | 산출 | DoD |
 |---|---|---|---|
 | **S0-1** | 비활성 중복 3파일(`life`·`static_rating`·`lubrication`, 9 830줄) 삭제 | 죽은 코드 제거 | `cargo test` 118개 유지 |
 | **S0-2** | `solver/{common,bb}/` 폴더 재편 (공통 6타입 + `util.rs` → `common/`) · `app_lib` → `bb_core` · A-8 `include_str!` 경로 갱신 | 구조 경계 | 〃 |
-| **S0-3** | 타입 접두사 규칙 적용 (`Bearing`→`Bb` 치환 + 중립명 14개) (§3.6.10.1) | 이름 경계 | 〃 |
-| **S0-4** | `displacement` → `Displacement` named struct · **`BallBearingKind` enum**(`Acbb` 만 검증완료, 나머지 `validate()` 거부) (§3.6.9) | 확장·통합 대비 | 〃, clippy 0 |
-| **S1** | `types/bearing.ts` → `common/types.ts` + `bb/types.ts` · 죽은 파일 삭제(D등급 14) · `store.ts` 정리 · **`src/common/` ↔ `src/bb/` 분리** · **파일 평탄화·`Bb` 접두** (§3.6.10) · **`kind` 판별자** · **커맨드 `bb_` 접두** · **ESLint 경계 규칙 + A-8 확장 3항목** | 타입 SSOT · 경계 기계 강제 | `npm run build` + `npm run lint` 통과, `@ts-nocheck` 잔여 0 |
+| **S0-3** | 타입 접두사 규칙 적용 (`Bearing`→`Bb` 치환 + 중립명 14개) (§3.6.1.6) | 이름 경계 | 〃 |
+| **S0-4** | `displacement` → `Displacement` named struct · **`BallBearingKind` enum**(`Acbb` 만 검증완료, 나머지 `validate()` 거부) (§3.6.1.3) | 확장·통합 대비 | 〃, clippy 0 |
+| **S1** | `types/bearing.ts` → `common/types.ts` + `bb/types.ts` · 죽은 파일 삭제(D등급 14) · `store.ts` 정리 · **`src/common/` ↔ `src/bb/` 분리** · **파일 평탄화·`Bb` 접두** (§3.6.1.6) · **`kind` 판별자** · **커맨드 `bb_` 접두** · **ESLint 경계 규칙 + A-8 확장 3항목** | 타입 SSOT · 경계 기계 강제 | `npm run build` + `npm run lint` 통과, `@ts-nocheck` 잔여 0 |
 | **S2** | `InputPanel` BB 4블록 재매핑 (`geometry`/`material`/`operating`/`solver`) + `ClearanceSpec` 3종 · `PreloadModel` 2종 · `DofMask` · 위상스윕 | 입력 가능 | `solve_bearing` 왕복 성공 |
 | **S3** | `GeometryView` 개조 + `compute_geometry` 첫 연결 · `ResultsCard` 5-DOF 요약 · `AlertPanel` | 기하·요약 확인 | Level A 결과가 화면과 일치 |
 | **S4** | `LoadDistChart` → **`LoadDistPolar`(공통) + 전용 패널로 분할**, `Q_j` 극좌표 + **`α_j(φ)` 곡선** · Contact Ellipse View (`RibContactDetailChart` 개조 + `compute_contact` 연결) | **핵심 검증 뷰** | Level C·D 결과가 화면과 일치 |
@@ -555,377 +1068,6 @@ BB `BearingResult` 에 **하나도 없다**. 현재 `BearingResult` 는
 
 **Phase DoD**: `npm run build` + `npm run lint` 통과, 살아남은 전 뷰가 실제 솔버 출력으로 동작,
 `@ts-nocheck` 0, 죽은 `invoke` 0.
-
----
-
-#### 3.6.8 통합 SW 를 내다본 구조 (TRB · CRB · BB)
-
-> 조사일 2026-08-21. CRB 저장소(`d:/AI/AI_Seminar_CRB/CRB-main`) 전수 조사 결과.
-
-> ### 📌 확정 사항 (2026-08-21)
->
-> | 항목 | 결정 | 이유 |
-> |---|---|---|
-> | **프론트 재작성 범위** | **BB 전용** (원안 유지) | 「가벼운 개별 개발」이 현 단계의 목적. CRB 프론트는 별도로 |
-> | **통합 대비 수준** | **레벨 1 — 경계만 지키기** | 추상화 장치를 만들지 않는다. 통합 때 **조용히 틀릴 것만** 지금 막는다 |
-> | **규약 SSOT** | **BB (ISO X축 · N·mm·rad)** | 유일하게 규격 근거가 있고 기계 검사로 강제된다 (3.6.8.6) |
-> | **통합 목표 형태** | **단일 앱 + 베어링 종류 선택** | 3.6.8.4 |
-> | **중복 9 830줄** | **BB 에서 삭제** | 발견 ② · 3.6.8.5 |
-> | **`displacement`** | **named struct 로 지금 변경** | 충돌 3 · 3.6.8.5 |
-> | **BB 계열 내부 변종** | **`BallBearingKind` enum** (ACBB·DGBB·4PCBB). 폴더 분리 없음 | §3.6.9 |
-> | **명명·접두사 층위** | **계열 `bb_`** · 파일 평탄화 · 전용물만 `Bb` 접두 | §3.6.10 |
-> | **경계 강제** | **ESLint `no-restricted-imports` + A-8 확장 3항목** | §3.6.10.2 |
-
-##### 3.6.8.1 현황과 두 가지 발견
-
-세 SW 는 **TRB(원본) → CRB(파생) → BB(파생)** 계보다. 지금은 **경량화를 위해 개별 개발**하되,
-추후 **하나의 SW 로 통합**해 「베어링 종류를 고르면 바로 결과를 보는」 형태를 목표로 한다.
-
-파생 방식은 CRB Plan Phase 0 이 규정한 **「전체 복사 후 이름만 바꾸고 diff 로 갈라내기」**다.
-조사에서 이 방식의 현재 상태가 두 가지 형태로 드러났다.
-
-> 🔴 **발견 ① — CRB `src/` 와 BB `src/` 는 byte-identical 이다.**
-> `diff -rq` 가 차이를 하나도 내지 않는다. 41개 프론트 파일의 줄수가 전부 일치하고
-> `package.json` 은 `"name"` 한 줄(`crb-app` ↔ `bb-app`)만 다르다.
-> **BB 는 Rust 솔버만 포팅했고 프론트는 CRB 사본 그대로**다.
->
-> → §3.6.2 의 인벤토리(11 067줄 · `@ts-nocheck` 13 · 죽은 `invoke` 6종)는
-> **CRB 에도 글자 그대로 적용된다.** 신 Phase 4 는 BB 전용으로 진행하기로 했으나,
-> 그 산출물이 **CRB 프론트 재작성의 사실상 설계도**라는 점은 기록해 둔다.
-
-> 🔴 **발견 ② — `life.rs`(1085) · `static_rating.rs`(304) · `lubrication.rs`(8441) 합계 9 830줄이 두 저장소에 완전히 동일한 사본으로 존재하며, 양쪽 모두 비활성이다.**
-> 세 파일 모두 **롤러 기준 TRB 판**이고 `solver/mod.rs` 에서 주석 처리되어 컴파일되지 않는다.
-> BB 는 신 P5(수명)·P6(윤활)에서 **ISO 16281 §5.2 볼 식으로 새로 쓴다.**
-> → **BB 저장소에서 삭제한다** (Plan 이 명시한 「주석처리 금지, 삭제」 원칙, P1 과 동일). git 에 남는다.
-
-##### 3.6.8.2 충돌 지점 (확인된 8건)
-
-| # | 항목 | CRB | BB | 심각도 | 해소 시점 |
-|---|---|---|---|:---:|---|
-| 1 | **커맨드 이름** | `solve_bearing` · `compute_slice_geometry` · `presets::*` | 동일 이름 | 🟠 | 통합 (`generate_handler!` 즉시 충돌). `solve_roller_*` 6종은 이름에 `roller` 가 있어 **충돌 없음** |
-| 2 | **`BearingResult`** | `mode`·`life`·`static_rating`·`thermal_speed`·`f_a_induced_kn` | `phase_sweep`·`elapsed_ms` | 🟠 | 통합 |
-| 3 | 🔴 **`displacement: [f64;5]`** | `[δx, δy, **δz=0**, γx, **γy=0**]` — **실제로는 3-DOF**, `bearing.rs:325` 에서 2칸을 하드코딩 0 으로 패딩 | `[δx, δy, δz, γy, γz]` — 진짜 5-DOF | 🔴🔴 | **지금** (레벨 1) |
-| 4 | **단위** | 입력 kN → 내부 **N + μm** → 출력 **kN + μm + `N/μm`** 혼성 | **N·mm·rad 엄격** (D-10, A-8 기계검사) | 🔴 | 통합 (SSOT 는 지금 명문화) |
-| 5 | **좌표계** | **X=수평 radial, Y=수직(중력), Z=샤프트축** (`types.rs:34` D5) | **X=회전축**, Y·Z 반경 (ISO 16281, D-7) | 🔴 | 통합 (SSOT 는 지금 명문화) |
-| 6 | **각도 입력 단위** | `gamma` 가 **arcmin** → rad → **μm/mm** 3단 환산 (`types.rs:456`, `bearing.rs:106`) | rad 단일 | 🟡 | 통합 |
-| 7 | **프리셋 저장소** | `app_data_dir()/presets` 고정, 페이로드는 `BearingInput` 직렬화. **베어링 종류 필드 없음** | 동일 (사본) | 🔴 | **지금** — 같은 디렉터리에서 섞이고 serde 가 조용히 잘못 역직렬화한다 |
-| 8 | **프로젝트 파일** | `.trb.json`, `PROJECT_VERSION = 1`, **베어링 종류 필드 없음** | 동일 (사본) | 🟠 | **지금** |
-
-**3번이 가장 위험하다.** 두 배열이 모양이 같아 컴파일러도 TypeScript 도 구분하지 못하는데,
-**인덱스 3이 CRB 는 `γx`, BB 는 `γy`** 다. 게다가 CRB 의 `[2]`·`[4]` 는 항상 0 인 죽은 슬롯이라
-인덱스를 맞추려는 시도 자체가 무의미하다. → **배열을 named struct 로 바꾸는 것이 유일한 방어**다.
-
-##### 3.6.8.3 공통 ↔ 전용 경계 (4계층)
-
-**① 솔버 모듈**
-
-| 판정 | 모듈 | 근거 |
-|---|---|---|
-| **공통 (통합 시 crate 후보)** | ~~`life.rs`(1085)~~ · ~~`static_rating.rs`(304)~~ · ~~`lubrication.rs`(8441)~~ | **CRB·BB 에 byte-identical 사본.** BB 에서는 삭제 — 볼 식으로 새로 쓴다 (발견 ②) |
-| **공통 후보** | `transient*.rs` · `wec_risk.rs` · `hmehl.rs` | 시간적분·위험도·EHL 프레임은 형상 무관. BB 는 P1 에서 이미 삭제 |
-| **의미공통·형태상이** | `hertz.rs` · `bearing.rs` | 개념은 같으나 line↔point contact, DOF·잔차식 상이. **CRB Plan 은 `hertz.rs` 를 「🟢 거의 불변」으로 예측했으나 실제 1 013줄 차이** |
-| **롤러 전용** | `geometry.rs`(슬라이스·크라우닝) · `gen1.rs` · `gen3.rs` · `beam.rs` · `rib_contact.rs` | 볼에 대응물 없음 |
-| **볼 전용** | `util.rs`(432, BB only) | CRB 에 대응물 없음 |
-
-**② 타입** (CRB `types.rs` 67항목 기준)
-
-| 판정 | 대표 타입 |
-|---|---|
-| **공통** | `SolverProgress`·`ProgressReporter`·`Alert`·`AlertLevel`·`Material`·윤활/마찰 열거형 11종·`LubricationRegime`·`RiskLevel`·`SolverMode`·`RunMode`·`LifeMethod`·`StaticRatingResult`·`ThermalSpeedResult` |
-| **의미공통·형태상이** | `MacroGeometry`·`OperatingConditions`·`BearingInput`·`BearingEquilibrium`·`GeometrySummary`·`BearingResult`·`FatigueLifeResult`·`AngularLoadPoint` |
-| **롤러 전용** | `SliceGeometry`·`SliceContactResult`·`RollerProfile`·`CrownType`·`RacewayProfile`·`Rib*` 4종·`RollerResult`·`BeamType`·`RollerKinematicState`·`SkfTrbSeriesEnum` |
-
-> ⚠️ CRB `GeometrySummary` 에 **TRB 잔재**가 남아 있다 — `roller_taper_angle_deg`·`cone_angle_deg`
-> 가 CRB 에서 항상 0 이다. `BearingResult.f_a_induced_kn` 주석도 "paired TRB arrangement" 를
-> 그대로 언급한다. **파생이 두 세대 지나면서 죽은 필드가 누적되고 있다.**
-
-**③ 커맨드**
-
-| 판정 | 커맨드 |
-|---|---|
-| **이름 충돌** | `solve_bearing` · `compute_slice_geometry` · `presets::*`(7종) |
-| 충돌 없음 | `solve_roller_gen1/gen3` 계열 6종 — 이름에 `roller` 가 박혀 있다 |
-| **의미공통** | `compute_hertz_single_slice` — 유일하게 `BearingInput` 비의존, 순수 스칼라 시그니처 |
-
-**④ 프론트 뷰** — §3.6.2 등급과 통합 관점을 겹치면
-
-| 통합 판정 | 컴포넌트 |
-|---|---|
-| **공통** | `AlertPanel` · `ProgressBar` · `charts/PlotWithCopy` · `charts/plotlyDefaults` · `shared/DetailTable` · `CanvasArea`(셸) · `ResultsCard`(셸) · `InputPanel`(아코디언·프리셋·검증 **프레임워크만**) |
-| **공통 (분할 후)** | `LoadDistChart` → **`LoadDistPolar`(공통) + `ContactDetailPanel`(전용)** — 3.6.8.7 |
-| **베어링 전용** | BB: Contact Ellipse · BB 축단면 / CRB·TRB: 슬라이스 분포 · `ProfileView` / TRB: 리브 접촉 |
-
-##### 3.6.8.4 통합 아키텍처 — 단일 앱 + 베어링 종류 선택
-
-```mermaid
-graph TB
-  subgraph UI["단일 Tauri 앱"]
-    SEL["베어링 종류 셀렉터<br/>TRB · CRB · BB"]:::sel
-    subgraph SHELL["공통 셸 (베어링 무관)"]
-      IPF["InputPanel 프레임<br/>아코디언·프리셋·필드검증"]
-      CAF["CanvasArea 탭 셸"]
-      RCF["ResultsCard 셸"]
-      APF["AlertPanel · ProgressBar"]
-      PWC["PlotWithCopy · plotlyDefaults · DetailTable"]
-    end
-    subgraph SHARED["공통 뷰"]
-      LDP["LoadDistPolar<br/>전동체별 Q(φ) — 3종 공통"]
-      GEO["Geometry 요약표"]
-      D3["3D 셸 (전동체 메쉬만 교체)"]
-    end
-    subgraph OWN["베어링 전용 뷰"]
-      BBV["BB : Contact Ellipse · 축단면 α₀↔α_j"]:::bb
-      CRV["CRB : 슬라이스 분포 · Profile"]:::crb
-      TRV["TRB : + 리브 접촉"]:::trb
-    end
-  end
-  subgraph CORE["Rust — 공통 crate"]
-    LIFE["life · static_rating · lubrication<br/>(베어링별 식으로 재작성 후 통합)"]
-    COMMON["Alert · Material · SolverProgress<br/>Displacement(named) · 하중 입력"]
-  end
-  subgraph SOLV["Rust — 베어링별 솔버"]
-    SBB["bb::solve<br/>점접촉 · 5-DOF"]:::bb
-    SCRB["crb::solve<br/>선접촉 · 3-DOF"]:::crb
-    STRB["trb::solve<br/>선접촉 + 리브"]:::trb
-  end
-  SEL --> SHELL
-  SEL --> OWN
-  SHELL --> SHARED
-  SHELL -->|"invoke(kind)"| SOLV
-  SOLV --> CORE
-  SHARED --> CORE
-
-  classDef sel fill:#3a2a12,stroke:#e67e22,color:#f5cba7
-  classDef bb fill:#123524,stroke:#27ae60,color:#a9dfbf
-  classDef crb fill:#12283a,stroke:#2980b9,color:#aed6f1
-  classDef trb fill:#2a1a30,stroke:#8e44ad,color:#d7bde2
-```
-
-핵심은 **`SEL` 하나가 「입력 폼 · 탭 구성 · 결과 뷰 · 호출 커맨드」 네 가지를 동시에 바꾼다**는 것이다.
-그러려면 결과 타입이 **판별 가능**해야 한다 → 3.6.8.5 의 `kind` 판별자.
-
-##### 3.6.8.5 레벨 1 — 지금 지불할 비용
-
-**원칙**: 「가벼운 개별 개발」이 목적이므로 **추상화 장치를 만들지 않는다.**
-대신 **통합 시점에 조용히 틀릴 수 있는 것만** 지금 막는다.
-
-| 항목 | 조치 | 비용 | 왜 지금인가 | 단계 |
-|---|---|:---:|---|:---:|
-| **중복 삭제** | `life.rs`·`static_rating.rs`·`lubrication.rs` 9 830줄 제거 | 0 | 발견 ②. 비활성 롤러 코드이며 BB 는 볼 식으로 새로 쓴다. **「살아있는 코드」로 오해될 위험 제거** | P4-S0 |
-| **`displacement` named struct** | `[f64;5]` → `Displacement { dx, dy, dz, ry, rz }` | 필드 5 + 호출부·테스트 | **충돌 3 의 유일한 방어.** 인덱스 3이 CRB 는 `γx`, BB 는 `γy` 인데 타입으로 안 잡힌다. **프론트 타입을 지금 쓰므로 지금이 가장 싸다** | P4-S0 |
-| **폴더 경계** | `src/common/` ↔ `src/bb/` 분리 | 거의 0 | S1 에서 어차피 전 파일을 옮긴다. 나중에 나누려면 다시 옮겨야 한다 | P4-S1 |
-| **`kind` 판별자** | `BearingInput`·`BearingResult` 에 `kind: 'BB'` (Rust `#[serde(tag)]`) | 거의 0 | **충돌 2·7 을 컴파일러·serde 가 대신 잡는다** | P4-S1 |
-| **프리셋 태그** | 저장 JSON 에 `bearing_type` + 서브디렉터리 분리 | 작음 | 충돌 7 — 지금 안 넣으면 **이미 저장된 프리셋이 통합 후 잘못 읽힌다** | P4-S5 |
-| **프로젝트 파일** | `.trb.json` → `.bb.json`, `bearing_type` 필드 | 작음 | 충돌 8 | P4-S5 |
-| **`LoadDistChart` 분할** | `LoadDistPolar`(공통) + 전용 패널 | 작음 | S4 에서 어차피 재작성한다. 분할해 두면 통합 시 공통부를 그대로 든다 | P4-S4 |
-| **명명 규약** | 커맨드 `bb_` 접두 · 파일 평탄화 · 전용물 `Bb` 접두 (§3.6.10) | 작음 | **커맨드는 전역 평면 네임스페이스라 접두가 하드 제약.** 지금 BB 커맨드는 3개뿐이고 프론트가 아직 호출하지 않아 비용 ≈ 0 | P4-S1 |
-| **경계 기계 강제** | ESLint `no-restricted-imports` + A-8 확장 3항목 (§3.6.10.2) | 작음 | A-8 이 이미 실제 오류를 3회 잡았다. **규율로는 못 막는다** — CRB 가 TRB 식별자를 두 세대째 끌고 있는 것이 증거 | P4-S1 |
-| **규약 명문화** | 「BB 가 좌표·단위 SSOT」 고정 | 0 | 3.6.8.6 | 완료 |
-
-**지금 하지 않는 것** (통합 시점으로 보류): 커맨드 네임스페이스 분리 · 공통 crate 추출 ·
-베어링 디스크립터 레지스트리 · TRB/CRB 의 좌표·단위 이관 · 베어링별 비교 기능.
-
-##### 3.6.8.6 규약 SSOT 와 보류 목록
-
-> ### 📌 **BB 규약이 통합 SW 의 표준이다**
->
-> | 항목 | 표준 | 근거 |
-> |---|---|---|
-> | **좌표계** | **X = 회전축**, Y·Z 반경 (우수좌표계) | **ISO 16281 A.2.2 규약.** CRB 의 `Z = 샤프트축`은 TRB 승계일 뿐 규격 근거가 없다 |
-> | **단위** | 솔버 내부 **N · mm · rad**. μm·kN·° 환산은 `commands` 경계에서만 | D-10. **Level A-8 이 솔버 소스를 `include_str!` 해 기계 검사**한다 — 세 SW 중 유일하게 강제되고 있다 |
-> | **자유도** | `(δx, δy, δz, γy, γz)` 5-DOF, **named struct** | CRB 는 3-DOF 를 5칸에 패딩 중이라 확장이 필요한 쪽이다 |
->
-> 통합 시 **TRB·CRB 가 맞추는 부담을 진다.** CRB 는 kN·μm·arcmin 3단 환산과
-> `N/μm` 혼성 단위(`k_radial`)를 쓰고 있어 이관 작업이 작지 않다 — 이 사실을 여기 기록해 둔다.
-
-**통합 착수 시점으로 보류하는 결정**
-
-| # | 결정 | 선택지 |
-|---|---|---|
-| U-1 | 커맨드 네임스페이스 | `bb::solve_bearing` 접두 ↔ `solve_bearing(kind, input)` 단일 진입 |
-| U-2 | 공통 crate 추출 범위 | 수명·정정격만 ↔ 윤활·과도·위험도 포함 |
-| U-3 | 저장소 형태 | 모노레포 통합 ↔ 워크스페이스 crate 분리 유지 |
-| U-4 | CRB·TRB 의 좌표·단위 이관 시기 | 통합 직전 일괄 ↔ 각 SW Phase 중 점진 |
-| U-5 | 베어링별 비교 기능 | 선택만 ↔ 나란히 비교 (결과 스키마 요구가 크게 달라짐) |
-| U-6 | CRB 프론트 재작성 | 본 Phase 4 산출물을 이식 ↔ CRB 에서 독립 수행 |
-
-##### 3.6.8.7 선례가 주는 교훈 — CRB Plan §2.1·§2.2 예측 vs 실제
-
-CRB Plan 은 TRB→CRB 전환 시 모듈별 변경강도를 🔴대규모 / 🟡중간 / 🟢불변 3색으로 사전 판정했다.
-**「무엇을 공통으로 뒀는가」의 실제 선례**이므로 그 정확도를 대조한다.
-
-| CRB Plan 예측 | 실제 (BB 시점) |
-|---|---|
-| `hertz.rs` 「🟢 거의 불변」 | BB 와 **1 013줄 차이** — line ↔ point contact 는 사실상 별개 |
-| `gen1.rs` 「🟢 거의 불변」 | BB 에 **아예 없다** |
-| `ProfileView` 「🟢 거의 불변」 | `@ts-nocheck` stub 로 전락 |
-| `ResultCharts`·`ContourMap`·`ComparisonView` 「🟢 불변」 | 실제 파일은 **2줄짜리 re-export 껍데기** |
-
-> **「전체 복사 후 diff 로 갈라내기」는 3번째 파생에서 이미 한계에 도달했다.**
-> 증거는 발견 ② — 동일 사본 9 830줄이 양쪽에서 비활성인 채 중복 유지되고 있었다.
-> 사전 「🟢 불변」 판정이 네 건이나 빗나간 이유는 **접촉 물리가 바뀌면 그 위에 얹힌 모든 것이 바뀌기 때문**이며,
-> 이는 §3.6.1 대비표가 이미 예고한 바다.
-
-**`LoadDistChart` 가 이 교훈의 축소판이다.** 「3종 공통」 가설은 **부분 성립**한다:
-
-| 구간 | 내용 | 볼 적용 |
-|---|---|---|
-| 극좌표 envelope · barpolar · 전동체 인덱스 막대 | `psi_deg` vs `Q` | ✅ **그대로** — 전동체 각위치별 하중은 3종 공통 개념 |
-| 변위·강성 테이블 | `displacement[2]`(δz) 등 | ⚠️ **CRB 에서 이미 항상 0 인 죽은 표시.** BB 는 인덱스 의미가 다르다 |
-| `slice_results.map(p_max_k)` · `SliceContactTable` · "Slices in contact" | 슬라이스 상세 | ❌ 롤러 전용 |
-| `RibContactDetail` | 리브 힘·타원반경·스핀모멘트 | ❌❌ **이중 사장** — 리브는 CRB 에서 영구 삭제 대상인데 UI 에 남아 있다 |
-
-455줄 중 앞 절반만 공통이고 뒤 절반은 볼은 물론 **현재 CRB 에서도 유효하지 않다.**
-→ **`LoadDistPolar`(공통) + `ContactDetailPanel`(전용) 로 분할**한다 (3.6.8.5).
-
----
-
-#### 3.6.9 BB 계열 내부 확장 — ACBB · DGBB · 4PCBB
-
-> **확정 (2026-08-21)**: `BB` 는 **계열(family) 이름**이고, 변종은 **`BallBearingKind` enum 한 개**로
-> 구분한다. 변종별 폴더·모듈을 파지 않는다.
-
-##### 3.6.9.1 명명 층위는 3단이다
-
-```
-계열 (family)        변종 (variant)              배열 (arrangement)
-─────────────        ──────────────────          ──────────────────
-Ball  →  BB          ACBB · DGBB · 4PCBB         단열 · DB / DF / DT
-Roller → CRB·TRB     CRB · TRB · SRB · NRB       단열 · 복열
-```
-
-현재 이름들(`bb-app`, `BallBearingGeometry`, `BB_Development_*.md`, `bb_` 커맨드 접두)은
-**계열 층위**다. Plan §2 가 범위를 "단열 ACBB" 로 좁혀 적은 것과 코드 이름 사이에 층위 불일치가
-있었으므로 여기서 정리한다 — **코드는 계열 이름, 범위 문서는 변종 이름**이며 모순이 아니다.
-
-##### 3.6.9.2 근거 — 현 솔버는 **이미 DGBB 를 푼다**
-
-| 근거 | 내용 |
-|---|---|
-| **Level C-7 픽스처** | 「반경하중이면 반대편 볼이 뜬다」를 재현하려고 **α₀ = 0 · 클리어런스 0** 으로 교체했고, Action 에 「고전적 반경 하중구간은 **DGBB** 에서 나타난다」로 기록했다 |
-| **`geometry.rs` (A.1)** | `α₀ = arccos(1 − G_r / 2A)` — `G_r = 0` 이면 `α₀ = 0`. **DGBB 는 ACBB 의 α₀ = 0 특수해**다 |
-| **ISO 16281** | Annex A.2 는 "radial ball bearings" 로 **DGBB·ACBB 를 함께** 다룬다. 분기가 규격에도 없다 |
-
-즉 `bearing.rs` · `hertz.rs` · `geometry.rs` 는 **그대로 DGBB 에 쓰인다.**
-
-##### 3.6.9.3 변종별 차이 — 코어가 아니라 주변부다
-
-| 항목 | ACBB | DGBB | 4PCBB |
-|---|---|---|---|
-| 초기 접촉각 `α₀` | ≠ 0 (공칭각 지정) | **0** (클리어런스에서 유도) | ≠ 0, **볼당 2쌍** |
-| 궤도 곡률중심 | 궤도당 **1개** | 궤도당 **1개** | 궤도당 **2개** (고딕 아치) |
-| 볼당 접촉점 | 2 (내·외륜) | 2 | **최대 4**, 하중에 따라 **2점 ↔ 4점 전환** |
-| 점접촉 Hertz | 동일 | 동일 | 동일 |
-| 5-DOF 평형식 | 현행 | **현행 그대로** | **신규** (접촉쌍이 2배, 전환 판정 필요) |
-| ISO 281 `X`/`Y` | Table 3 (α 별) | Table 3 (α = 0 행) | ISO §5.1 근사 |
-| `f_c` 표 열 | 접촉각별 | α = 0 | 근사 |
-| **현 코드 재사용률** | — | **≈ 100 %** | **기하·접촉 100 %, 평형 신규** |
-
-> **DGBB 에 필요한 것은 수명 계수(`X`/`Y`/`f_c` 열 선택)와 UI 기본값뿐이며, 둘 다 신 P5(수명)·P4(프론트) 범위 안에 있다.**
-> 4PCBB 만 새 평형 모듈(`four_point.rs`)이 필요하고, 그것도 `hertz.rs`·`util.rs` 를 그대로 쓴다.
-
-##### 3.6.9.4 왜 폴더를 파지 않는가
-
-`bb/acbb/`·`bb/dgbb/` 로 미리 나누면 DGBB 착수 시 **거의 동일한 코드가 복사**된다.
-그것이 §3.6.8.7 이 기록한 **이 프로젝트가 세 번 물린 방식**(TRB → CRB → BB 전체 복사)이다.
-변종 간 재사용률이 ≈ 100 % 인데 폴더를 나누는 것은 **중복을 제도화**하는 것과 같다.
-
-**대신 이렇게 한다.**
-
-```rust
-/// 볼베어링 변종 (계열 = BB). 기하·접촉·평형은 공유하고, 변종은 데이터로 구분한다.
-pub enum BallBearingKind {
-    /// 각접촉 — α₀ ≠ 0. 현재 검증 완료 범위
-    Acbb,
-    /// 심구 — α₀ = 0 인 Acbb 의 특수해. 솔버 코어 동일
-    Dgbb,
-    /// 4점접촉 — 궤도당 곡률중심 2개, 볼당 최대 4접촉. 평형 모듈 신규 필요
-    FourPoint,
-}
-```
-
-- 지금은 `Acbb` 만 **검증 완료**다. `Dgbb` 는 코어가 이미 동작하나 **수명 계수 미확보**,
-  `FourPoint` 는 **평형 미구현**이다. 이 상태를 `validate()` 에서 명시적으로 거부해
-  「되는 줄 알았는데 안 되는」 상황을 막는다.
-- 배열(DB/DF/DT 복열)은 **직교하는 축**이며 Theory §8.2 확장 후보 1번이다. 변종 enum 과 별도 필드로 둔다.
-
----
-
-#### 3.6.10 명명 규약 (확정)
-
-> **원칙**: 「중립 이름 + 폴더로만 구분」은 이 프로젝트에서 **세 번 실패했다.**
->
-> | 사례 | 결과 |
-> |---|---|
-> | `src/` 전 파일이 `types/bearing.ts`·`InputPanel/index.tsx` 같은 중립명 | **CRB 인 줄 알았는데 TRB** 였고, §3.6.2 를 쓰면서야 발견 |
-> | `.trb.json` | BB 저장소가 **TRB 확장자로 저장** 중 |
-> | `SkfTrbSeriesEnum` · `roller_taper_angle_deg` | CRB 에 TRB 이름·죽은 필드가 남아 항상 0 |
->
-> → **전용물에는 이름 자체에 소속을 박는다.** 접두사 층위는 **계열(`bb`)** 로 한다 —
-> 변종이 늘어도 이름을 바꿀 필요가 없고, 솔버가 실제로 볼 계열 공통이므로 정확하다.
-
-##### 3.6.10.1 대상별 규칙
-
-| 대상 | 규칙 | 예 | 근거 |
-|---|---|---|---|
-| **Tauri 커맨드** | **`bb_` 접두 필수** | `bb_solve_bearing` · `bb_compute_geometry` · `bb_compute_contact` · `bb_preset_*` | **전역 평면 네임스페이스** — Rust 모듈 경로가 통하지 않아 `generate_handler!` 에서 즉시 충돌한다. 선택이 아니라 하드 제약 |
-| **Rust 모듈** | **`solver/common/` ↔ `solver/bb/` 로 분리** | `solver/common/{util,types}.rs`<br/>`solver/bb/{types,geometry,hertz,bearing}.rs` | **프론트(`src/common` ↔ `src/bb`)와 대칭**을 이룬다. BB Rust 에도 진짜 공통물이 있다 — `util.rs`(E*·곡률합성·타원적분·Gauss-Legendre·스플라인)는 **접촉 형상과 무관**하다. `commands.rs`·`presets.rs` 는 Tauri 계층이라 최상위 유지 |
-| **crate lib 이름** | `app_lib` → **`bb_core`** | `use bb_core::solver::…` | Tauri 템플릿 기본값이라 유일하게 중립적이었다. 통합 시 crate 를 나누면 세 번 충돌한다 |
-| **Rust 타입** | **`Bearing` → `Bb` 치환** + 중립명에 **`Bb` 접두**. 공통물과 이름에 `Ball` 이 든 것은 무접두 | `BearingInput`→**`BbInput`** · `BearingResult`→**`BbResult`** · `GeometrySummary`→**`BbGeometrySummary`**<br/>유지: `Alert`·`Material`·`BallBearingGeometry`·`BallResult` | **14개 타입이 이름 중립 + CRB 에도 같은 개념 존재**. 모듈 경로는 컴파일 시점만 구분하고 **hover·에러메시지·스택트레이스·생성 TS·grep 에는 맨 이름만 나온다** — `index.tsx` 문제와 같은 구조. `Bearing` 접두는 어차피 정보가 0 이므로(전부 베어링) 치환이 자연스럽다 |
-| **프론트 폴더** | `src/common/` ↔ `src/bb/` | — | §3.6.8.5 |
-| **프론트 파일** | **평탄화** + **전용물에만 `Bb` 접두**. 하위 파일이 여럿인 것만 폴더 | `src/common/LoadDistPolar.tsx`<br/>`src/bb/BbContactEllipseView.tsx`<br/>`src/bb/BbSectionView.tsx` | `index.tsx` 관행은 에디터 탭·검색결과에서 **전부 `index.tsx` 로 보여** 구분이 불가능하다. 현 16개 중 하위파일이 있는 것은 `InputPanel`·`TransientView` 둘뿐 |
-| **프론트 타입** | `src/common/types.ts` + `src/bb/types.ts` | — | `types/bearing.ts` 784줄을 대체 |
-| **테스트** | 현 `<대상>_level_<등급>.rs` 유지 | `equilibrium_level_d3.rs` | `tests/` 는 crate 내부라 충돌하지 않는다 |
-| **문서** | `BB_Development_*.md` 유지 (**계열**) | — | 변종이 늘어도 문서를 쪼갤 이유가 없다. 범위는 본문에 명시 |
-| **프로젝트 파일** | `.bb.json` + **`bearing_kind` 필드**(변종까지) | `{"bearing_family":"bb","bearing_kind":"acbb",…}` | 충돌 8. 확장자는 계열, 필드는 변종 |
-| **프리셋** | `presets/bb/` 하위 + 페이로드에 `kind` | — | 충돌 7 — 같은 디렉터리에서 섞이면 serde 가 조용히 잘못 읽는다 |
-
-> **접두 판정 규칙**: 「이름만 보고 어느 계열인지 알 수 없고, **다른 계열에도 같은 개념이 존재**하면」 → `Bb` 접두.
-> 이름에 이미 `Ball` 이 있거나 계열 무관이면 → 무접두.
->
-> | 분류 | 타입 | 조치 |
-> |---|---|:---:|
-> | 진짜 공통 (6) | `SolverProgress` · `ProgressReporter`/`NoopReporter` · `Material` · `Alert` · `AlertLevel` · `SolverError` | 무접두, **`solver/common/` 으로 이동** |
-> | 이름에 계열 있음 (2) | `BallBearingGeometry` · `BallResult` | 무접두, `bb/` |
-> | 🔴 중립명 (14) | `BearingInput` · `BearingResult` · `BearingEquilibrium` · `GeometryDerived` · `GeometrySummary` · `ContactDerived` · `SolverParams` · `OperatingConditions` · `ClearanceSpec` · `PreloadModel` · `PhaseSweep` · `PhaseSweepResult` · `Dof` · `DofMask` | **`Bb` 접두**, `bb/` |
->
-> ⚠️ `Displacement`·`DofMask` 는 BB 가 규약 SSOT 이나(§3.6.8.6) **물리적 위치는 `bb/`** 에 둔다.
-> CRB·TRB 가 실제로 채택하는 시점에 `common/` 으로 승격한다 — 쓰는 곳이 하나뿐인데 미리 공통에 두면 근거 없는 추상화가 된다.
-
-##### 3.6.10.2 기계적 강제 — 규율이 아니라 도구가 지킨다
-
-Level A-8(단위 접미사 기계 검사)이 **실제 오류를 3회 잡았다**(`c_p_n_per_mm15` 누락, `elapsed_ms` 환산,
-`* 1000.0` 혼입). 같은 방식을 경계에도 적용한다.
-
-| 장치 | 검사 내용 | 위치 |
-|---|---|---|
-| **ESLint `no-restricted-imports`** | `src/common/**` 이 `src/bb/**` 를 import 하면 **에러** | `eslint.config.js` |
-| **A-8 확장 ①** | `Displacement` 의 전 필드가 단위 접미사를 갖는가 (`dx_mm`·`ry_rad`) | `tests/geometry_level_a.rs` |
-| **A-8 확장 ②** | `BearingInput`·`BearingResult` 에 `kind` 판별자가 존재하는가 | 〃 |
-| **A-8 확장 ③** | 솔버 소스에 `trb`·`roller`·`slice`·`rib` 식별자가 남아 있지 않은가 | 〃 |
-
-> ③ 이 특히 중요하다. CRB 가 `SkfTrbSeriesEnum`·`roller_taper_angle_deg` 를 두 세대째 끌고 있는 것이
-> **사람 규율로는 못 막는다**는 증거다.
-
-##### 3.6.10.3 `Displacement` named struct 의 부수 효과
-
-현재 `displacement: [f64; 5]` 는 배열이라 **D-10 단위 접미사 검사(A-8)를 우회**하고 있다.
-named struct 로 바꾸면 `pub … : f64` 가 되어 자동으로 검사 대상이 된다:
-
-```rust
-/// 5-DOF 평형 변위 (D-7 좌표계: X = 회전축).
-/// ⚠ CRB 의 `[f64;5]` 는 `[δx, δy, δz=0, γx, γy=0]` 로 **인덱스 3의 의미가 다르다**.
-///    배열을 쓰면 타입 검사를 통과하면서 조용히 틀린다 (§3.6.8.2 충돌 3).
-pub struct Displacement {
-    pub dx_mm: f64,
-    pub dy_mm: f64,
-    pub dz_mm: f64,
-    pub ry_rad: f64,
-    pub rz_rad: f64,
-}
-```
-
-**의도치 않게 얻는 이득이다** — 지금 배열은 단위 검사의 사각지대였다.
 
 ---
 
@@ -1102,21 +1244,24 @@ pub struct Displacement {
 > 구조 다이어그램(현행/목표), 탭 구성 3안, `ProfileView`·`SectionView2D` 대체 판정,
 > 상태·타입 변경. 아래는 **작업 순서만** 적는다.
 
-**작업 (§3.6.7)**
+**작업 — 전체는 §3.6.5 에 있다** (S0-1 ~ S5 · 9단계)
 
-| 단계 | 내용 | DoD |
-|---|---|---|
-| **S1** | `types/bearing.ts` 대체 · D등급 14파일 삭제 · `store.ts` 정리 | `npm run build` 통과 |
-| **S2** | `InputPanel` BB 4블록 재매핑 | `solve_bearing` 왕복 성공 |
-| **S3** | `GeometryView` + `compute_geometry` 연결 · `ResultsCard` 5-DOF · `AlertPanel` | Level A 결과가 화면과 일치 |
-| **S4** | `LoadDistChart` 개조(`Q_j` + **`α_j(φ)`**) · Contact Ellipse View(`RibContactDetailChart` 개조 + `compute_contact`) | Level C·D 결과가 화면과 일치 |
-| **S5** | BB 축단면 뷰 신규 · `BearingView3D` 개조 · 타이틀/확장자 | build + lint 통과 |
+| 단계 | 요지 |
+|---|---|
+| **S0-1~4** | 레벨 1 선반영 — 중복 9 830줄 삭제 · `solver/{common,bb}/` 재편 · `app_lib`→`bb_core` · 타입 접두사 · `Displacement`/`BallBearingKind` |
+| **S1** | 타입 SSOT · 폴더·명명 경계 · 커맨드 `bb_` 접두 · **ESLint + A-8 확장으로 기계 강제** |
+| **S2~S3** | `InputPanel` 재매핑 → `GeometryView`·`ResultsCard`·`AlertPanel` |
+| **S4** | **핵심 검증 뷰** — `LoadDistPolar`(`Q_j`·`α_j(φ)`) + Contact Ellipse |
+| **S5** | BB 축단면 · 3D · `.bb.json`·프리셋 태그 |
+
+> 각 단계의 산출·DoD 와 **각 뷰가 어느 Level 을 눈으로 검증하는지**(§3.6.4.2)는 §3.6 을 볼 것.
+> 여기에 표를 중복해 두면 §3.6.5 와 어긋난다.
 
 **DoD**: `npm run build` + `npm run lint` 통과, 살아남은 전 뷰가 실제 솔버 출력으로 동작, `@ts-nocheck` 0, 죽은 `invoke` 0
 
-> ⚠️ **미결정 (S1 착수 전)**: ① 타입 동기화 방식(ts-rs 자동생성 ↔ 수작업) ② 탭 구성 3안 중 택1 ③ 삭제 시점(D등급 14파일 + `LubricationView` 2 439줄) ④ 시각 확인 절차 — Claude 는 서버를 직접 띄우지 않는다(CLAUDE.md 필수 준수 1)
+> ⚠️ **미결정 (S1 착수 전)**: ① 타입 동기화 방식(ts-rs 자동생성 ↔ 수작업) ② 탭 구성 3안 중 택1(§3.6.4.1) ③ 삭제 시점(D등급 14파일 + `LubricationView` 2 439줄) ④ 시각 확인 절차 — Claude 는 서버를 직접 띄우지 않는다(CLAUDE.md 필수 준수 1)
 
-> 🔗 **통합 관점은 §3.6.8** (충돌 8건 · 공통↔전용 경계 · 레벨 1 비용 · BB 규약 SSOT) · **BB 계열 확장은 §3.6.9** (ACBB·DGBB·4PCBB 변종 enum) · **명명 규약은 §3.6.10**.
+> 🔗 **통합 관점은 §3.6.1** (충돌 8건 · 공통↔전용 경계 · 레벨 1 비용 · BB 규약 SSOT) · **BB 계열 확장은 §3.6.1.3** (ACBB·DGBB·4PCBB 변종 enum) · **명명 규약은 §3.6.1.6**.
 
 ---
 
