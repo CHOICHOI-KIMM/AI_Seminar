@@ -43,3 +43,9 @@ Main bearing/01. 정리/Python 자동화/Results/**/*.log
 # 스크리닝 ε 맵 — 설계 × DLC × k 301수준이라 파일당 60 MB 다 (260805)
 # 진단용 중간 산출이고 screen_k.csv 로 최종 k 가 남으므로 추적하지 않는다
 **/screen_eps_map.csv
+
+# Obsidian 편집기 레이아웃 — 볼트를 열 때마다 갱신되어 매번 변경으로 잡힌다 (260819)
+.obsidian/workspace.json
+
+# TRB-main: 프론트엔드 구조 참조용 로컬 사본 (원본은 별도 관리, 커밋 제외 260821)
+TRB-main/
