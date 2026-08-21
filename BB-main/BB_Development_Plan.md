@@ -543,7 +543,10 @@ BB `BearingResult` 에 **하나도 없다**. 현재 `BearingResult` 는
 
 | 단계 | 내용 | 산출 | DoD |
 |---|---|---|---|
-| **S0** | **레벨 1 선반영** — 비활성 중복 3파일(9 830줄) 삭제 · `displacement` → `Displacement` named struct · **`BallBearingKind` enum 도입**(`Acbb` 만 검증완료, 나머지는 `validate()` 에서 거부) (§3.6.8.5 · §3.6.9) | 통합·확장 대비 경계 | `cargo test` 118개 유지, clippy 0 |
+| **S0-1** | 비활성 중복 3파일(`life`·`static_rating`·`lubrication`, 9 830줄) 삭제 | 죽은 코드 제거 | `cargo test` 118개 유지 |
+| **S0-2** | `solver/{common,bb}/` 폴더 재편 (공통 6타입 + `util.rs` → `common/`) · `app_lib` → `bb_core` · A-8 `include_str!` 경로 갱신 | 구조 경계 | 〃 |
+| **S0-3** | 타입 접두사 규칙 적용 (`Bearing`→`Bb` 치환 + 중립명 14개) (§3.6.10.1) | 이름 경계 | 〃 |
+| **S0-4** | `displacement` → `Displacement` named struct · **`BallBearingKind` enum**(`Acbb` 만 검증완료, 나머지 `validate()` 거부) (§3.6.9) | 확장·통합 대비 | 〃, clippy 0 |
 | **S1** | `types/bearing.ts` → `common/types.ts` + `bb/types.ts` · 죽은 파일 삭제(D등급 14) · `store.ts` 정리 · **`src/common/` ↔ `src/bb/` 분리** · **파일 평탄화·`Bb` 접두** (§3.6.10) · **`kind` 판별자** · **커맨드 `bb_` 접두** · **ESLint 경계 규칙 + A-8 확장 3항목** | 타입 SSOT · 경계 기계 강제 | `npm run build` + `npm run lint` 통과, `@ts-nocheck` 잔여 0 |
 | **S2** | `InputPanel` BB 4블록 재매핑 (`geometry`/`material`/`operating`/`solver`) + `ClearanceSpec` 3종 · `PreloadModel` 2종 · `DofMask` · 위상스윕 | 입력 가능 | `solve_bearing` 왕복 성공 |
 | **S3** | `GeometryView` 개조 + `compute_geometry` 첫 연결 · `ResultsCard` 5-DOF 요약 · `AlertPanel` | 기하·요약 확인 | Level A 결과가 화면과 일치 |
@@ -866,8 +869,9 @@ pub enum BallBearingKind {
 | 대상 | 규칙 | 예 | 근거 |
 |---|---|---|---|
 | **Tauri 커맨드** | **`bb_` 접두 필수** | `bb_solve_bearing` · `bb_compute_geometry` · `bb_compute_contact` · `bb_preset_*` | **전역 평면 네임스페이스** — Rust 모듈 경로가 통하지 않아 `generate_handler!` 에서 즉시 충돌한다. 선택이 아니라 하드 제약 |
-| **Rust 모듈** | 현 `solver/` 유지. 통합 시 crate 째 `bb::` | `solver/bearing.rs` | crate 가 이미 BB 전용이므로 지금 중복 접두는 잡음 |
-| **Rust 타입** | 접두사 없음 (모듈 경로로 구분). 이미 계열이 이름에 있는 것은 유지 | `BearingInput` · `BallBearingGeometry` | 통합 시 `bb::BearingInput` 로 구분된다. 단 `kind` 판별자로 serde 충돌은 별도 차단 |
+| **Rust 모듈** | **`solver/common/` ↔ `solver/bb/` 로 분리** | `solver/common/{util,types}.rs`<br/>`solver/bb/{types,geometry,hertz,bearing}.rs` | **프론트(`src/common` ↔ `src/bb`)와 대칭**을 이룬다. BB Rust 에도 진짜 공통물이 있다 — `util.rs`(E*·곡률합성·타원적분·Gauss-Legendre·스플라인)는 **접촉 형상과 무관**하다. `commands.rs`·`presets.rs` 는 Tauri 계층이라 최상위 유지 |
+| **crate lib 이름** | `app_lib` → **`bb_core`** | `use bb_core::solver::…` | Tauri 템플릿 기본값이라 유일하게 중립적이었다. 통합 시 crate 를 나누면 세 번 충돌한다 |
+| **Rust 타입** | **`Bearing` → `Bb` 치환** + 중립명에 **`Bb` 접두**. 공통물과 이름에 `Ball` 이 든 것은 무접두 | `BearingInput`→**`BbInput`** · `BearingResult`→**`BbResult`** · `GeometrySummary`→**`BbGeometrySummary`**<br/>유지: `Alert`·`Material`·`BallBearingGeometry`·`BallResult` | **14개 타입이 이름 중립 + CRB 에도 같은 개념 존재**. 모듈 경로는 컴파일 시점만 구분하고 **hover·에러메시지·스택트레이스·생성 TS·grep 에는 맨 이름만 나온다** — `index.tsx` 문제와 같은 구조. `Bearing` 접두는 어차피 정보가 0 이므로(전부 베어링) 치환이 자연스럽다 |
 | **프론트 폴더** | `src/common/` ↔ `src/bb/` | — | §3.6.8.5 |
 | **프론트 파일** | **평탄화** + **전용물에만 `Bb` 접두**. 하위 파일이 여럿인 것만 폴더 | `src/common/LoadDistPolar.tsx`<br/>`src/bb/BbContactEllipseView.tsx`<br/>`src/bb/BbSectionView.tsx` | `index.tsx` 관행은 에디터 탭·검색결과에서 **전부 `index.tsx` 로 보여** 구분이 불가능하다. 현 16개 중 하위파일이 있는 것은 `InputPanel`·`TransientView` 둘뿐 |
 | **프론트 타입** | `src/common/types.ts` + `src/bb/types.ts` | — | `types/bearing.ts` 784줄을 대체 |
@@ -875,6 +879,18 @@ pub enum BallBearingKind {
 | **문서** | `BB_Development_*.md` 유지 (**계열**) | — | 변종이 늘어도 문서를 쪼갤 이유가 없다. 범위는 본문에 명시 |
 | **프로젝트 파일** | `.bb.json` + **`bearing_kind` 필드**(변종까지) | `{"bearing_family":"bb","bearing_kind":"acbb",…}` | 충돌 8. 확장자는 계열, 필드는 변종 |
 | **프리셋** | `presets/bb/` 하위 + 페이로드에 `kind` | — | 충돌 7 — 같은 디렉터리에서 섞이면 serde 가 조용히 잘못 읽는다 |
+
+> **접두 판정 규칙**: 「이름만 보고 어느 계열인지 알 수 없고, **다른 계열에도 같은 개념이 존재**하면」 → `Bb` 접두.
+> 이름에 이미 `Ball` 이 있거나 계열 무관이면 → 무접두.
+>
+> | 분류 | 타입 | 조치 |
+> |---|---|:---:|
+> | 진짜 공통 (6) | `SolverProgress` · `ProgressReporter`/`NoopReporter` · `Material` · `Alert` · `AlertLevel` · `SolverError` | 무접두, **`solver/common/` 으로 이동** |
+> | 이름에 계열 있음 (2) | `BallBearingGeometry` · `BallResult` | 무접두, `bb/` |
+> | 🔴 중립명 (14) | `BearingInput` · `BearingResult` · `BearingEquilibrium` · `GeometryDerived` · `GeometrySummary` · `ContactDerived` · `SolverParams` · `OperatingConditions` · `ClearanceSpec` · `PreloadModel` · `PhaseSweep` · `PhaseSweepResult` · `Dof` · `DofMask` | **`Bb` 접두**, `bb/` |
+>
+> ⚠️ `Displacement`·`DofMask` 는 BB 가 규약 SSOT 이나(§3.6.8.6) **물리적 위치는 `bb/`** 에 둔다.
+> CRB·TRB 가 실제로 채택하는 시점에 `common/` 으로 승격한다 — 쓰는 곳이 하나뿐인데 미리 공통에 두면 근거 없는 추상화가 된다.
 
 ##### 3.6.10.2 기계적 강제 — 규율이 아니라 도구가 지킨다
 
