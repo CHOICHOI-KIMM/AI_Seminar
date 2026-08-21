@@ -253,6 +253,301 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 
 ---
 
+### 3.6 프론트엔드 구조 — TRB 현행 ↔ BB 목표
+
+> 조사일 2026-08-21. 신 Phase 4 착수 전 전수 조사 결과.
+>
+> ⚠️ **전제 정정**: `src/` 는 CRB 가 아니라 **TRB(테이퍼 롤러) 코드**다. 앱 타이틀이
+> `TRB Contact Analysis`, 프로젝트 저장 확장자가 `.trb.json`, `alpha_rib`·`r_rib_circ`·
+> 리브 접촉 로직이 곳곳에 남아 있다. 모든 파일 헤더에 `// CRB Phase 1.4 stub … Phase 6
+> 에서 정식 재작성 예정` 주석이 붙어 있고, 그 "Phase 6" 이 지금의 **신 Phase 4** 다.
+
+#### 3.6.1 왜 바꾸는가 — TRB ↔ ACBB 물리 대비
+
+프론트의 모든 뷰는 **롤러 선접촉**을 전제로 설계되어 있다. 볼로 바뀌면 그 전제가 사라진다.
+
+| # | 개념 | TRB (현행 프론트의 전제) | ACBB (BB 솔버) | 프론트에 미치는 영향 |
+|---|---|---|---|---|
+| 1 | **접촉 형태** | 선접촉. 롤러 유효길이 `L_we` 를 `n_slices` 로 분할, 슬라이스별 `q_k`·`b_k`·`p_k` | **점접촉 1개.** 타원 `(a, b, p_max)` 가 볼당 내륜·외륜 2쌍 | 축방향 분포 차트가 **전멸**한다. 대신 **타원 형상 뷰**가 필요 |
+| 2 | **접촉각** | 롤러 경사 `γ = (α_i+α_o)/2` — 기하로 **고정** | 볼별 `α_j` 가 **하중에 따라 변한다** (`α_j = atan2(X_j, R_j)`) | CRB·TRB 에 없던 자유도. **`α_j(φ)` 곡선**과 단면도의 `α₀ ↔ α_j` 겹쳐그리기가 신설 대상 |
+| 3 | **회전축** | **Z** 축 | **X** 축 (ISO 규약, D-7) | 3D 뷰·단면도의 좌표 전면 교체. `CRB X→BB Y`, `CRB Y→BB Z`, `CRB Z→BB X` |
+| 4 | **평형 자유도** | 결과 표시는 사실상 반경 위주 | **5-DOF** `(δ_x, δ_y, δ_z, γ_y, γ_z)` | 결과 카드가 **5성분 + 접촉각 범위 + 수렴정보**로 재구성 |
+| 5 | **해석 모드** | Gen1(독립 슬라이스) ↔ Gen3(빔 결합) **이중 모드** | **단일 모드** (D-1) | `ComparisonView`·`DualModeToggle`·`RollerComparisonChart` 의 **존재 이유 소멸** |
+| 6 | **리브 접촉** | 대단부 리브 = **타원 점접촉** (별도 뷰) | 리브 없음 | 뷰는 죽지만 **코드는 산다** — 이 저장소에서 유일하게 타원 점접촉 히트맵을 그린다 (§3.6.5) |
+| 7 | **프로파일** | 크라우닝 `Δz(x)` — 로그/원호/포물선/커스텀 **곡선** | **오스큘레이션 스칼라 2개** `f_i = r_i/D_w`, `f_e = r_e/D_w` | **그릴 자유도 자체가 없다.** `ProfileView` 는 개조 불가 |
+| 8 | **수명** | 슬라이스(라미나)별 수명 적산 | 볼별 `Q_ci`/`Q_ce` → ISO 16281 §5.2 | `LifeChart` 는 신 **P5** 에서 신규. 지금은 대상 아님 |
+| 9 | **윤활** | HMEHL · 마이크로피팅 · 리브 EHL · 슬라이스 유막 | 점접촉 Hamrock-Dowson (`κ`, `Λ`) | `LubricationView` 2 439줄이 **전부 폐기 모듈 참조**. 신 **P6** 에서 신규 |
+| 10 | **과도 / 열속도** | transient 솔버, ISO 15312 | **폐기** (Plan §2) | `TransientView`·`ThermalSpeedView` 삭제 |
+
+> **요약**: 1·2·7 이 이번 Phase 의 핵심이다. 「축방향 분포가 사라지고 타원 형상이 들어오며,
+> 접촉각이 상수에서 변수가 된다」 — 이 세 문장이 프론트 변경안 전체를 결정한다.
+
+#### 3.6.2 현행 인벤토리 (전 44파일, 11 067줄)
+
+`invoke` 열의 ~~취소선~~ 은 **등록 해제된 죽은 커맨드**다. 등급은 A 재활용 / B 개조 / C 대체 / D 삭제.
+
+**components/ (32파일 · 9 868줄)**
+
+| 파일 | 줄수 | nocheck | invoke | 등급 | 근거 |
+|---|---:|:---:|---|:---:|---|
+| `AlertPanel/index.tsx` | 41 | | | **A** | `alerts[{level, category, message}]` → BB 는 `{level, code, message}`. `category`→`code` 한 줄 |
+| `ProgressBar.tsx` | 41 | | | **A** | `listen('solver-progress')` 만 사용. 물리 무관 |
+| `charts/PlotWithCopy.tsx` | 158 | | | **A** | Plotly 래퍼 + 우클릭 데이터 복사(TSV/CSV/JSON) |
+| `charts/plotlyDefaults.ts` | 35 | | | **A** | `darkLayout` / `plotConfig` / viridis |
+| `shared/DetailTable.tsx` | 26 | | | **A** | 순수 표시 컴포넌트 |
+| `CanvasArea/index.tsx` | 89 | | | **B** | 탭 셸 유지. 11탭 중 4개 제거 + 신설 (§3.6.4) |
+| `GeometryView/index.tsx` | 326 | ✓ | | **B** | `DetailTable` 나열 구조 유지. `l_we`·`d_we`·리브·크라우닝 행 → `A`·`α₀`·`f_i/f_e`·`Σρ`·`γ`·`g_r_op`·`n·D_pw` (BB `GeometrySummary` 와 거의 1:1) |
+| `ResultsCard/index.tsx` | 492 | ✓ | | **B** | 접이식 사이드바 셸 유지. 표시 물리량 교체 (5-DOF 변위·`α_j` 범위·`Q_max`·`loaded_count`·`p_max`) |
+| `BearingView3D/index.tsx` | 262 | ✓ | | **B** | R3F/three 뼈대 유지. 테이퍼 롤러 메쉬 → `sphereGeometry`, 축 Z→X |
+| `InputPanel/index.tsx` | **1696** | ✓ | presets 6 · `solve_bearing` · ~~`solve_bearing_dual`~~ ~~`parse_load_csv`~~ ~~`solve_transient`~~ | **B** | 아코디언·프리셋·필드검증 **프레임워크가 자산**. Geometry/Profile/Transient/Dual 섹션 대량 삭제 + BB 4블록 재매핑 → **실질 절반 재작성** |
+| `InputPanel/FieldGroup.tsx` | 68 | | | **B** | 필드 그룹 프리미티브. 라벨·단위만 |
+| `charts/LoadDistChart.tsx` | 455 | ✓ | | **B** | 원주방향 `Q(ψ)` 극좌표/막대 골격 우수. `rollers[].q_total` → `ball_results[].q_n`, 축방향 서브플롯 제거, **`α_j(φ)` 곡선 추가** |
+| `charts/StressContourChart.tsx` | 508 | | | **B** | 히트맵 인프라 유지. (슬라이스 × 접촉폭) 격자 → 단일 타원 내 `p(x,y)`, 내/외륜 탭 유지 |
+| `charts/RibContactDetailChart.tsx` | 354 | ✓ | | **B ⭐** | **이 저장소에서 유일하게 이미 타원 점접촉 히트맵을 그린다.** 리브 접촉 → 볼–궤도 접촉 치환이 최단 경로 |
+| `ProfileView/index.tsx` | 590 | ✓ | | **C** | 대비표 #7 — 그릴 자유도 자체가 없음 (§3.6.5) |
+| `SectionView2D/index.tsx` | 447 | ✓ | | **C** | 형상 계산부(사다리꼴 롤러·리브·γ 경사축) 약 200줄 폐기. **치수선 헬퍼는 살릴 값어치 있음** (§3.6.5) |
+| `LubricationView/index.tsx` | **2439** | ✓ | ~~`run_hmehl`~~ | **C** | 최대 파일이자 최대 사망자. 참조 모듈 전부 폐기. 신 P6 에서 요약 카드 수준으로 신규 |
+| `charts/LifeChart.tsx` | 349 | ✓ | | **C** | `result.life` 없음. 신 P5 에서 레이아웃만 참고 |
+| `charts/ContactPatchChart.tsx` | 145 | | | **C** | 슬라이스를 x축으로 쓰는 패치 컨투어. `RibContactDetailChart` 로 대체됨 |
+| `ComparisonView/index.tsx` | 2 | | | **D** | re-export 스텁. Gen1/Gen3 폐기 |
+| `ContourMap/index.tsx` | 2 | | | **D** | re-export 스텁 (실체 없음) |
+| `ResultCharts/index.tsx` | 2 | | | **D** | re-export 스텁 |
+| `DualModeToggle.tsx` | 30 | | | **D** | Gen1/Gen3 토글 그 자체 |
+| `ThermalSpeedView/index.tsx` | 133 | | | **D** | `result.thermal_speed` 없음. 대응 모듈 폐기 |
+| `TransientView/index.tsx` | 66 | | | **D** | transient 폐기 |
+| `TransientView/SliceSlidingContour.tsx` | 168 | | | **D** | 슬라이스 개념 자체 |
+| `TransientView/RollerDynamicsChart.tsx` | 157 | | | **D** | 롤러 동역학 |
+| `TransientView/DamageRiskView.tsx` | 127 | | | **D** | WEC 위험도 — 모듈 폐기 |
+| `TransientView/TransientTimeChart.tsx` | 105 | ✓ | | **D** | 시간이력 |
+| `charts/ComparisonChart.tsx` | 239 | | | **D** | Gen1/Gen3 비교 |
+| `charts/RollerComparisonChart.tsx` | 160 | ✓ | | **D** | Gen1 vs Gen3 롤러 오버레이 |
+| `charts/RollerDetailChart.tsx` | 156 | ✓ | | **D** | 단일 롤러 슬라이스 분포 |
+
+**components/ 밖 (12파일 · 1 199줄)**
+
+| 파일 | 줄수 | invoke | 등급 | 근거 |
+|---|---:|---|:---:|---|
+| `types/bearing.ts` | **784** | | **C** | **전부 TRB.** Rust `types.rs` 기준 전면 재작성. 살아남는 것은 `Alert`·`AlertLevel`·`Material` 정도. **프론트 전환의 첫 작업** |
+| `store.ts` | 80 | | **B** | `useReducer` + Context 1개. **구조가 좋아 유지.** dual/transient 필드·액션 3종만 제거 |
+| `App.tsx` | 100 | | **B** | Context 제공 + 레이아웃. 타이틀 `TRB` → `BB` |
+| `defaults.ts` | 124 | | **C** | TRB 기본 입력값. BB 스키마로 교체 |
+| `project.ts` | 34 | | **B** | `.trb.json` → `.bb.json` |
+| `hooks/useActiveResult.ts` | 11 | | **B** | dual 분기 제거 시 `state.result` 반환 한 줄. **호출부 유지 위해 남기는 편이 diff 가 작다** |
+| `hooks/useSolver.ts` | 56 | ~~`compute_slice_geometry`~~ ~~`compute_hertz_single_slice`~~ | **D** | 둘 다 죽은 커맨드. 어디서도 import 되지 않음 |
+| `main.tsx` | 10 | | **A** | 엔트리 |
+
+**집계**: A 6 · B 12 · C 6 · D 14 (스텁 3 포함) · 기타 6.
+`@ts-nocheck` **13파일**. **죽은 `invoke` 6종** — `solve_bearing_dual` · `parse_load_csv` · `solve_transient` · `run_hmehl` · `compute_slice_geometry` · `compute_hertz_single_slice`.
+
+> ⚠️ **등록만 되고 아무도 호출하지 않는 커맨드 2종**: `compute_geometry` · `compute_contact`.
+> 신 `GeometryView` 와 접촉타원 뷰의 **연결 지점**이다.
+
+#### 3.6.3 구조 다이어그램
+
+**현행** — 붉은 노드가 죽은 경로다.
+
+```mermaid
+graph LR
+  subgraph RUST["Rust · commands.rs"]
+    CG["compute_geometry<br/>(등록됨 · 미사용)"]
+    CC["compute_contact<br/>(등록됨 · 미사용)"]
+    SB["solve_bearing"]
+    PR["presets 6종"]
+    DEAD["solve_bearing_dual · run_hmehl<br/>solve_transient · parse_load_csv<br/>compute_slice_geometry · compute_hertz_single_slice"]
+  end
+  subgraph FE["React"]
+    APP["App.tsx<br/>AppContext"]
+    ST["store.ts<br/>useReducer"]
+    IP["InputPanel<br/>1696줄"]
+    CA["CanvasArea<br/>11 탭"]
+    RC["ResultsCard"]
+    AP["AlertPanel"]
+  end
+  subgraph TABS["탭 11개"]
+    T1["Geometry"]; T2["Profile"]; T3["Section"]; T4["3D View"]
+    T5["Load Dist"]; T6["Stress Contour"]; T7["Lubrication"]; T8["Life"]
+    T9["Thermal Speed"]; T10["Comparison"]; T11["Transient"]
+  end
+  APP --> ST
+  APP --> IP
+  APP --> CA
+  APP --> RC
+  APP --> AP
+  IP -->|invoke| SB
+  IP -->|invoke| PR
+  IP -.->|죽음| DEAD
+  CA --> T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11
+  T7 -.->|죽음| DEAD
+  CG -.->|미연결| FE
+  CC -.->|미연결| FE
+
+  classDef dead fill:#4a1520,stroke:#c0392b,color:#f5b7b1
+  classDef idle fill:#3a3520,stroke:#b7950b,color:#f9e79f
+  class DEAD,T2,T7,T9,T10,T11 dead
+  class CG,CC idle
+```
+
+**목표** — 초록이 신설, 파랑이 개조, 회색이 유지.
+
+```mermaid
+graph LR
+  subgraph RUST["Rust · commands.rs"]
+    CG["compute_geometry"]
+    CC["compute_contact"]
+    SB["solve_bearing"]
+    PR["presets 6종"]
+  end
+  subgraph FE["React"]
+    APP["App.tsx<br/>AppContext"]
+    ST["store.ts<br/>dual·transient 제거"]
+    TY["types/bb.ts<br/>Rust types.rs 기준 재작성"]
+    IP["InputPanel<br/>BB 4블록"]
+    CA["CanvasArea"]
+    RC["ResultsCard<br/>5-DOF 요약"]
+    AP["AlertPanel"]
+  end
+  subgraph TABS["탭"]
+    G["Geometry<br/>compute_geometry 연결"]
+    S["Section<br/>축단면 + α₀↔α_j"]
+    L["Load<br/>Q_j·α_j 극좌표"]
+    E["Contact Ellipse<br/>a·b·p_max"]
+    D3["3D View<br/>볼 세트"]
+  end
+  APP --> ST --> TY
+  APP --> IP --> CA
+  APP --> RC
+  APP --> AP
+  IP -->|invoke| SB
+  IP -->|invoke| PR
+  G -->|invoke| CG
+  E -->|invoke| CC
+  CA --> G & S & L & E & D3
+  P5["신 P5 : Life 탭"]:::later
+  P6["신 P6 : Lubrication 탭"]:::later
+  CA -.-> P5
+  CA -.-> P6
+
+  classDef new fill:#123524,stroke:#27ae60,color:#a9dfbf
+  classDef mod fill:#12283a,stroke:#2980b9,color:#aed6f1
+  classDef later fill:#2c2c2c,stroke:#7f8c8d,color:#bdc3c7,stroke-dasharray:4 3
+  class E,S,TY new
+  class G,L,D3,IP,RC,CA,ST mod
+```
+
+#### 3.6.4 탭 구성 — 3안 병기
+
+현행 11탭 중 **4탭이 즉시 사망**(`Profile`·`Thermal Speed`·`Comparison`·`Transient`)하고
+2탭이 **후속 Phase 로 이월**(`Life`→P5, `Lubrication`→P6)한다. 남는 5탭을 어떻게 구성할지 3안.
+
+| 현행 탭 | 안 A (5탭 · 이월 숨김) | 안 B (7탭 · 자리 확보) | 안 C (4탭 · 초집중) |
+|---|---|---|---|
+| Geometry | ✅ 개조 | ✅ 개조 | ✅ 개조 |
+| Profile | ➡ **Contact Ellipse 로 교체** | ➡ **Contact Ellipse 로 교체** | ➡ **Contact Ellipse 로 교체** |
+| Section | 🔄 **BB 축단면 신규** | 🔄 **BB 축단면 신규** | 🔄 **BB 축단면 신규** |
+| 3D View | ✅ 개조 | ✅ 개조 | ❌ 이번엔 제외 |
+| Load Distribution | ✅ 개조 (+`α_j(φ)`) | ✅ 개조 (+`α_j(φ)`) | ✅ 개조 (+`α_j(φ)`) |
+| Stress Contour | 🔀 Contact Ellipse 에 흡수 | 🔀 Contact Ellipse 에 흡수 | 🔀 흡수 |
+| Lubrication | ❌ 숨김 (P6 에서 부활) | ⏳ 빈 탭 "P6 예정" | ❌ 숨김 |
+| Life | ❌ 숨김 (P5 에서 부활) | ⏳ 빈 탭 "P5 예정" | ❌ 숨김 |
+| Thermal Speed / Comparison / Transient | ❌ 삭제 | ❌ 삭제 | ❌ 삭제 |
+| **결과 탭 수** | **5** | **7** | **4** |
+
+| | 장점 | 단점 |
+|---|---|---|
+| **안 A** | 화면에 **동작하는 것만** 남아 검증에 집중된다. 빈 탭이 없어 「이건 왜 비어 있지」가 생기지 않는다 | P5·P6 에서 `CanvasArea` 와 `CanvasTab` 타입을 다시 건드린다 (각 2줄) |
+| **안 B** | 최종 형태가 처음부터 보인다. P5·P6 는 컴포넌트만 갈아끼우면 됨 | **빈 탭 2개가 계속 보인다.** 검증용 화면에 노이즈. 「미구현」 표시를 별도로 만들어야 함 |
+| **안 C** | 가장 빠르다. 3D 는 미세한 수치 차이를 못 읽으므로 검증 가치가 낮다 | 볼 배치·접촉각의 **공간적 직관**을 잃는다. 3D 개조는 262줄로 크지 않다 |
+
+> **권장: 안 A.** 「접촉/하중을 먼저 눈으로 검증한다」가 이 Phase 의 목적이므로,
+> 화면에 **검증 가능한 것만** 두는 편이 목적에 맞다. P5·P6 의 탭 추가 비용은 각 2줄이다.
+
+#### 3.6.5 대체 판정 상세 — `ProfileView` 와 `SectionView2D`
+
+**`ProfileView` (590줄) — 개조 불가, 삭제**
+
+내용은 롤러 유효길이 `L_we` 를 x축으로 하는 `Δz(x)` 프로파일 5종(롤러 크라우닝 / 내륜 궤도 /
+외륜 궤도 / 내륜 합성 / 외륜 합성)이고, 코어는 `Δz = δ_c·(2x/L_we)²` 류의 크라우닝 식과
+로그 크라운·다항식·커스텀 보간이다. x 격자는 `solver.n_slices` 로 나눈다.
+
+BB 에서 이 뷰의 기반이 **전부 소멸**한다:
+
+| | 이유 |
+|---|---|
+| (a) | 볼은 점접촉이라 **"축방향 위치 x" 가 없다** |
+| (b) | 크라우닝·로그 프로파일·엣지응력 완화는 **선접촉 엣지로딩 대책**이라 대응 개념이 없다 |
+| (c) | `n_slices` 가 BB `SolverParams` 에 **존재하지 않는다** |
+| (d) | 볼–궤도 형상은 **스칼라 2개(`f_i`, `f_e`)로 완결**된다 — 곡선을 그릴 자유도 자체가 없다 |
+
+살릴 것은 SVG 차트 셸(축 스케일링·주석·우클릭 복사)뿐이고 그것은 `PlotWithCopy` 로 이미 대체된다.
+→ **Profile 탭을 Contact Ellipse View 로 교체**한다. 볼 `j` 선택 → 내/외륜 접촉타원 2개를
+실제 축척으로 겹쳐 그리고(`a`, `b`, `a/b`, `p_max`) 궤도 홈폭 대비 장축 침범(truncation) 경고를 표시.
+**`RibContactDetailChart` 를 개조하는 편이 `ProfileView` 를 고치는 것보다 훨씬 빠르다.**
+
+**`SectionView2D` (447줄) — 형상부는 폐기, 그러나 새 뷰의 값어치가 크다**
+
+현행은 TRB 축방향 반단면 SVG 다. `computeSectionGeometry()` 가 롤러 축 경사 `γ = (α_i+α_o)/2` 를
+잡고 사다리꼴 롤러 4점 폴리곤, 내륜(리브 팁·리브 배면 8점)/외륜(6점) 폴리라인, 접촉선, 리브 라인,
+리브 접촉점(`h_c`, `α_rib`, `r_rib_circ`)까지 그린다 — **형상 로직 대부분이 테이퍼+리브 전용**이다.
+
+| 살아남는 것 | 죽는 것 |
+|---|---|
+| `viewBox` + `scale(1,-1)` 좌표 뒤집기 · 치수선/지시선 `Annotations` 유틸 · `d`/`D`/`B`/`D_pw` 스케일 계산 | 사다리꼴 롤러 · `γ` 경사축 · 리브 전체 · `α_i`/`α_o` 이중 접촉각 · `d_we_max/min` · `l_we` |
+
+**BB 축단면 뷰는 오히려 TRB 보다 정보량이 많다:**
+
+- 볼은 **원**(반경 `D_w/2`, 중심 `r = D_pw/2`), 궤도는 홈반경 `r_i`/`r_e` 의 **원호** (폴리곤 아님)
+- 곡률중심 `O_i`·`O_e` 를 찍고 그 사이 거리 **`A = r_i + r_e − D_w`** 를 도시
+  → **단면도가 곧 BB 해석의 교과서 그림**이 된다 (Theory §2 의 (A.3) 그 자체)
+- 무하중 `α₀` 선과 하중 후 `α_j` 선을 **겹쳐** 그려 **대비표 #2 의 새 자유도**를 시각화
+- 축을 **X = 회전축**으로 잡고 `δ_x` 를 화살표로
+
+→ **새 파일로 작성하되 `Annotations`/치수선 헬퍼와 `viewBox` 셋업은 복사**한다.
+형상 계산부 약 200줄은 통째로 버린다.
+
+#### 3.6.6 상태 · 타입 변경
+
+**`store.ts` (80줄) — 구조 유지, 사망 항목만 제거**
+
+| 항목 | 조치 |
+|---|---|
+| `AppState.dualResult` · `dualViewMode` · `transientResult` | 삭제 |
+| `SET_DUAL_RESULT` · `SET_DUAL_VIEW_MODE` · `SET_TRANSIENT_RESULT` | 삭제 (액션 12종 → 9종) |
+| `CanvasTab` 유니온 | 11 → 5 (안 A 기준) |
+| `SET_RESULT` 의 `dualResult: null` | 정리 |
+| 나머지 (`useReducer` + Context 1개, props drilling 없음) | **그대로 유지** — 구조가 좋다 |
+
+**`types/bearing.ts` (784줄) — 전면 재작성**
+
+Rust `src-tauri/src/solver/types.rs` 가 단일 진리원(SSOT)이다. 프론트가 참조하는
+`result.life` · `result.film_thickness` · `result.thermal_speed` · `result.rollers[].slices[]` 는
+BB `BearingResult` 에 **하나도 없다**. 현재 `BearingResult` 는
+
+```ts
+{ geometry: GeometrySummary, equilibrium: BearingEquilibrium,
+  phase_sweep: PhaseSweepResult | null, alerts: Alert[], elapsed_ms: number }
+```
+
+뿐이며, `BearingEquilibrium.ball_results[]` 가 볼별 `(φ_j, δ_j, α_j, Q_j, loaded, a/b/p_max × 2)` 를 담는다.
+
+> ⚠️ **스키마 드리프트가 이번 Phase 순서 변경의 유일한 리스크**다 (CLAUDE.md 체크리스트 1번).
+> 신 P5(수명)·P6(윤활)에서 `BearingResult` 에 필드가 **추가**되면 TS 타입을 다시 손대야 한다.
+> 방지책은 P4-S1 착수 전에 결정한다.
+
+#### 3.6.7 작업 분해 (신 Phase 4)
+
+| 단계 | 내용 | 산출 | DoD |
+|---|---|---|---|
+| **S1** | `types/bearing.ts` 대체 · 죽은 파일 삭제(D등급 14) · `store.ts` 정리 | 타입 SSOT 확립 | `npm run build` 통과, `@ts-nocheck` 잔여 0 (살아남은 파일 기준) |
+| **S2** | `InputPanel` BB 4블록 재매핑 (`geometry`/`material`/`operating`/`solver`) + `ClearanceSpec` 3종 · `PreloadModel` 2종 · `DofMask` · 위상스윕 | 입력 가능 | `solve_bearing` 왕복 성공 |
+| **S3** | `GeometryView` 개조 + `compute_geometry` 첫 연결 · `ResultsCard` 5-DOF 요약 · `AlertPanel` | 기하·요약 확인 | Level A 결과가 화면과 일치 |
+| **S4** | `LoadDistChart` 개조 (`Q_j` 극좌표 + **`α_j(φ)` 곡선**) · Contact Ellipse View (`RibContactDetailChart` 개조 + `compute_contact` 연결) | **핵심 검증 뷰** | Level C·D 결과가 화면과 일치 |
+| **S5** | BB 축단면 뷰 신규 · `BearingView3D` 개조 · 타이틀/확장자 정리 | 공간 직관 | `npm run build` + `npm run lint` 통과 |
+
+**Phase DoD**: `npm run build` + `npm run lint` 통과, 살아남은 전 뷰가 실제 솔버 출력으로 동작,
+`@ts-nocheck` 0, 죽은 `invoke` 0.
+
+---
+
 ## 4. Phase 계획
 
 ### Phase 1 — 데이터 모델 + 기하 (Theory §2)
@@ -422,13 +717,23 @@ struct DofMask { d_x: bool, d_y: bool, d_z: bool, g_y: bool, g_z: bool }
 
 ### Phase 4 — 프론트엔드 (접촉/하중 검증 뷰) 〔구 Phase 6〕
 
-**작업**
-1. 삭제: `ProfileView`, `ComparisonView`(Gen1↔Gen3), `ContourMap`, `SectionView2D`(롤러 단면), `TransientView`
-2. 개편: `InputPanel`(볼 기하·예압), `BearingView3D`(볼 세트), `ResultCharts`(`Q_j`·`α_j` 극좌표 분포), `LubricationView`, `AlertPanel`(고속 경고·응력 초과)
-3. 신규: 접촉타원 시각화 (`a`, `b`, `p_H` 분포), 접촉각 변화 차트
-4. `@ts-nocheck` 전면 해제, 타입 정합
+> 📐 **구조 설계는 §3.6 에 있다** — TRB 현행 ↔ BB 목표 대비, 전 44파일 인벤토리,
+> 구조 다이어그램(현행/목표), 탭 구성 3안, `ProfileView`·`SectionView2D` 대체 판정,
+> 상태·타입 변경. 아래는 **작업 순서만** 적는다.
 
-**DoD**: `npm run build` + `npm run lint` 통과, 전 뷰가 실제 솔버 출력으로 동작
+**작업 (§3.6.7)**
+
+| 단계 | 내용 | DoD |
+|---|---|---|
+| **S1** | `types/bearing.ts` 대체 · D등급 14파일 삭제 · `store.ts` 정리 | `npm run build` 통과 |
+| **S2** | `InputPanel` BB 4블록 재매핑 | `solve_bearing` 왕복 성공 |
+| **S3** | `GeometryView` + `compute_geometry` 연결 · `ResultsCard` 5-DOF · `AlertPanel` | Level A 결과가 화면과 일치 |
+| **S4** | `LoadDistChart` 개조(`Q_j` + **`α_j(φ)`**) · Contact Ellipse View(`RibContactDetailChart` 개조 + `compute_contact`) | Level C·D 결과가 화면과 일치 |
+| **S5** | BB 축단면 뷰 신규 · `BearingView3D` 개조 · 타이틀/확장자 | build + lint 통과 |
+
+**DoD**: `npm run build` + `npm run lint` 통과, 살아남은 전 뷰가 실제 솔버 출력으로 동작, `@ts-nocheck` 0, 죽은 `invoke` 0
+
+> ⚠️ **미결정 (S1 착수 전)**: ① 타입 동기화 방식(ts-rs 자동생성 ↔ 수작업) ② 탭 구성 3안 중 택1 ③ 삭제 시점(D등급 + `LubricationView` 2 439줄) ④ 시각 확인 절차 — Claude 는 서버를 직접 띄우지 않는다(CLAUDE.md 필수 준수 1)
 
 ---
 
