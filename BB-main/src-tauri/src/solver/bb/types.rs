@@ -18,6 +18,16 @@
 // ── 수식 근거 ───────────────────────────────────────────────────────
 //  BB_Development_Theory.md. 식 번호는 ISO 16281:2025 (A.x / 숫자) 기준.
 //  본 파일은 수식을 구현하지 않는다 — 자료구조와 검증만 담당.
+//
+// ── ts-rs 자동생성 (P4-S1-2, Plan §3.6.5.5) ─────────────────────────
+//  `#[cfg_attr(test, derive(ts_rs::TS))]` 로 **테스트 빌드에서만** TS 타입을
+//  내보낸다. `ts-rs` 가 dev-dependency 이므로 릴리스 빌드에는 들어가지 않는다.
+//  생성은 `cargo test` 로 일어나고, 드리프트는 단계 DoD ③ 의
+//  `git diff --exit-code src/bb/generated/` 로 검사한다.
+//
+//  ⚠ `export_to` 의 기준 디렉터리는 ts-rs 의 `TS_RS_EXPORT_DIR`(기본
+//     `<crate>/bindings/`) 이다. 따라서 `../../src/bb/generated/` 가
+//     저장소 루트의 `src/bb/generated/` 를 가리킨다 (`src-tauri/` 가 아니다).
 
 use serde::{Deserialize, Serialize};
 
@@ -33,6 +43,8 @@ use crate::solver::common::types::{Alert, Material};
 /// ISO 16281 은 예압을 직접 다루지 않는다. 셋 중 무엇을 주든 내부적으로
 /// 초기 접촉각 `α₀` (식 A.1) 로 환산해 사용한다.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub enum BbClearanceSpec {
     /// 직경으로 측정한 반경 운전 클리어런스 `G_r op` [mm].
     /// **직경 기준**임에 주의 (식 A.1 의 분모가 2A). 음수면 예압 상태.
@@ -45,6 +57,8 @@ pub enum BbClearanceSpec {
 
 /// ACBB 매크로 기하. 모든 길이 [mm].
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BallBearingGeometry {
     /// 내경 d [mm]
     pub bore_mm: f64,
@@ -116,6 +130,8 @@ impl BallBearingGeometry {
 ///
 /// 부호 규약: 내륜에 작용하는 하중을 양으로 본다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbOperatingConditions {
     /// 축하중 F_x [N] (X = 회전축). ISO 식 (A.7) 의 F_a
     pub f_x_n: f64,
@@ -172,6 +188,8 @@ impl BbOperatingConditions {
 ///
 /// 단위: `δ_x`·`δ_y`·`δ_z` 는 [mm], `γ_y`·`γ_z` 는 [rad].
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub enum BbDof {
     Free,
     Prescribed(f64),
@@ -198,6 +216,8 @@ impl BbDof {
 /// **강체(스페이서) 예압**은 `x: Prescribed(δ_x0)` 로 표현된다 — 별도 기구가 아니라
 /// 같은 구속 메커니즘이다 (P3-1 결정).
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbDofMask {
     pub x: BbDof,
     pub y: BbDof,
@@ -253,6 +273,8 @@ impl Default for BbDofMask {
 /// `Rigid` 는 `δ_x` 를 구속하므로 **외부 축하중을 독립적으로 받을 수 없다**
 /// (실물에서 가능한 이유는 짝 베어링이 반력을 받기 때문이며, 그것은 단열 모델 범위 밖이다).
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub enum BbPreloadModel {
     /// 정력(스프링) 예압 — 기본값
     #[default]
@@ -266,6 +288,8 @@ pub enum BbPreloadModel {
 /// `φ_j = φ₀ + 2π(j−1)/Z` 의 `φ₀` 를 `[0, 2π/Z)` 로 `n_phase` 분할하여
 /// Q_max·p_H·수명의 **최악값**과 발생 위상을 구한다.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbPhaseSweep {
     pub enabled: bool,
     /// 분할 수. 볼 해석은 O(Z) 라 36 분할도 밀리초 단위.
@@ -282,6 +306,8 @@ impl Default for BbPhaseSweep {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbSolverParams {
     /// 수렴 판정 상대 잔차
     pub convergence_tol: f64,
@@ -345,6 +371,8 @@ impl BbSolverParams {
 /// ⚠ **선언값이지 추론값이 아니다.** α₀ 로 변종을 자동 판정하지 않는다 —
 ///    `Acbb` 로 선언된 α₀ = 0 입력은 그대로 통과한다 (Level C-7 픽스처).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub enum BallBearingKind {
     /// 각접촉 — α₀ ≠ 0. **현재 검증 완료 범위**
     #[default]
@@ -357,6 +385,8 @@ pub enum BallBearingKind {
 
 /// 최상위 입력 래퍼.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbInput {
     /// 볼베어링 변종. 기본값 `Acbb` (§3.6.1.3)
     #[serde(default)]
@@ -403,6 +433,8 @@ impl BbInput {
 /// 해석 시작 시 1회 계산해 캐시한다. CRB 가 매 반복마다 슬라이스를 순회하던
 /// 것과 달리, 볼은 이 구조체가 확정되면 반복 비용이 O(Z) 로 끝난다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbGeometryDerived {
     /// A = r_i_mm + r_e_mm − D_w [mm] — 식 (A.3). 곡률중심 간 거리
     pub a_mm: f64,
@@ -429,6 +461,8 @@ pub struct BbGeometryDerived {
 /// `χ` 는 기하만으로 결정되고 `c_P` 도 그로부터 나오므로, 해석 시작 시 1회만
 /// 계산해 캐시한다. CRB 의 슬라이스 강성이 하중 의존이던 것과 근본적으로 다르다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbContactDerived {
     /// 내륜 접촉타원 형상비 χ = a/b — 식 (E.1) 의 해
     pub chi_inner: f64,
@@ -463,6 +497,8 @@ pub struct BbContactDerived {
 
 /// 볼 1개의 해석 결과.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BallResult {
     /// 각위치 φ_j [rad] (D-8: φ_1 = 0 이 Y축 방향)
     pub phi_rad: f64,
@@ -505,6 +541,8 @@ pub struct BallResult {
 ///
 /// 필드명의 단위 접미사는 필수다 — 배열이던 시절엔 A-8 단위검사를 우회했다.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct Displacement {
     pub dx_mm: f64,
     pub dy_mm: f64,
@@ -515,6 +553,8 @@ pub struct Displacement {
 
 /// 5-DOF 평형해 (D-7 좌표계).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbEquilibrium {
     /// 평형 변위 (δ_x, δ_y, δ_z [mm] · γ_y, γ_z [rad])
     pub displacement: Displacement,
@@ -532,6 +572,8 @@ pub struct BbEquilibrium {
 
 /// 위상 스윕 결과 (D-8). `BbPhaseSweep::enabled` 일 때만 채워진다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbPhaseSweepResult {
     /// 최악 Q_max [N] 와 그때의 φ₀ [rad]
     pub worst_q_max_n: f64,
@@ -545,6 +587,8 @@ pub struct BbPhaseSweepResult {
 
 /// 자동 산출된 기하 요약 (UI 표시·검산용).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbGeometrySummary {
     pub a_mm: f64,
     /// 초기 접촉각 [rad] (표시는 UI 에서 ° 로 변환)
@@ -570,6 +614,8 @@ pub struct BbGeometrySummary {
 ///
 /// 수명(P4)·윤활(P5) 결과는 해당 Phase 에서 필드를 추가한다 (P1-S2 결정).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbResult {
     pub geometry: BbGeometrySummary,
     pub equilibrium: BbEquilibrium,

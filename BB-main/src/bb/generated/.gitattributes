@@ -1,0 +1,4 @@
+# ts-rs 생성물은 LF 로 고정한다.
+# 체크아웃 시 CRLF 로 바뀌면 재생성(LF)과 diff 가 나서
+# 단계 DoD 의 `git diff --exit-code src/bb/generated/` 가 거짓 양성이 된다.
+*.ts eol=lf
