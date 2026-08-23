@@ -120,7 +120,7 @@ fn is_leap(year: i64) -> bool {
 }
 
 #[tauri::command]
-pub fn save_preset(app: AppHandle, name: String, input: BearingInput) -> Result<(), String> {
+pub fn save_preset(app: AppHandle, name: String, input: BbInput) -> Result<(), String> {
     let dir = presets_dir(&app)?;
     let filename = sanitize_filename(&name);
     let path = dir.join(&filename);
@@ -130,12 +130,12 @@ pub fn save_preset(app: AppHandle, name: String, input: BearingInput) -> Result<
 }
 
 #[tauri::command]
-pub fn load_preset(app: AppHandle, name: String) -> Result<BearingInput, String> {
+pub fn load_preset(app: AppHandle, name: String) -> Result<BbInput, String> {
     let dir = presets_dir(&app)?;
     let filename = sanitize_filename(&name);
     let path = dir.join(&filename);
     let json = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let input: BearingInput = serde_json::from_str(&json).map_err(|e| e.to_string())?;
+    let input: BbInput = serde_json::from_str(&json).map_err(|e| e.to_string())?;
     Ok(input)
 }
 
@@ -186,7 +186,7 @@ pub fn ensure_default_preset(app: AppHandle) -> Result<(), String> {
     let dir = presets_dir(&app)?;
 
     // 프리셋이 하나도 없을 때만 기본값 생성.
-    // NOTE (BB P1-S2): CRB 시절 프리셋 JSON 은 BearingInput 스키마가 달라
+    // NOTE (BB P1-S2): CRB 시절 프리셋 JSON 은 BbInput 스키마가 달라
     // load_preset 에서 역직렬화 오류가 난다. 사용자 결정에 따라 마이그레이션은
     // 제공하지 않으며, 구 프리셋은 폐기 대상이다 (파일 삭제는 사용자 몫).
     let has_presets = fs::read_dir(&dir)
@@ -219,10 +219,10 @@ pub fn ensure_default_preset(app: AppHandle) -> Result<(), String> {
 /// **Z 와 D_w 는 제조사별 값이라 가정값이다** (실 카탈로그 미확인 — Plan T-6 참조).
 /// 홈 반경은 ISO 16281 Annex B.2 참조기하 (r_i = 0,52 D_w, r_e = 0,53 D_w).
 /// 단위는 전부 솔버 내부 단위 mm · N · rad (Plan D-10).
-fn default_bearing_input() -> BearingInput {
+fn default_bearing_input() -> BbInput {
     let d_w_mm = 11.5; // [mm] 가정값
     let (r_i_mm, r_e_mm) = BallBearingGeometry::reference_groove_radii(d_w_mm);
-    BearingInput {
+    BbInput {
         geometry: BallBearingGeometry {
             bore_mm: 50.0,
             outer_diameter_mm: 90.0,
@@ -233,10 +233,10 @@ fn default_bearing_input() -> BearingInput {
             r_i_mm,
             r_e_mm,
             alpha_nom_rad: 40.0_f64.to_radians(),
-            clearance: ClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
+            clearance: BbClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
         },
         material: Material::default(),
-        operating: OperatingConditions {
+        operating: BbOperatingConditions {
             f_x_n: 5_000.0, // [N] 축하중
             f_y_n: 2_000.0, // [N] 반경하중 (Y)
             f_z_n: 0.0,
@@ -246,6 +246,6 @@ fn default_bearing_input() -> BearingInput {
             n_outer_rpm: 0.0,
             temperature_c: 70.0,
         },
-        solver: SolverParams::default(),
+        solver: BbSolverParams::default(),
     }
 }

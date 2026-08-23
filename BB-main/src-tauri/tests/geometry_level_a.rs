@@ -30,12 +30,12 @@ fn fixture() -> BallBearingGeometry {
         r_i_mm,
         r_e_mm,
         alpha_nom_rad: ALPHA_DEG.to_radians(),
-        clearance: ClearanceSpec::InitialAngleRad(ALPHA_DEG.to_radians()),
+        clearance: BbClearanceSpec::InitialAngleRad(ALPHA_DEG.to_radians()),
     }
 }
 
-fn operating(rpm: f64) -> OperatingConditions {
-    OperatingConditions {
+fn operating(rpm: f64) -> BbOperatingConditions {
+    BbOperatingConditions {
         f_x_n: 0.0,
         f_y_n: 0.0,
         f_z_n: 0.0,
@@ -74,10 +74,10 @@ fn a2_initial_angle_roundtrip() {
     for deg in [0.0_f64, 5.0, 15.0, 25.0, 40.0, 60.0] {
         let mut g = fixture();
         g.alpha_nom_rad = deg.to_radians();
-        g.clearance = ClearanceSpec::InitialAngleRad(deg.to_radians());
+        g.clearance = BbClearanceSpec::InitialAngleRad(deg.to_radians());
         let d1 = compute_geometry_derived(&g).unwrap();
 
-        g.clearance = ClearanceSpec::DiametralMm(d1.g_r_op_mm);
+        g.clearance = BbClearanceSpec::DiametralMm(d1.g_r_op_mm);
         let d2 = compute_geometry_derived(&g).unwrap();
 
         assert!(
@@ -94,7 +94,7 @@ fn a2b_clearance_to_angle_is_monotonic() {
     let mut prev = -1.0;
     for g_mm in [0.0_f64, 0.05, 0.10, 0.20, 0.30, 0.50] {
         let mut geom = fixture();
-        geom.clearance = ClearanceSpec::DiametralMm(g_mm);
+        geom.clearance = BbClearanceSpec::DiametralMm(g_mm);
         let d = compute_geometry_derived(&geom).unwrap();
         assert!(
             d.alpha_0_rad > prev,
@@ -107,7 +107,7 @@ fn a2b_clearance_to_angle_is_monotonic() {
 #[test]
 fn a2c_zero_clearance_gives_zero_angle() {
     let mut g = fixture();
-    g.clearance = ClearanceSpec::DiametralMm(0.0);
+    g.clearance = BbClearanceSpec::DiametralMm(0.0);
     let d = compute_geometry_derived(&g).unwrap();
     assert!(d.alpha_0_rad.abs() < 1e-12);
 }
@@ -142,7 +142,7 @@ fn a3b_tilt_arm_decreases_with_contact_angle() {
     let mut prev = f64::INFINITY;
     for deg in [0.0_f64, 10.0, 20.0, 30.0, 40.0, 50.0] {
         let mut g = fixture();
-        g.clearance = ClearanceSpec::InitialAngleRad(deg.to_radians());
+        g.clearance = BbClearanceSpec::InitialAngleRad(deg.to_radians());
         let d = compute_geometry_derived(&g).unwrap();
         assert!(d.r_i_center_mm < prev, "α₀ = {deg}° 에서 R_i 단조성 위반");
         prev = d.r_i_center_mm;
@@ -225,7 +225,7 @@ fn a4c_relative_curvature_difference_in_unit_interval() {
     for deg in [0.0_f64, 15.0, 30.0, 40.0, 55.0] {
         let mut g = fixture();
         g.alpha_nom_rad = deg.to_radians();
-        g.clearance = ClearanceSpec::InitialAngleRad(deg.to_radians());
+        g.clearance = BbClearanceSpec::InitialAngleRad(deg.to_radians());
         let d = compute_geometry_derived(&g).unwrap();
         assert!(
             (0.0..1.0).contains(&d.f_rho_i),
@@ -291,17 +291,17 @@ fn a5_reference_groove_radii() {
 fn a6_domain_guards() {
     // 예압은 P3 소관 — 조용히 0 으로 처리하지 않고 명시적으로 거부
     let mut g = fixture();
-    g.clearance = ClearanceSpec::AxialPreloadN(500.0);
+    g.clearance = BbClearanceSpec::AxialPreloadN(500.0);
     assert!(compute_geometry_derived(&g).is_err());
 
     // 음의 클리어런스는 식 (A.1) 정의역 밖
     let mut g = fixture();
-    g.clearance = ClearanceSpec::DiametralMm(-0.01);
+    g.clearance = BbClearanceSpec::DiametralMm(-0.01);
     assert!(compute_geometry_derived(&g).is_err());
 
     // 과대 클리어런스도 정의역 밖
     let mut g = fixture();
-    g.clearance = ClearanceSpec::DiametralMm(100.0);
+    g.clearance = BbClearanceSpec::DiametralMm(100.0);
     assert!(compute_geometry_derived(&g).is_err());
 
     // 홈 반경이 볼 반경 이하면 접촉이 성립하지 않음
@@ -403,7 +403,7 @@ fn a8b_dimensional_fields_carry_unit_suffix() {
     let dimensionless = [
         "nu", "hrc", "gamma", "f_rho_i", "f_rho_e", "percent",
         "osculation_inner", "osculation_outer", "convergence_tol", "residual_norm",
-        // ContactDerived — χ·타원적분·무차원 계수는 전부 무차원
+        // BbContactDerived — χ·타원적분·무차원 계수는 전부 무차원
         "chi_inner", "chi_outer",
         "k_ellip_inner", "e_ellip_inner", "k_ellip_outer", "e_ellip_outer",
         "a_star_inner", "b_star_inner", "delta_star_inner",

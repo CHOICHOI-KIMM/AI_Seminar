@@ -66,7 +66,7 @@ fn fixture() -> BallBearingGeometry {
         r_i_mm,
         r_e_mm,
         alpha_nom_rad: 40.0_f64.to_radians(),
-        clearance: ClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
+        clearance: BbClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
     }
 }
 

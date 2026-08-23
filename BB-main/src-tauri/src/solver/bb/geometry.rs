@@ -22,21 +22,21 @@ use crate::solver::bb::types::*;
 use crate::solver::common::types::{Alert, AlertLevel, Material};
 use crate::solver::common::util;
 
-/// 입력의 `ClearanceSpec` 을 (등가 직경 클리어런스 [mm], 초기 접촉각 [rad]) 로 환산.
+/// 입력의 `BbClearanceSpec` 을 (등가 직경 클리어런스 [mm], 초기 접촉각 [rad]) 로 환산.
 ///
 /// 식 (A.1) 과 그 역: `G_r op = 2A (1 − cos α₀)`
 fn resolve_clearance(
-    clearance: ClearanceSpec,
+    clearance: BbClearanceSpec,
     a_mm: f64,
 ) -> Result<(f64, f64), SolverError> {
     match clearance {
-        ClearanceSpec::DiametralMm(g) => {
+        BbClearanceSpec::DiametralMm(g) => {
             // (A.1) 은 G_r op ≥ 0 에서만 정의된다. G < 0 이면 arccos 인수가 1 을
             // 넘어 정의역을 벗어난다 — ISO 16281 은 음의 클리어런스(예압)를
             // 클리어런스로 표현하지 않는다. ACBB 의 예압은 축방향 하중으로 준다.
             if g < 0.0 {
                 return Err(SolverError::InvalidInput(format!(
-                    "음의 운전 클리어런스({g} mm)는 식 (A.1) 의 정의역 밖입니다.                      ACBB 예압은 ClearanceSpec::AxialPreloadN 으로 지정하십시오 (P3 지원)"
+                    "음의 운전 클리어런스({g} mm)는 식 (A.1) 의 정의역 밖입니다.                      ACBB 예압은 BbClearanceSpec::AxialPreloadN 으로 지정하십시오 (P3 지원)"
                 )));
             }
             let arg = 1.0 - g / (2.0 * a_mm);
@@ -48,12 +48,12 @@ fn resolve_clearance(
             }
             Ok((g, arg.acos()))
         }
-        ClearanceSpec::InitialAngleRad(alpha_0) => {
+        BbClearanceSpec::InitialAngleRad(alpha_0) => {
             // (A.1) 역산
             let g = 2.0 * a_mm * (1.0 - alpha_0.cos());
             Ok((g, alpha_0))
         }
-        ClearanceSpec::AxialPreloadN(_) => Err(SolverError::InvalidInput(
+        BbClearanceSpec::AxialPreloadN(_) => Err(SolverError::InvalidInput(
             "축방향 예압(F_a0) → α₀ 역산은 P3 평형 솔버에서 지원합니다. \
              P1 단계에서는 DiametralMm 또는 InitialAngleRad 로 지정하십시오"
                 .into(),
@@ -64,7 +64,7 @@ fn resolve_clearance(
 /// 하중 무관 기하 전처리 (Theory §2).
 pub fn compute_geometry_derived(
     geom: &BallBearingGeometry,
-) -> Result<GeometryDerived, SolverError> {
+) -> Result<BbGeometryDerived, SolverError> {
     geom.validate()?;
 
     let d_w = geom.d_w_mm;
@@ -110,7 +110,7 @@ pub fn compute_geometry_derived(
     let f_rho_i = (ki + ci) / den_i;
     let f_rho_e = (-ke + ce) / den_e;
 
-    Ok(GeometryDerived {
+    Ok(BbGeometryDerived {
         a_mm,
         alpha_0_rad,
         r_i_center_mm,
@@ -129,11 +129,11 @@ pub fn compute_geometry_derived(
 /// 1×10⁶ mm/min 을 넘으면 정적 평형 가정 범위 밖이다.
 pub fn compute_geometry_summary(
     geom: &BallBearingGeometry,
-    derived: &GeometryDerived,
-    operating: &OperatingConditions,
+    derived: &BbGeometryDerived,
+    operating: &BbOperatingConditions,
     material: &Material,
-) -> GeometrySummary {
-    GeometrySummary {
+) -> BbGeometrySummary {
+    BbGeometrySummary {
         a_mm: derived.a_mm,
         alpha_0_rad: derived.alpha_0_rad,
         r_i_center_mm: derived.r_i_center_mm,
@@ -154,7 +154,7 @@ pub fn compute_geometry_summary(
 pub const N_DPW_STATIC_LIMIT: f64 = 1.0e6;
 
 /// 기하·운전조건에서 나오는 경고를 수집한다.
-pub fn collect_geometry_alerts(summary: &GeometrySummary) -> Vec<Alert> {
+pub fn collect_geometry_alerts(summary: &BbGeometrySummary) -> Vec<Alert> {
     let mut alerts = Vec::new();
 
     if summary.n_dpw_mm_per_min > N_DPW_STATIC_LIMIT {
@@ -202,14 +202,14 @@ mod tests {
             r_i_mm,
             r_e_mm,
             alpha_nom_rad: 40.0_f64.to_radians(),
-            clearance: ClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
+            clearance: BbClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
         }
     }
 
     #[test]
     fn axial_preload_is_rejected_with_explicit_message() {
         let mut g = fixture();
-        g.clearance = ClearanceSpec::AxialPreloadN(500.0);
+        g.clearance = BbClearanceSpec::AxialPreloadN(500.0);
         let err = compute_geometry_derived(&g).unwrap_err();
         assert!(format!("{err}").contains("P3"));
     }
@@ -218,7 +218,7 @@ mod tests {
     fn oversized_clearance_is_rejected() {
         let mut g = fixture();
         // A = 0.05 D_w = 0.575 mm → G_r op > 4A 면 arccos 인수가 −1 미만
-        g.clearance = ClearanceSpec::DiametralMm(10.0);
+        g.clearance = BbClearanceSpec::DiametralMm(10.0);
         assert!(compute_geometry_derived(&g).is_err());
     }
 
@@ -234,7 +234,7 @@ mod tests {
     fn summary_osculation_and_mass() {
         let g = fixture();
         let d = compute_geometry_derived(&g).unwrap();
-        let op = OperatingConditions {
+        let op = BbOperatingConditions {
             f_x_n: 0.0,
             f_y_n: 0.0,
             f_z_n: 0.0,
@@ -255,7 +255,7 @@ mod tests {
     fn high_speed_alert_fires_only_above_limit() {
         let g = fixture();
         let d = compute_geometry_derived(&g).unwrap();
-        let mk = |rpm: f64| OperatingConditions {
+        let mk = |rpm: f64| BbOperatingConditions {
             f_x_n: 0.0,
             f_y_n: 0.0,
             f_z_n: 0.0,
@@ -281,7 +281,7 @@ mod tests {
         // 식 (A.1) 은 G_r op ≥ 0 에서만 정의된다 (arccos 인수 ≤ 1).
         // ACBB 예압은 클리어런스가 아니라 축방향 하중으로 준다.
         let mut g = fixture();
-        g.clearance = ClearanceSpec::DiametralMm(-0.02);
+        g.clearance = BbClearanceSpec::DiametralMm(-0.02);
         let err = compute_geometry_derived(&g).unwrap_err();
         assert!(format!("{err}").contains("AxialPreloadN"));
     }

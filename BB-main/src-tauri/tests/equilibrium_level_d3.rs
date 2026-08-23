@@ -46,15 +46,15 @@ fn geometry() -> BallBearingGeometry {
         r_i_mm,
         r_e_mm,
         alpha_nom_rad: ALPHA_DEG.to_radians(),
-        clearance: ClearanceSpec::InitialAngleRad(ALPHA_DEG.to_radians()),
+        clearance: BbClearanceSpec::InitialAngleRad(ALPHA_DEG.to_radians()),
     }
 }
 
-fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BearingInput {
-    BearingInput {
+fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BbInput {
+    BbInput {
         geometry: geometry(),
         material: Material::default(),
-        operating: OperatingConditions {
+        operating: BbOperatingConditions {
             f_x_n: fx,
             f_y_n: fy,
             f_z_n: fz,
@@ -64,9 +64,9 @@ fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BearingInput {
             n_outer_rpm: 0.0,
             temperature_c: 70.0,
         },
-        solver: SolverParams {
+        solver: BbSolverParams {
             convergence_tol: 1e-13,
-            ..SolverParams::default()
+            ..BbSolverParams::default()
         },
     }
 }
@@ -173,7 +173,7 @@ fn d3b_original_free_contact_angle_matches_iso_a1() {
     let mut worst = 0.0_f64;
     for p_d in [0.005, 0.02, 0.05, 0.12, 0.30] {
         let mut g = geometry();
-        g.clearance = ClearanceSpec::DiametralMm(p_d);
+        g.clearance = BbClearanceSpec::DiametralMm(p_d);
         let d = compute_geometry_derived(&g).unwrap();
         let o = original_constants(&g, d.alpha_0_rad);
         let alpha_orig = (1.0 - p_d / (2.0 * o.bd)).acos();

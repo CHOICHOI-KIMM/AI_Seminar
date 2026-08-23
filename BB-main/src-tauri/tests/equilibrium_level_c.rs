@@ -32,15 +32,15 @@ fn geometry(z: u32) -> BallBearingGeometry {
         r_i_mm,
         r_e_mm,
         alpha_nom_rad: ALPHA_DEG.to_radians(),
-        clearance: ClearanceSpec::InitialAngleRad(ALPHA_DEG.to_radians()),
+        clearance: BbClearanceSpec::InitialAngleRad(ALPHA_DEG.to_radians()),
     }
 }
 
-fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BearingInput {
-    BearingInput {
+fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BbInput {
+    BbInput {
         geometry: geometry(Z),
         material: Material::default(),
-        operating: OperatingConditions {
+        operating: BbOperatingConditions {
             f_x_n: fx,
             f_y_n: fy,
             f_z_n: fz,
@@ -50,7 +50,7 @@ fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BearingInput {
             n_outer_rpm: 0.0,
             temperature_c: 70.0,
         },
-        solver: SolverParams::default(),
+        solver: BbSolverParams::default(),
     }
 }
 
@@ -60,7 +60,7 @@ fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BearingInput {
 
 /// 결과의 `(φ_j, α_j, Q_j)` 만으로 5개 평형식을 다시 세워 외력과 대조한다.
 /// 솔버 내부 상태를 전혀 쓰지 않으므로 동어반복이 아니다.
-fn check_equilibrium(inp: &BearingInput, tol: f64) {
+fn check_equilibrium(inp: &BbInput, tol: f64) {
     let r = solve_bearing(inp).unwrap();
     assert!(
         r.equilibrium.converged,
@@ -186,16 +186,16 @@ fn c2b_pure_axial_is_perfectly_symmetric() {
 //  C-3. 예압 (D-2, 두 모델)
 // ═══════════════════════════════════════════════════════════════════
 
-fn preload_input(model: PreloadModel, fx: f64) -> BearingInput {
+fn preload_input(model: BbPreloadModel, fx: f64) -> BbInput {
     let mut inp = make(fx, 0.0, 0.0, 0.0, 0.0);
-    inp.geometry.clearance = ClearanceSpec::AxialPreloadN(2_000.0);
+    inp.geometry.clearance = BbClearanceSpec::AxialPreloadN(2_000.0);
     inp.solver.preload_model = model;
     inp
 }
 
 #[test]
 fn c3_preload_loads_all_balls_uniformly() {
-    for model in [PreloadModel::Spring, PreloadModel::Rigid] {
+    for model in [BbPreloadModel::Spring, BbPreloadModel::Rigid] {
         let r = solve_bearing(&preload_input(model, 0.0)).unwrap();
         assert!(r.equilibrium.converged, "{model:?} 미수렴");
         assert_eq!(r.equilibrium.loaded_count, Z, "{model:?}: 전 볼 접촉이어야 함");
@@ -210,8 +210,8 @@ fn c3_preload_loads_all_balls_uniformly() {
 #[test]
 fn c3b_preload_models_agree_without_external_load() {
     // 강체 예압의 δ_x0 는 스프링 예압의 무하중 해로 역산되므로 둘이 같아야 한다
-    let a = solve_bearing(&preload_input(PreloadModel::Spring, 0.0)).unwrap();
-    let b = solve_bearing(&preload_input(PreloadModel::Rigid, 0.0)).unwrap();
+    let a = solve_bearing(&preload_input(BbPreloadModel::Spring, 0.0)).unwrap();
+    let b = solve_bearing(&preload_input(BbPreloadModel::Rigid, 0.0)).unwrap();
     let (da, db) = (a.equilibrium.displacement[0], b.equilibrium.displacement[0]);
     assert!((da - db).abs() / da.abs() < 1e-9, "δ_x0: 스프링 {da} vs 강체 {db}");
     let (qa, qb) = (a.equilibrium.q_max_n, b.equilibrium.q_max_n);
@@ -220,12 +220,12 @@ fn c3b_preload_models_agree_without_external_load() {
 
 #[test]
 fn c3c_preload_models_diverge_under_axial_load() {
-    let dx0 = solve_bearing(&preload_input(PreloadModel::Spring, 0.0))
+    let dx0 = solve_bearing(&preload_input(BbPreloadModel::Spring, 0.0))
         .unwrap()
         .equilibrium
         .displacement[0];
-    let a = solve_bearing(&preload_input(PreloadModel::Spring, 3_000.0)).unwrap();
-    let b = solve_bearing(&preload_input(PreloadModel::Rigid, 3_000.0)).unwrap();
+    let a = solve_bearing(&preload_input(BbPreloadModel::Spring, 3_000.0)).unwrap();
+    let b = solve_bearing(&preload_input(BbPreloadModel::Rigid, 3_000.0)).unwrap();
 
     assert!(
         a.equilibrium.displacement[0] > dx0,
@@ -276,7 +276,7 @@ fn c4b_radial_magnitude_invariance() {
         let mut inp = make(3_000.0, f * c, f * s, 0.0, 0.0);
         // 위상 스윕은 이산 표본이라 방향마다 표본점이 달라진다.
         // 표본을 늘리면 오차가 O(Δφ²) 로 줄어드는 것을 이용한다 (24 → 180 이면 ~1/56).
-        inp.solver.phase_sweep = PhaseSweep {
+        inp.solver.phase_sweep = BbPhaseSweep {
             enabled: true,
             n_phase: 180,
         };
@@ -296,7 +296,7 @@ fn c4b_radial_magnitude_invariance() {
 #[test]
 fn c5_phase_sweep_bounds_and_periodicity() {
     let mut inp = make(2_000.0, 5_000.0, 0.0, 0.0, 0.0);
-    inp.solver.phase_sweep = PhaseSweep {
+    inp.solver.phase_sweep = BbPhaseSweep {
         enabled: true,
         n_phase: 36,
     };
@@ -327,7 +327,7 @@ fn c5_phase_sweep_bounds_and_periodicity() {
 #[test]
 fn c5b_pure_axial_has_no_phase_dependence() {
     let mut inp = make(5_000.0, 0.0, 0.0, 0.0, 0.0);
-    inp.solver.phase_sweep = PhaseSweep {
+    inp.solver.phase_sweep = BbPhaseSweep {
         enabled: true,
         n_phase: 12,
     };
@@ -347,7 +347,7 @@ fn c5b_pure_axial_has_no_phase_dependence() {
 fn c6_iso_3dof_constrains_and_still_equilibrates() {
     // ISO_3DOF 는 δ_z·γ_y 를 0 으로 묶는다. 그 평면 안에서는 평형이 성립해야 한다.
     let mut inp = make(4_000.0, 3_000.0, 0.0, 0.0, 5_000.0);
-    inp.solver.dof_mask = DofMask::ISO_3DOF;
+    inp.solver.dof_mask = BbDofMask::ISO_3DOF;
     let r = solve_bearing(&inp).unwrap();
     assert!(r.equilibrium.converged);
     assert_eq!(r.equilibrium.displacement[2], 0.0, "δ_z 미구속");
@@ -372,15 +372,15 @@ fn c6_iso_3dof_constrains_and_still_equilibrates() {
 #[test]
 fn c6b_prescribed_axial_displacement_produces_reaction() {
     // δ_x 를 구속하면(강체 예압과 같은 기구) 그 방향은 반력이 된다.
-    let dx0 = solve_bearing(&preload_input(PreloadModel::Spring, 0.0))
+    let dx0 = solve_bearing(&preload_input(BbPreloadModel::Spring, 0.0))
         .unwrap()
         .equilibrium
         .displacement[0];
 
     let mut inp = make(0.0, 0.0, 0.0, 0.0, 0.0);
-    inp.solver.dof_mask = DofMask {
-        x: Dof::Prescribed(dx0),
-        ..DofMask::FULL
+    inp.solver.dof_mask = BbDofMask {
+        x: BbDof::Prescribed(dx0),
+        ..BbDofMask::FULL
     };
     let r = solve_bearing(&inp).unwrap();
     assert!((r.equilibrium.displacement[0] - dx0).abs() / dx0.abs() < 1e-12);
@@ -408,7 +408,7 @@ fn c7_radial_load_concentrates_near_load_direction() {
     //    (초안에서 이 전제를 틀리게 잡아 실패했다).
     let mut inp = make(0.0, 8_000.0, 0.0, 0.0, 0.0);
     inp.geometry.alpha_nom_rad = 0.0;
-    inp.geometry.clearance = ClearanceSpec::DiametralMm(0.0);
+    inp.geometry.clearance = BbClearanceSpec::DiametralMm(0.0);
     let r = solve_bearing(&inp).unwrap();
     assert!(r.equilibrium.converged);
     let balls = &r.equilibrium.ball_results;
@@ -463,7 +463,7 @@ fn c8_convergence_is_reported() {
     assert!(r.equilibrium.converged);
     assert!(r.equilibrium.iterations >= 1);
     assert!(r.equilibrium.residual_norm.is_finite());
-    assert!(r.equilibrium.residual_norm < SolverParams::default().convergence_tol);
+    assert!(r.equilibrium.residual_norm < BbSolverParams::default().convergence_tol);
     assert!(
         !r.alerts.iter().any(|a| a.code == "NOT_CONVERGED"),
         "정상 수렴인데 NOT_CONVERGED Alert 발생"
@@ -476,7 +476,7 @@ fn c8b_zero_load_with_clearance_is_a_trivial_equilibrium() {
     // (초안에서 이를 오류로 보았으나, 잔차가 0 이므로 자명해가 맞다.)
     // 솔버의 '접촉 볼 0' 오류 경로는 반복 도중 해가 접촉을 잃는 경우를 막는 가드다.
     let mut inp = make(0.0, 0.0, 0.0, 0.0, 0.0);
-    inp.geometry.clearance = ClearanceSpec::DiametralMm(0.05);
+    inp.geometry.clearance = BbClearanceSpec::DiametralMm(0.05);
     let r = solve_bearing(&inp).unwrap();
     assert!(r.equilibrium.converged);
     assert_eq!(r.equilibrium.loaded_count, 0);

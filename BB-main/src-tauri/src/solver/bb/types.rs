@@ -33,7 +33,7 @@ use crate::solver::common::types::{Alert, Material};
 /// ISO 16281 은 예압을 직접 다루지 않는다. 셋 중 무엇을 주든 내부적으로
 /// 초기 접촉각 `α₀` (식 A.1) 로 환산해 사용한다.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-pub enum ClearanceSpec {
+pub enum BbClearanceSpec {
     /// 직경으로 측정한 반경 운전 클리어런스 `G_r op` [mm].
     /// **직경 기준**임에 주의 (식 A.1 의 분모가 2A). 음수면 예압 상태.
     DiametralMm(f64),
@@ -68,7 +68,7 @@ pub struct BallBearingGeometry {
     /// 내부 하중분포에는 초기 접촉각 α₀ 를 쓴다 (ISO 16281 Clause 3.5 NOTE).
     pub alpha_nom_rad: f64,
     /// 클리어런스 / 예압
-    pub clearance: ClearanceSpec,
+    pub clearance: BbClearanceSpec,
 }
 
 impl BallBearingGeometry {
@@ -99,7 +99,7 @@ impl BallBearingGeometry {
         if self.outer_diameter_mm <= self.bore_mm {
             return e("외경 D 는 내경 d 보다 커야 합니다");
         }
-        if let ClearanceSpec::InitialAngleRad(a) = self.clearance {
+        if let BbClearanceSpec::InitialAngleRad(a) = self.clearance {
             if !(0.0..std::f64::consts::FRAC_PI_2).contains(&a) {
                 return e("초기 접촉각 α₀ 는 [0, π/2) 범위여야 합니다");
             }
@@ -116,7 +116,7 @@ impl BallBearingGeometry {
 ///
 /// 부호 규약: 내륜에 작용하는 하중을 양으로 본다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OperatingConditions {
+pub struct BbOperatingConditions {
     /// 축하중 F_x [N] (X = 회전축). ISO 식 (A.7) 의 F_a
     pub f_x_n: f64,
     /// 반경하중 F_y [N] (Y). ISO 식 (A.6) 의 F_r
@@ -144,7 +144,7 @@ fn default_temperature() -> f64 {
     70.0
 }
 
-impl OperatingConditions {
+impl BbOperatingConditions {
     /// 반경하중 합성 크기 [N]
     pub fn radial_magnitude(&self) -> f64 {
         (self.f_y_n * self.f_y_n + self.f_z_n * self.f_z_n).sqrt()
@@ -172,20 +172,20 @@ impl OperatingConditions {
 ///
 /// 단위: `δ_x`·`δ_y`·`δ_z` 는 [mm], `γ_y`·`γ_z` 는 [rad].
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-pub enum Dof {
+pub enum BbDof {
     Free,
     Prescribed(f64),
 }
 
-impl Dof {
+impl BbDof {
     pub fn is_free(&self) -> bool {
-        matches!(self, Dof::Free)
+        matches!(self, BbDof::Free)
     }
     /// 구속값 (자유면 0)
     pub fn value(&self) -> f64 {
         match self {
-            Dof::Free => 0.0,
-            Dof::Prescribed(v) => *v,
+            BbDof::Free => 0.0,
+            BbDof::Prescribed(v) => *v,
         }
     }
 }
@@ -198,34 +198,34 @@ impl Dof {
 /// **강체(스페이서) 예압**은 `x: Prescribed(δ_x0)` 로 표현된다 — 별도 기구가 아니라
 /// 같은 구속 메커니즘이다 (P3-1 결정).
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-pub struct DofMask {
-    pub x: Dof,
-    pub y: Dof,
-    pub z: Dof,
-    pub gy: Dof,
-    pub gz: Dof,
+pub struct BbDofMask {
+    pub x: BbDof,
+    pub y: BbDof,
+    pub z: BbDof,
+    pub gy: BbDof,
+    pub gz: BbDof,
 }
 
-impl DofMask {
+impl BbDofMask {
     /// 5-DOF 전 자유도 해방
     pub const FULL: Self = Self {
-        x: Dof::Free,
-        y: Dof::Free,
-        z: Dof::Free,
-        gy: Dof::Free,
-        gz: Dof::Free,
+        x: BbDof::Free,
+        y: BbDof::Free,
+        z: BbDof::Free,
+        gy: BbDof::Free,
+        gz: BbDof::Free,
     };
 
     /// ISO 16281 Annex A.2 정식화와 항등인 3-DOF 구속 (δ_a, δ_r, ψ)
     pub const ISO_3DOF: Self = Self {
-        x: Dof::Free,
-        y: Dof::Free,
-        z: Dof::Prescribed(0.0),
-        gy: Dof::Prescribed(0.0),
-        gz: Dof::Free,
+        x: BbDof::Free,
+        y: BbDof::Free,
+        z: BbDof::Prescribed(0.0),
+        gy: BbDof::Prescribed(0.0),
+        gz: BbDof::Free,
     };
 
-    pub fn as_array(&self) -> [Dof; 5] {
+    pub fn as_array(&self) -> [BbDof; 5] {
         [self.x, self.y, self.z, self.gy, self.gz]
     }
 
@@ -234,7 +234,7 @@ impl DofMask {
     }
 }
 
-impl Default for DofMask {
+impl Default for BbDofMask {
     fn default() -> Self {
         Self::FULL
     }
@@ -253,7 +253,7 @@ impl Default for DofMask {
 /// `Rigid` 는 `δ_x` 를 구속하므로 **외부 축하중을 독립적으로 받을 수 없다**
 /// (실물에서 가능한 이유는 짝 베어링이 반력을 받기 때문이며, 그것은 단열 모델 범위 밖이다).
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Default)]
-pub enum PreloadModel {
+pub enum BbPreloadModel {
     /// 정력(스프링) 예압 — 기본값
     #[default]
     Spring,
@@ -266,13 +266,13 @@ pub enum PreloadModel {
 /// `φ_j = φ₀ + 2π(j−1)/Z` 의 `φ₀` 를 `[0, 2π/Z)` 로 `n_phase` 분할하여
 /// Q_max·p_H·수명의 **최악값**과 발생 위상을 구한다.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct PhaseSweep {
+pub struct BbPhaseSweep {
     pub enabled: bool,
     /// 분할 수. 볼 해석은 O(Z) 라 36 분할도 밀리초 단위.
     pub n_phase: u32,
 }
 
-impl Default for PhaseSweep {
+impl Default for BbPhaseSweep {
     fn default() -> Self {
         Self {
             enabled: false,
@@ -282,20 +282,20 @@ impl Default for PhaseSweep {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SolverParams {
+pub struct BbSolverParams {
     /// 수렴 판정 상대 잔차
     pub convergence_tol: f64,
     /// Newton-Raphson 최대 반복
     pub max_iterations: u32,
     /// 자유도 구속 (D-1)
     #[serde(default)]
-    pub dof_mask: DofMask,
+    pub dof_mask: BbDofMask,
     /// 위상 스윕 (D-8)
     #[serde(default)]
-    pub phase_sweep: PhaseSweep,
-    /// 축방향 예압 모델 (D-2). `ClearanceSpec::AxialPreloadN` 일 때만 의미가 있다
+    pub phase_sweep: BbPhaseSweep,
+    /// 축방향 예압 모델 (D-2). `BbClearanceSpec::AxialPreloadN` 일 때만 의미가 있다
     #[serde(default)]
-    pub preload_model: PreloadModel,
+    pub preload_model: BbPreloadModel,
     /// 기본 동정격 반경하중 C_r [N]. `None` 이면 ISO 281 식으로 자체 산출 (P4)
     #[serde(default)]
     pub c_r_n: Option<f64>,
@@ -304,21 +304,21 @@ pub struct SolverParams {
     pub c_0r_n: Option<f64>,
 }
 
-impl Default for SolverParams {
+impl Default for BbSolverParams {
     fn default() -> Self {
         Self {
             convergence_tol: 1e-8,
             max_iterations: 100,
-            dof_mask: DofMask::default(),
-            phase_sweep: PhaseSweep::default(),
-            preload_model: PreloadModel::default(),
+            dof_mask: BbDofMask::default(),
+            phase_sweep: BbPhaseSweep::default(),
+            preload_model: BbPreloadModel::default(),
             c_r_n: None,
             c_0r_n: None,
         }
     }
 }
 
-impl SolverParams {
+impl BbSolverParams {
     pub fn validate(&self) -> Result<(), SolverError> {
         if self.convergence_tol <= 0.0 {
             return Err(SolverError::InvalidInput(
@@ -341,16 +341,16 @@ impl SolverParams {
 
 /// 최상위 입력 래퍼.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BearingInput {
+pub struct BbInput {
     pub geometry: BallBearingGeometry,
     #[serde(default)]
     pub material: Material,
-    pub operating: OperatingConditions,
+    pub operating: BbOperatingConditions,
     #[serde(default)]
-    pub solver: SolverParams,
+    pub solver: BbSolverParams,
 }
 
-impl BearingInput {
+impl BbInput {
     pub fn validate(&self) -> Result<(), SolverError> {
         self.geometry.validate()?;
         self.material.validate()?;
@@ -368,7 +368,7 @@ impl BearingInput {
 /// 해석 시작 시 1회 계산해 캐시한다. CRB 가 매 반복마다 슬라이스를 순회하던
 /// 것과 달리, 볼은 이 구조체가 확정되면 반복 비용이 O(Z) 로 끝난다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GeometryDerived {
+pub struct BbGeometryDerived {
     /// A = r_i_mm + r_e_mm − D_w [mm] — 식 (A.3). 곡률중심 간 거리
     pub a_mm: f64,
     /// 초기 접촉각 α₀ [rad] — 식 (A.1)
@@ -394,7 +394,7 @@ pub struct GeometryDerived {
 /// `χ` 는 기하만으로 결정되고 `c_P` 도 그로부터 나오므로, 해석 시작 시 1회만
 /// 계산해 캐시한다. CRB 의 슬라이스 강성이 하중 의존이던 것과 근본적으로 다르다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContactDerived {
+pub struct BbContactDerived {
     /// 내륜 접촉타원 형상비 χ = a/b — 식 (E.1) 의 해
     pub chi_inner: f64,
     /// 외륜 접촉타원 형상비 χ = a/b
@@ -461,7 +461,7 @@ pub struct BallResult {
 
 /// 5-DOF 평형해 (D-7 좌표계).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BearingEquilibrium {
+pub struct BbEquilibrium {
     /// [δ_x, δ_y, δ_z, γ_y, γ_z] — 변위 [mm], 틸트 [rad]
     pub displacement: [f64; 5],
     /// 볼별 결과 (φ_j 오름차순)
@@ -476,9 +476,9 @@ pub struct BearingEquilibrium {
     pub residual_norm: f64,
 }
 
-/// 위상 스윕 결과 (D-8). `PhaseSweep::enabled` 일 때만 채워진다.
+/// 위상 스윕 결과 (D-8). `BbPhaseSweep::enabled` 일 때만 채워진다.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PhaseSweepResult {
+pub struct BbPhaseSweepResult {
     /// 최악 Q_max [N] 와 그때의 φ₀ [rad]
     pub worst_q_max_n: f64,
     pub worst_q_max_phase_rad: f64,
@@ -491,7 +491,7 @@ pub struct PhaseSweepResult {
 
 /// 자동 산출된 기하 요약 (UI 표시·검산용).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GeometrySummary {
+pub struct BbGeometrySummary {
     pub a_mm: f64,
     /// 초기 접촉각 [rad] (표시는 UI 에서 ° 로 변환)
     pub alpha_0_rad: f64,
@@ -516,11 +516,11 @@ pub struct GeometrySummary {
 ///
 /// 수명(P4)·윤활(P5) 결과는 해당 Phase 에서 필드를 추가한다 (P1-S2 결정).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BearingResult {
-    pub geometry: GeometrySummary,
-    pub equilibrium: BearingEquilibrium,
+pub struct BbResult {
+    pub geometry: BbGeometrySummary,
+    pub equilibrium: BbEquilibrium,
     #[serde(default)]
-    pub phase_sweep: Option<PhaseSweepResult>,
+    pub phase_sweep: Option<BbPhaseSweepResult>,
     pub alerts: Vec<Alert>,
     pub elapsed_ms: f64,
 }
@@ -549,7 +549,7 @@ mod tests {
             r_i_mm,
             r_e_mm,
             alpha_nom_rad: 40.0_f64.to_radians(),
-            clearance: ClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
+            clearance: BbClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
         }
     }
 
@@ -618,31 +618,31 @@ mod tests {
     #[allow(clippy::assertions_on_constants)]
     #[test]
     fn iso_3dof_mask_constrains_two_dof() {
-        assert_eq!(DofMask::ISO_3DOF.count_free(), 3);
-        assert_eq!(DofMask::FULL.count_free(), 5);
-        assert!(!DofMask::ISO_3DOF.z.is_free());
-        assert!(!DofMask::ISO_3DOF.gy.is_free());
-        assert_eq!(DofMask::ISO_3DOF.z.value(), 0.0);
+        assert_eq!(BbDofMask::ISO_3DOF.count_free(), 3);
+        assert_eq!(BbDofMask::FULL.count_free(), 5);
+        assert!(!BbDofMask::ISO_3DOF.z.is_free());
+        assert!(!BbDofMask::ISO_3DOF.gy.is_free());
+        assert_eq!(BbDofMask::ISO_3DOF.z.value(), 0.0);
     }
 
     #[test]
     fn prescribed_dof_carries_value() {
-        let d = Dof::Prescribed(0.012);
+        let d = BbDof::Prescribed(0.012);
         assert!(!d.is_free());
         assert!((d.value() - 0.012).abs() < 1e-15);
-        assert!(Dof::Free.is_free());
-        assert_eq!(Dof::Free.value(), 0.0);
+        assert!(BbDof::Free.is_free());
+        assert_eq!(BbDof::Free.value(), 0.0);
     }
 
     #[test]
     fn preload_model_defaults_to_spring() {
-        assert_eq!(PreloadModel::default(), PreloadModel::Spring);
-        assert_eq!(SolverParams::default().preload_model, PreloadModel::Spring);
+        assert_eq!(BbPreloadModel::default(), BbPreloadModel::Spring);
+        assert_eq!(BbSolverParams::default().preload_model, BbPreloadModel::Spring);
     }
 
     #[test]
     fn radial_magnitude_and_angle_are_consistent() {
-        let op = OperatingConditions {
+        let op = BbOperatingConditions {
             f_x_n: 0.0,
             f_y_n: 3.0,
             f_z_n: 4.0,
@@ -660,16 +660,16 @@ mod tests {
     #[allow(clippy::field_reassign_with_default)]
     #[test]
     fn solver_params_reject_bad_settings() {
-        let mut p = SolverParams::default();
+        let mut p = BbSolverParams::default();
         p.convergence_tol = 0.0;
         assert!(p.validate().is_err());
 
-        let mut p = SolverParams::default();
+        let mut p = BbSolverParams::default();
         p.max_iterations = 0;
         assert!(p.validate().is_err());
 
-        let mut p = SolverParams::default();
-        p.phase_sweep = PhaseSweep {
+        let mut p = BbSolverParams::default();
+        p.phase_sweep = BbPhaseSweep {
             enabled: true,
             n_phase: 0,
         };
@@ -681,10 +681,10 @@ mod tests {
     /// (207_000.0 은 MPa 물성값이지 환산 상수가 아니다.)
     #[test]
     fn serde_roundtrip_preserves_input() {
-        let input = BearingInput {
+        let input = BbInput {
             geometry: fixture(),
             material: Material::default(),
-            operating: OperatingConditions {
+            operating: BbOperatingConditions {
                 f_x_n: 5000.0,
                 f_y_n: 2000.0,
                 f_z_n: 0.0,
@@ -694,13 +694,13 @@ mod tests {
                 n_outer_rpm: 0.0,
                 temperature_c: 70.0,
             },
-            solver: SolverParams::default(),
+            solver: BbSolverParams::default(),
         };
         let json = serde_json::to_string(&input).unwrap();
-        let back: BearingInput = serde_json::from_str(&json).unwrap();
+        let back: BbInput = serde_json::from_str(&json).unwrap();
         assert!((back.operating.f_x_n - 5000.0).abs() < 1e-12);
         assert!((back.geometry.d_w_mm - 11.5).abs() < 1e-12);
-        assert_eq!(back.solver.dof_mask, DofMask::FULL);
+        assert_eq!(back.solver.dof_mask, BbDofMask::FULL);
         assert!(back.validate().is_ok());
     }
 }

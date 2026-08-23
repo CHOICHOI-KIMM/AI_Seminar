@@ -101,7 +101,7 @@ fn geometry_at(alpha_deg: f64) -> BallBearingGeometry {
         r_i_mm: F_INNER * D_W_IN * MM_PER_IN,
         r_e_mm: F_OUTER * D_W_IN * MM_PER_IN,
         alpha_nom_rad: alpha,
-        clearance: ClearanceSpec::InitialAngleRad(alpha),
+        clearance: BbClearanceSpec::InitialAngleRad(alpha),
     }
 }
 

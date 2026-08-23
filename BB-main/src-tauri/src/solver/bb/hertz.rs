@@ -165,9 +165,9 @@ pub fn dimensionless_contact_coefficients(chi: f64, k_ellip: f64, e_ellip: f64) 
 
 /// 점접촉 전처리 (Theory §8 2~3단계). 해석당 1회.
 pub fn compute_contact_derived(
-    derived: &GeometryDerived,
+    derived: &BbGeometryDerived,
     material: &Material,
-) -> Result<ContactDerived, SolverError> {
+) -> Result<BbContactDerived, SolverError> {
     material.validate()?;
 
     let chi_inner = solve_chi(derived.f_rho_i)?;
@@ -188,7 +188,7 @@ pub fn compute_contact_derived(
 
     let c_p_n_per_mm15 = spring_constant_c_p(derived, material, chi_inner, k_i, e_i, chi_outer, k_e, e_e);
 
-    Ok(ContactDerived {
+    Ok(BbContactDerived {
         chi_inner,
         chi_outer,
         k_ellip_inner: k_i,
@@ -208,7 +208,7 @@ pub fn compute_contact_derived(
 
 /// ISO (38) 의 대괄호 항 — 내·외륜 기여의 합. 단위 [mm^(1/3)·… ] 무차원 아님.
 fn deflection_bracket(
-    derived: &GeometryDerived,
+    derived: &BbGeometryDerived,
     chi_i: f64,
     k_i: f64,
     e_i: f64,
@@ -229,7 +229,7 @@ fn deflection_bracket(
 /// 하이브리드(Si₃N₄) 식 (41) 은 범위 밖이다 (Plan D-5).
 #[allow(clippy::too_many_arguments)]
 pub fn spring_constant_c_p(
-    derived: &GeometryDerived,
+    derived: &BbGeometryDerived,
     material: &Material,
     chi_i: f64,
     k_i: f64,
@@ -353,7 +353,7 @@ mod tests {
             r_i_mm,
             r_e_mm,
             alpha_nom_rad: 40.0_f64.to_radians(),
-            clearance: ClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
+            clearance: BbClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
         }
     }
 

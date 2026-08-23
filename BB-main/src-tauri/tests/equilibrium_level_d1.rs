@@ -19,7 +19,7 @@
 //
 // ── ⚠ 구속 조건: ISO_3DOF 가 아니다 ────────────────────────────────
 // Harris §7.5(조합하중)는 **미스얼라인먼트를 포함하지 않는 2-DOF**(δ_a, δ_r) 정식화다.
-// `DofMask::ISO_3DOF` 는 `γ_z` 가 자유이므로 조건이 다르다.
+// `BbDofMask::ISO_3DOF` 는 `γ_z` 가 자유이므로 조건이 다르다.
 // 따라서 여기서는 `δ_x`·`δ_y` 만 자유로 두고 나머지 셋을 0 으로 구속한다.
 // (모멘트 반력은 하우징이 받는다고 보는 것이며, Harris 도 암묵적으로 그렇게 둔다.)
 
@@ -66,12 +66,12 @@ fn lookup(ratio: f64, col: usize) -> f64 {
 }
 
 /// Harris §7.5 조건에 맞춘 구속: 미스얼라인먼트 없음 (2-DOF).
-const HARRIS_2DOF: DofMask = DofMask {
-    x: Dof::Free,
-    y: Dof::Free,
-    z: Dof::Prescribed(0.0),
-    gy: Dof::Prescribed(0.0),
-    gz: Dof::Prescribed(0.0),
+const HARRIS_2DOF: BbDofMask = BbDofMask {
+    x: BbDof::Free,
+    y: BbDof::Free,
+    z: BbDof::Prescribed(0.0),
+    gy: BbDof::Prescribed(0.0),
+    gz: BbDof::Prescribed(0.0),
 };
 
 const ALPHA_DEG: f64 = 40.0;
@@ -88,7 +88,7 @@ struct Point {
 fn solve_point(z: u32, f_a: f64, f_r: f64) -> Point {
     let d_w = 11.5;
     let (r_i, r_e) = BallBearingGeometry::reference_groove_radii(d_w);
-    let inp = BearingInput {
+    let inp = BbInput {
         geometry: BallBearingGeometry {
             bore_mm: 50.0,
             outer_diameter_mm: 90.0,
@@ -99,10 +99,10 @@ fn solve_point(z: u32, f_a: f64, f_r: f64) -> Point {
             r_i_mm: r_i,
             r_e_mm: r_e,
             alpha_nom_rad: ALPHA_DEG.to_radians(),
-            clearance: ClearanceSpec::InitialAngleRad(ALPHA_DEG.to_radians()),
+            clearance: BbClearanceSpec::InitialAngleRad(ALPHA_DEG.to_radians()),
         },
         material: Material::default(),
-        operating: OperatingConditions {
+        operating: BbOperatingConditions {
             f_x_n: f_a,
             f_y_n: f_r,
             f_z_n: 0.0,
@@ -112,11 +112,11 @@ fn solve_point(z: u32, f_a: f64, f_r: f64) -> Point {
             n_outer_rpm: 0.0,
             temperature_c: 20.0,
         },
-        solver: SolverParams {
+        solver: BbSolverParams {
             convergence_tol: 1e-12,
             max_iterations: 300,
             dof_mask: HARRIS_2DOF,
-            ..SolverParams::default()
+            ..BbSolverParams::default()
         },
     };
     let r = solve_bearing(&inp).expect("해석 실패");

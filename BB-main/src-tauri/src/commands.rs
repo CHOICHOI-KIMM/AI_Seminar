@@ -39,14 +39,14 @@ impl ProgressReporter for TauriReporter {
 /// UI 표시용 μm·kN·° 환산은 프론트엔드가 담당한다.
 #[derive(serde::Serialize)]
 pub struct GeometryResponse {
-    pub derived: GeometryDerived,
-    pub summary: GeometrySummary,
+    pub derived: BbGeometryDerived,
+    pub summary: BbGeometrySummary,
     pub alerts: Vec<Alert>,
 }
 
 /// ACBB 기하 전처리 (Theory §2, 식 A.1/A.3/A.4/E.4~E.7).
 #[tauri::command]
-pub fn compute_geometry(input: BearingInput) -> Result<GeometryResponse, String> {
+pub fn compute_geometry(input: BbInput) -> Result<GeometryResponse, String> {
     input.validate().map_err(|e| e.to_string())?;
     let derived = geometry::compute_geometry_derived(&input.geometry).map_err(|e| e.to_string())?;
     let summary = geometry::compute_geometry_summary(
@@ -68,7 +68,7 @@ pub fn compute_geometry(input: BearingInput) -> Result<GeometryResponse, String>
 /// 점접촉 전처리 + 주어진 볼 하중에서의 접촉타원·응력.
 #[derive(serde::Serialize)]
 pub struct ContactResponse {
-    pub derived: ContactDerived,
+    pub derived: BbContactDerived,
     /// 요청 하중 [N] (없으면 0)
     pub q_n: f64,
     /// 총 탄성변형 δ [mm] — 식 (38)
@@ -86,7 +86,7 @@ pub struct ContactResponse {
 ///
 /// `q_n` 은 볼 1개에 걸리는 법선하중 [N]. 0 이면 전처리(χ·c_P)만 수행한다.
 #[tauri::command]
-pub fn compute_contact(input: BearingInput, q_n: f64) -> Result<ContactResponse, String> {
+pub fn compute_contact(input: BbInput, q_n: f64) -> Result<ContactResponse, String> {
     input.validate().map_err(|e| e.to_string())?;
     let geo = geometry::compute_geometry_derived(&input.geometry).map_err(|e| e.to_string())?;
     let derived =
@@ -143,10 +143,10 @@ pub fn compute_contact(input: BearingInput, q_n: f64) -> Result<ContactResponse,
 
 /// ACBB 5-DOF 정적 평형 (Theory §4).
 ///
-/// `SolverParams::dof_mask` 로 자유도를 구속할 수 있다 (`ISO_3DOF` 등).
+/// `BbSolverParams::dof_mask` 로 자유도를 구속할 수 있다 (`ISO_3DOF` 등).
 /// `phase_sweep.enabled` 이면 케이지 위상 스윕 결과가 함께 반환된다.
 #[tauri::command]
-pub async fn solve_bearing(app: AppHandle, input: BearingInput) -> Result<BearingResult, String> {
+pub async fn solve_bearing(app: AppHandle, input: BbInput) -> Result<BbResult, String> {
     let _reporter = TauriReporter { app };
     tauri::async_runtime::spawn_blocking(move || {
         bearing::solve_bearing(&input).map_err(|e| e.to_string())

@@ -200,13 +200,13 @@ fn initial_guess(f_ext: &Vector5<f64>, z: u32, alpha_0: f64, c_p: f64) -> Vector
 #[allow(clippy::too_many_arguments)]
 fn solve_at_phase(
     geom: &BallBearingGeometry,
-    derived: &GeometryDerived,
-    contact: &ContactDerived,
-    operating: &OperatingConditions,
-    params: &SolverParams,
+    derived: &BbGeometryDerived,
+    contact: &BbContactDerived,
+    operating: &BbOperatingConditions,
+    params: &BbSolverParams,
     preload_n: f64,
     phase0: f64,
-) -> Result<BearingEquilibrium, SolverError> {
+) -> Result<BbEquilibrium, SolverError> {
     let r_i = derived.r_i_center_mm;
     let kins = ball_kinematics(geom.z, phase0);
 
@@ -366,7 +366,7 @@ fn solve_at_phase(
     // 스케일 공간 → 물리 단위 (γ = ũ / R_i)
     let displacement = [u[0], u[1], u[2], u[3] / r_i, u[4] / r_i];
 
-    Ok(BearingEquilibrium {
+    Ok(BbEquilibrium {
         displacement,
         ball_results,
         q_max_n: q_max,
@@ -430,7 +430,7 @@ fn solve_dense(a: &mut [f64], b: &mut [f64], n: usize) -> Option<Vec<f64>> {
 /// 지정된 예압 하중 `F_a0` [N] (없으면 0).
 fn preload_force(geom: &BallBearingGeometry) -> f64 {
     match geom.clearance {
-        ClearanceSpec::AxialPreloadN(f) => f,
+        BbClearanceSpec::AxialPreloadN(f) => f,
         _ => 0.0,
     }
 }
@@ -441,12 +441,12 @@ fn preload_force(geom: &BallBearingGeometry) -> f64 {
 /// 즉 **두 예압 모델은 무하중에서 정확히 같은 상태**를 준다 (Level C 판정 항목).
 fn preload_displacement(
     geom: &BallBearingGeometry,
-    derived: &GeometryDerived,
-    contact: &ContactDerived,
-    params: &SolverParams,
+    derived: &BbGeometryDerived,
+    contact: &BbContactDerived,
+    params: &BbSolverParams,
     f_a0: f64,
 ) -> Result<f64, SolverError> {
-    let axial_only = OperatingConditions {
+    let axial_only = BbOperatingConditions {
         f_x_n: 0.0,
         f_y_n: 0.0,
         f_z_n: 0.0,
@@ -458,14 +458,14 @@ fn preload_displacement(
     };
     let mut p = params.clone();
     // 축만 자유, 나머지는 0 구속 (순수 축하중 문제)
-    p.dof_mask = DofMask {
-        x: Dof::Free,
-        y: Dof::Prescribed(0.0),
-        z: Dof::Prescribed(0.0),
-        gy: Dof::Prescribed(0.0),
-        gz: Dof::Prescribed(0.0),
+    p.dof_mask = BbDofMask {
+        x: BbDof::Free,
+        y: BbDof::Prescribed(0.0),
+        z: BbDof::Prescribed(0.0),
+        gy: BbDof::Prescribed(0.0),
+        gz: BbDof::Prescribed(0.0),
     };
-    p.phase_sweep = PhaseSweep {
+    p.phase_sweep = BbPhaseSweep {
         enabled: false,
         n_phase: 1,
     };
@@ -479,7 +479,7 @@ fn preload_displacement(
 }
 
 /// 5-DOF 평형 해석 (위상 스윕 포함).
-pub fn solve_bearing(input: &BearingInput) -> Result<BearingResult, SolverError> {
+pub fn solve_bearing(input: &BbInput) -> Result<BbResult, SolverError> {
     let t0 = std::time::Instant::now();
     input.validate()?;
 
@@ -487,7 +487,7 @@ pub fn solve_bearing(input: &BearingInput) -> Result<BearingResult, SolverError>
     let mut geom_for_derived = input.geometry.clone();
     let preload_n = preload_force(&input.geometry);
     if preload_n != 0.0 {
-        geom_for_derived.clearance = ClearanceSpec::InitialAngleRad(input.geometry.alpha_nom_rad);
+        geom_for_derived.clearance = BbClearanceSpec::InitialAngleRad(input.geometry.alpha_nom_rad);
     }
 
     let derived = geometry::compute_geometry_derived(&geom_for_derived)?;
@@ -501,11 +501,11 @@ pub fn solve_bearing(input: &BearingInput) -> Result<BearingResult, SolverError>
     let mut spring_force = 0.0;
     if preload_n != 0.0 {
         match params.preload_model {
-            PreloadModel::Spring => spring_force = preload_n,
-            PreloadModel::Rigid => {
+            BbPreloadModel::Spring => spring_force = preload_n,
+            BbPreloadModel::Rigid => {
                 let dx0 =
                     preload_displacement(&geom_for_derived, &derived, &contact, &params, preload_n)?;
-                params.dof_mask.x = Dof::Prescribed(dx0);
+                params.dof_mask.x = BbDof::Prescribed(dx0);
             }
         }
     }
@@ -558,7 +558,7 @@ pub fn solve_bearing(input: &BearingInput) -> Result<BearingResult, SolverError>
             }
             curve.push((phase0, eq.q_max_n));
         }
-        Some(PhaseSweepResult {
+        Some(BbPhaseSweepResult {
             worst_q_max_n: worst_q.0,
             worst_q_max_phase_rad: worst_q.1,
             worst_p_max_mpa: worst_p.0,
@@ -600,7 +600,7 @@ pub fn solve_bearing(input: &BearingInput) -> Result<BearingResult, SolverError>
         });
     }
 
-    Ok(BearingResult {
+    Ok(BbResult {
         geometry: summary,
         equilibrium: base,
         phase_sweep: sweep,
@@ -627,15 +627,15 @@ mod tests {
             r_i_mm,
             r_e_mm,
             alpha_nom_rad: 40.0_f64.to_radians(),
-            clearance: ClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
+            clearance: BbClearanceSpec::InitialAngleRad(40.0_f64.to_radians()),
         }
     }
 
-    fn input(z: u32, fx: f64, fy: f64) -> BearingInput {
-        BearingInput {
+    fn input(z: u32, fx: f64, fy: f64) -> BbInput {
+        BbInput {
             geometry: fixture(z),
             material: Material::default(),
-            operating: OperatingConditions {
+            operating: BbOperatingConditions {
                 f_x_n: fx,
                 f_y_n: fy,
                 f_z_n: 0.0,
@@ -645,7 +645,7 @@ mod tests {
                 n_outer_rpm: 0.0,
                 temperature_c: 70.0,
             },
-            solver: SolverParams::default(),
+            solver: BbSolverParams::default(),
         }
     }
 
@@ -692,7 +692,7 @@ mod tests {
     #[test]
     fn iso_3dof_mask_zeroes_constrained_dof() {
         let mut inp = input(16, 5_000.0, 3_000.0);
-        inp.solver.dof_mask = DofMask::ISO_3DOF;
+        inp.solver.dof_mask = BbDofMask::ISO_3DOF;
         let r = solve_bearing(&inp).unwrap();
         assert!(r.equilibrium.converged);
         assert_eq!(r.equilibrium.displacement[2], 0.0, "δ_z 가 구속되지 않음");
@@ -703,10 +703,10 @@ mod tests {
     fn preload_models_agree_without_external_load() {
         // 무하중에서 스프링 예압과 강체 예압은 **완전히 같은 해**를 준다 (Level C 항목)
         let mut a = input(16, 0.0, 0.0);
-        a.geometry.clearance = ClearanceSpec::AxialPreloadN(2_000.0);
-        a.solver.preload_model = PreloadModel::Spring;
+        a.geometry.clearance = BbClearanceSpec::AxialPreloadN(2_000.0);
+        a.solver.preload_model = BbPreloadModel::Spring;
         let mut b = a.clone();
-        b.solver.preload_model = PreloadModel::Rigid;
+        b.solver.preload_model = BbPreloadModel::Rigid;
 
         let ra = solve_bearing(&a).unwrap();
         let rb = solve_bearing(&b).unwrap();
@@ -723,10 +723,10 @@ mod tests {
     fn preload_models_diverge_under_axial_load() {
         // 축하중을 걸면 스프링은 δ_x 가 늘고, 강체는 δ_x 가 고정된다
         let mut a = input(16, 3_000.0, 0.0);
-        a.geometry.clearance = ClearanceSpec::AxialPreloadN(2_000.0);
-        a.solver.preload_model = PreloadModel::Spring;
+        a.geometry.clearance = BbClearanceSpec::AxialPreloadN(2_000.0);
+        a.solver.preload_model = BbPreloadModel::Spring;
         let mut b = a.clone();
-        b.solver.preload_model = PreloadModel::Rigid;
+        b.solver.preload_model = BbPreloadModel::Rigid;
 
         let mut no_load = a.clone();
         no_load.operating.f_x_n = 0.0;
@@ -745,7 +745,7 @@ mod tests {
     #[test]
     fn preload_loads_all_balls_without_external_force() {
         let mut inp = input(16, 0.0, 0.0);
-        inp.geometry.clearance = ClearanceSpec::AxialPreloadN(2_000.0);
+        inp.geometry.clearance = BbClearanceSpec::AxialPreloadN(2_000.0);
         let r = solve_bearing(&inp).unwrap();
         assert!(r.equilibrium.converged);
         assert_eq!(r.equilibrium.loaded_count, 16, "예압 상태에서 전 볼 접촉이어야 함");

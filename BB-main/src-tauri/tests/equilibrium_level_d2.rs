@@ -1,6 +1,6 @@
 // Level D-2 검증 — 5-DOF 해방 (Plan Phase 3-2)
 //
-// 판정 대상: BB_Development_Theory.md §4.4 확정 형태를 `DofMask::FULL` 로 푼 해.
+// 판정 대상: BB_Development_Theory.md §4.4 확정 형태를 `BbDofMask::FULL` 로 푼 해.
 // 실행: cargo test --test equilibrium_level_d2
 //
 // ── 이 단계가 무엇을 검증하는가 ──────────────────────────────────────
@@ -34,15 +34,15 @@ fn geometry_at(z: u32, alpha_deg: f64) -> BallBearingGeometry {
         r_e_mm,
         alpha_nom_rad: alpha_deg.to_radians(),
         // 클리어런스 0 — 초기 접촉각 = 공칭 접촉각
-        clearance: ClearanceSpec::InitialAngleRad(alpha_deg.to_radians()),
+        clearance: BbClearanceSpec::InitialAngleRad(alpha_deg.to_radians()),
     }
 }
 
-fn make_z(z: u32, fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BearingInput {
-    BearingInput {
+fn make_z(z: u32, fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BbInput {
+    BbInput {
         geometry: geometry_at(z, ALPHA_DEG),
         material: Material::default(),
-        operating: OperatingConditions {
+        operating: BbOperatingConditions {
             f_x_n: fx,
             f_y_n: fy,
             f_z_n: fz,
@@ -52,14 +52,14 @@ fn make_z(z: u32, fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BearingInput {
             n_outer_rpm: 0.0,
             temperature_c: 70.0,
         },
-        solver: SolverParams {
+        solver: BbSolverParams {
             convergence_tol: 1e-13,
-            ..SolverParams::default()
+            ..BbSolverParams::default()
         },
     }
 }
 
-fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BearingInput {
+fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BbInput {
     make_z(Z, fx, fy, fz, my, mz)
 }
 
@@ -102,9 +102,9 @@ fn d2a_iso3dof_solution_is_a_full_solution() {
         (12000.0, 2000.0, 4.0e5),
     ] {
         let mut a = make(fx, fy, 0.0, 0.0, mz);
-        a.solver.dof_mask = DofMask::ISO_3DOF;
+        a.solver.dof_mask = BbDofMask::ISO_3DOF;
         let mut b = a.clone();
-        b.solver.dof_mask = DofMask::FULL;
+        b.solver.dof_mask = BbDofMask::FULL;
 
         let ra = solve_bearing(&a).unwrap();
         let rb = solve_bearing(&b).unwrap();
@@ -167,7 +167,7 @@ fn d2a_iso3dof_solution_is_a_full_solution() {
 fn d2b_radial_load_direction_invariance() {
     println!("\n── Level D-2b : 반경하중 방향 불변 ──");
     const F_R: f64 = 8000.0;
-    let sweep = PhaseSweep {
+    let sweep = BbPhaseSweep {
         enabled: true,
         n_phase: 180,
     };
@@ -202,7 +202,7 @@ fn d2b_radial_load_direction_invariance() {
 fn d2c_moment_axis_invariance() {
     println!("\n── Level D-2c : 모멘트 축 불변 ──");
     const M: f64 = 3.0e5;
-    let sweep = PhaseSweep {
+    let sweep = BbPhaseSweep {
         enabled: true,
         n_phase: 180,
     };
