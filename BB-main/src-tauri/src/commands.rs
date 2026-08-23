@@ -46,7 +46,7 @@ pub struct GeometryResponse {
 
 /// ACBB 기하 전처리 (Theory §2, 식 A.1/A.3/A.4/E.4~E.7).
 #[tauri::command]
-pub fn compute_geometry(input: BbInput) -> Result<GeometryResponse, String> {
+pub fn bb_compute_geometry(input: BbInput) -> Result<GeometryResponse, String> {
     input.validate().map_err(|e| e.to_string())?;
     let derived = geometry::compute_geometry_derived(&input.geometry).map_err(|e| e.to_string())?;
     let summary = geometry::compute_geometry_summary(
@@ -86,7 +86,7 @@ pub struct ContactResponse {
 ///
 /// `q_n` 은 볼 1개에 걸리는 법선하중 [N]. 0 이면 전처리(χ·c_P)만 수행한다.
 #[tauri::command]
-pub fn compute_contact(input: BbInput, q_n: f64) -> Result<ContactResponse, String> {
+pub fn bb_compute_contact(input: BbInput, q_n: f64) -> Result<ContactResponse, String> {
     input.validate().map_err(|e| e.to_string())?;
     let geo = geometry::compute_geometry_derived(&input.geometry).map_err(|e| e.to_string())?;
     let derived =
@@ -146,7 +146,7 @@ pub fn compute_contact(input: BbInput, q_n: f64) -> Result<ContactResponse, Stri
 /// `BbSolverParams::dof_mask` 로 자유도를 구속할 수 있다 (`ISO_3DOF` 등).
 /// `phase_sweep.enabled` 이면 케이지 위상 스윕 결과가 함께 반환된다.
 #[tauri::command]
-pub async fn solve_bearing(app: AppHandle, input: BbInput) -> Result<BbResult, String> {
+pub async fn bb_solve_bearing(app: AppHandle, input: BbInput) -> Result<BbResult, String> {
     let _reporter = TauriReporter { app };
     tauri::async_runtime::spawn_blocking(move || {
         bearing::solve_bearing(&input).map_err(|e| e.to_string())

@@ -18,20 +18,20 @@ pub fn run() {
                 )?;
             }
             // Create default preset if none exist
-            let _ = presets::ensure_default_preset(app.handle().clone());
+            let _ = presets::bb_preset_ensure_default(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::compute_geometry,
-            commands::compute_contact,
-            commands::solve_bearing,
-            presets::list_presets,
-            presets::save_preset,
-            presets::load_preset,
-            presets::delete_preset,
-            presets::ensure_default_preset,
-            presets::get_last_preset,
-            presets::save_last_preset,
+            commands::bb_compute_geometry,
+            commands::bb_compute_contact,
+            commands::bb_solve_bearing,
+            presets::bb_preset_list,
+            presets::bb_preset_save,
+            presets::bb_preset_load,
+            presets::bb_preset_delete,
+            presets::bb_preset_ensure_default,
+            presets::bb_preset_get_last,
+            presets::bb_preset_save_last,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

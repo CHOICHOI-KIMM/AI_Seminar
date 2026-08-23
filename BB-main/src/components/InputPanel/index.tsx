@@ -46,7 +46,7 @@ export default function InputPanel() {
 
   const refreshPresets = useCallback(async () => {
     try {
-      const list = await invoke<PresetInfo[]>('list_presets');
+      const list = await invoke<PresetInfo[]>('bb_preset_list');
       setPresets(list);
       if (list.length > 0 && !list.find(p => p.name === selectedPreset)) {
         setSelectedPreset(list[0].name);
@@ -59,9 +59,9 @@ export default function InputPanel() {
     (async () => {
       await refreshPresets();
       try {
-        const lastName = await invoke<string | null>('get_last_preset');
+        const lastName = await invoke<string | null>('bb_preset_get_last');
         if (lastName) {
-          const data = await invoke<BearingInput>('load_preset', { name: lastName });
+          const data = await invoke<BearingInput>('bb_preset_load', { name: lastName });
           dispatch({ type: 'SET_INPUT', payload: data });
           setSelectedPreset(lastName);
           return;
@@ -69,13 +69,13 @@ export default function InputPanel() {
       } catch { /* 프리셋 삭제된 경우 등 */ }
       // last_preset 없으면 첫 번째 프리셋 자동 로드
       try {
-        const list = await invoke<PresetInfo[]>('list_presets');
+        const list = await invoke<PresetInfo[]>('bb_preset_list');
         if (list.length > 0) {
           const firstName = list[0].name;
-          const data = await invoke<BearingInput>('load_preset', { name: firstName });
+          const data = await invoke<BearingInput>('bb_preset_load', { name: firstName });
           dispatch({ type: 'SET_INPUT', payload: data });
           setSelectedPreset(firstName);
-          invoke('save_last_preset', { name: firstName }).catch(() => {});
+          invoke('bb_preset_save_last', { name: firstName }).catch(() => {});
         }
       } catch { /* ignore */ }
     })();
@@ -86,9 +86,9 @@ export default function InputPanel() {
     setSelectedPreset(name);
     if (!name) return;
     try {
-      const data = await invoke<BearingInput>('load_preset', { name });
+      const data = await invoke<BearingInput>('bb_preset_load', { name });
       dispatch({ type: 'SET_INPUT', payload: data });
-      invoke('save_last_preset', { name }).catch(() => {});
+      invoke('bb_preset_save_last', { name }).catch(() => {});
     } catch (e) {
       dispatch({ type: 'SET_ERROR', payload: `Preset load failed: ${e}` });
     }
@@ -99,10 +99,10 @@ export default function InputPanel() {
     const name = window.prompt('새 프리셋 이름:', '');
     if (!name) return;
     try {
-      await invoke('save_preset', { name, input });
+      await invoke('bb_preset_save', { name, input });
       await refreshPresets();
       setSelectedPreset(name);
-      invoke('save_last_preset', { name }).catch(() => {});
+      invoke('bb_preset_save_last', { name }).catch(() => {});
     } catch (e) {
       dispatch({ type: 'SET_ERROR', payload: `Preset save failed: ${e}` });
     }
@@ -112,8 +112,8 @@ export default function InputPanel() {
   const handleOverwritePreset = useCallback(async () => {
     if (!selectedPreset) return;
     try {
-      await invoke('save_preset', { name: selectedPreset, input });
-      invoke('save_last_preset', { name: selectedPreset }).catch(() => {});
+      await invoke('bb_preset_save', { name: selectedPreset, input });
+      invoke('bb_preset_save_last', { name: selectedPreset }).catch(() => {});
       await refreshPresets();
       setSaveFlash(true);
       setTimeout(() => setSaveFlash(false), 1200);
@@ -126,7 +126,7 @@ export default function InputPanel() {
   const handleResetPreset = useCallback(async () => {
     if (!selectedPreset) return;
     try {
-      const data = await invoke<BearingInput>('load_preset', { name: selectedPreset });
+      const data = await invoke<BearingInput>('bb_preset_load', { name: selectedPreset });
       dispatch({ type: 'SET_INPUT', payload: data });
     } catch (e) {
       dispatch({ type: 'SET_ERROR', payload: `Preset reset failed: ${e}` });
@@ -137,8 +137,8 @@ export default function InputPanel() {
     if (!selectedPreset) return;
     if (!window.confirm(`"${selectedPreset}" 프리셋을 삭제하시겠습니까?`)) return;
     try {
-      await invoke('delete_preset', { name: selectedPreset });
-      invoke('save_last_preset', { name: '' }).catch(() => {});
+      await invoke('bb_preset_delete', { name: selectedPreset });
+      invoke('bb_preset_save_last', { name: '' }).catch(() => {});
       await refreshPresets();
     } catch (e) {
       dispatch({ type: 'SET_ERROR', payload: `Preset delete failed: ${e}` });
@@ -243,7 +243,7 @@ export default function InputPanel() {
         const result = await invoke<DualModeComparison>('solve_bearing_dual', { input });
         dispatch({ type: 'SET_DUAL_RESULT', payload: result });
       } else {
-        const result = await invoke<BearingResult>('solve_bearing', { input });
+        const result = await invoke<BearingResult>('bb_solve_bearing', { input });
         dispatch({ type: 'SET_RESULT', payload: result });
       }
       console.log('[Solve] done');

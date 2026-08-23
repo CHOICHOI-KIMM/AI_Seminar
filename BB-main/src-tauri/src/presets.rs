@@ -38,7 +38,7 @@ fn sanitize_filename(name: &str) -> String {
 }
 
 #[tauri::command]
-pub fn list_presets(app: AppHandle) -> Result<Vec<PresetInfo>, String> {
+pub fn bb_preset_list(app: AppHandle) -> Result<Vec<PresetInfo>, String> {
     let dir = presets_dir(&app)?;
     let mut presets = Vec::new();
 
@@ -120,7 +120,7 @@ fn is_leap(year: i64) -> bool {
 }
 
 #[tauri::command]
-pub fn save_preset(app: AppHandle, name: String, input: BbInput) -> Result<(), String> {
+pub fn bb_preset_save(app: AppHandle, name: String, input: BbInput) -> Result<(), String> {
     let dir = presets_dir(&app)?;
     let filename = sanitize_filename(&name);
     let path = dir.join(&filename);
@@ -130,7 +130,7 @@ pub fn save_preset(app: AppHandle, name: String, input: BbInput) -> Result<(), S
 }
 
 #[tauri::command]
-pub fn load_preset(app: AppHandle, name: String) -> Result<BbInput, String> {
+pub fn bb_preset_load(app: AppHandle, name: String) -> Result<BbInput, String> {
     let dir = presets_dir(&app)?;
     let filename = sanitize_filename(&name);
     let path = dir.join(&filename);
@@ -140,7 +140,7 @@ pub fn load_preset(app: AppHandle, name: String) -> Result<BbInput, String> {
 }
 
 #[tauri::command]
-pub fn get_last_preset(app: AppHandle) -> Result<Option<String>, String> {
+pub fn bb_preset_get_last(app: AppHandle) -> Result<Option<String>, String> {
     let path = app
         .path()
         .app_data_dir()
@@ -160,7 +160,7 @@ pub fn get_last_preset(app: AppHandle) -> Result<Option<String>, String> {
 }
 
 #[tauri::command]
-pub fn save_last_preset(app: AppHandle, name: String) -> Result<(), String> {
+pub fn bb_preset_save_last(app: AppHandle, name: String) -> Result<(), String> {
     let dir = app
         .path()
         .app_data_dir()
@@ -173,7 +173,7 @@ pub fn save_last_preset(app: AppHandle, name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn delete_preset(app: AppHandle, name: String) -> Result<(), String> {
+pub fn bb_preset_delete(app: AppHandle, name: String) -> Result<(), String> {
     let dir = presets_dir(&app)?;
     let filename = sanitize_filename(&name);
     let path = dir.join(&filename);
@@ -182,7 +182,7 @@ pub fn delete_preset(app: AppHandle, name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn ensure_default_preset(app: AppHandle) -> Result<(), String> {
+pub fn bb_preset_ensure_default(app: AppHandle) -> Result<(), String> {
     let dir = presets_dir(&app)?;
 
     // 프리셋이 하나도 없을 때만 기본값 생성.
