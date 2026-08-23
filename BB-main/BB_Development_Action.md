@@ -1384,3 +1384,119 @@ cargo test             110 → 118 passed, 0 failed
 **Phase 3 완결.** 다음은 **Phase 4 — 정격하중 및 수명** (`C_r`·`b_m` Table 1·`f_c` Table 2 40행·`X`/`Y`/`e` Table 3 2중 보간·`Q_c`/`Q_e`·`a_ISO`·`C_u`). ISO 표 전사 분량이 커서 착수 전 별도 확인이 필요하다.
 
 ---
+
+---
+
+# Phase 4
+
+## 260823 — P4-S0: 통합·확장 대비 선반영 (4단계)
+
+**커밋** `02b5cad` · `cd70300` · `14daf15` · `fbd9eeb` — 각 단계마다 `cargo test` + `cargo clippy --lib --tests` 통과 후 커밋. push 없음.
+
+> 근거는 Plan **§3.6.1**(통합을 전제로 한 설계 기준) 전량. S0 는 **프론트 착수 전에
+> 「통합 시점에 조용히 틀릴 것」만 미리 막는** 단계이며, 추상화 장치는 만들지 않았다(레벨 1).
+
+### 왜 지금인가 — 조사에서 나온 두 발견
+
+| 발견 | 내용 |
+|---|---|
+| ① | **CRB `src/` 와 BB `src/` 가 byte-identical.** BB 는 Rust 만 포팅했고 프론트는 CRB(실은 TRB) 사본 그대로다 |
+| ② | **`life.rs`·`static_rating.rs`·`lubrication.rs` 9 830줄이 두 저장소에 동일 사본으로 존재하며 양쪽 다 비활성.** 이미 두 번 유지보수되고 있었다 |
+
+### S0-1 — 비활성 중복 3파일 삭제 `02b5cad`
+
+`life.rs`(1 085) · `static_rating.rs`(304) · `lubrication.rs`(8 441) = **9 830줄 삭제**.
+셋 다 **롤러 기준 TRB 판**이고 `mod.rs` 에서 주석 처리되어 컴파일되지 않았다.
+BB 는 신 P5·P6 에서 **ISO 16281 §5.2 볼 식으로 새로 쓴다.** `mod.rs` 주석을
+「재작성 후 활성화」 → 「**영구 삭제 · 신 P5/P6 신규 작성**」으로 정정했다(파일이 없어졌으므로 기존 문구는 거짓이 된다).
+
+### S0-2 — `solver/{common,bb}` 재편 · `app_lib` → `bb_core` `cd70300`
+
+```
+src/solver/
+  common/  mod.rs · util.rs · types.rs   ← SolverProgress·ProgressReporter·NoopReporter
+  bb/      mod.rs · types.rs · geometry.rs · hertz.rs · bearing.rs   ·Material·Alert·AlertLevel 6개만
+```
+
+- `src/error.rs`(`SolverError`)는 `solver/` 밖이라 그대로 뒀다.
+- **재수출(`pub use`) 편법을 쓰지 않았다.** 옛 경로 `solver::types::*` 는 완전히 죽었고
+  `commands.rs`·`presets.rs`·테스트 7파일이 `solver::bb::types::*` + `solver::common::types::*` 를 직접 쓴다.
+  **경계가 목적이므로 import 를 실제로 고쳐야 한다.**
+- 의존 방향은 단방향 — `common/` 은 `bb/` 를 참조하지 않으며 `common/mod.rs` 주석에 명시했다.
+
+### S0-3 — 타입 접두사 `14daf15`
+
+§3.6.1.6 의 판정 규칙(「이름만 보고 계열을 알 수 없고 다른 계열에도 같은 개념이 있으면 `Bb` 접두」)에 따라 **중립명 14개**를 개명했다.
+
+`BearingInput`→`BbInput` · `BearingResult`→`BbResult` · `BearingEquilibrium`→`BbEquilibrium` ·
+`GeometryDerived`→`BbGeometryDerived` · `GeometrySummary`→`BbGeometrySummary` · `ContactDerived`→`BbContactDerived` ·
+`SolverParams`→`BbSolverParams` · `OperatingConditions`→`BbOperatingConditions` · `ClearanceSpec`→`BbClearanceSpec` ·
+`PreloadModel`→`BbPreloadModel` · `PhaseSweep`→`BbPhaseSweep` · `PhaseSweepResult`→`BbPhaseSweepResult` ·
+`Dof`→`BbDof` · `DofMask`→`BbDofMask`
+
+**무접두 유지 8개**: `Alert`·`AlertLevel`·`Material`·`SolverProgress`·`ProgressReporter`·`NoopReporter`·`SolverError`(계열 무관) / `BallBearingGeometry`·`BallResult`(이름에 이미 `Ball`).
+
+### S0-4 — `Displacement` · `BallBearingKind` `fbd9eeb`
+
+**(a)** `BbEquilibrium.displacement: [f64;5]` → `Displacement { dx_mm, dy_mm, dz_mm, ry_rad, rz_rad }`.
+CRB 는 같은 `[f64;5]` 가 `[δx, δy, δz=0, γx, γy=0]` 이라 **인덱스 3의 의미가 다르다**(CRB `γx` / BB `γy`).
+배열은 타입 검사를 통과하면서 조용히 틀리므로 named struct 가 유일한 방어다.
+
+**(b)** `BallBearingKind { Acbb, Dgbb, FourPoint }` + `validate()` 게이트.
+`Dgbb` 는 솔버 코어가 이미 동작하나 **ISO 281 X/Y 계수 미확보**(신 P5), `FourPoint` 는 **평형 모듈 미구현**이므로 거부한다.
+⚠ **`kind` 는 선언값이지 추론값이 아니다** — α₀ 로 변종을 자동 판정하는 규칙을 넣지 않았다.
+Level C-7 픽스처가 α₀ = 0(물리적으로는 DGBB)을 `Acbb` 로 쓰기 때문이다.
+
+### ⭐ A-8 이 예상대로 작동했다 — 실측 확인
+
+`displacement` 가 배열이던 시절 **D-10 단위 접미사 검사(A-8)의 사각지대**였다. struct 전환으로 검사 대상에 자동 편입되는지 실측했다:
+
+```
+ry_rad → ry 로 일시 변경 후 실행
+  → a8b 즉시 실패: 단위 접미사 없는 유차원 f64 필드: ["ry"]
+```
+
+원복 후 커밋했다. Plan §3.6.1.6 ③ 이 예상한 **「의도치 않게 얻는 이득」이 실제로 성립**한다.
+
+A-8 자체 변경:
+- `a8`: `include_str!` 5개 → **6개** (`bb/{types,geometry,hertz,bearing}.rs` + `mod.rs` + **`common/types.rs` 신규**)
+- `a8b`: 단일 스캔 → `bb/types.rs` + `common/types.rs` **2개 스캔**
+- `common/util.rs` **제외 유지** + 근거 주석 명시 — D-10 이 환산 상수를 허용한 유일한 지점이라, 스캔에 넣으면 **규약이 허용한 것을 규약 검사가 잡는 모순**이 된다
+
+### 판단이 필요했던 지점 2건 — 둘 다 Plan 범위 내
+
+| # | 지점 | 처리 |
+|---|---|---|
+| 1 | **`d2a` 의 5성분 루프** — 판정이 `(0..5)` 인덱스 순회 + `if i ≥ 3 { v · r_i }`(회전을 길이 차원으로) 에 의존해, 필드 접근으로 단순 치환하면 **판정이 훼손**된다 | **테스트 파일 로컬 헬퍼** `fn comps(&Displacement) -> [f64;5]` 로 판정 직전에만 배열로 편다. 솔버 API 에 배열 변환기를 **추가하지 않았다**(Plan 에 없음) |
+| 2 | `bb/types.rs` 가 `Alert`·`Material` 을 참조 | `use`(사적 import)이지 `pub use`(재수출)가 아니다. 편법 없음 |
+
+### 검증 — 숫자 소명
+
+```
+cargo test             118 → 120 passed, 0 failed
+cargo clippy           경고 0 (4단계 모두)
+```
+
+| 항목 | 증감 | 소명 |
+|---|---|---|
+| `src/solver/bb/types.rs` `rejects_unverified_ball_bearing_kinds` | **+1** | S0-4 에서 **새로 생긴 분기**(변종 게이트). 기존 테스트가 전혀 덮지 않았다 |
+| 〃 `acbb_with_zero_initial_angle_is_accepted` | **+1** | 「`kind` 는 선언값」 규칙의 **회귀 방지** — 누군가 α₀ 자동판정을 넣어 Level C-7 픽스처를 죽이는 것을 막는다 |
+| **합계** | 118 + 2 = **120** ✓ | 기존 테스트는 하나도 삭제·약화하지 않았다 |
+
+**코드 줄수**: src-tauri 전체 **15 691 → 6 065줄** (net **−9 626**). S0-2~S0-4 순증 약 +204줄.
+
+### 프론트에 남긴 부채 (신 P4-S1 에서 처리)
+
+**`../src/` 는 전혀 건드리지 않았다** (`git diff --stat -- src/` 빈 출력 확인). 다만 두 가지가 바뀌어 S1 에서 반영해야 한다:
+
+| 변경 | 프론트 영향 |
+|---|---|
+| `[lib] name` `app_lib` → `bb_core` | Rust 내부 문제. 프론트 무관 |
+| **`BbEquilibrium.displacement` JSON 이 배열 → 객체** | **TypeScript 타입 재작성 시 반드시 반영.** `displacement[0]` → `displacement.dx_mm` |
+
+### 다음
+
+**S1** — 프론트 타입 SSOT · 폴더·명명 경계 · 커맨드 `bb_` 접두 · ESLint + A-8 확장.
+단, 탭별 처분 방침이 **최소 변경**으로 바뀌었으므로 (§3.6.4.3) 작업 분해를 갱신한 뒤 착수한다.
+
+---
