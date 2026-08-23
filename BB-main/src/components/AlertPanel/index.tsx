@@ -30,7 +30,7 @@ export default function AlertPanel() {
           <div key={i} className={`flex items-start gap-2 p-2 rounded border mb-1 ${colors[alert.level]}`}>
             <span className="text-[13px] font-bold mt-0.5">{icons[alert.level]}</span>
             <div className="min-w-0">
-              <p className="text-[13px] font-medium">{alert.category}</p>
+              <p className="text-[13px] font-medium">{alert.code}</p>
               <p className="text-xs opacity-80">{alert.message}</p>
             </div>
           </div>

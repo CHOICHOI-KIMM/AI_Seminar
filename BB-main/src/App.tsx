@@ -60,8 +60,8 @@ export default function App() {
         {/* Top Bar */}
         <header className="flex items-center justify-between px-4 py-2 bg-bar text-bar-text border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
-            <h1 className="text-sm font-semibold tracking-wide">TRB Contact Analysis</h1>
-            <span className="text-xs text-text-canvas">Tapered Roller Bearing</span>
+            <h1 className="text-sm font-semibold tracking-wide">BB Contact Analysis</h1>
+            <span className="text-xs text-text-canvas">Angular Contact Ball Bearing (ACBB)</span>
           </div>
           <div className="flex items-center gap-2 text-xs">
             <button onClick={handleLoad} className="px-2 py-1 rounded hover:bg-white/10 text-text-canvas transition-colors cursor-pointer" title="Open project file">
