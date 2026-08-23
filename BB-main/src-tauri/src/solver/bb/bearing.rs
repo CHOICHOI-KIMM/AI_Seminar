@@ -607,6 +607,8 @@ pub fn solve_bearing(input: &BbInput) -> Result<BbResult, SolverError> {
     }
 
     Ok(BbResult {
+        // 판별자 — 입력의 변종을 그대로 반영한다 (§3.6.1.7)
+        kind: input.kind,
         geometry: summary,
         equilibrium: base,
         phase_sweep: sweep,

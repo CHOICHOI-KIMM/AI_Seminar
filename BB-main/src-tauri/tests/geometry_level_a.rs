@@ -439,3 +439,129 @@ fn a8b_dimensional_fields_carry_unit_suffix() {
         "단위 접미사 없는 유차원 f64 필드: {offenders:?}"
     );
 }
+
+// ═══════════════════════════════════════════════════════════════════
+//  A-8c / A-8d. 자기검사 확장 (P4-S1-3, Plan §3.6.1.6 ②)
+// ═══════════════════════════════════════════════════════════════════
+
+#[test]
+fn a8c_kind_discriminant_present_on_input_and_result() {
+    // §3.6.1.7 「kind 판별자」 — 통합 시 serde 가 필드가 겹치는 다른 계열
+    // 결과로 **조용히 역직렬화**하는 것을 막는 장치다.
+    //
+    // 소스 문자열이 아니라 **실제 직렬화 결과(JSON)** 를 본다.
+    // 필드가 있어도 `#[serde(skip)]` 이면 계약은 깨지기 때문이다.
+    let input = BbInput {
+        kind: BallBearingKind::Acbb,
+        geometry: fixture(),
+        material: Material::default(),
+        operating: BbOperatingConditions {
+            f_x_n: 3_000.0,
+            f_y_n: 1_000.0,
+            ..operating(1_000.0)
+        },
+        solver: BbSolverParams::default(),
+    };
+
+    let input_json: serde_json::Value = serde_json::to_value(&input).unwrap();
+    assert!(
+        input_json.get("kind").is_some(),
+        "BbInput 직렬화에 `kind` 판별자가 없다"
+    );
+
+    let result = bb_core::solver::bb::bearing::solve_bearing(&input).unwrap();
+    let result_json: serde_json::Value = serde_json::to_value(&result).unwrap();
+    assert!(
+        result_json.get("kind").is_some(),
+        "BbResult 직렬화에 `kind` 판별자가 없다"
+    );
+
+    // 솔버는 입력의 변종을 **그대로** 반영해야 한다 (변환·추론 금지)
+    assert_eq!(
+        result_json.get("kind"),
+        input_json.get("kind"),
+        "BbResult.kind 가 BbInput.kind 와 다르다"
+    );
+    assert_eq!(result.kind, input.kind);
+}
+
+/// 식별자를 snake_case · camelCase 경계로 쪼갠 소문자 단어 목록.
+///
+/// `Prescribed` 는 부분문자열로 보면 `rib` 를 포함하지만 **단어가 아니다**.
+/// A-8d 가 오탐 없이 성립하려면 판정 단위가 부분문자열이 아니라
+/// **식별자를 구성하는 단어**여야 한다 (P4-S1-3 실측으로 확인한 유일한 오탐).
+fn identifier_words(ident: &str) -> Vec<String> {
+    let mut words = Vec::new();
+    for chunk in ident.split('_') {
+        if chunk.is_empty() {
+            continue;
+        }
+        // `TRB` 같은 전대문자 약어는 쪼개지 않고 통째로도 넣는다
+        words.push(chunk.to_ascii_lowercase());
+        let mut cur = String::new();
+        for ch in chunk.chars() {
+            if ch.is_uppercase() && !cur.is_empty() {
+                words.push(std::mem::take(&mut cur));
+            }
+            cur.push(ch.to_ascii_lowercase());
+        }
+        if !cur.is_empty() {
+            words.push(cur);
+        }
+    }
+    words
+}
+
+#[test]
+fn a8d_no_roller_lineage_identifiers_in_solver() {
+    // Plan §3.6.1.6 ② — CRB 가 TRB 식별자를 두 세대째 끌고 있는 것이 증거다.
+    // 규율로는 못 막으므로 기계로 막는다.
+    //
+    // ⚠ **주석·문서 문자열의 언급은 정상이다** (CRB 와의 차이를 설명해야 한다).
+    //    따라서 `//` 이후는 잘라내고 **코드 부분의 식별자만** 본다.
+    // ⚠ 판정은 부분문자열이 아니라 `identifier_words` 의 **단어 단위**다
+    //    (`Prescribed` ⊅ `rib`).
+    // ⚠ `#[cfg(test)]` 이후는 픽스처라 제외한다 (a8 과 같은 방침).
+    let sources: [(&str, &str); 7] = [
+        ("bb/types.rs", include_str!("../src/solver/bb/types.rs")),
+        ("bb/geometry.rs", include_str!("../src/solver/bb/geometry.rs")),
+        ("bb/hertz.rs", include_str!("../src/solver/bb/hertz.rs")),
+        ("bb/bearing.rs", include_str!("../src/solver/bb/bearing.rs")),
+        ("common/types.rs", include_str!("../src/solver/common/types.rs")),
+        ("common/util.rs", include_str!("../src/solver/common/util.rs")),
+        ("mod.rs", include_str!("../src/solver/mod.rs")),
+    ];
+    let banned = ["trb", "roller", "slice", "rib"];
+
+    let mut offenders = Vec::new();
+    for (name, src) in sources {
+        let body = src.split("#[cfg(test)]").next().unwrap_or(src);
+        for (lineno, line) in body.lines().enumerate() {
+            let code = line.split("//").next().unwrap_or("");
+            let mut ident = String::new();
+            let flush = |ident: &mut String, offenders: &mut Vec<String>| {
+                if ident.is_empty() {
+                    return;
+                }
+                let words = identifier_words(ident);
+                if let Some(w) = banned.iter().find(|b| words.iter().any(|x| x == *b)) {
+                    offenders.push(format!("{name}:{} `{ident}` (금지어 `{w}`)", lineno + 1));
+                }
+                ident.clear();
+            };
+            for ch in code.chars() {
+                if ch.is_alphanumeric() || ch == '_' {
+                    ident.push(ch);
+                } else {
+                    flush(&mut ident, &mut offenders);
+                }
+            }
+            flush(&mut ident, &mut offenders);
+        }
+    }
+    assert!(
+        offenders.is_empty(),
+        "솔버 소스에 롤러 계열 식별자 잔존 — Plan §3.6.1.6 ② 위반:\n  {}",
+        offenders.join("\n  ")
+    );
+}

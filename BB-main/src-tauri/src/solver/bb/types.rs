@@ -617,6 +617,14 @@ pub struct BbGeometrySummary {
 #[cfg_attr(test, derive(ts_rs::TS))]
 #[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
 pub struct BbResult {
+    /// 입력의 볼베어링 변종을 그대로 반영한 **판별자** (§3.6.1.7).
+    ///
+    /// 통합 시 여러 계열의 결과가 한 채널로 흐른다. 판별자가 없으면 serde 가
+    /// 필드가 겹치는 다른 계열 결과로 **조용히 역직렬화**한다 — 그것을 막는 장치다.
+    /// `BbInput::kind` 와 항상 같아야 한다 (A-8c 가 필드 존재를, 런타임
+    /// 계약검사가 값 일치를 검사한다).
+    #[serde(default)]
+    pub kind: BallBearingKind,
     pub geometry: BbGeometrySummary,
     pub equilibrium: BbEquilibrium,
     #[serde(default)]
