@@ -11,12 +11,12 @@ pub mod bearing;
 // hertz    : 점접촉 타원 Hertz (χ·c_P·a·b·p_H)  — Theory §3, §6
 // bearing  : 5-DOF 평형 (해석 야코비안·active set·위상 스윕) — Theory §4
 //
-// ─── CRB 데이터 모델 소비 — 재작성 시 활성화 ──────────────────────────
-//
-// ─── BB Phase 4~5 에서 ACBB 기준 재작성 후 활성화 ─────────────────────
-// pub mod life;             // P4: ISO 16281 §5.2 + ISO 281 볼 C_r
-// pub mod static_rating;    // P4: ISO 76 볼 C_0r
-// pub mod lubrication;      // P5: κ + Hamrock-Dowson 타원접촉 유막
+// ─── P4-S0-1 (2026-08-23) 에서 영구 삭제 — 신 P5/P6 에서 신규 작성 ────
+// life / static_rating / lubrication 3파일(9 830줄)은 비활성 롤러(TRB) 판이었고
+// CRB 저장소에 byte-identical 사본이 있어 삭제했다 (Plan §3.6.1.1 발견 ②).
+// BB 는 아래를 **신규 작성**한다 — 기존 파일 재활성화가 아니다.
+//   신 P5 : 수명   — ISO 16281 §5.2 볼 식 + ISO 281 볼 C_r · ISO 76 볼 C_0r
+//   신 P6 : 윤활   — κ + Hamrock-Dowson 점(타원)접촉 유막
 //
 // ─── P1-S1 에서 영구 삭제 ─────────────────────────────────────────────
 // gen1 / gen3 / beam / rib_contact / hmehl / transient / transient_io / wec_risk
