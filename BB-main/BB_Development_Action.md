@@ -1500,3 +1500,108 @@ cargo clippy           경고 0 (4단계 모두)
 단, 탭별 처분 방침이 **최소 변경**으로 바뀌었으므로 (§3.6.4.3) 작업 분해를 갱신한 뒤 착수한다.
 
 ---
+
+---
+
+## 260824 — P4-S1: 프론트 기반 (5단계) + 첫 런타임 헬스체크
+
+**커밋** `9a01054` · `8c7893c` · `edef94a` · `8435b67` · `ae76589` — 각 단계 검사 통과 후 커밋. push 없음.
+
+| 단계 | 내용 |
+|---|---|
+| **S1-1** | Tauri 커맨드 **10종 `bb_` 접두 개명** + 기존 `InputPanel` 의 `invoke` 문자열 갱신. **별칭 0** |
+| **S1-2** | **`ts-rs` 도입**(dev-dep) · 타입 **22종 자동생성** · `src/bb/generated/` 커밋 |
+| **S1-3** | `BbResult.kind` 판별자 + **A-8 확장 2항목**(`a8c`·`a8d`) |
+| **S1-4** | `store.ts` → `BbResult` · 헤더 BB · `alert.code` · **미개조 8탭 회색 + 「TRB 잔존」 배지** |
+| **S1-5** | **에러 브리지** · 자동 스모크(env 잠금) · **ESLint 경계 규칙** |
+
+### 검사 결과
+
+| 검사 | 결과 |
+|---|---|
+| `npm run build` | ✅ 성공 |
+| `npm run lint` | ⚠️ 44건 — **전부 착수 전부터 있던 TRB 잔존물**. baseline 대조로 **증감 0** 확인. **`src/bb/**` 는 0건** |
+| `cargo test` | **120 → 144** (ts-rs `export_bindings_*` +22, A-8 확장 +2). **솔버 테스트 120개는 그대로** |
+| `cargo clippy` | 경고 0 |
+| `git diff --exit-code src/bb/generated/` | 비어 있음 (재생성 후 재확인) |
+
+### ts-rs ↔ serde 표현 — **보정 0건**
+
+가장 위험하다고 지목했던 항목들이 **그대로 맞았다**:
+
+| 항목 | 생성된 TS | 판정 |
+|---|---|---|
+| `BbClearanceSpec` | `{ "DiametralMm": number } \| { "InitialAngleRad": number } \| { "AxialPreloadN": number }` | ✅ externally tagged 일치 |
+| `BbDof` | `"Free" \| { "Prescribed": number }` | ✅ 유닛/뉴타입 혼재 표현 일치 |
+| `Displacement` | 객체(`dx_mm`…) | ✅ S0-4 반영 |
+
+**`#[serde(default)]` 20곳은 의도적으로 필수 필드로 두었다.** 방향 비대칭(Rust→프론트 읽기는 항상 존재 / 프론트→Rust 쓰기는 생략 가능) 때문에 `#[ts(optional)]` 을 붙이면 **읽기 쪽이 틀려진다.** 필수로 두면 읽기는 정확하고 쓰기만 더 엄격한 **안전한 상위집합**이다.
+
+### 🔎 첫 런타임 헬스체크 (④) — 오케스트레이터 수행
+
+`VITE_BB_HEALTHCHECK=1 npm run tauri dev` 백그라운드 기동 → 로그 확인 → **프로세스 종료**(잔존 0, 포트 해제). CLAUDE.md 개정안 절차 그대로.
+
+**스모크 결과 — `ALL PASS`**
+
+```
+[healthcheck] preset='7210 (ACBB Default)' BbInput 형상검증 PASS
+[healthcheck] bb_solve_bearing kind=Acbb converged=true loaded_count=16
+              q_max_n=1178.368 elapsed_ms=6.25
+[healthcheck] BbResult 형상검증 PASS
+[healthcheck] kind 판별자 PASS
+[healthcheck] 종료 — ALL PASS
+```
+
+**커맨드 왕복·타입 계약·판별자가 모두 성립**한다. 전 16볼 접촉(`loaded_count=16`)은 α₀ = 40° ACBB + 축하중 조건에서 물리적으로 맞다(Level C-7 이 확인한 성질).
+
+### 🔴 에러 브리지가 첫 실행에서 실오류를 잡았다
+
+```
+[webview] window.onerror src/components/InputPanel/index.tsx:2478:30
+TypeError: Cannot read properties of undefined (reading 'mean')
+    at InputPanel (index.tsx:2454:15)
+```
+
+**원인**: 앱 기동 시 `bb_preset_get_last` → `bb_preset_load` 로 **BB 프리셋**이 로드되어 `store.input` 이 `BbInput` 이 되는데, 기존 TRB `InputPanel` 은 TRB 필드(`surface_finish.mean` 등)를 읽는다 → `undefined`.
+
+**심각도**: `InputPanel` 은 **좌측 사이드바 상시 렌더**다. 렌더 중 throw 하면 에러 바운더리가 없는 React 19 는 **트리 전체를 언마운트**한다.
+
+> **§3.6.5.3 의 주장이 첫 실행에서 입증됐다** — 「dev 터미널에는 웹뷰 JS 오류가 안 나온다.
+> 에러 브리지가 없으면 ④ 가 성립하지 않는다」. 브리지가 없었다면 **로그상 `ALL PASS` 만 보고
+> 정상이라 판단했을 것**이다. 실제로는 화면이 비어 있을 가능성이 높다.
+
+**`ResultsCard` 가 아직 안 터진 이유**: 헬스체크는 `bb_solve_bearing` 을 **커맨드로만** 부르고 store 에 넣지 않는다. 사용자가 Solve 를 누르면 `result` 가 채워지면서 같은 이유로 터진다(§3.6.4.3 에서 예고한 항목).
+
+### 🟠 부수 발견 — Tauri 버전 불일치 경고
+
+```
+tauri (v2.10.3) : @tauri-apps/api (v2.11.1)
+tauri-plugin-log (v2.8.0) : @tauri-apps/plugin-log (v2.9.0)
+```
+
+JS 패키지가 Rust crate 보다 minor 가 높다. 현재 동작에는 문제가 없으나 경고가 상시 뜬다.
+
+### 자동 수정 목록 (§3.6.5.3 규칙에 따른 전량 보고)
+
+| # | 내용 | 사유 |
+|---|---|---|
+| 1 | `hooks/useActiveResult.ts` 에 캐스트 1줄 + 근거 주석 | `store.result` 타입 교체로 **유일하게 깨진 비-`@ts-nocheck` 파일**. **`@ts-nocheck` 를 새로 추가하지 않았다** |
+| 2 | `store.ts` `SET_DUAL_RESULT` 에 동일 캐스트 | dual 3필드·액션 3종은 미변경(지시대로). `solve_bearing_dual` 은 이미 죽은 커맨드라 실행 경로 없음 |
+| 3 | `capabilities/default.json` 에 `log:default` 추가 | JS `plugin-log` 는 이 권한 없이 **런타임에 무조건 거부**된다 |
+| 4 | `#[cfg_attr(test, derive(ts_rs::TS))]` 방식 채택 | 일반 `#[derive(TS)]` 는 dev-dependency 로는 릴리스 빌드가 안 된다 |
+| 5 | `export_to = "../../src/bb/generated/"` | ts-rs 11 의 기준이 `<crate>/bindings/` 라 `../..` 필요. 실측 확인 후 주석에 근거 |
+| 6 | 생성물 폴더에 `.gitattributes`(`*.ts eol=lf`) | 없으면 CRLF 변환으로 **DoD③ 가 거짓 양성** |
+| 7 | `a8d` 판정 기준 축소 | `Prescribed` 가 `rib` 를 **부분문자열로** 포함하는 오탐 실측 → 판정 단위를 **식별자 구성 단어**로. 변이 게이트로 검출력 확인 |
+| 8 | `console.warn` 도 브리지에 포함 | 지시는 `console.error` 까지였으나 경고도 놓치면 안 된다 |
+
+**판단이 필요해 멈춘 것**: 없음(구현 단계에서는). 헬스체크에서 나온 `InputPanel` 크래시는 **아래 미결로 올린다**.
+
+### ⛔ S1 DoD 미달 — 결정 필요
+
+S1 의 기능 DoD 는 「앱이 뜨고 8탭 회색 표시, **콘솔 오류 0**」이었다.
+`InputPanel` 크래시 때문에 **미달**이다. 「TRB 잔존 경로의 오류는 기록만」으로 해석했으나,
+**상시 렌더 컴포넌트가 트리 전체를 무너뜨리는 것은 「기록만」의 범위를 넘는다.**
+
+**파일 증감**: 신규 25 · 수정 12 · **삭제 0**(방침대로).
+
+---
