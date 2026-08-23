@@ -1175,7 +1175,7 @@ sequenceDiagram
 
 | 단계 | 내용 | 산출 | 기능 DoD |
 |---|---|---|---|
-| **S1** | **기반** — `src/bb/` 신설 · `bb/types.ts`(Rust `solver/bb/types.rs` 대응, **`displacement` 배열→객체 반영**) · `store.ts` `result: BbResult` · 커맨드 `bb_` 접두 반영 · **`App.tsx` 헤더 TRB→BB** · **`AlertPanel` `category`→`code`** · `CanvasArea` 미개조 8탭 회색 표시 · **ESLint 경계 규칙 + A-8 확장** · **에러 브리지**(§3.6.5.3) | 경계 확립 + 오류 가시화 | 앱이 뜨고 **8탭 회색 표시**, 콘솔 오류 0 |
+| **S1** | **기반** — `src/bb/` 신설 · `bb/types.ts`(Rust `solver/bb/types.rs` 대응, **`displacement` 배열→객체 반영**) · `store.ts` `result: BbResult` · 커맨드 `bb_` 접두 반영 · **`App.tsx` 헤더 TRB→BB** · **`AlertPanel` `category`→`code`** · `CanvasArea` 미개조 8탭 회색 표시 · **ESLint 경계 규칙**(§3.6.5.6) **+ A-8 확장** · **`ts-rs` 도입 + 생성물 커밋**(§3.6.5.5) · **에러 브리지**(§3.6.5.3) | 경계 확립 + 타입 SSOT + 오류 가시화 | 앱이 뜨고 **8탭 회색 표시**, 콘솔 오류 0 |
 | **S2** | **입력** — `bb/BbInputPanel.tsx` 신규 (기하·재질·하중 5성분·솔버 파라미터 · `BbClearanceSpec` 3종 · `BbPreloadModel` 2종 · `BbDofMask` · 위상 스윕) · **기본 프리셋 2종**(§3.6.5.4). 기존 `InputPanel` 은 그대로 둔다 | `BbInput` 생성 | **프리셋 로드 → Solve → 결과 수신** 왕복 성공 |
 | **S3** | **요약** — `bb/BbGeometryView.tsx`(개조, **`bb_compute_geometry` 첫 연결**) · `bb/BbResultsCard.tsx` 신규(5-DOF 5성분·`Q_max`·접촉볼 수·`α_j` 범위·`p_max`·수렴정보) | 기하·요약 확인 | **Level A** 가 화면과 일치 · **D-2a** 의 `δ_z`·`γ_y` = 0 육안 확인 |
 | **S4** | **핵심 검증 뷰** — `bb/BbLoadDistView.tsx` : `Q_j(φ)` 극좌표 + **`α_j(φ)` 곡선** + 접촉타원 **형상**(`a`·`b`·비율) | 하중분포 검증 | **C-4·C-5·C-7 · D-1 · D-2b~d** 가 화면과 일치 |
@@ -1195,7 +1195,7 @@ sequenceDiagram
 |:--:|---|---|---|---|
 | **①** | 타입·빌드 | `npm run build` (`tsc -b && vite build`) | 타입 불일치 · import 오류 · 문법 | Claude |
 | **②** | 린트·경계 | `npm run lint` (**ESLint 경계 규칙 포함**) | `common/` → `bb/` 역참조 · 미사용 · 훅 규칙 | Claude |
-| **③** | 솔버 회귀 | `cargo test` + `cargo clippy --lib --tests` | Rust 쪽 회귀 (**120개 유지**) | Claude |
+| **③** | 솔버 회귀 + **타입 드리프트** | `cargo test` + `cargo clippy --lib --tests` + **`git diff --exit-code src/bb/generated/`** | Rust 쪽 회귀(**120개 유지**) · **재생성 타입이 커밋본과 다른가** | Claude |
 | **④** | 🔴 **런타임 헬스체크** | `npm run tauri dev` **백그라운드 기동 → 로그 감시 → 종료** | **웹뷰 JS 오류 · Rust 패닉 · 커맨드 왕복 실패** | **Claude** |
 | **⑤** | 육안 확인 | 사용자가 `npm run tauri dev` 로 직접 | 레이아웃 · 숫자의 물리적 타당성 · 축·부호 방향 | **사용자** |
 
@@ -1271,11 +1271,59 @@ Rust 쪽 `tauri-plugin-log` 는 **이미 의존성에 있다**(`lib.rs` 에서 �
 → 이름을 `ACBB Verification Fixture (assumed Z, D_w)` 로 바꾸고, **UI 에도 「가정 기하」 배지**를 띄운다.
 실 카탈로그를 확보하면(T-6) 그때 진짜 7210 프리셋을 별도로 추가한다.
 
-##### 3.6.5.5 미결정 (S1 착수 전)
+##### 3.6.5.5 타입 동기화 — `ts-rs` 자동생성 (확정 2026-08-24)
 
-| # | 항목 | 선택지 |
-|---|---|---|
-| ① | TS 타입 동기화 방식 | `ts-rs` 로 Rust→TS 자동생성 ↔ 수작업 + 정합 테스트 |
+**결정**: **`ts-rs` 로 Rust → TS 자동생성** + **런타임 계약 검사**(④ 헬스체크에 얹음).
+생성물은 **커밋하고, 재생성 차이를 단계 DoD 로 검사**한다.
+
+**왜 자동생성인가** — 손으로 쓸 때 정확히 위험한 지점이 특정된다.
+
+| 위험 | 내용 |
+|---|---|
+| 🔴 **데이터 보유 enum 2개** | `BbClearanceSpec` → JSON 이 **`{"DiametralMm": 0.05}`** · `BbDof` → **`"Free"` 와 `{"Prescribed": 0.1}` 가 섞임** |
+| 🟠 **`#[serde(default)]` 20곳** | **방향 비대칭** — Rust→프론트(읽기)는 항상 존재, 프론트→Rust(`BbInput` 전송)는 생략 가능 |
+| 🟠 **이미 한 번 바뀜** | `Displacement` 가 배열 → 객체 (S0-4). P5·P6 에서 또 일어난다 |
+
+**필드명만 대조하는 검사(A-8 방식)로는 위 enum 2개를 못 잡는다** — 이름은 맞는데 JSON 모양이 틀리는 경우다.
+그래서 자동생성으로 **이름·형상**을 묶고, 런타임 계약 검사로 **실제 직렬화 표현**을 확인하는 이중 구성으로 간다.
+
+> §3.6.1.7 이 「**스키마 드리프트가 이번 Phase 순서 변경의 유일한 리스크**」라고 명시했고,
+> 이 프로젝트가 실패한 방식은 전부 **손으로 유지하는 두 가지가 어긋난 것**이었다
+> (TRB→CRB→BB 복사본 · Theory §4.4 부호 vs 코드). 성공한 장치는 **기계적 강제**(A-8, 실오류 3회)였다.
+
+**구성**
+
+| 항목 | 내용 |
+|---|---|
+| 의존성 | Rust `ts-rs` (**dev-dependency**) + JS `@tauri-apps/plugin-log` (에러 브리지, §3.6.5.3). **둘뿐이다** |
+| 대상 | `solver/bb/types.rs` 18개 + `solver/common/types.rs` 의 직렬화 타입 (`Alert`·`AlertLevel`·`Material`·`SolverProgress`) |
+| 생성 위치 | **`src/bb/generated/`** — 최소 변경 방침상 프론트에 `src/common/` 을 아직 만들지 않으므로(§3.6.4.5) 공통 타입도 여기 둔다. 통합 시점에 `src/common/` 을 만들면 그때 분리한다 |
+| 생성 시점 | `cargo test` (ts-rs 관행). 즉 **③ 솔버 회귀 검사와 같은 명령에서 갱신**된다 |
+| 드리프트 검사 | 단계 DoD ③ 에 **`git diff --exit-code src/bb/generated/`** 추가 — 재생성 후 diff 가 비어야 한다 |
+| 표현 검사 | ④ 헬스체크 자동 스모크에서 받은 JSON 을 생성 타입으로 파싱·형상 검증 (**enum 표현까지**) |
+
+> ⚠️ **ts-rs 가 serde 를 100 % 미러링하지는 않는다** (특히 `#[serde(default)]` ↔ `#[ts(optional)]`).
+> 자동생성만 믿지 않고 **런타임 계약 검사를 반드시 함께 둔다** — 이것이 위 이중 구성의 이유다.
+
+##### 3.6.5.6 ESLint 경계 규칙 — 방향 정정
+
+§3.6.1.7 은 `common/` → `bb/` **역참조 금지**로 적었으나, 그것은 `src/common/` 이 있는 배치를 전제한 것이다.
+**§3.6.4.5 의 최소 변경 배치에는 `src/common/` 이 없다** (`bb/` ↔ `components/` 뿐).
+따라서 규칙의 방향을 다음으로 확정한다:
+
+```js
+// eslint.config.js — no-restricted-imports
+// components/** 는 bb/** 를 import 할 수 없다. 역은 허용.
+```
+
+| 방향 | 허용 | 이유 |
+|---|:--:|---|
+| `bb/**` → `components/**` | ✅ | 공통 유틸(`PlotWithCopy`·`plotlyDefaults`·`DetailTable`)을 **재사용해야 한다** (§3.6.4.5) |
+| `components/**` → `bb/**` | ❌ | **TRB 잔존물이 BB 전용물에 의존하면 나중에 `components/` 를 통째로 지울 수 없다.** 의존 방향이 한쪽이어야 §3.6.4.6 의 일괄 정리가 가능하다 |
+
+Rust 쪽은 그대로다 — `solver/common/` 은 `solver/bb/` 를 참조하지 않는다 (S0-2 에서 확인, `common/mod.rs` 주석에 명시).
+
+> ✅ **S1 착수를 막는 미결정은 없다.**
 
 ---
 
@@ -1470,10 +1518,15 @@ Rust 쪽 `tauri-plugin-log` 는 **이미 의존성에 있다**(`lib.rs` 에서 �
 
 **DoD**: `npm run build` + `npm run lint` 통과, 살아남은 전 뷰가 실제 솔버 출력으로 동작, `@ts-nocheck` 0, 죽은 `invoke` 0
 
-> ⚠️ **미결정 (S1 착수 전)**: ① TS 타입 동기화 방식(`ts-rs` 자동생성 ↔ 수작업+정합테스트)
+> ✅ **S1 착수를 막는 미결정은 없다** (2026-08-24 기준).
 >
-> 탭 구성·삭제 시점은 **2026-08-23 최소 변경 방침**으로(§3.6.4.3, 삭제 0건),
-> 검증 절차는 **2026-08-24 5단 사다리**로 확정되었다 (§3.6.5.3) — **④ 런타임 헬스체크는 Claude 가 수행**한다.
+> | 결정 | 내용 |
+> |---|---|
+> | 탭 구성·삭제 시점 | **최소 변경 방침** — 삭제 0건 (§3.6.4.3) |
+> | 검증 절차 | **5단 사다리** — ④ 런타임 헬스체크는 **Claude 수행** (§3.6.5.3) |
+> | 기본 프리셋 | **2종** — Harris-Mindel 1973 + 검증 픽스처 (§3.6.5.4) |
+> | 타입 동기화 | **`ts-rs` 자동생성 + 런타임 계약검사**, 생성물 커밋 (§3.6.5.5) |
+> | 경계 강제 | `components/**` → `bb/**` import 금지 (§3.6.5.6) |
 
 > 🔗 **통합 관점은 §3.6.1** (충돌 8건 · 공통↔전용 경계 · 레벨 1 비용 · BB 규약 SSOT) · **BB 계열 확장은 §3.6.1.3** (ACBB·DGBB·4PCBB 변종 enum) · **명명 규약은 §3.6.1.6**.
 
