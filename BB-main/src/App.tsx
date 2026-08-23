@@ -4,7 +4,12 @@ import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { AppContext, appReducer, type AppState } from './store';
 import { defaultInput } from './defaults';
 import { openProjectFile, type ProjectFile, PROJECT_VERSION } from './project';
-import InputPanel from './components/InputPanel';
+// P4-S2-3: 좌측 상시 입력 패널을 BB 전용으로 교체 (Plan §3.6.5.2 S2).
+// 기존 `components/InputPanel` 은 TRB 필드(surface_finish.mean 등)를 읽어
+// BB 프리셋이 로드되면 렌더 중 throw 했다 — 에러 바운더리가 없는 React 19 는
+// 트리 전체를 언마운트하므로 화면이 통째로 비었다 (S1 헬스체크에서 검출).
+// **파일은 지우지 않는다** — 최소 변경 방침(§3.6.4.3), 삭제는 §3.6.4.6 에서 일괄.
+import BbInputPanel from './bb/BbInputPanel';
 import CanvasArea from './components/CanvasArea';
 import ResultsCard from './components/ResultsCard';
 import AlertPanel from './components/AlertPanel';
@@ -81,7 +86,7 @@ export default function App() {
         <div className="flex flex-1 min-h-0">
           {/* Left: Input Panel (Light) */}
           <aside className="w-72 shrink-0 bg-panel border-r border-panel-border overflow-y-auto custom-scrollbar">
-            <InputPanel />
+            <BbInputPanel />
             <AlertPanel />
           </aside>
 
