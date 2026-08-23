@@ -40,6 +40,7 @@ fn geometry_at(z: u32, alpha_deg: f64) -> BallBearingGeometry {
 
 fn make_z(z: u32, fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BbInput {
     BbInput {
+        kind: BallBearingKind::Acbb,
         geometry: geometry_at(z, ALPHA_DEG),
         material: Material::default(),
         operating: BbOperatingConditions {
@@ -73,6 +74,12 @@ fn angle_diff(a: f64, b: f64) -> f64 {
         d += std::f64::consts::TAU;
     }
     d
+}
+
+/// 판정용 5성분 나열 — 순서는 D-7 규약 (δ_x, δ_y, δ_z [mm] · γ_y, γ_z [rad]).
+/// named struct 를 인덱스 순회가 필요한 판정에서만 배열로 편다.
+fn comps(u: &Displacement) -> [f64; 5] {
+    [u.dx_mm, u.dy_mm, u.dz_mm, u.ry_rad, u.rz_rad]
 }
 
 fn rel(a: f64, b: f64) -> f64 {
@@ -111,8 +118,8 @@ fn d2a_iso3dof_solution_is_a_full_solution() {
         assert!(ra.equilibrium.converged && rb.equilibrium.converged, "미수렴");
 
         // 해방된 자유도가 실제로 0 에 머무는가 (대칭이 요구하는 값)
-        let dz = rb.equilibrium.displacement[2];
-        let gy = rb.equilibrium.displacement[3];
+        let dz = rb.equilibrium.displacement.dz_mm;
+        let gy = rb.equilibrium.displacement.ry_rad;
         assert!(dz.abs() < 1e-12, "δ_z 가 0 이 아님: {dz:.3e} mm");
         assert!(gy.abs() < 1e-12, "γ_y 가 0 이 아님: {gy:.3e} rad");
 
@@ -121,16 +128,21 @@ fn d2a_iso3dof_solution_is_a_full_solution() {
         //   정확히 0 이라 1e-18 대 1e-19 를 비교하는 꼴이 되어 무의미한 O(1) 이 나온다.
         //   해 벡터 전체의 크기를 분모로 삼는다 (병진 [mm], 회전은 R_i 를 곱해 길이 차원).
         let r_i = ra.geometry.r_i_center_mm;
+        // 5성분을 인덱스로 순회해야 하므로 판정 직전에만 나열한다.
+        // ⚠ 순서는 D-7 규약 (δ_x, δ_y, δ_z, γ_y, γ_z) 이며 아래 `i >= 3`
+        //   (회전 성분에 R_i 를 곱해 길이 차원으로 맞추는 처리) 가 이에 의존한다.
+        let ua = comps(&ra.equilibrium.displacement);
+        let ub = comps(&rb.equilibrium.displacement);
         let scale_u = (0..5)
             .map(|i| {
-                let v = ra.equilibrium.displacement[i].abs();
+                let v = ua[i].abs();
                 if i >= 3 { v * r_i } else { v }
             })
             .fold(0.0_f64, f64::max)
             .max(1e-12);
         let mut worst = 0.0_f64;
         for i in [0usize, 1, 4] {
-            let d = (ra.equilibrium.displacement[i] - rb.equilibrium.displacement[i]).abs();
+            let d = (ua[i] - ub[i]).abs();
             let d = if i >= 3 { d * r_i } else { d };
             worst = worst.max(d / scale_u);
         }
@@ -258,8 +270,8 @@ fn d2d_biaxial_moment_aligns_with_tilt_axis() {
         let r = solve_bearing(&inp).unwrap();
         assert!(r.equilibrium.converged, "미수렴");
 
-        let gy = r.equilibrium.displacement[3];
-        let gz = r.equilibrium.displacement[4];
+        let gy = r.equilibrium.displacement.ry_rad;
+        let gz = r.equilibrium.displacement.rz_rad;
         let mag = gy.hypot(gz);
         let off = angle_diff(gz.atan2(gy), th); // 틸트축과 모멘트축의 차이
 

@@ -52,6 +52,7 @@ fn geometry() -> BallBearingGeometry {
 
 fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BbInput {
     BbInput {
+        kind: BallBearingKind::Acbb,
         geometry: geometry(),
         material: Material::default(),
         operating: BbOperatingConditions {
@@ -209,7 +210,8 @@ fn d3c_ball_kinematics_match_original() {
         let o = original_constants(&inp.geometry, d.alpha_0_rad);
 
         let u = r.equilibrium.displacement;
-        let dl = [u[0], -u[1], u[2], u[3], u[4]]; // Δ₂ = −δ_y
+        // Δ₂ = −δ_y (원전 부호 사상)
+        let dl = [u.dx_mm, -u.dy_mm, u.dz_mm, u.ry_rad, u.rz_rad];
 
         let (mut ed, mut ea) = (0.0_f64, 0.0_f64);
         for (j, b) in r.equilibrium.ball_results.iter().enumerate() {
@@ -252,7 +254,7 @@ fn d3d_five_dof_equilibrium_matches_original() {
         let o = original_constants(&inp.geometry, d.alpha_0_rad);
 
         let u = r.equilibrium.displacement;
-        let dl = [u[0], -u[1], u[2], u[3], u[4]];
+        let dl = [u.dx_mm, -u.dy_mm, u.dz_mm, u.ry_rad, u.rz_rad];
         let f = original_equilibrium(&o, Z, c.c_p_n_per_mm15, dl);
 
         // 사상: F₁=F_x, F₂=−F_y, F₃=F_z, F₄=M_y, F₅=M_z

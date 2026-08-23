@@ -223,6 +223,7 @@ fn default_bearing_input() -> BbInput {
     let d_w_mm = 11.5; // [mm] 가정값
     let (r_i_mm, r_e_mm) = BallBearingGeometry::reference_groove_radii(d_w_mm);
     BbInput {
+        kind: BallBearingKind::Acbb,
         geometry: BallBearingGeometry {
             bore_mm: 50.0,
             outer_diameter_mm: 90.0,

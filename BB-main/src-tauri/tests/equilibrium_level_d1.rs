@@ -89,6 +89,7 @@ fn solve_point(z: u32, f_a: f64, f_r: f64) -> Point {
     let d_w = 11.5;
     let (r_i, r_e) = BallBearingGeometry::reference_groove_radii(d_w);
     let inp = BbInput {
+        kind: BallBearingKind::Acbb,
         geometry: BallBearingGeometry {
             bore_mm: 50.0,
             outer_diameter_mm: 90.0,
@@ -137,7 +138,7 @@ fn solve_point(z: u32, f_a: f64, f_r: f64) -> Point {
         // Harris (7.66)(7.68) 을 J 에 대해 푼 형태.
         // (7.70) 의 `sin α` 는 원서 오식이며 `cos α` 가 맞다 (Theory §9.1 주의 1, T-5 해소)
         ratio: f_r * alpha.tan() / f_a,
-        eps: 0.5 * (1.0 + eq.displacement[0] * alpha.tan() / eq.displacement[1]),
+        eps: 0.5 * (1.0 + eq.displacement.dx_mm * alpha.tan() / eq.displacement.dy_mm),
         j_r: f_r / (zf * eq.q_max_n * alpha.cos()),
         j_a: f_a / (zf * eq.q_max_n * alpha.sin()),
         alpha_deg: alpha.to_degrees(),

@@ -38,6 +38,7 @@ fn geometry(z: u32) -> BallBearingGeometry {
 
 fn make(fx: f64, fy: f64, fz: f64, my: f64, mz: f64) -> BbInput {
     BbInput {
+        kind: BallBearingKind::Acbb,
         geometry: geometry(Z),
         material: Material::default(),
         operating: BbOperatingConditions {
@@ -156,7 +157,7 @@ fn c2_pure_axial_matches_scalar_solution() {
         let c = compute_contact_derived(&d, &inp.material).unwrap();
 
         let want = axial_scalar_solution(d.a_mm, d.alpha_0_rad, c.c_p_n_per_mm15, Z, f_x);
-        let got = solve_bearing(&inp).unwrap().equilibrium.displacement[0];
+        let got = solve_bearing(&inp).unwrap().equilibrium.displacement.dx_mm;
         assert!(
             (got - want).abs() / want < 1e-9,
             "F_x={f_x}: 솔버 δ_x={got:.9e} vs 스칼라해 {want:.9e}"
@@ -212,7 +213,7 @@ fn c3b_preload_models_agree_without_external_load() {
     // 강체 예압의 δ_x0 는 스프링 예압의 무하중 해로 역산되므로 둘이 같아야 한다
     let a = solve_bearing(&preload_input(BbPreloadModel::Spring, 0.0)).unwrap();
     let b = solve_bearing(&preload_input(BbPreloadModel::Rigid, 0.0)).unwrap();
-    let (da, db) = (a.equilibrium.displacement[0], b.equilibrium.displacement[0]);
+    let (da, db) = (a.equilibrium.displacement.dx_mm, b.equilibrium.displacement.dx_mm);
     assert!((da - db).abs() / da.abs() < 1e-9, "δ_x0: 스프링 {da} vs 강체 {db}");
     let (qa, qb) = (a.equilibrium.q_max_n, b.equilibrium.q_max_n);
     assert!((qa - qb).abs() / qa < 1e-9, "Q_max: {qa} vs {qb}");
@@ -223,16 +224,17 @@ fn c3c_preload_models_diverge_under_axial_load() {
     let dx0 = solve_bearing(&preload_input(BbPreloadModel::Spring, 0.0))
         .unwrap()
         .equilibrium
-        .displacement[0];
+        .displacement
+        .dx_mm;
     let a = solve_bearing(&preload_input(BbPreloadModel::Spring, 3_000.0)).unwrap();
     let b = solve_bearing(&preload_input(BbPreloadModel::Rigid, 3_000.0)).unwrap();
 
     assert!(
-        a.equilibrium.displacement[0] > dx0,
+        a.equilibrium.displacement.dx_mm > dx0,
         "스프링: 축하중이 걸리면 δ_x 가 늘어야 함"
     );
     assert!(
-        (b.equilibrium.displacement[0] - dx0).abs() / dx0.abs() < 1e-9,
+        (b.equilibrium.displacement.dx_mm - dx0).abs() / dx0.abs() < 1e-9,
         "강체: δ_x 가 δ_x0 에 고정돼야 함"
     );
     assert!(
@@ -350,8 +352,8 @@ fn c6_iso_3dof_constrains_and_still_equilibrates() {
     inp.solver.dof_mask = BbDofMask::ISO_3DOF;
     let r = solve_bearing(&inp).unwrap();
     assert!(r.equilibrium.converged);
-    assert_eq!(r.equilibrium.displacement[2], 0.0, "δ_z 미구속");
-    assert_eq!(r.equilibrium.displacement[3], 0.0, "γ_y 미구속");
+    assert_eq!(r.equilibrium.displacement.dz_mm, 0.0, "δ_z 미구속");
+    assert_eq!(r.equilibrium.displacement.ry_rad, 0.0, "γ_y 미구속");
 
     // 자유 자유도(F_x, F_y, M_z)의 평형만 재조립해 확인
     let r_i = r.geometry.r_i_center_mm;
@@ -375,7 +377,8 @@ fn c6b_prescribed_axial_displacement_produces_reaction() {
     let dx0 = solve_bearing(&preload_input(BbPreloadModel::Spring, 0.0))
         .unwrap()
         .equilibrium
-        .displacement[0];
+        .displacement
+        .dx_mm;
 
     let mut inp = make(0.0, 0.0, 0.0, 0.0, 0.0);
     inp.solver.dof_mask = BbDofMask {
@@ -383,7 +386,7 @@ fn c6b_prescribed_axial_displacement_produces_reaction() {
         ..BbDofMask::FULL
     };
     let r = solve_bearing(&inp).unwrap();
-    assert!((r.equilibrium.displacement[0] - dx0).abs() / dx0.abs() < 1e-12);
+    assert!((r.equilibrium.displacement.dx_mm - dx0).abs() / dx0.abs() < 1e-12);
 
     // 반력 = Σ Q_j sin α_j 가 원래 예압 하중 2 kN 이어야 한다
     let fx: f64 = r
@@ -435,7 +438,7 @@ fn c7b_load_deflection_is_monotonic() {
     let mut prev = 0.0_f64;
     for f in [1_000.0, 2_000.0, 4_000.0, 8_000.0, 16_000.0] {
         let r = solve_bearing(&make(f, 0.0, 0.0, 0.0, 0.0)).unwrap();
-        let dx = r.equilibrium.displacement[0];
+        let dx = r.equilibrium.displacement.dx_mm;
         assert!(dx > prev, "F_x={f}: δ_x 단조성 위반");
         prev = dx;
     }

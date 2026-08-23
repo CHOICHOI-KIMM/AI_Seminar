@@ -339,9 +339,28 @@ impl BbSolverParams {
     }
 }
 
+/// 볼베어링 변종 (계열 = BB). 기하·접촉·평형을 공유하고 변종은 데이터로 구분한다
+/// (Plan §3.6.1.3). 변종별 폴더·모듈을 파지 않는다.
+///
+/// ⚠ **선언값이지 추론값이 아니다.** α₀ 로 변종을 자동 판정하지 않는다 —
+///    `Acbb` 로 선언된 α₀ = 0 입력은 그대로 통과한다 (Level C-7 픽스처).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum BallBearingKind {
+    /// 각접촉 — α₀ ≠ 0. **현재 검증 완료 범위**
+    #[default]
+    Acbb,
+    /// 심구 — α₀ = 0 인 Acbb 의 특수해. 솔버 코어는 동일하나 수명 계수 미확보
+    Dgbb,
+    /// 4점접촉 — 궤도당 곡률중심 2개, 볼당 최대 4접촉. 평형 모듈 신규 필요
+    FourPoint,
+}
+
 /// 최상위 입력 래퍼.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BbInput {
+    /// 볼베어링 변종. 기본값 `Acbb` (§3.6.1.3)
+    #[serde(default)]
+    pub kind: BallBearingKind,
     pub geometry: BallBearingGeometry,
     #[serde(default)]
     pub material: Material,
@@ -352,6 +371,22 @@ pub struct BbInput {
 
 impl BbInput {
     pub fn validate(&self) -> Result<(), SolverError> {
+        // 변종 게이트 (§3.6.1.3 ⑤) — 「되는 줄 알았는데 안 되는」 상황을 막는다.
+        match self.kind {
+            BallBearingKind::Acbb => {}
+            BallBearingKind::Dgbb => {
+                return Err(SolverError::InvalidInput(
+                    "DGBB(심구)는 아직 지원하지 않습니다: 솔버 코어(기하·접촉·5-DOF 평형)는                      ACBB 와 동일하게 동작하나, ISO 281 X/Y 계수(α = 0 행)를 아직 확보하지                      못해 수명 산출이 불가능합니다 — 신 P5(수명) 범위입니다."
+                        .into(),
+                ));
+            }
+            BallBearingKind::FourPoint => {
+                return Err(SolverError::InvalidInput(
+                    "4점접촉(4PCBB)은 아직 지원하지 않습니다: 궤도당 곡률중심이 2개이고                      볼당 접촉이 최대 4점(2점 ↔ 4점 전환 판정 포함)이라 평형 모듈이                      미구현입니다 — 기하·접촉(Hertz)은 그대로 재사용 가능합니다."
+                        .into(),
+                ));
+            }
+        }
         self.geometry.validate()?;
         self.material.validate()?;
         self.solver.validate()?;
@@ -459,11 +494,30 @@ pub struct BallResult {
     pub p_max_outer_mpa: f64,
 }
 
+/// 5-DOF 평형 변위 (D-7 좌표계: X = 회전축).
+///
+/// ⚠ CRB 의 `[f64;5]` 는 `[δx, δy, δz=0, γx, γy=0]` 로 **인덱스 3의 의미가 다르다**
+///    (CRB 는 γx, BB 는 γy). 배열을 쓰면 타입 검사를 통과하면서 조용히 틀린다
+///    (Plan §3.6.1.2 충돌 3).
+///
+/// ⚠ 위치는 `bb/` 다. BB 가 이 규약의 SSOT 이나(§3.6.1.8) CRB·TRB 가 실제로
+///    채택하는 시점에 `common/` 으로 승격한다 (§3.6.1.6 주석).
+///
+/// 필드명의 단위 접미사는 필수다 — 배열이던 시절엔 A-8 단위검사를 우회했다.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct Displacement {
+    pub dx_mm: f64,
+    pub dy_mm: f64,
+    pub dz_mm: f64,
+    pub ry_rad: f64,
+    pub rz_rad: f64,
+}
+
 /// 5-DOF 평형해 (D-7 좌표계).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BbEquilibrium {
-    /// [δ_x, δ_y, δ_z, γ_y, γ_z] — 변위 [mm], 틸트 [rad]
-    pub displacement: [f64; 5],
+    /// 평형 변위 (δ_x, δ_y, δ_z [mm] · γ_y, γ_z [rad])
+    pub displacement: Displacement,
     /// 볼별 결과 (φ_j 오름차순)
     pub ball_results: Vec<BallResult>,
     /// 최대 볼 하중 Q_max [N]
@@ -682,6 +736,7 @@ mod tests {
     #[test]
     fn serde_roundtrip_preserves_input() {
         let input = BbInput {
+            kind: BallBearingKind::Acbb,
             geometry: fixture(),
             material: Material::default(),
             operating: BbOperatingConditions {
@@ -702,5 +757,62 @@ mod tests {
         assert!((back.geometry.d_w_mm - 11.5).abs() < 1e-12);
         assert_eq!(back.solver.dof_mask, BbDofMask::FULL);
         assert!(back.validate().is_ok());
+    }
+
+    /// P4-S0-4: 변종 게이트 (§3.6.1.3 ⑤).
+    /// 미지원 변종은 `validate()` 가 **이유와 함께** 거부해야 한다.
+    #[test]
+    fn rejects_unverified_ball_bearing_kinds() {
+        let base = |kind| BbInput {
+            kind,
+            geometry: fixture(),
+            material: Material::default(),
+            operating: BbOperatingConditions {
+                f_x_n: 5000.0,
+                f_y_n: 2000.0,
+                f_z_n: 0.0,
+                m_y_nmm: 0.0,
+                m_z_nmm: 0.0,
+                n_inner_rpm: 1500.0,
+                n_outer_rpm: 0.0,
+                temperature_c: 70.0,
+            },
+            solver: BbSolverParams::default(),
+        };
+        assert!(base(BallBearingKind::Acbb).validate().is_ok());
+        for kind in [BallBearingKind::Dgbb, BallBearingKind::FourPoint] {
+            assert!(
+                base(kind).validate().is_err(),
+                "미검증 변종 {kind:?} 가 통과했다"
+            );
+        }
+        // 기본값은 검증 완료 범위여야 한다 (serde default 포함).
+        assert_eq!(BallBearingKind::default(), BallBearingKind::Acbb);
+    }
+
+    /// `kind` 는 **선언값이지 추론값이 아니다** — α₀ = 0 이어도 `Acbb` 선언이면
+    /// 통과한다 (Level C-7 픽스처가 α₀ = 0 을 쓴다).
+    #[test]
+    fn acbb_with_zero_initial_angle_is_accepted() {
+        let mut g = fixture();
+        g.alpha_nom_rad = 0.0;
+        g.clearance = BbClearanceSpec::DiametralMm(0.0);
+        let input = BbInput {
+            kind: BallBearingKind::Acbb,
+            geometry: g,
+            material: Material::default(),
+            operating: BbOperatingConditions {
+                f_x_n: 0.0,
+                f_y_n: 3000.0,
+                f_z_n: 0.0,
+                m_y_nmm: 0.0,
+                m_z_nmm: 0.0,
+                n_inner_rpm: 1500.0,
+                n_outer_rpm: 0.0,
+                temperature_c: 70.0,
+            },
+            solver: BbSolverParams::default(),
+        };
+        assert!(input.validate().is_ok());
     }
 }

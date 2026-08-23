@@ -364,7 +364,13 @@ fn solve_at_phase(
     }
 
     // 스케일 공간 → 물리 단위 (γ = ũ / R_i)
-    let displacement = [u[0], u[1], u[2], u[3] / r_i, u[4] / r_i];
+    let displacement = Displacement {
+        dx_mm: u[0],
+        dy_mm: u[1],
+        dz_mm: u[2],
+        ry_rad: u[3] / r_i,
+        rz_rad: u[4] / r_i,
+    };
 
     Ok(BbEquilibrium {
         displacement,
@@ -475,7 +481,7 @@ fn preload_displacement(
             "강체 예압의 δ_x0 역산이 수렴하지 않았습니다 (F_a0 = {f_a0} N)"
         )));
     }
-    Ok(eq.displacement[0])
+    Ok(eq.displacement.dx_mm)
 }
 
 /// 5-DOF 평형 해석 (위상 스윕 포함).
@@ -633,6 +639,7 @@ mod tests {
 
     fn input(z: u32, fx: f64, fy: f64) -> BbInput {
         BbInput {
+            kind: BallBearingKind::Acbb,
             geometry: fixture(z),
             material: Material::default(),
             operating: BbOperatingConditions {
@@ -695,8 +702,8 @@ mod tests {
         inp.solver.dof_mask = BbDofMask::ISO_3DOF;
         let r = solve_bearing(&inp).unwrap();
         assert!(r.equilibrium.converged);
-        assert_eq!(r.equilibrium.displacement[2], 0.0, "δ_z 가 구속되지 않음");
-        assert_eq!(r.equilibrium.displacement[3], 0.0, "γ_y 가 구속되지 않음");
+        assert_eq!(r.equilibrium.displacement.dz_mm, 0.0, "δ_z 가 구속되지 않음");
+        assert_eq!(r.equilibrium.displacement.ry_rad, 0.0, "γ_y 가 구속되지 않음");
     }
 
     #[test]
@@ -711,8 +718,8 @@ mod tests {
         let ra = solve_bearing(&a).unwrap();
         let rb = solve_bearing(&b).unwrap();
         assert!(ra.equilibrium.converged && rb.equilibrium.converged);
-        let dxa = ra.equilibrium.displacement[0];
-        let dxb = rb.equilibrium.displacement[0];
+        let dxa = ra.equilibrium.displacement.dx_mm;
+        let dxb = rb.equilibrium.displacement.dx_mm;
         assert!((dxa - dxb).abs() / dxa.abs() < 1e-9, "δ_x0: 스프링 {dxa} vs 강체 {dxb}");
         assert!(
             (ra.equilibrium.q_max_n - rb.equilibrium.q_max_n).abs() / ra.equilibrium.q_max_n < 1e-9
@@ -730,13 +737,13 @@ mod tests {
 
         let mut no_load = a.clone();
         no_load.operating.f_x_n = 0.0;
-        let dx0 = solve_bearing(&no_load).unwrap().equilibrium.displacement[0];
+        let dx0 = solve_bearing(&no_load).unwrap().equilibrium.displacement.dx_mm;
 
         let ra = solve_bearing(&a).unwrap();
         let rb = solve_bearing(&b).unwrap();
-        assert!(ra.equilibrium.displacement[0] > dx0, "스프링: δ_x 가 늘어야 함");
+        assert!(ra.equilibrium.displacement.dx_mm > dx0, "스프링: δ_x 가 늘어야 함");
         assert!(
-            (rb.equilibrium.displacement[0] - dx0).abs() / dx0.abs() < 1e-9,
+            (rb.equilibrium.displacement.dx_mm - dx0).abs() / dx0.abs() < 1e-9,
             "강체: δ_x 가 δ_x0 에 고정돼야 함"
         );
         assert!(ra.equilibrium.q_max_n > rb.equilibrium.q_max_n, "스프링이 더 큰 볼하중");
