@@ -23,10 +23,11 @@
 // 부호가 뒤집히는 짝(Δ₂, F₂)은 **함께** 뒤집히므로 가상일 F·Δ 는 보존된다.
 // 이 사상 자체가 검증 대상이며, 임의로 맞춘 것이 아니라 회전변환에서 유도된다.
 
-use app_lib::solver::bearing::solve_bearing;
-use app_lib::solver::geometry::compute_geometry_derived;
-use app_lib::solver::hertz;
-use app_lib::solver::types::*;
+use bb_core::solver::bb::bearing::solve_bearing;
+use bb_core::solver::bb::geometry::compute_geometry_derived;
+use bb_core::solver::bb::hertz;
+use bb_core::solver::bb::types::*;
+use bb_core::solver::common::types::*;
 
 const D_W: f64 = 11.5;
 const D_PW: f64 = 70.0;

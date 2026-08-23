@@ -3,7 +3,8 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
-use crate::solver::types::*;
+use crate::solver::bb::types::*;
+use crate::solver::common::types::*;
 
 #[derive(Serialize)]
 pub struct PresetInfo {

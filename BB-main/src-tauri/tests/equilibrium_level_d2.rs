@@ -12,8 +12,9 @@
 //   ④ 넓은 하중 격자에서 **수렴**하는지
 // 를 본다. 외부 문헌 대조는 D-1 이 끝이며, 여기는 구조적 성질 검증이다.
 
-use app_lib::solver::bearing::solve_bearing;
-use app_lib::solver::types::*;
+use bb_core::solver::bb::bearing::solve_bearing;
+use bb_core::solver::bb::types::*;
+use bb_core::solver::common::types::*;
 
 const D_W: f64 = 11.5;
 const D_PW: f64 = 70.0;

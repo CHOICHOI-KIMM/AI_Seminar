@@ -12,10 +12,11 @@
 
 use tauri::{AppHandle, Emitter};
 
-use crate::solver::bearing;
-use crate::solver::geometry;
-use crate::solver::hertz;
-use crate::solver::types::*;
+use crate::solver::bb::bearing;
+use crate::solver::bb::geometry;
+use crate::solver::bb::hertz;
+use crate::solver::bb::types::*;
+use crate::solver::common::types::*;
 
 /// Tauri event 기반 진행률 리포터.
 /// P1-S3 이후 신규 command 에서 사용한다.

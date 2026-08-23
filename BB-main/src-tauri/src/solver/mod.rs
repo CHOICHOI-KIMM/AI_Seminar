@@ -1,15 +1,14 @@
-pub mod types;
-pub mod util;
-pub mod geometry;
-pub mod hertz;
-pub mod bearing;
+pub mod bb;
+pub mod common;
 
-// ─── BB Phase 1-S3 (2026-08-20) ──────────────────────────────────────
-// util     : 접촉 형상 무관 수치·물성 유틸 (E*, 곡률합성, 스플라인, 구 질량)
-// geometry : ACBB 기하 전처리 (A·α₀·R_i·γ·Σρ·F(ρ))  — Theory §2
+// ─── P4-S0-2 (2026-08-23) 폴더 재편 — Plan §3.6.1.6 ───────────────────
+// common/ : 베어링 계열 무관 (util · 공통 6타입)
+// bb/     : 볼 계열 전용 (types · geometry · hertz · bearing)
 //
-// hertz    : 점접촉 타원 Hertz (χ·c_P·a·b·p_H)  — Theory §3, §6
-// bearing  : 5-DOF 평형 (해석 야코비안·active set·위상 스윕) — Theory §4
+// 재수출(`pub use`)로 옛 경로를 살려두지 않는다 — **경계가 목적**이므로
+// 소비처가 `solver::common::…` / `solver::bb::…` 를 직접 써야 한다.
+//
+// ⚠ `SolverError` 는 `solver/` 밖(`src/error.rs`)이라 이동하지 않았다.
 //
 // ─── P4-S0-1 (2026-08-23) 에서 영구 삭제 — 신 P5/P6 에서 신규 작성 ────
 // life / static_rating / lubrication 3파일(9 830줄)은 비활성 롤러(TRB) 판이었고

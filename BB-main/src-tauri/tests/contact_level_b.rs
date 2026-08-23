@@ -18,10 +18,11 @@
 //    P2 선조사에서 두 식이 대수적으로 동일함을 확인했다. 따라서 이 대조는
 //    두 표준의 독립 검증이 아니라 **전사·구현 검증**이다 (B-5 주석 참조).
 
-use app_lib::solver::geometry::compute_geometry_derived;
-use app_lib::solver::hertz::*;
-use app_lib::solver::types::*;
-use app_lib::solver::util;
+use bb_core::solver::bb::geometry::compute_geometry_derived;
+use bb_core::solver::bb::hertz::*;
+use bb_core::solver::bb::types::*;
+use bb_core::solver::common::types::*;
+use bb_core::solver::common::util;
 
 /// Harris Table 6.1 — 무차원 접촉 파라미터. (F(ρ), a*, b*, δ*)
 /// 원서 p.128. 마지막 행 F(ρ)=1 (a*=∞) 은 수치 대조 대상이 아니라 제외.

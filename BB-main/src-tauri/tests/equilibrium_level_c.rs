@@ -11,8 +11,9 @@
 //
 // Level D-1(Harris Table 7.4) 이 유일한 외부 문헌 검증이며, 여기는 자체 정합성 단계다.
 
-use app_lib::solver::bearing::solve_bearing;
-use app_lib::solver::types::*;
+use bb_core::solver::bb::bearing::solve_bearing;
+use bb_core::solver::bb::types::*;
+use bb_core::solver::common::types::*;
 
 const D_W: f64 = 11.5;
 const D_PW: f64 = 70.0;
@@ -143,8 +144,8 @@ fn axial_scalar_solution(a_mm: f64, alpha_0: f64, c_p: f64, z: u32, f_x: f64) ->
 
 #[test]
 fn c2_pure_axial_matches_scalar_solution() {
-    use app_lib::solver::geometry::compute_geometry_derived;
-    use app_lib::solver::hertz::compute_contact_derived;
+    use bb_core::solver::bb::geometry::compute_geometry_derived;
+    use bb_core::solver::bb::hertz::compute_contact_derived;
 
     for f_x in [500.0, 2_000.0, 5_000.0, 20_000.0] {
         let mut inp = make(f_x, 0.0, 0.0, 0.0, 0.0);

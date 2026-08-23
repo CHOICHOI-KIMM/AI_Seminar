@@ -19,8 +19,9 @@
 // mm · N · rad · MPa. 이 파일에 단위 환산 상수는 없다.
 
 use crate::error::SolverError;
-use crate::solver::types::*;
-use crate::solver::util;
+use crate::solver::bb::types::*;
+use crate::solver::common::types::Material;
+use crate::solver::common::util;
 
 // ─── [P1 이관] rib_contact.rs 에서 이관 (2026-08-20) ───────────────────
 // ACBB 점접촉에서 χ = a/b 비선형 방정식(ISO 16281 식 E.1)의 **초기 추정값** 및
@@ -409,7 +410,7 @@ mod tests {
     #[test]
     fn contact_derived_is_self_consistent() {
         let g = geom_fixture();
-        let d = crate::solver::geometry::compute_geometry_derived(&g).unwrap();
+        let d = crate::solver::bb::geometry::compute_geometry_derived(&g).unwrap();
         let m = Material::default();
         let c = compute_contact_derived(&d, &m).unwrap();
 
@@ -425,7 +426,7 @@ mod tests {
     #[test]
     fn load_deflection_roundtrip() {
         let g = geom_fixture();
-        let d = crate::solver::geometry::compute_geometry_derived(&g).unwrap();
+        let d = crate::solver::bb::geometry::compute_geometry_derived(&g).unwrap();
         let c = compute_contact_derived(&d, &Material::default()).unwrap();
         for q in [1.0, 100.0, 1_000.0, 10_000.0] {
             let delta = delta_from_q(c.c_p_n_per_mm15, q);
@@ -446,7 +447,7 @@ mod tests {
     fn ellipse_aspect_ratio_equals_chi() {
         // a/b = a*/b* = χ 여야 한다
         let g = geom_fixture();
-        let d = crate::solver::geometry::compute_geometry_derived(&g).unwrap();
+        let d = crate::solver::bb::geometry::compute_geometry_derived(&g).unwrap();
         let c = compute_contact_derived(&d, &Material::default()).unwrap();
         let (a, b, _) = contact_ellipse(
             c.e_star_mpa,

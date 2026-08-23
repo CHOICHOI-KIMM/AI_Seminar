@@ -18,8 +18,9 @@
 // 볼 질량의 mm³→cm³ 환산만 `util::sphere_mass_g` 에 격리되어 있다.
 
 use crate::error::SolverError;
-use crate::solver::types::*;
-use crate::solver::util;
+use crate::solver::bb::types::*;
+use crate::solver::common::types::{Alert, AlertLevel, Material};
+use crate::solver::common::util;
 
 /// 입력의 `ClearanceSpec` 을 (등가 직경 클리어런스 [mm], 초기 접촉각 [rad]) 로 환산.
 ///

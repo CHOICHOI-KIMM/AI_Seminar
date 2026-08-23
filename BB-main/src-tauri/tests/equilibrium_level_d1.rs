@@ -23,8 +23,9 @@
 // 따라서 여기서는 `δ_x`·`δ_y` 만 자유로 두고 나머지 셋을 0 으로 구속한다.
 // (모멘트 반력은 하우징이 받는다고 보는 것이며, Harris 도 암묵적으로 그렇게 둔다.)
 
-use app_lib::solver::bearing::solve_bearing;
-use app_lib::solver::types::*;
+use bb_core::solver::bb::bearing::solve_bearing;
+use bb_core::solver::bb::types::*;
+use bb_core::solver::common::types::*;
 
 /// Harris Table 7.4 — 점접촉 단열. `(ε, F_r tanα/F_a, J_r, J_a)`
 /// `ε = 0` 행의 `J = 1/Z` 는 이산(볼 1개) 값이라 수치 대조에서 제외한다.

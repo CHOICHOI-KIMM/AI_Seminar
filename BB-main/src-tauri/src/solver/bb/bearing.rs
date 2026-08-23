@@ -42,10 +42,11 @@
 use nalgebra::{Matrix5, Vector5};
 
 use crate::error::SolverError;
-use crate::solver::geometry;
-use crate::solver::hertz;
-use crate::solver::util;
-use crate::solver::types::*;
+use crate::solver::bb::geometry;
+use crate::solver::bb::hertz;
+use crate::solver::bb::types::*;
+use crate::solver::common::types::{Alert, AlertLevel};
+use crate::solver::common::util;
 
 /// 미지수·잔차 대각 스케일링에 쓰는 길이 (= `R_i`).
 ///
@@ -611,6 +612,7 @@ pub fn solve_bearing(input: &BearingInput) -> Result<BearingResult, SolverError>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::solver::common::types::Material;
 
     fn fixture(z: u32) -> BallBearingGeometry {
         let d_w_mm = 11.5;

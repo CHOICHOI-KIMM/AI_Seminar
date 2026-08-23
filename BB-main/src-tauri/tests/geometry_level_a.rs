@@ -8,10 +8,11 @@
 // 곡률합·곡률차는 **ISO 축약형이 아니라 개별 주곡률로부터 조립**하여
 // 독립 경로로 대조한다 (Harris Ch.6 의 Σρ = Σ(ρ_1x + ρ_1y + ρ_2x + ρ_2y) 방식).
 
-use app_lib::solver::geometry::{
+use bb_core::solver::bb::geometry::{
     collect_geometry_alerts, compute_geometry_derived, compute_geometry_summary,
 };
-use app_lib::solver::types::*;
+use bb_core::solver::bb::types::*;
+use bb_core::solver::common::types::*;
 
 const D_W: f64 = 11.5;
 const D_PW: f64 = 70.0;
@@ -352,11 +353,20 @@ fn a8_no_unit_conversion_constants_outside_util() {
     // 판정 대상은 **연산자에 인접한** 배율 상수다 (`* 1000.0`, `/ 1e-3` 등).
     // 단순한 수치 리터럴(회전속도 1000.0 rpm 같은 값)은 환산이 아니다.
     // `#[cfg(test)]` 이후는 픽스처라 검사에서 제외한다.
-    let sources: [(&str, &str); 5] = [
-        ("types.rs", include_str!("../src/solver/types.rs")),
-        ("geometry.rs", include_str!("../src/solver/geometry.rs")),
-        ("hertz.rs", include_str!("../src/solver/hertz.rs")),
-        ("bearing.rs", include_str!("../src/solver/bearing.rs")),
+    //
+    // 스캔 대상 (P4-S0-2 에서 경로 갱신 · `common/types.rs` 추가):
+    //   bb/{types,geometry,hertz,bearing}.rs · common/types.rs · solver/mod.rs
+    //
+    // ⚠ `common/util.rs` 는 **의도적으로 제외**한다. D-10 이 「환산 상수는
+    //    util.rs 의 명시적 변환 함수 안에만 존재할 수 있다」고 정한 유일한
+    //    허용 지점이므로, 스캔에 넣으면 규약이 허용한 것을 규약 검사가 잡는
+    //    모순이 된다. 이 제외는 A-8 신설 때부터의 설계이며 유지한다.
+    let sources: [(&str, &str); 6] = [
+        ("bb/types.rs", include_str!("../src/solver/bb/types.rs")),
+        ("bb/geometry.rs", include_str!("../src/solver/bb/geometry.rs")),
+        ("bb/hertz.rs", include_str!("../src/solver/bb/hertz.rs")),
+        ("bb/bearing.rs", include_str!("../src/solver/bb/bearing.rs")),
+        ("common/types.rs", include_str!("../src/solver/common/types.rs")),
         ("mod.rs", include_str!("../src/solver/mod.rs")),
     ];
     let magnitudes = ["1000.0", "1_000.0", "1e3", "1e-3", "0.001"];
@@ -384,7 +394,12 @@ fn a8_no_unit_conversion_constants_outside_util() {
 fn a8b_dimensional_fields_carry_unit_suffix() {
     // 유차원 필드는 이름에 단위를 달아 프론트·JSON 오독을 차단한다 (P1-S3 결정).
     // 대상은 `pub <name>: f64` 형태의 스칼라 필드에 한정한다.
-    let src = include_str!("../src/solver/types.rs");
+    // P4-S0-2: `bb/types.rs` + `common/types.rs` 양쪽을 스캔한다.
+    // (`common/util.rs` 는 a8 과 같은 이유로 제외 — 위 주석 참조.)
+    let sources: [&str; 2] = [
+        include_str!("../src/solver/bb/types.rs"),
+        include_str!("../src/solver/common/types.rs"),
+    ];
     let dimensionless = [
         "nu", "hrc", "gamma", "f_rho_i", "f_rho_e", "percent",
         "osculation_inner", "osculation_outer", "convergence_tol", "residual_norm",
@@ -400,7 +415,7 @@ fn a8b_dimensional_fields_carry_unit_suffix() {
     ];
 
     let mut offenders = Vec::new();
-    for line in src.lines() {
+    for line in sources.iter().flat_map(|s| s.lines()) {
         let t = line.trim();
         // `pub 이름: f64,` 형태만 검사 (bool/u32/Vec/enum 등은 무차원 또는 비스칼라)
         if !t.starts_with("pub ") || !t.contains(": f64") {

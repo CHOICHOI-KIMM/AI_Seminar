@@ -23,9 +23,10 @@
 // **1,9522e5 psi** 이며, 이는 인쇄된 a·b 로 계산한 3Q/(2πab) = 1,9521e5 와 일치한다.
 // 아래 상수는 **재렌더 판독값**이다.
 
-use app_lib::solver::geometry::compute_geometry_derived;
-use app_lib::solver::hertz;
-use app_lib::solver::types::*;
+use bb_core::solver::bb::geometry::compute_geometry_derived;
+use bb_core::solver::bb::hertz;
+use bb_core::solver::bb::types::*;
+use bb_core::solver::common::types::*;
 
 // ── 단위 환산 (원 자료가 in·lb·psi 계) ──────────────────────────────
 // 솔버 내부는 mm·N·MPa 이므로 **테스트 경계에서** 환산한다 (D-10 은 솔버 내부 규칙).
