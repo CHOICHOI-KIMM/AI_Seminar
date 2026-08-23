@@ -1605,3 +1605,86 @@ S1 의 기능 DoD 는 「앱이 뜨고 8탭 회색 표시, **콘솔 오류 0**�
 **파일 증감**: 신규 25 · 수정 12 · **삭제 0**(방침대로).
 
 ---
+
+---
+
+## 260824 — P4-S2: 입력 패널 + 기본 프리셋 2종
+
+**커밋** `64cef5b` · `6047266` · `6583708` · `b16dcc1`. push 없음.
+
+| 단계 | 내용 |
+|---|---|
+| **S2-0** | Tauri crate 정합 — `tauri` 2.10.3 → **2.11.1**, `tauri-plugin-log` 2.8.0 → **2.9.0**. JS 는 내리지 않았다 |
+| **S2-1** | 기본 프리셋 **2종** — `Harris-Mindel 1973 (ACBB)` 신규 + `7210 (ACBB Default)` → **개명**(값 불변) |
+| **S2-2** | `src/bb/BbInputPanel.tsx` 신규 (744줄) |
+| **S2-3** | `App.tsx` 좌측 패널 교체 (2줄) |
+
+### 검사
+
+| 항목 | 결과 |
+|---|---|
+| `npm run build` | ✅ |
+| `npm run lint` | 44건 — baseline 대비 **증감 0**. `src/bb/**` **0건** |
+| `cargo test` | **144 → 147** (신규 3, 아래 소명) |
+| `cargo clippy` | 경고 0 |
+| `git diff --exit-code src/bb/generated/` | 비어 있음 |
+
+**테스트 +3 소명** — 전부 S2 신규 코드 전용:
+`default_presets_round_trip_and_validate`(프리셋 2종 `validate()` + serde 왕복 + 파일명 충돌) ·
+`harris_mindel_preset_matches_source_figure_15`(in→mm 환산이 Fig. 15 원 자료와 일치, `n·D_pw` < 1e6) ·
+`verification_fixture_geometry_is_unchanged`(개명이 값을 바꾸지 않았음 — 회귀 방지)
+
+### 🔎 런타임 헬스체크 (④) — 오케스트레이터 수행
+
+```
+[healthcheck] preset='ACBB Verification Fixture (assumed Z_ D_w)' BbInput 형상검증 PASS
+[healthcheck] bb_solve_bearing kind=Acbb converged=true loaded_count=16
+              q_max_n=1178.368 elapsed_ms=6.12
+[healthcheck] BbResult 형상검증 PASS
+[healthcheck] kind 판별자 PASS
+[healthcheck] 종료 — ALL PASS
+```
+
+**✅ S1 에서 검출됐던 `InputPanel` 렌더 크래시가 사라졌다.** 이번 로그에는 `[webview] window.onerror` 가 **한 건도 없다.** S1 의 DoD 미달이 해소됐다.
+
+**✅ Tauri 버전 불일치 경고도 사라졌다** — stderr 에 `mismatch` 없음.
+
+**프리셋 3종이 실제로 생성됐다** (`%APPDATA%\com.bb.contact-analysis\presets`):
+
+| 파일 | 성격 |
+|---|---|
+| `Harris-Mindel 1973 (ACBB).json` | **신규** — 문헌 근거 기하 |
+| `ACBB Verification Fixture (assumed Z_ D_w).json` | **신규** — 개명본 |
+| `7210 (ACBB Default).json` | **구 파일 보존** — 사용자 데이터라 삭제하지 않는다(기존 방침) |
+
+프로세스는 종료했다 (19개 트리 kill, 잔존 0).
+
+> ⚠️ **사소한 미관 문제**: 프리셋 표시 이름이 파일명 stem 이라 `sanitize_filename` 이 콤마를 `_` 로 바꿔
+> **`(assumed Z_ D_w)`** 로 보인다. 이름에서 콤마를 빼면 해소된다.
+
+### 자동 수정 (§3.6.5.3 규칙에 따른 전량 보고)
+
+| # | 내용 | 사유 |
+|---|---|---|
+| 1 | `cargo update -p tauri --precise 2.11.1` | 평범한 `cargo update` 는 2.10.3 에 머물렀다 — `tauri-build` 2.5.6 이 상한을 잡고 있었다. `--precise` 로 `tauri-build` 도 2.6.3 까지 올라가 JS 와 minor 가 정확히 맞았다 |
+| 2 | `NumField` 의 부모→표시 동기화를 `useEffect` → **렌더 중 상태 조정** | ESLint `react-hooks/set-state-in-effect` 가 새로 1건 잡혀 **증감 0 위반**. React 공식 권장 패턴으로 교체해 baseline 복귀 |
+
+**판단이 필요해 멈춘 것: 없음.** 솔버가 틀렸을 가능성을 시사하는 징후 없음.
+
+### 판단이 갈릴 수 있어 근거를 남긴 설계 선택 3건
+
+| # | 선택 | 근거 |
+|---|---|---|
+| 1 | 🔴 **BB 입력을 `store` 가 아니라 패널 지역 상태로** | `store.input` 은 아직 TRB `BearingInput` 타입이다(S1 은 `result` 만 교체). 타입을 바꾸면 **`@ts-nocheck` 가 아닌** `ThermalSpeedView`·`project.ts` 가 깨져 최소 변경 위반. **S3 에서 `bb_compute_geometry` 를 부르려면 입력이 필요하므로 그때 store 로 끌어올려야 한다** |
+| 2 | **클리어런스 3종 사이를 자동 환산하지 않는다** | α₀ ↔ 직경클리어런스 ↔ 축예압 환산은 **솔버 내부 관계식**(식 A.1 및 역산)이다. 프론트가 흉내내면 **화면 숫자와 솔버 숫자가 갈라진다** |
+| 3 | `FieldGroup` 재사용 대신 `bb/` 안에 `NumField` | `components/InputPanel/` 은 §3.6.4.6 에서 통째로 삭제될 대상이고 재사용 허용 목록(`PlotWithCopy`·`plotlyDefaults`·`DetailTable`)에도 없다 |
+
+### 🔴 남은 위험 — `ResultsCard` (S3 소관)
+
+우측 **상시 렌더**인 `components/ResultsCard` 는 손대지 않았다(S3 범위).
+헬스체크는 `bb_solve_bearing` 을 **커맨드로만** 부르고 store 에 넣지 않아 이번에도 드러나지 않았다.
+**사용자가 Solve 를 누르면** BB 에 없는 `life`·`static_rating`·`k_radial` 을 읽어 `InputPanel` 과 **똑같은 방식으로 터진다.**
+
+> 즉 **기동 시 크래시는 사라졌으나 Solve 후 크래시는 S3 까지 남는다.**
+
+---
