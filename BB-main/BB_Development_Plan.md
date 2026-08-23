@@ -949,8 +949,14 @@ BB `BearingResult` 에 **하나도 없다**. 현재 `BearingResult` 는
 > 신 Phase 4 의 목적은 **「접촉/하중 해석을 눈으로 먼저 검증」**이다.
 > 따라서 탭 구성보다 먼저 정해야 할 것은 **각 뷰가 어느 검증 Level 을 대신 보는가**다 (3.6.4.2).
 > 검증 임무가 없는 뷰는 이번 Phase 에 넣지 않는다.
+>
+> **확정안은 §3.6.4.3(최소 변경)이다.** §3.6.4.1 의 3안은 검토 이력으로 남긴다.
 
-##### 3.6.4.1 탭 구성 — 3안 병기
+##### 3.6.4.1 탭 구성 — 3안 병기 〔검토 이력〕
+
+> ⚠️ **이 절은 검토 이력이다.** 2026-08-23 에 **최소 변경 방침**으로 결정되어
+> 안 A~C 중 어느 것도 지금은 채택하지 않는다 → **§3.6.4.3 이 확정안**이다.
+> 실사용 SW 로 전환할 때 안 A 로 넘어간다 (§3.6.4.6).
 
 현행 11탭 중 **4탭이 즉시 사망**(`Profile`·`Thermal Speed`·`Comparison`·`Transient`)하고
 2탭이 **후속 Phase 로 이월**(`Life`→P5, `Lubrication`→P6)한다. 남는 5탭을 어떻게 구성할지 3안.
@@ -1000,7 +1006,104 @@ BB `BearingResult` 에 **하나도 없다**. 현재 `BearingResult` 는
 > **최대하중 볼이 정반대 방위에 선다.** 극좌표 그림에서 즉시 보이는 종류다.
 > 「시각화가 검증 수단」(§4 Phase 순서 변경 사유 ③)은 이 표가 있어야 근거가 된다.
 
-##### 3.6.4.3 데이터 흐름 — command → store → view
+##### 3.6.4.3 탭별 처분 — 최소 변경 방침 (확정 2026-08-23)
+
+> **현 단계의 성격**: 프론트엔드 개발과 **수치 솔버 검증**을 동시에 한다.
+> 화면은 **솔버가 맞는지 보기 위한 도구**이지 완성품이 아니다.
+> 따라서 §3.6.4.1 의 안 A(5탭 · 14파일 삭제)를 **지금은 채택하지 않고 변경을 최소화**한다.
+>
+> **판단 근거**: 변경이 적을수록 문제가 났을 때 **「솔버가 틀린 건가, 내가 화면을 잘못 만든 건가」**
+> 가 명확하다. 삭제는 git 으로 되돌릴 수 있지만, **검증 중에 원인이 섞이면 되돌릴 수 없다.**
+
+**최소 변경이 실제로 가능한 이유**
+
+| 사실 | 함의 |
+|---|---|
+| 손대지 않을 뷰 대부분이 **`@ts-nocheck`** | 타입 검사가 꺼져 있어 **`npm run build` 는 통과**한다. 런타임에만 깨지는데 **이미 깨져 있다**(죽은 `invoke` 6종) |
+| `store.ts` 의 `result: BearingResult` | 여기만은 **반드시** `BbResult` 로 바꿔야 한다 — `bb_solve_bearing` 반환형이 바뀌었다 |
+| 그 결과 | store 를 바꿔도 `@ts-nocheck` 뷰들은 **컴파일이 깨지지 않는다.** 최소 변경이 성립하는 지점이다 |
+
+→ 기존 TRB 타입(`types/bearing.ts` 784줄)을 **지우지 않고** `src/bb/types.ts` 를 새로 두어
+**개조 뷰만 그것을 쓰게 하는 공존 전략**을 택한다.
+
+**처분표 — 탭 11개 + 상시 요소 4개**
+
+| 대상 | 처분 | 산출 | 근거 |
+|---|---|---|---|
+| **Geometry** | 🔧 **개조** | `bb/BbGeometryView.tsx` | BB `BbGeometrySummary` 와 거의 1:1. `bb_compute_geometry` 첫 연결 지점 |
+| **Load Distribution** | 🔧 **개조 + 접촉타원 통합** | `bb/BbLoadDistView.tsx` | **핵심 검증 뷰.** `Q_j(φ)` 극좌표 · `α_j(φ)` 곡선 · 접촉타원 **형상** |
+| **Stress Contour** | 🔧 **개조** | `bb/BbStressContourView.tsx` | 타원 **내부** 압력분포. `RibContactDetailChart`(유일한 타원 히트맵 자산) 개조 |
+| Profile · Section · 3D View | ⬜ **일단 둠** | — | 회색 표시. 대체 대상이나 지금은 미변경 |
+| Life · Lubrication | ⬜ **일단 둠** | — | 각각 신 P5 · P6 소관 |
+| Thermal Speed · Comparison · Transient | ⬜ **일단 둠** | — | 폐기 예정이나 **지금 지우지 않는다** |
+| **InputPanel** (상시) | ➕ **신규 (기존 유지)** | `bb/BbInputPanel.tsx` | 입력 없이는 솔버를 못 돌린다. **1 696줄 개조보다 작게 새로 만드는 편이 변경량이 훨씬 적다** |
+| 🔴 **ResultsCard** (상시) | ➕ **신규 (기존 유지)** | `bb/BbResultsCard.tsx` | `result.life`·`static_rating`·`k_radial` 등이 **BB 에 하나도 없어** 그대로 두면 **런타임 사망**. 탭이 아니라 회색 처리로 피할 수 없다 |
+| **AlertPanel** (상시) | 🔧 **한 줄** | 기존 파일 | `alert.category` → `code`. 안 고치면 경고가 빈 칸으로 뜬다 |
+| **`App.tsx` 헤더** (상시) | 🔧 **한 줄** | 기존 파일 | `TRB Contact Analysis` / `Tapered Roller Bearing` 이 화면 최상단에 박혀 있다 |
+| **`CanvasArea`** | 🔧 **배선 + 회색** | 기존 파일 | BB 탭 3개 연결 + 미개조 8탭 회색 표시 |
+| **`store.ts`** | 🔧 **타입 교체** | 기존 파일 | `result: BbResult`. dual/transient 필드는 **지금 건드리지 않는다** |
+
+**미개조 탭의 동작**: 회색으로 표시하되 **클릭은 허용**하고 내용은 그대로 둔다.
+누르면 기존 화면(비어 있거나 깨진 상태)이 뜬다. 배지로 「TRB 잔존」임을 알린다 —
+**나중에 개조할 목록이 화면에 그대로 보이는 부수 효과**가 있다.
+
+**변경 규모 대비**
+
+| | 안 A (구 계획) | **최소 변경 (확정)** |
+|---|---:|---:|
+| 신규 | 2 | **7** |
+| 개조 | 12 | **5** (한 줄짜리 2건 포함) |
+| **삭제** | **14** | **0** |
+| 손대는 파일 합계 | **26** | **12** |
+
+##### 3.6.4.4 Load Distribution ↔ Stress Contour 역할 분담
+
+접촉타원을 Load Distribution 에 통합하면 Stress Contour 와 겹친다. **형상 ↔ 압력분포**로 가른다.
+
+| | `BbLoadDistView` | `BbStressContourView` |
+|---|---|---|
+| 성격 | **전 볼을 한눈에** (분포) | **볼 하나를 자세히** (상세) |
+| 내용 | `Q_j(φ)` 극좌표 · `α_j(φ)` 곡선 · 접촉타원 **형상**(`a`·`b`·비율, 볼별 비교) | 선택한 볼의 타원 **내부** `p(x,y) = p_max·√(1−(x/a)²−(y/b)²)` 히트맵, 내/외륜 탭 |
+| 대응 Level | **C-4·C-5·C-7 · D-1 · D-2b~d** | **B**(Harris Table 6.1) · **B-3**(1973 Fig. 15 실기) |
+| 기반 | `charts/LoadDistChart` 개조 | `charts/RibContactDetailChart` 개조 |
+
+> `RibContactDetailChart`(354줄)는 **이 저장소에서 유일하게 이미 타원 점접촉 히트맵을 그린다**(§3.6.3.1).
+> 리브 접촉을 볼–궤도 접촉으로 치환하는 것이 새로 만드는 것보다 빠르다.
+
+##### 3.6.4.5 `src/bb/` 이동 범위
+
+**개조물만** 옮긴다. 기존 `src/components/` 는 그대로 둔다.
+
+```
+src/
+  bb/                       ← BB 전용. 이 안에 있는 것만 BB 로 검증된다
+    types.ts                  Rust solver/bb/types.rs 대응
+    BbInputPanel.tsx
+    BbGeometryView.tsx
+    BbLoadDistView.tsx
+    BbStressContourView.tsx
+    BbResultsCard.tsx
+  components/               ← TRB 잔존. 회색 탭들이 여기를 쓴다
+  types/bearing.ts          ← TRB 타입 784줄, 지우지 않는다
+  store.ts                  ← result 타입만 교체
+```
+
+**폴더만 보고 「검증된 것 / 잔존물」이 갈린다.** §3.6.1.6 명명 규약의 목적이 그대로 달성된다.
+공통 유틸(`PlotWithCopy`·`plotlyDefaults`·`DetailTable`)은 **`components/` 에 그대로 두고 import 해 쓴다** —
+지금 `common/` 으로 옮기면 기존 뷰 5개의 import 가 깨지고, 그것은 최소 변경 방침에 어긋난다.
+
+##### 3.6.4.6 언제 안 A 로 넘어가는가
+
+솔버 검증이 끝나고 **실사용 SW 로 전환할 때**다. 그 시점에 한꺼번에 처리한다:
+
+- D등급 14파일 삭제 · `types/bearing.ts` 784줄 제거 · `@ts-nocheck` 전면 해제
+- 공통 유틸을 `src/common/` 으로 승격 (Rust `solver/{common,bb}` 와 대칭)
+- `store.ts` 의 dual/transient 필드·액션 3종 제거
+
+지금 그것을 하지 않는 이유는 **검증 중에는 변경이 적을수록 원인 분리가 쉽기 때문**이며,
+기술적 어려움 때문이 아니다. 이 문단이 그 판단을 남긴다.
+
+##### 3.6.4.7 데이터 흐름 — command → store → view
 
 ```mermaid
 sequenceDiagram
@@ -1054,20 +1157,41 @@ sequenceDiagram
 
 #### 3.6.5 작업 분해 (신 Phase 4)
 
+> S0 는 **완료**(2026-08-23, 커밋 `02b5cad`·`cd70300`·`14daf15`·`fbd9eeb`).
+> S1~S5 는 **§3.6.4.3 최소 변경 방침**에 맞춰 재작성했다.
+
+**S0 — 통합·확장 대비 선반영 ✅ 완료**
+
+| 단계 | 내용 | 결과 |
+|---|---|---|
+| **S0-1** | 비활성 중복 3파일(`life`·`static_rating`·`lubrication`) 삭제 | **−9 830줄** |
+| **S0-2** | `solver/{common,bb}/` 재편 · `app_lib` → `bb_core` · A-8 경로 갱신 | 재수출 편법 없음 |
+| **S0-3** | 타입 접두사 규칙 적용 (중립명 14개 → `Bb`) | 무접두 8개 유지 |
+| **S0-4** | `Displacement` named struct · `BallBearingKind` enum + `validate()` 게이트 | **A-8 단위검사 자동 편입 실측 확인** |
+
+`cargo test` **118 → 120**, clippy 0. src-tauri **15 691 → 6 065줄**.
+
+**S1~S5 — 프론트 (최소 변경)**
+
 | 단계 | 내용 | 산출 | DoD |
 |---|---|---|---|
-| **S0-1** | 비활성 중복 3파일(`life`·`static_rating`·`lubrication`, 9 830줄) 삭제 | 죽은 코드 제거 | `cargo test` 118개 유지 |
-| **S0-2** | `solver/{common,bb}/` 폴더 재편 (공통 6타입 + `util.rs` → `common/`) · `app_lib` → `bb_core` · A-8 `include_str!` 경로 갱신 | 구조 경계 | 〃 |
-| **S0-3** | 타입 접두사 규칙 적용 (`Bearing`→`Bb` 치환 + 중립명 14개) (§3.6.1.6) | 이름 경계 | 〃 |
-| **S0-4** | `displacement` → `Displacement` named struct · **`BallBearingKind` enum**(`Acbb` 만 검증완료, 나머지 `validate()` 거부) (§3.6.1.3) | 확장·통합 대비 | 〃, clippy 0 |
-| **S1** | `types/bearing.ts` → `common/types.ts` + `bb/types.ts` · 죽은 파일 삭제(D등급 14) · `store.ts` 정리 · **`src/common/` ↔ `src/bb/` 분리** · **파일 평탄화·`Bb` 접두** (§3.6.1.6) · **`kind` 판별자** · **커맨드 `bb_` 접두** · **ESLint 경계 규칙 + A-8 확장 3항목** | 타입 SSOT · 경계 기계 강제 | `npm run build` + `npm run lint` 통과, `@ts-nocheck` 잔여 0 |
-| **S2** | `InputPanel` BB 4블록 재매핑 (`geometry`/`material`/`operating`/`solver`) + `ClearanceSpec` 3종 · `PreloadModel` 2종 · `DofMask` · 위상스윕 | 입력 가능 | `solve_bearing` 왕복 성공 |
-| **S3** | `GeometryView` 개조 + `compute_geometry` 첫 연결 · `ResultsCard` 5-DOF 요약 · `AlertPanel` | 기하·요약 확인 | Level A 결과가 화면과 일치 |
-| **S4** | `LoadDistChart` → **`LoadDistPolar`(공통) + 전용 패널로 분할**, `Q_j` 극좌표 + **`α_j(φ)` 곡선** · Contact Ellipse View (`RibContactDetailChart` 개조 + `compute_contact` 연결) | **핵심 검증 뷰** | Level C·D 결과가 화면과 일치 |
-| **S5** | BB 축단면 뷰 신규 · `BearingView3D` 개조 · 타이틀 `TRB`→`BB` · **`.trb.json`→`.bb.json` + `bearing_type` 필드** · **프리셋 태그** | 공간 직관 | `npm run build` + `npm run lint` 통과 |
+| **S1** | **기반** — `src/bb/` 신설 · `bb/types.ts`(Rust `solver/bb/types.rs` 대응, **`displacement` 배열→객체 반영**) · `store.ts` `result: BbResult` · 커맨드 `bb_` 접두 반영 · **`App.tsx` 헤더 TRB→BB** · **`AlertPanel` `category`→`code`** · `CanvasArea` 미개조 8탭 회색 표시 · **ESLint 경계 규칙 + A-8 확장** | 경계 확립 | `npm run build` + `npm run lint` 통과 |
+| **S2** | **입력** — `bb/BbInputPanel.tsx` 신규 (기하·재질·하중 5성분·솔버 파라미터 · `BbClearanceSpec` 3종 · `BbPreloadModel` 2종 · `BbDofMask` · 위상 스윕). 기존 `InputPanel` 은 그대로 둔다 | `BbInput` 생성 | `bb_solve_bearing` 왕복 성공 |
+| **S3** | **요약** — `bb/BbGeometryView.tsx`(개조, **`bb_compute_geometry` 첫 연결**) · `bb/BbResultsCard.tsx` 신규(5-DOF 5성분·`Q_max`·접촉볼 수·`α_j` 범위·`p_max`·수렴정보) | 기하·요약 확인 | **Level A** 결과가 화면과 일치 · **D-2a** 의 `δ_z`·`γ_y` = 0 을 육안 확인 |
+| **S4** | **핵심 검증 뷰** — `bb/BbLoadDistView.tsx` : `Q_j(φ)` 극좌표 + **`α_j(φ)` 곡선** + 접촉타원 **형상**(`a`·`b`·비율) | 하중분포 검증 | **C-4·C-5·C-7 · D-1 · D-2b~d** 가 화면과 일치 |
+| **S5** | **응력** — `bb/BbStressContourView.tsx` : 선택 볼의 타원 **내부** `p(x,y)` 히트맵 (`RibContactDetailChart` 개조), 내/외륜 탭 | 접촉응력 검증 | **B · B-3** 이 화면과 일치 |
 
-**Phase DoD**: `npm run build` + `npm run lint` 통과, 살아남은 전 뷰가 실제 솔버 출력으로 동작,
-`@ts-nocheck` 0, 죽은 `invoke` 0.
+**Phase DoD**: `npm run build` + `npm run lint` 통과 · **`src/bb/` 의 5개 뷰가 실제 솔버 출력으로 동작** ·
+`src/bb/**` 의 `@ts-nocheck` 0 · **§3.6.4.2 검증 매핑의 전 항목을 화면에서 확인**.
+
+> ⚠️ 미개조 8탭과 `components/` 의 `@ts-nocheck` 는 **이번 Phase 의 DoD 대상이 아니다** (§3.6.4.6).
+
+**미결정 (S1 착수 전)**
+
+| # | 항목 | 선택지 |
+|---|---|---|
+| ① | TS 타입 동기화 방식 | `ts-rs` 로 Rust→TS 자동생성 ↔ 수작업 + 정합 테스트 |
+| ② | 시각 확인 절차 | Claude 는 서버를 직접 띄우지 않는다(CLAUDE.md 필수 준수 1). 빌드·린트만 자동, 화면은 사용자 확인 ↔ 골든 픽스처 스냅샷 추가 |
 
 ---
 
@@ -1248,18 +1372,20 @@ sequenceDiagram
 
 | 단계 | 요지 |
 |---|---|
-| **S0-1~4** | 레벨 1 선반영 — 중복 9 830줄 삭제 · `solver/{common,bb}/` 재편 · `app_lib`→`bb_core` · 타입 접두사 · `Displacement`/`BallBearingKind` |
-| **S1** | 타입 SSOT · 폴더·명명 경계 · 커맨드 `bb_` 접두 · **ESLint + A-8 확장으로 기계 강제** |
-| **S2~S3** | `InputPanel` 재매핑 → `GeometryView`·`ResultsCard`·`AlertPanel` |
-| **S4** | **핵심 검증 뷰** — `LoadDistPolar`(`Q_j`·`α_j(φ)`) + Contact Ellipse |
-| **S5** | BB 축단면 · 3D · `.bb.json`·프리셋 태그 |
+| **S0-1~4** ✅ | 레벨 1 선반영 — 중복 9 830줄 삭제 · `solver/{common,bb}/` 재편 · `app_lib`→`bb_core` · 타입 접두사 · `Displacement`/`BallBearingKind`. **완료 2026-08-23, 120 tests** |
+| **S1** | 기반 — `src/bb/` 신설 · `bb/types.ts` · `store.ts` 타입 교체 · 헤더/AlertPanel 한 줄 · 미개조 8탭 회색 · **ESLint + A-8 확장** |
+| **S2~S3** | `BbInputPanel` **신규** → `BbGeometryView` 개조 · `BbResultsCard` **신규** |
+| **S4** | **핵심 검증 뷰** — `BbLoadDistView` : `Q_j(φ)` · `α_j(φ)` · 접촉타원 **형상** |
+| **S5** | `BbStressContourView` : 타원 **내부** `p(x,y)` 히트맵 |
 
 > 각 단계의 산출·DoD 와 **각 뷰가 어느 Level 을 눈으로 검증하는지**(§3.6.4.2)는 §3.6 을 볼 것.
 > 여기에 표를 중복해 두면 §3.6.5 와 어긋난다.
 
 **DoD**: `npm run build` + `npm run lint` 통과, 살아남은 전 뷰가 실제 솔버 출력으로 동작, `@ts-nocheck` 0, 죽은 `invoke` 0
 
-> ⚠️ **미결정 (S1 착수 전)**: ① 타입 동기화 방식(ts-rs 자동생성 ↔ 수작업) ② 탭 구성 3안 중 택1(§3.6.4.1) ③ 삭제 시점(D등급 14파일 + `LubricationView` 2 439줄) ④ 시각 확인 절차 — Claude 는 서버를 직접 띄우지 않는다(CLAUDE.md 필수 준수 1)
+> ⚠️ **미결정 (S1 착수 전)**: ① TS 타입 동기화 방식(`ts-rs` 자동생성 ↔ 수작업+정합테스트) ② 시각 확인 절차 — Claude 는 서버를 직접 띄우지 않는다(CLAUDE.md 필수 준수 1)
+>
+> 탭 구성·삭제 시점은 **2026-08-23 최소 변경 방침으로 확정**되었다 (§3.6.4.3) — 삭제는 0건이다.
 
 > 🔗 **통합 관점은 §3.6.1** (충돌 8건 · 공통↔전용 경계 · 레벨 1 비용 · BB 규약 SSOT) · **BB 계열 확장은 §3.6.1.3** (ACBB·DGBB·4PCBB 변종 enum) · **명명 규약은 §3.6.1.6**.
 
