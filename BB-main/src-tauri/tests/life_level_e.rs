@@ -479,28 +479,35 @@ fn e7_dynamic_rating_tables_and_boundaries() {
 
     // (b) X/Y/e Table 3 (단열) 격자점 + 정의역
     for (deg, x, y, e) in XYE_TABLE_DEG {
-        let (gx, gy, ge) = x_y_e(deg.to_radians()).unwrap();
+        let (gx, gy, ge) = x_y_e(deg.to_radians(), None).unwrap();
         assert!((gx - x).abs() < 1e-12 && (gy - y).abs() < 1e-12 && (ge - e).abs() < 1e-12);
     }
     // 중간각은 선형보간
-    let (x, y, e) = x_y_e(22.5_f64.to_radians()).unwrap();
+    let (x, y, e) = x_y_e(22.5_f64.to_radians(), None).unwrap();
     assert!((x - 0.42).abs() < 1e-12);
     assert!((y - 0.935).abs() < 1e-12);
     assert!((e - 0.625).abs() < 1e-12);
-    // α < 20° 는 상대 축하중에 따른 2중 보간이 필요하고 그 표가 Theory 에 없다 → 오류
+    // P5-1b: α < 20° 는 이제 **상대 축하중을 주면** 결정된다. 없으면 여전히 오류다.
     for deg in [0.0_f64, 5.0, 10.0, 15.0, 19.999] {
-        assert!(x_y_e(deg.to_radians()).is_err(), "α={deg}° 는 거부되어야 한다");
+        assert!(
+            x_y_e(deg.to_radians(), None).is_err(),
+            "α={deg}° 는 상대 축하중 없이는 결정할 수 없다"
+        );
+        assert!(x_y_e(deg.to_radians(), Some(1.0)).is_ok(), "α={deg}°");
     }
-    assert!(x_y_e(45.001_f64.to_radians()).is_err());
+    assert!(x_y_e(45.001_f64.to_radians(), None).is_err());
+    assert!(x_y_e(-0.001_f64.to_radians(), Some(1.0)).is_err());
 
     // (c) P 의 바깥 겹 분기 — F_a/F_r ≤ e 이면 P = F_r
     let alpha = 40.0_f64.to_radians();
-    let (x, y, e) = x_y_e(alpha).unwrap();
+    let (x, y, e) = x_y_e(alpha, None).unwrap();
     let f_r = 1_000.0;
-    let below = dynamic_equivalent_radial_load_n(alpha, f_r, f_r * e * 0.99).unwrap();
+    let z = 16;
+    let d_w = 11.5;
+    let below = dynamic_equivalent_radial_load_n(alpha, f_r, f_r * e * 0.99, z, d_w).unwrap();
     assert!((below - f_r).abs() < 1e-12);
     let f_a = f_r * e * 1.01;
-    let above = dynamic_equivalent_radial_load_n(alpha, f_r, f_a).unwrap();
+    let above = dynamic_equivalent_radial_load_n(alpha, f_r, f_a, z, d_w).unwrap();
     assert!((above - (x * f_r + y * f_a)).abs() < 1e-12);
     // 경계에서 두 식의 차이는 e 정의상 연속에 가깝다 (X + Y e ≈ 1 은 규격이 보장하지 않는다)
     // → 여기서는 **분기 자체가 존재**하고 큰 쪽이 아니라 **조건**으로 갈린다는 사실만 고정한다.
@@ -754,4 +761,224 @@ fn e0_module_paths_are_stable() {
     assert_eq!(TR_TABLE_A1.len(), 41);
     assert_eq!(Y0_ANGULAR_TABLE_DEG.len(), 9);
     assert_eq!(XYE_TABLE_DEG.len(), 6);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  E-10. ISO 281 Table 3 **상단부** — α < 20° (Theory §7.3.1, Plan P5-1b)
+// ═══════════════════════════════════════════════════════════════════
+//
+// 전사(Theory §7.3.1)를 코드가 그대로 재현하는지, 그리고 §7.3.1 이 명시한
+// **함정 2건**을 구현이 실제로 지키는지 고정한다.
+
+/// §7.3.1 E-9 — 제2열 격자의 원값 [psi].
+const XYE_COL2_PSI: [f64; 9] = [25.0, 50.0, 100.0, 150.0, 200.0, 300.0, 500.0, 750.0, 1000.0];
+/// psi → MPa 환산 (§7.3.1 E-9 가 명시한 값). **테스트 전용** — 솔버는 MPa 만 쓴다.
+const PSI_TO_MPA: f64 = 0.006_894_8;
+
+/// Theory §7.3.1 「제1열」 전사 — α = 5°/10°/15° 각 9점.
+const XYE_COL1_TRANSCRIBED: [(f64, [f64; 9]); 3] = [
+    (5.0, [0.173, 0.346, 0.692, 1.04, 1.38, 2.08, 3.46, 5.19, 6.92]),
+    (10.0, [0.175, 0.35, 0.7, 1.05, 1.4, 2.1, 3.5, 5.25, 7.0]),
+    (15.0, [0.178, 0.357, 0.714, 1.07, 1.43, 2.14, 3.57, 5.35, 7.14]),
+];
+
+/// ISO 자릿수 = **유효숫자 3자리** (0,172 · 1,03 · 6,89 · 7,00 이 모두 3자리다).
+fn round_to_3_significant_digits(v: f64) -> f64 {
+    if v == 0.0 {
+        return 0.0;
+    }
+    let factor = 10f64.powf(2.0 - v.abs().log10().floor());
+    (v * factor).round() / factor
+}
+
+#[test]
+fn e10a_low_table_grid_points_are_reproduced_exactly() {
+    assert_eq!(XYE_ROW_GRID.len(), 9);
+    assert_eq!(XYE_LOW_SINGLE.len(), 5);
+    for w in XYE_ROW_GRID.windows(2) {
+        assert!(w[1] > w[0], "제2열 격자가 오름차순이 아니다");
+    }
+    for block in XYE_LOW_SINGLE {
+        for (k, rel) in XYE_ROW_GRID.iter().enumerate() {
+            let (x, y, e) = x_y_e_low(block.alpha_deg.to_radians(), *rel);
+            assert!(
+                (x - block.x).abs() < 1e-12,
+                "α={}° r={rel} X {x} ≠ {}",
+                block.alpha_deg,
+                block.x
+            );
+            assert!(
+                (y - block.y[k]).abs() < 1e-12,
+                "α={}° r={rel} Y {y} ≠ {}",
+                block.alpha_deg,
+                block.y[k]
+            );
+            assert!(
+                (e - block.e[k]).abs() < 1e-12,
+                "α={}° r={rel} e {e} ≠ {}",
+                block.alpha_deg,
+                block.e[k]
+            );
+        }
+    }
+}
+
+#[test]
+fn e10b_trap1_five_degrees_single_row_equals_radial_contact() {
+    // 🔴 함정 1 — ISO 는 α = 5° 단열 칸에 숫자 대신 「radial contact 값을 쓰라」는
+    //    문장을 넣었다. 그래서 단열 X·Y·e 는 α ∈ [0°, 5°] 에서 **상수**다.
+    for rel in [0.172, 0.3, 0.689, 1.0, 1.38, 2.5, 3.45, 6.0, 6.89] {
+        let at0 = x_y_e_low(0.0, rel);
+        let at5 = x_y_e_low(5.0_f64.to_radians(), rel);
+        let at2_5 = x_y_e_low(2.5_f64.to_radians(), rel);
+        assert!((at0.0 - at5.0).abs() < 1e-12 && (at0.0 - at2_5.0).abs() < 1e-12, "X @ r={rel}");
+        assert!((at0.1 - at5.1).abs() < 1e-12 && (at0.1 - at2_5.1).abs() < 1e-12, "Y @ r={rel}");
+        assert!((at0.2 - at5.2).abs() < 1e-12 && (at0.2 - at2_5.2).abs() < 1e-12, "e @ r={rel}");
+        // 그리고 5°→10° 에서 **처음** 변한다
+        let at10 = x_y_e_low(10.0_f64.to_radians(), rel);
+        assert!((at0.0 - at10.0).abs() > 1e-6, "5°→10° 에서 X 가 변하지 않았다");
+    }
+    // α = 5° 의 e 표(0,23…0,52)는 **복열 전용**이다 — 단열에 새어들면 안 된다.
+    let (_, _, e5) = x_y_e_low(5.0_f64.to_radians(), XYE_ROW_GRID[0]);
+    assert!((e5 - XYE_LOW_E_RADIAL[0]).abs() < 1e-12, "단열 5° e 는 0,19 여야 한다");
+    assert!((e5 - 0.23).abs() > 1e-6, "복열 5° e(0,23)가 단열에 새어들었다");
+}
+
+#[test]
+fn e10c_trap2_twenty_degrees_is_invariant_to_relative_axial_load() {
+    // 🔴 함정 2 — 20° 이상은 상대 축하중 의존이 사라진다. 20° 를 9점 전부 같은
+    //    값으로 채웠으므로 두 경로(상단부·하단부)가 20° 에서 정확히 만나야 한다.
+    let (x0, y0, e0) = (XYE_TABLE_DEG[0].1, XYE_TABLE_DEG[0].2, XYE_TABLE_DEG[0].3);
+    for rel in [0.01, 0.172, 1.0, 2.07, 6.89, 100.0] {
+        let via_high = x_y_e(20.0_f64.to_radians(), Some(rel)).unwrap();
+        let via_low = x_y_e_low(20.0_f64.to_radians(), rel);
+        assert!((via_high.0 - x0).abs() < 1e-12 && (via_low.0 - x0).abs() < 1e-12, "X @ r={rel}");
+        assert!((via_high.1 - y0).abs() < 1e-12 && (via_low.1 - y0).abs() < 1e-12, "Y @ r={rel}");
+        assert!((via_high.2 - e0).abs() < 1e-12 && (via_low.2 - e0).abs() < 1e-12, "e @ r={rel}");
+    }
+    // 15°→20° 접합 — 17,5° 는 두 끝의 중점이어야 한다
+    let a = x_y_e(17.5_f64.to_radians(), Some(1.38)).unwrap();
+    let lo = x_y_e(15.0_f64.to_radians(), Some(1.38)).unwrap();
+    assert!((a.0 - 0.5 * (lo.0 + x0)).abs() < 1e-12, "17,5° 는 15°·20° 의 중점이어야 한다");
+    assert!((a.1 - 0.5 * (lo.1 + y0)).abs() < 1e-12);
+    assert!((a.2 - 0.5 * (lo.2 + e0)).abs() < 1e-12);
+}
+
+#[test]
+fn e10d_outside_the_grid_is_clamped_not_extrapolated() {
+    // ISO 는 외삽을 허용하지 않는다 → 양 끝 값으로 클램프한다.
+    for deg in [0.0_f64, 5.0, 10.0, 15.0, 12.3] {
+        let a = deg.to_radians();
+        let lo_out = x_y_e_low(a, 0.01);
+        let lo_edge = x_y_e_low(a, XYE_ROW_GRID[0]);
+        assert!((lo_out.0 - lo_edge.0).abs() < 1e-12);
+        assert!((lo_out.1 - lo_edge.1).abs() < 1e-12);
+        assert!((lo_out.2 - lo_edge.2).abs() < 1e-12);
+
+        let hi_out = x_y_e_low(a, 100.0);
+        let hi_edge = x_y_e_low(a, XYE_ROW_GRID[8]);
+        assert!((hi_out.0 - hi_edge.0).abs() < 1e-12);
+        assert!((hi_out.1 - hi_edge.1).abs() < 1e-12);
+        assert!((hi_out.2 - hi_edge.2).abs() < 1e-12);
+    }
+    // F_a = 0 (r = 0) 도 하단 클램프로 흡수된다
+    assert!((x_y_e_low(0.0, 0.0).1 - XYE_LOW_Y_RADIAL[0]).abs() < 1e-12);
+}
+
+#[test]
+fn e10e_high_angle_results_are_unchanged_by_p5_1b() {
+    // 회귀 — α = 20~45° 는 상대 축하중과 무관하게 종전 값 그대로여야 한다.
+    for (deg, x, y, e) in XYE_TABLE_DEG {
+        for rel in [None, Some(0.01), Some(1.03), Some(6.89), Some(500.0)] {
+            let (gx, gy, ge) = x_y_e(deg.to_radians(), rel).unwrap();
+            assert!((gx - x).abs() < 1e-12, "α={deg}° X");
+            assert!((gy - y).abs() < 1e-12, "α={deg}° Y");
+            assert!((ge - e).abs() < 1e-12, "α={deg}° e");
+        }
+    }
+    // 중간각도 종전과 같다 (E-7 이 고정한 22,5° 값)
+    let (x, y, e) = x_y_e(22.5_f64.to_radians(), Some(2.07)).unwrap();
+    assert!((x - 0.42).abs() < 1e-12 && (y - 0.935).abs() < 1e-12 && (e - 0.625).abs() < 1e-12);
+}
+
+#[test]
+fn e10f_column1_reproduces_column2_over_cos_alpha() {
+    // Theory §7.3.1 Level E-9 (TR-21):  제1열 = 제2열 / cos α
+    // 제2열 격자 자체도 psi 원값에서 재현되는지 함께 본다 (전사 자체검증).
+    let mut mismatches = Vec::new();
+    for (k, psi) in XYE_COL2_PSI.iter().enumerate() {
+        let exact_mpa = psi * PSI_TO_MPA;
+        let rounded = round_to_3_significant_digits(exact_mpa);
+        if (rounded - XYE_ROW_GRID[k]).abs() > 1e-9 {
+            mismatches.push(format!("제2열 #{k}: {rounded} ≠ {}", XYE_ROW_GRID[k]));
+        }
+        for (alpha_deg, col1) in XYE_COL1_TRANSCRIBED {
+            let computed = round_to_3_significant_digits(exact_mpa / alpha_deg.to_radians().cos());
+            if (computed - col1[k]).abs() > 1e-9 {
+                mismatches.push(format!("α={alpha_deg}° 제1열 #{k}: {computed} ≠ {}", col1[k]));
+            }
+        }
+    }
+    println!(
+        "\n── E-10f : (TR-21) 제1열 = 제2열/cos α — 검사 36건, 불일치 {}건",
+        mismatches.len()
+    );
+    assert!(mismatches.is_empty(), "TR-21 재현 실패:\n  {}", mismatches.join("\n  "));
+}
+
+#[test]
+fn e10g_double_row_transcription_is_intact() {
+    // 현 SW 는 단열만 계산하지만 복열 전사값도 죽은 코드가 되지 않게 여기서 검증한다.
+    assert_eq!(XYE_LOW_DOUBLE.len(), 4);
+    for b in XYE_LOW_DOUBLE {
+        assert!((0.0..=15.0).contains(&b.alpha_deg));
+        for w in b.y.windows(2) {
+            assert!(w[1] <= w[0] + 1e-12, "α={}° 복열 Y 가 증가했다", b.alpha_deg);
+        }
+        for w in b.e.windows(2) {
+            assert!(w[1] >= w[0] - 1e-12, "α={}° 복열 e 가 감소했다", b.alpha_deg);
+        }
+    }
+    // α = 0° 복열은 단열과 **완전히 동일**하다 (Theory §7.3.1)
+    assert!((XYE_LOW_DOUBLE[0].x - XYE_LOW_SINGLE[0].x).abs() < 1e-12);
+    assert_eq!(XYE_LOW_DOUBLE[0].y, XYE_LOW_SINGLE[0].y);
+    assert_eq!(XYE_LOW_DOUBLE[0].e, XYE_LOW_SINGLE[0].e);
+    // α = 10°/15° 의 e 는 단열·복열이 같고, α = 5° 만 갈린다 (함정 1 의 뒷면)
+    assert_eq!(XYE_LOW_DOUBLE[2].e, XYE_LOW_SINGLE[2].e);
+    assert_eq!(XYE_LOW_DOUBLE[3].e, XYE_LOW_SINGLE[3].e);
+    assert_ne!(XYE_LOW_DOUBLE[1].e, XYE_LOW_SINGLE[1].e);
+    // > e 구간 X 스팟 (전사 확인)
+    assert!((XYE_LOW_DOUBLE[1].x - 0.78).abs() < 1e-12);
+    assert!((XYE_LOW_DOUBLE[2].x - 0.75).abs() < 1e-12);
+    assert!((XYE_LOW_DOUBLE[3].x - 0.72).abs() < 1e-12);
+    // 복열은 ≤ e 구간에서도 Y ≠ 0 이다 (α = 0° 제외) — 단열과 다른 점
+    assert!(XYE_LOW_DOUBLE[1].y_below.iter().all(|v| *v > 1.0));
+}
+
+#[test]
+fn e10h_relative_axial_load_is_the_second_column_in_mpa() {
+    // 제2열 = F_a/(Z D_w²) [N/mm² = MPa]. i 는 곱하지 않는다 (ACBB, Theory §7.3.1 ⚠).
+    let z = 16;
+    let d_w = 11.5;
+    let f_a = 2_000.0;
+    let expected = f_a / (f64::from(z) * d_w * d_w);
+    assert!((relative_axial_load_mpa(f_a, z, d_w) - expected).abs() < 1e-12);
+    // 방어 — Z = 0 또는 D_w = 0 이면 0 (하단 클램프로 흡수)
+    assert_eq!(relative_axial_load_mpa(f_a, 0, d_w), 0.0);
+    assert_eq!(relative_axial_load_mpa(f_a, z, 0.0), 0.0);
+}
+
+#[test]
+fn e10i_p_r_is_now_available_below_twenty_degrees() {
+    // P5-1b 의 목적 — `p_r_n` 이 α < 20° 에서도 Some 이 된다 (Plan §5-2.3 표).
+    let mut input = life_input();
+    input.geometry.alpha_nom_rad = 15.0_f64.to_radians();
+    input.geometry.clearance = BbClearanceSpec::InitialAngleRad(15.0_f64.to_radians());
+    let r = bb_core::commands::solve_life(&input, &BbLifeConditions::default()).unwrap();
+    let p = r.p_r_n.expect("α = 15° 에서도 P_r 이 나와야 한다 (P5-1b)");
+    assert!(p.is_finite() && p > 0.0, "P_r = {p}");
+    println!("\n── E-10i : α = 15° 에서 P_r = {p:.1} N");
+    // α ≥ 20° 경로도 여전히 살아 있다
+    let r40 = bb_core::commands::solve_life(&life_input(), &BbLifeConditions::default()).unwrap();
+    assert!(r40.p_r_n.is_some());
 }

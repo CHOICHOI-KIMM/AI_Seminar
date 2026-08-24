@@ -110,9 +110,7 @@ pub fn basic_dynamic_radial_load_rating_n(
 /// `F_a/F_r > e` 구간의 `X`·`Y` 이며, `F_a/F_r ≤ e` 이면 `X = 1, Y = 0` 이다.
 /// α ≥ 20° 는 상대 축하중과 **무관**한 단일 값을 가진다 (Theory §7.3).
 ///
-/// ⚠️ α = 5°/10°/15° 는 `f_0 F_a/C_0r` 에 따라 X·Y·e 가 **또 한 겹 변한다**
-///    (ISO 281 Table 3 상단부). 그 상단부는 Theory §7.3 에 전사되어 있지 않으므로
-///    본 구현은 α < 20° 를 **거부**한다 — 값을 지어내지 않는다.
+/// α < 20° 는 상대 축하중에 따라 한 겹 더 변한다 → `XYE_LOW_SINGLE` (Theory §7.3.1).
 pub const XYE_TABLE_DEG: [(f64, f64, f64, f64); 6] = [
     (20.0, 0.43, 1.00, 0.57),
     (25.0, 0.41, 0.87, 0.68),
@@ -122,21 +120,225 @@ pub const XYE_TABLE_DEG: [(f64, f64, f64, f64); 6] = [
     (45.0, 0.33, 0.50, 1.34),
 ];
 
-/// Table 3 단열 구간의 하한 [°] — 이보다 작으면 2중 보간 표가 필요하다.
-pub const XYE_MIN_DEG: f64 = 20.0;
+/// Table 3 의 접촉각 정의역 하한 [°] (P5-1b 이전에는 20,0 이었다).
+pub const XYE_MIN_DEG: f64 = 0.0;
+/// Table 3 **상단부**(상대 축하중 의존)의 상한 [°]. 이 이상은 단일 값 구간이다.
+pub const XYE_LOW_MAX_DEG: f64 = 20.0;
 /// Table 3 단열 구간의 상한 [°].
 pub const XYE_MAX_DEG: f64 = 45.0;
 
-/// `(X, Y, e)` — ISO 281 Table 3 (단열), 접촉각 선형보간.
-pub fn x_y_e(alpha_nom_rad: f64) -> Result<(f64, f64, f64), SolverError> {
+// ───────────────────────────────────────────────────────────────────
+//  Table 3 상단부 — α = 0/5/10/15° (Theory §7.3.1 전사 2026-08-24)
+// ───────────────────────────────────────────────────────────────────
+//
+// 진입 변수는 **제2열 `F_a/(Z D_w²)` [MPa]** 로 고정한다.
+//   근거: Theory §7.3.1 Level E-9 (TR-21) 이 ISO 76 `C_0r = f₀ i Z D_w² cos α`
+//   로부터 「제1열 = 제2열 / cos α」임을 보였다 — 두 열은 동치이므로 하나만
+//   구현하면 충분하다. 제2열은 `C_0r` 의존이 없어 수명↔정정격 순환이 생기지 않는다.
+// 아래 값은 전부 **무차원**이다 (X·Y·e). 격자 `XYE_ROW_GRID` 만 [MPa] 다.
+
+/// Table 3 상단부의 제2열 격자 `F_a/(Z D_w²)` [MPa] — 세 블록 공통 9점.
+///
+/// 원값은 psi 단위의 `{25, 50, 100, 150, 200, 300, 500, 750, 1000}` 이다 (§7.3.1 E-9).
+pub const XYE_ROW_GRID: [f64; 9] = [
+    0.172, 0.345, 0.689, 1.03, 1.38, 2.07, 3.45, 5.17, 6.89,
+];
+
+/// α = 0° (radial contact) `X` (`F_a/F_r > e`) — 무차원. 9점 전부 동일한 단일 값.
+pub const XYE_LOW_X_RADIAL: f64 = 0.56;
+/// α = 0° `Y` (`> e`) 9점 — 무차원. **단열·복열 동일**.
+pub const XYE_LOW_Y_RADIAL: [f64; 9] = [2.3, 1.99, 1.71, 1.55, 1.45, 1.31, 1.15, 1.04, 1.0];
+/// α = 0° `e` 9점 — 무차원. **단열·복열 동일**.
+pub const XYE_LOW_E_RADIAL: [f64; 9] = [0.19, 0.22, 0.26, 0.28, 0.3, 0.34, 0.38, 0.42, 0.44];
+
+/// Table 3 상단부 한 블록 (하나의 접촉각). 값은 `F_a/F_r > e` 구간용이며 **무차원**이다.
+///
+/// `F_a/F_r ≤ e` 구간은 단열에서 `X = 1, Y = 0` 이라 표가 필요 없다.
+#[derive(Debug, Clone, Copy)]
+pub struct XyeLowBlock {
+    /// 공칭 접촉각 [°].
+    pub alpha_deg: f64,
+    /// `X` (`> e`) — 행에 무관한 단일 값 [무차원].
+    pub x: f64,
+    /// `Y` (`> e`) — `XYE_ROW_GRID` 9점 [무차원].
+    pub y: [f64; 9],
+    /// `e` — `XYE_ROW_GRID` 9점 [무차원].
+    pub e: [f64; 9],
+}
+
+/// ISO 281 Table 3 상단부 — **단열** 블록 5개 (α = 0/5/10/15/20°).
+///
+/// 🔴 **함정 1** (Theory §7.3.1): ISO 는 α = 5° **단열**의 `> e` 칸에 숫자 대신
+///    *"For this type, use the X, Y and e values applicable to single-row radial
+///    contact ball bearings."* 라는 **문장**을 넣었다. 그래서 5° 블록은 0° 와
+///    **같은 상수를 참조**한다 (복사가 아니다). 결과적으로 단열 `X·Y·e` 는
+///    α ∈ [0°, 5°] 에서 **상수**이고 5°→10° 에서 처음 변한다.
+///    §7.3.1 의 `e` 표 α = 5° 행(0,23…0,52)은 **복열 전용**이라 여기 쓰지 않는다.
+///
+/// 🔴 **함정 2** (Theory §7.3.1): α ≥ 20° 는 상대 축하중 의존이 사라진 단일 값이다.
+///    15°↔20° 를 일관되게 잇기 위해 20° 블록을 `XYE_TABLE_DEG[0]` 의 값으로
+///    **9점 전부 채운다** — 그러면 20° 에서 두 경로가 정확히 일치한다.
+pub const XYE_LOW_SINGLE: [XyeLowBlock; 5] = [
+    XyeLowBlock {
+        alpha_deg: 0.0,
+        x: XYE_LOW_X_RADIAL,
+        y: XYE_LOW_Y_RADIAL,
+        e: XYE_LOW_E_RADIAL,
+    },
+    // ⚠ 함정 1 — ISO 문장 지시에 의해 α = 0° 와 **동일**하다.
+    XyeLowBlock {
+        alpha_deg: 5.0,
+        x: XYE_LOW_X_RADIAL,
+        y: XYE_LOW_Y_RADIAL,
+        e: XYE_LOW_E_RADIAL,
+    },
+    XyeLowBlock {
+        alpha_deg: 10.0,
+        x: 0.46,
+        y: [1.88, 1.71, 1.52, 1.41, 1.34, 1.23, 1.1, 1.01, 1.0],
+        e: [0.29, 0.32, 0.36, 0.38, 0.4, 0.44, 0.49, 0.54, 0.54],
+    },
+    XyeLowBlock {
+        alpha_deg: 15.0,
+        x: 0.44,
+        y: [1.47, 1.4, 1.3, 1.23, 1.19, 1.12, 1.02, 1.0, 1.0],
+        e: [0.38, 0.4, 0.43, 0.46, 0.47, 0.5, 0.55, 0.56, 0.56],
+    },
+    // ⚠ 함정 2 — 20° 는 상대 축하중 무관. XYE_TABLE_DEG 의 첫 행을 9점에 복제한다.
+    XyeLowBlock {
+        alpha_deg: XYE_TABLE_DEG[0].0,
+        x: XYE_TABLE_DEG[0].1,
+        y: [XYE_TABLE_DEG[0].2; 9],
+        e: [XYE_TABLE_DEG[0].3; 9],
+    },
+];
+
+/// ISO 281 Table 3 상단부 — **복열** 블록 4개 (α = 0/5/10/15°).
+///
+/// 현 SW 는 단열(`i = 1`)만 다루므로 계산에는 쓰지 않는다. 전사의 완결성을 위해
+/// 두고, Level E-10 테스트가 값을 검증한다. `≤ e` 구간의 `Y` 는 `y_below` 에 있다
+/// (복열은 `≤ e` 에서도 `Y ≠ 0` 이다 — 단열과 다른 점).
+///
+/// α = 0° 는 단열과 **완전히 동일**하고 `≤ e` 에서 `X = 1, Y = 0` 이다.
+#[derive(Debug, Clone, Copy)]
+pub struct XyeLowDoubleBlock {
+    /// 공칭 접촉각 [°].
+    pub alpha_deg: f64,
+    /// `Y` (`F_a/F_r ≤ e`) 9점 [무차원]. 이 구간의 `X` 는 1 이다.
+    pub y_below: [f64; 9],
+    /// `X` (`> e`) — 단일 값 [무차원].
+    pub x: f64,
+    /// `Y` (`> e`) 9점 [무차원].
+    pub y: [f64; 9],
+    /// `e` 9점 [무차원].
+    pub e: [f64; 9],
+}
+
+/// 복열 전사값 (Theory §7.3.1). α = 0° 는 단열 상수를 그대로 참조한다.
+pub const XYE_LOW_DOUBLE: [XyeLowDoubleBlock; 4] = [
+    XyeLowDoubleBlock {
+        alpha_deg: 0.0,
+        y_below: [0.0; 9],
+        x: XYE_LOW_X_RADIAL,
+        y: XYE_LOW_Y_RADIAL,
+        e: XYE_LOW_E_RADIAL,
+    },
+    XyeLowDoubleBlock {
+        alpha_deg: 5.0,
+        y_below: [2.78, 2.4, 2.07, 1.87, 1.75, 1.58, 1.39, 1.26, 1.21],
+        x: 0.78,
+        y: [3.74, 3.23, 2.78, 2.52, 2.36, 2.13, 1.87, 1.69, 1.63],
+        e: [0.23, 0.26, 0.3, 0.34, 0.36, 0.4, 0.45, 0.5, 0.52],
+    },
+    XyeLowDoubleBlock {
+        alpha_deg: 10.0,
+        y_below: [2.18, 1.98, 1.76, 1.63, 1.55, 1.42, 1.27, 1.17, 1.16],
+        x: 0.75,
+        y: [3.06, 2.78, 2.47, 2.29, 2.18, 2.0, 1.79, 1.64, 1.63],
+        e: [0.29, 0.32, 0.36, 0.38, 0.4, 0.44, 0.49, 0.54, 0.54],
+    },
+    XyeLowDoubleBlock {
+        alpha_deg: 15.0,
+        y_below: [1.65, 1.57, 1.46, 1.38, 1.34, 1.26, 1.14, 1.12, 1.12],
+        x: 0.72,
+        y: [2.39, 2.28, 2.11, 2.0, 1.93, 1.82, 1.66, 1.63, 1.63],
+        e: [0.38, 0.4, 0.43, 0.46, 0.47, 0.5, 0.55, 0.56, 0.56],
+    },
+];
+
+/// 상대 축하중 **제2열** `F_a/(Z D_w²)` — 단위는 **N/mm² = MPa** (D-10).
+///
+/// ACBB 는 제2열에 `i` 가 **없다** (제1열에는 있다 — Theory §7.3.1 의 ⚠).
+/// 단열(`i = 1`)이라 어느 쪽이든 같지만, 식은 규격대로 둔다.
+pub fn relative_axial_load_mpa(f_a_n: f64, z: u32, d_w_mm: f64) -> f64 {
+    if z == 0 || d_w_mm <= 0.0 {
+        return 0.0;
+    }
+    f_a_n / (f64::from(z) * d_w_mm * d_w_mm)
+}
+
+/// 9점 격자 위의 선형보간. 격자 밖은 **외삽하지 않고 양 끝 값으로 클램프**한다
+/// (Theory §7.3.1 함정 2 — ISO 가 외삽을 허용하지 않는다).
+fn interpolate_row_grid(values: &[f64; 9], rel_axial_mpa: f64) -> f64 {
+    let clamped = rel_axial_mpa.clamp(XYE_ROW_GRID[0], XYE_ROW_GRID[8]);
+    let grid: Vec<(f64, f64)> = XYE_ROW_GRID
+        .iter()
+        .copied()
+        .zip(values.iter().copied())
+        .collect();
+    util::interpolate_linear_table(&grid, clamped).expect("클램프로 정의역 내 보장됨")
+}
+
+/// `(X, Y, e)` — ISO 281 Table 3 **상단부** (단열), `0° ≤ α ≤ 20°`.
+///
+/// **2중 선형보간**이다 (각주 b): 먼저 각 α 블록 안에서 `rel_axial_mpa` 로 9점
+/// 보간하고, 그 결과들을 접촉각으로 다시 보간한다.
+/// α 는 `[0°, 20°]` 로 클램프된다 — 정의역 검사는 호출부 `x_y_e` 가 한다.
+pub fn x_y_e_low(alpha_nom_rad: f64, rel_axial_mpa: f64) -> (f64, f64, f64) {
+    let alpha_deg = alpha_nom_rad
+        .to_degrees()
+        .clamp(XYE_MIN_DEG, XYE_LOW_MAX_DEG);
+
+    let x_grid: Vec<(f64, f64)> = XYE_LOW_SINGLE.iter().map(|b| (b.alpha_deg, b.x)).collect();
+    let y_grid: Vec<(f64, f64)> = XYE_LOW_SINGLE
+        .iter()
+        .map(|b| (b.alpha_deg, interpolate_row_grid(&b.y, rel_axial_mpa)))
+        .collect();
+    let e_grid: Vec<(f64, f64)> = XYE_LOW_SINGLE
+        .iter()
+        .map(|b| (b.alpha_deg, interpolate_row_grid(&b.e, rel_axial_mpa)))
+        .collect();
+
+    let x = util::interpolate_linear_table(&x_grid, alpha_deg).expect("클램프로 보장됨");
+    let y = util::interpolate_linear_table(&y_grid, alpha_deg).expect("클램프로 보장됨");
+    let e = util::interpolate_linear_table(&e_grid, alpha_deg).expect("클램프로 보장됨");
+    (x, y, e)
+}
+
+/// `(X, Y, e)` — ISO 281 Table 3 (단열) 전 구간 `0° ≤ α ≤ 45°`.
+///
+/// `rel_axial_mpa` 는 상대 축하중 제2열 `F_a/(Z D_w²)` [MPa] 다
+/// (→ `relative_axial_load_mpa`). α ≥ 20° 는 이 값과 **무관**하므로 `None` 이어도 된다.
+/// α < 20° 에서 `None` 이면 값을 지어내지 않고 **오류**를 낸다.
+pub fn x_y_e(
+    alpha_nom_rad: f64,
+    rel_axial_mpa: Option<f64>,
+) -> Result<(f64, f64, f64), SolverError> {
     let alpha_deg = alpha_nom_rad.to_degrees();
     if !(XYE_MIN_DEG..=XYE_MAX_DEG).contains(&alpha_deg) {
         return Err(SolverError::InvalidGeometry(format!(
-            "공칭 접촉각 {alpha_deg:.3}° 가 ISO 281 Table 3 단열 구간 \
-             [{XYE_MIN_DEG}°, {XYE_MAX_DEG}°] 밖입니다. α < 20° 는 상대 축하중 \
-             f_0·F_a/C_0r 에 따른 2중 보간이 필요하며 그 표는 Theory §7.3 에 \
-             전사되어 있지 않습니다 (동등가하중 P 만 영향 — L_10r 은 P_ref r 을 씁니다)"
+            "공칭 접촉각 {alpha_deg:.3}° 가 ISO 281 Table 3 의 정의역 \
+             [{XYE_MIN_DEG}°, {XYE_MAX_DEG}°] 밖입니다 — 규격이 값을 주지 않아 외삽하지 않습니다"
         )));
+    }
+    if alpha_deg < XYE_LOW_MAX_DEG {
+        let rel = rel_axial_mpa.ok_or_else(|| {
+            SolverError::InvalidInput(format!(
+                "공칭 접촉각 {alpha_deg:.3}° 는 ISO 281 Table 3 상단부라 X·Y·e 가 \
+                 상대 축하중 F_a/(Z D_w²) 에 따라 변합니다 — 그 값 없이는 결정할 수 없습니다"
+            ))
+        })?;
+        return Ok(x_y_e_low(alpha_nom_rad, rel));
     }
     let x_grid: Vec<(f64, f64)> = XYE_TABLE_DEG.iter().map(|r| (r.0, r.1)).collect();
     let y_grid: Vec<(f64, f64)> = XYE_TABLE_DEG.iter().map(|r| (r.0, r.2)).collect();
@@ -151,12 +353,17 @@ pub fn x_y_e(alpha_nom_rad: f64) -> Result<(f64, f64, f64), SolverError> {
 ///
 /// `F_a/F_r ≤ e` 이면 `X = 1, Y = 0` (즉 `P = F_r`), 아니면 Table 3 값을 쓴다.
 /// **2중 보간의 바깥 겹**(상대 축하중 분기)이 여기다.
+///
+/// `z`·`d_w_mm` 은 α < 20° 의 상대 축하중 `F_a/(Z D_w²)` 진입값에 쓴다 (P5-1b).
 pub fn dynamic_equivalent_radial_load_n(
     alpha_nom_rad: f64,
     f_r_n: f64,
     f_a_n: f64,
+    z: u32,
+    d_w_mm: f64,
 ) -> Result<f64, SolverError> {
-    let (x, y, e) = x_y_e(alpha_nom_rad)?;
+    let rel_axial = Some(relative_axial_load_mpa(f_a_n.abs(), z, d_w_mm));
+    let (x, y, e) = x_y_e(alpha_nom_rad, rel_axial)?;
     if f_r_n <= 0.0 {
         // 순수 축하중. F_a/F_r → ∞ 이므로 Table 3 분기.
         return Ok(y * f_a_n);
@@ -430,11 +637,13 @@ pub fn compute_life(
     let l_10r = l_10r_mrev(q_ci, q_ei, q_ce, q_ee);
     let p_ref_r = p_ref_r_n(c_r_n, l_10r);
 
-    // ── ISO 281 카탈로그 동등가하중 P (α ≥ 20° 에서만) ─────────────
+    // ── ISO 281 카탈로그 동등가하중 P (P5-1b 이후 0° ≤ α ≤ 45° 전 구간) ──
     let p_r_n = dynamic_equivalent_radial_load_n(
         geom.alpha_nom_rad,
         static_rating.f_r_n,
         static_rating.f_a_n,
+        geom.z,
+        geom.d_w_mm,
     )
     .ok();
 
@@ -598,11 +807,14 @@ mod tests {
     #[test]
     fn x_y_e_grid_points_and_range() {
         for (deg, x, y, e) in XYE_TABLE_DEG {
-            let (gx, gy, ge) = x_y_e(deg.to_radians()).unwrap();
+            let (gx, gy, ge) = x_y_e(deg.to_radians(), None).unwrap();
             assert!((gx - x).abs() < 1e-12 && (gy - y).abs() < 1e-12 && (ge - e).abs() < 1e-12);
         }
-        assert!(x_y_e(15.0_f64.to_radians()).is_err());
-        assert!(x_y_e(50.0_f64.to_radians()).is_err());
+        // α < 20° 는 상대 축하중이 있어야 결정된다 (없으면 지어내지 않고 오류)
+        assert!(x_y_e(15.0_f64.to_radians(), None).is_err());
+        assert!(x_y_e(15.0_f64.to_radians(), Some(1.0)).is_ok());
+        assert!(x_y_e(-0.1_f64.to_radians(), Some(1.0)).is_err());
+        assert!(x_y_e(50.0_f64.to_radians(), None).is_err());
     }
 
     #[test]
