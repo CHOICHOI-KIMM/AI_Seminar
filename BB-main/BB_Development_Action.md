@@ -1880,3 +1880,108 @@ hover `%{:.9g}`, 표 유효숫자 9자리.
 검사: build ✅ · lint 증감 0 · 헬스체크 `ALL PASS` + 웹뷰 오류 0.
 
 ---
+
+## 260824 — P4-S5: 접촉응력 뷰 + Phase 4 종료
+
+**커밋** `cba6bf9` · `e557980`. push 없음. **이것으로 Phase 4 가 끝난다.**
+
+| 단계 | 내용 |
+|---|---|
+| **S5-1** | `src/bb/BbStressContourView.tsx` 신규 — 타원 **내부** 압력분포 히트맵(축척 1:1) · σ_Hu 등고선 · 볼 선택 · 내/외륜 탭 · Level B 대조표 · what-if |
+| **S5-2** | `CanvasArea` 에 `contourView` prop · `App.tsx` 주입 · 헬스체크에 **`bb_compute_contact` 왕복 2회** 추가 |
+| **S5-3** | Phase 4 DoD 최종 점검 (이 절 말미) |
+
+### 검사
+
+| 항목 | 결과 |
+|---|---|
+| `npm run build` | ✅ |
+| `npm run lint` | 44건 — baseline **증감 0**, `src/bb/**` **0건**, `@ts-nocheck` **0** |
+| `cargo test` | **147** (Rust 무변경) · clippy **0** · `git diff --exit-code src/bb/generated/` 비어 있음 |
+| 삭제 | **0건**. `charts/RibContactDetailChart.tsx`(354줄)는 **읽기만** 했고, `charts/StressContourChart.tsx` 는 import 만 끊고 파일은 남겼다 |
+
+> ⚠️ `cargo test` 실행 시 `target/debug/bb-contact-analysis.exe` 가 **사용자가 띄워 둔 앱**(11:03 기동, 부모 `cargo run`)에 잠겨 있었다. 사용자 프로세스를 죽이지 않기 위해 `CARGO_TARGET_DIR` 를 임시 경로로 돌려 전량 재빌드해 돌렸다. 결과는 동일한 **147**.
+
+### 압력분포 식과 σ_Hu 의 출처 — 소스에서 확인
+
+| 항목 | 어디서 확인했나 |
+|---|---|
+| `p(x,y) = p_max·√(1 − (x/a)² − (y/b)²)` | Hertz 반타원체. `p_max` 정의가 이 식을 함축한다 — Theory §6.3 `p_H,max = 3Q/(2πab)` (본문 라인 607, Harris 6.25). 적분하면 `∫p dA = (2/3)p_max·πab = Q`. `a`·`b` 는 Theory §6.1 (Harris 6.38·6.40) |
+| 구현 대조 | `src-tauri/src/solver/bb/hertz.rs::contact_ellipse` — `p_max = 3.0*q_n/(2.0*π*a*b)` (같은 식) |
+| `σ_Hu` | `src-tauri/src/solver/bb/hertz.rs:337` `pub const SIGMA_HU_MPA: f64 = 1500.0`. 같은 상수를 `bearing.rs:595` · `commands.rs:113` 이 `CONTACT_STRESS_OVER_FATIGUE_LIMIT` 경고에 쓴다. 근거 ISO 281 Annex B.3.1 (Theory §6.3) |
+
+**등고선은 격자에서 찾지 않고 해석적으로 그린다** — `p = σ_Hu` 자취는
+`(x/a)² + (y/b)² = 1 − (σ_Hu/p_max)²` 인 동심 타원이다. 격자 해상도에 좌우되지 않고,
+초과 **면적비**도 정확히 `1 − (σ_Hu/p_max)²` 로 낼 수 있다.
+
+### 데이터 출처 — §3.6.4.7 경고 준수
+
+- **주 데이터는 `result.equilibrium.ball_results[]` 뿐.** 히트맵·단면·수치표가 전부 여기서 나온다.
+- `bb_compute_contact` 는 두 곳에서만 쓰고 **둘 다 평형 해가 아님을 화면에 명시**한다:
+  - `q_n = 0` → **하중 무관** 전처리(`χ`·`K`·`E`·`a*`·`b*`·`δ*`·`E*`·`c_P`). 타원이 나오지 않는다.
+    **Level B 골든값(Harris Table 6.1)의 `a*`·`b*`·`δ*` 가 `BbResult` 어디에도 없어** 이 경로가 유일하다.
+  - what-if → 호박색 파선 테두리 + 「이 값은 평형 해가 아니다」 문구로 분리.
+- 하중 입력은 `state.bbInput` 이 아니라 **`state.resultInput`**(S4-3 스냅샷).
+
+### 자체 항등 재계산 — 화면이 지어낸 식을 쓰고 있지 않다는 증거
+
+수치표에 `3Q/(2π a b)` 를 **화면에서 다시 계산**해 솔버의 `p_max` 와 나란히 내고 상대차를 낸다.
+헬스체크도 같은 항등(`p_max = 3Q/(2πab)`, `a ≥ b > 0`, `χ = a/b`)을 상대차 `< 1e-9` 로 본다.
+
+### ⭐ 헬스체크 — 마지막 커맨드를 덮었다
+
+`bb_compute_contact` 는 **등록만 되고 아무도 부르지 않던 마지막 하나**였다(§3.6.3.1).
+왕복 2회를 추가해 **BB 커맨드 3종을 헬스체크가 전부 덮는다.**
+
+- (a) `q_n = 0` — 전처리 값 로깅 + 「타원이 0 인가」
+- (b) `q_n = 평형 해의 Q_max` — `ball_results[]` 의 `a`·`b`·`p_max` 6개와 **상대차 `< 1e-9`** 대조.
+  §3.6.4.7 의 「화면과 검증 결과가 같은 숫자」를 로그로 실증하는 지점이다.
+
+인자 키는 **camelCase `qN`** — `tauri-macros` 의 기본이 `ArgumentCase::Camel` 임을 crate 소스에서 확인했다
+(`tauri-macros-2.6.3/src/command/wrapper.rs:51`). Rust 시그니처는 `q_n: f64` 다.
+
+### ④ 런타임 헬스체크 — **이번 단계에서는 하지 않았다**
+
+상위 지시로 `npm run tauri dev` 실행이 금지되었다. ①②③ 만 수행했다.
+
+### Phase 4 DoD 최종 점검 (§3.6.5.2)
+
+| DoD | 결과 |
+|---|---|
+| `npm run build` | ✅ |
+| `npm run lint` | ✅ 44건 baseline 유지 (`src/bb/**` 0건) |
+| `src/bb/` 5개 뷰가 실제 솔버 출력으로 동작 | ✅ `BbInputPanel`(프리셋·Solve) · `BbGeometryView`(`bb_compute_geometry`) · `BbResultsCard`·`BbLoadDistView`·`BbStressContourView`(`bb_solve_bearing` 결과). ⑤ 육안은 사용자 몫 |
+| `src/bb/**` 의 `@ts-nocheck` | ✅ **0** |
+| `src/bb/**` 의 죽은 `invoke` | ✅ **0** — 호출하는 9종이 전부 `lib.rs::generate_handler!` 에 등록돼 있다 |
+
+**§3.6.4.2 검증 매핑 7개 뷰 항목 ↔ 화면**
+
+| # | §3.6.4.2 뷰 항목 | Level | 화면 |
+|:--:|---|---|---|
+| 1 | `GeometryView` | **A** | Geometry 탭 — `BbGeometryView` (`BbGeometryDerived` 9 + `BbGeometrySummary` 13 전 필드, 9자리) |
+| 2 | `LoadDistPolar` — `Q_j(φ)` | **C-4·C-5·C-7·D-2b/2c** | Load Distribution 탭 — `Q_j` barpolar + 볼 위치 링 + `F_r` 붉은 파선, 위상 스윕 곡선 |
+| 3 | `LoadDistPolar` — `α_j(φ)` | **D-1·C-2** | Load Distribution 탭 — `AlphaCurve` (접촉 볼만, `α₀` 라임 점선 기준선 겹침) |
+| 4 | **Contact Ellipse** | **B·B-3** | **형상** = Load Distribution 탭 `ContactEllipse`(볼별 `a`·`b` 막대 + 최대하중 볼 1:1 윤곽) / **내부 압력분포** = Stress Contour 탭 `BbStressContourView`(히트맵 1:1 + σ_Hu 등고선 + `χ`·`a*`·`b*`·`δ*` 대조표) |
+| 5 | **BB 축단면** (`α₀` ↔ `α_j` 겹쳐그리기) | **D-1·D-2d** | 🟡 **전용 그림 없음** — 아래 참조 |
+| 6 | `ResultsCard` (5-DOF 5성분) | **D-2a·C-8** | 우측 상시 `BbResultsCard` — `δ_z`·`γ_y` 를 `watch` 로 강조, `converged`/`iterations` |
+| 7 | `AlertPanel` | **D-2f·C-8** | 좌측 상시 `AlertPanel` (`code` 표시). Stress Contour 의 σ_Hu 등고선이 `CONTACT_STRESS_OVER_FATIGUE_LIMIT` 과 **같은 상수**임을 화면에 명시해 연결 |
+
+### 🔴 상위 판단이 필요한 사항 1건 — #5 「BB 축단면」
+
+§3.6.4.2 는 **7개 뷰 항목**을 들지만, §3.6.4.3 처분표의 신규 BB 뷰는 **5개**뿐이고
+그 안에 **축단면 뷰가 없다**. Section 탭은 TRB 잔존(회색)으로 남아 있다. 즉 두 절이 어긋난다.
+
+- 현재 **부분적으로** 덮이는 것: `α₀` ↔ `α_j` 겹쳐보기는 `AlphaCurve` 가 (직교좌표로) 한다 → **D-1 은 확인된다.**
+  `A = r_i + r_e − D_w` 는 Geometry 탭에 숫자로 있다.
+- 덮이지 **않는** 것: 「하중 후 접촉각이 **벌어지는 방향**」·「틸트 방향이 모멘트와 맞는가(**D-2d**)」의 **그림에 의한** 판정.
+- **자의로 만들지 않았다** — 새 뷰 추가는 §3.6.4.3 처분표(신규 5개)를 넘고, 표시 물리량·레이아웃 결정이 뒤따른다.
+  §3.6.5.3 의 「판단이 필요한 것 → 멈추고 안내」에 해당한다.
+- 선택지: ⓐ Phase 4 를 이대로 닫고 축단면은 별건(S6 또는 후속 Phase)으로 뺀다 /
+  ⓑ 지금 `BbAxialSectionView` 를 6번째 뷰로 추가한다 / ⓒ §3.6.4.2 의 7행을 6행으로 정정한다.
+
+### 자동 수정 — **0건**
+
+빌드·린트가 첫 시도에 통과했다. `CanvasArea` 의 `StressContourChart` import 제거는
+배선에 따른 필수 변경이지 오류 수정이 아니다.
+
+---
