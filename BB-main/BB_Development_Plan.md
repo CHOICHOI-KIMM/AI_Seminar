@@ -1279,7 +1279,12 @@ sequenceDiagram
 
 | 단계 | 검사 | 수단 | 잡는 것 | 누가 |
 |:--:|---|---|---|---|
-| **①** | 타입·빌드 | `npm run build` (`tsc -b && vite build`) | 타입 불일치 · import 오류 · 문법 | Claude |
+| **①** | 타입·빌드 | `npm run build` (`tsc -b && vite build`) | 타입 불일치 · import 오류 · 문법 · **미사용 변수** | Claude |
+
+> 🔴 **`npx tsc --noEmit` 으로 대체하면 안 된다.** 루트 `tsconfig.json` 은 `references` 만 갖고 파일이 없어
+> **앱을 전혀 검사하지 않는다.** `noUnusedLocals`·`noUnusedParameters` 는 `tsconfig.app.json` 에 있고
+> **`tsc -b` 에서만 적용**된다. 병렬 작업 중 파일 단위로 확인해야 하면 `npx tsc -p tsconfig.app.json --noEmit` 을 쓴다.
+> (2026-08-24 P4-2 에서 실제로 `--noEmit` 통과 → `tsc -b` 실패가 발생했다.)
 | **②** | 린트·경계 | `npm run lint` (**ESLint 경계 규칙 포함**) | `common/` → `bb/` 역참조 · 미사용 · 훅 규칙 | Claude |
 | **③** | 솔버 회귀 + **타입 드리프트** | `cargo test` + `cargo clippy --lib --tests` + **`git diff --exit-code src/bb/generated/`** | Rust 쪽 회귀(**120개 유지**) · **재생성 타입이 커밋본과 다른가** | Claude |
 | **④** | 🔴 **런타임 헬스체크** | `npm run tauri dev` **백그라운드 기동 → 로그 감시 → 종료** | **웹뷰 JS 오류 · Rust 패닉 · 커맨드 왕복 실패** | **Claude** |
