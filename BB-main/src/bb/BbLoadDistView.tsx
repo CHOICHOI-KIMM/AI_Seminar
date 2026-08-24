@@ -97,6 +97,10 @@ const C_OUTER = '#f97316';
  * 를 가지므로 통합 시 이 컴포넌트가 그대로 재사용된다.
  *
  * `loadPhiDeg` = 외부 반경하중의 방위 `atan2(F_z, F_y)` [°]. 반경하중이 0 이면 `null`.
+ *
+ * ⚠ 화면의 「방위 규약」 배너와 차트 캡션은 2026-08-24 사용자 지시로 제거했다.
+ *   규약 자체는 그대로다 — `polar.angularaxis` 의 `rotation:-90` ·
+ *   `direction:'counterclockwise'` 가 방향을 만들고, 근거는 위 주석에 남아 있다.
  */
 function LoadDistPolar({
   points,
@@ -248,11 +252,6 @@ function LoadDistPolar({
 
   return (
     <div className="space-y-1">
-      {/* 🔴 축 규약 부제 — 제목을 `Load Distribution` 으로 줄인 대신 여기에 남긴다.
-          이것을 지우면 극좌표를 잘못 읽어 방위 검증 자체가 불가능해진다. */}
-      <p className="text-[11px] text-text-canvas/70 font-mono">
-        0° = +Y = 화면 아래 · 90° = +Z = 오른쪽 (각도 우측 증가) — ISO 16281 A.2.2
-      </p>
       <div className="h-[420px]">
         <Plot
           data={data}
@@ -640,48 +639,6 @@ export default function BbLoadDistView() {
 
   return (
     <div className="h-full overflow-auto custom-scrollbar p-4 space-y-5">
-      {/* ── 🔴 방위 규약 명시 — 이 배너가 없으면 극좌표를 잘못 읽는다 ───────── */}
-      <div className="p-2.5 rounded border bg-blue-500/10 border-blue-400/30 text-blue-100 text-[12px] leading-relaxed">
-        <p className="font-semibold text-[13px] mb-1">
-          방위 규약 (D-8 · Theory §4.4 · solver/bb/bearing.rs · 표시 규약 §3.6.4.10)
-        </p>
-        <p>
-          극좌표의 각도축은 <span className="font-mono">φ</span> 그 자체다 —{' '}
-          <span className="font-mono font-semibold">θ = 0 은 +Y 축</span>,{' '}
-          <span className="font-mono">θ = 90° 는 +Z 축</span>. 볼 각위치는{' '}
-          <span className="font-mono">φ_j = 2π(j−1)/Z</span> 이고 반경 단위벡터가{' '}
-          <span className="font-mono">(cos φ_j, sin φ_j)</span> in{' '}
-          <span className="font-mono">(Y, Z)</span> 다.
-        </p>
-        <p className="mt-1">
-          <span className="font-semibold">
-            화면 배치: 0° = +Y = <u>아래</u>, 90° = +Z = <u>오른쪽</u> (각도는 우측으로 증가)
-          </span>{' '}
-          — ISO 16281 Annex A.2.2 NOTE 「모든 그림에서 Y 축은 지면 아래쪽을 향한다」 + 우수좌표계{' '}
-          <span className="font-mono">Z = X × Y</span> (X = 회전축 = 화면 밖).{' '}
-          <span className="text-blue-200/80">
-            회전은 <b>표시만</b> 바꾼다 — <span className="font-mono">φ_j</span> 값도{' '}
-            <span className="font-mono">atan2(F_z, F_y)</span> 값도 그대로다.
-          </span>
-        </p>
-        <p className="mt-1">
-          붉은 파선은 외부 반경하중의 방위 <span className="font-mono">φ_F = atan2(F_z, F_y)</span> ={' '}
-          <span className="font-mono">{loadPhiDeg === null ? '— (F_r = 0)' : `${num(loadPhiDeg)}°`}</span>
-          {', '}
-          <span className="font-mono">
-            |F_r| = {num(loadMagN)} N
-          </span>{' '}
-          (F_y = {num(fy)} N, F_z = {num(fz)} N).{' '}
-          <span className="text-blue-200/80">
-            하중구간이 이 선을 중심으로 정렬·대칭인지가 C-7 · D-2b/2c 의 육안 판정이다.
-          </span>
-        </p>
-        <p className="mt-1 text-blue-200/70">
-          기준선의 하중값은 <b>이 결과를 만든 Solve 시점의 입력</b>에서 읽는다. 입력을 편집해도 기준선은
-          움직이지 않으므로 볼 하중과 시점이 항상 일치한다.
-        </p>
-      </div>
-
       {/* ① Q_j(φ) 극좌표 — C-4 · C-7 · D-2b/2c */}
       <LoadDistPolar points={balls} loadPhiDeg={loadPhiDeg} loadMagN={loadMagN} />
 
