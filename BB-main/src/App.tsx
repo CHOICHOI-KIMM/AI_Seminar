@@ -29,6 +29,8 @@ const initialState: AppState = {
   // P4-S3-1: BB 입력은 Rust 프리셋이 유일한 출처라 초기값이 없다 (`BbInputPanel` 이 기동 시 로드).
   bbInput: null,
   result: null,
+  // Solve 시점 입력 스냅샷 (store.ts `resultInput` 주석 참조)
+  resultInput: null,
   dualResult: null,
   transientResult: null,
   dualViewMode: 'gen1',

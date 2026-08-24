@@ -540,7 +540,7 @@ function BallTable({ balls }: { balls: BallResult[] }) {
 
 export default function BbLoadDistView() {
   const { state } = useAppState();
-  const { result, bbInput } = state;
+  const { result, resultInput } = state;
 
   if (!result) {
     return (
@@ -558,8 +558,10 @@ export default function BbLoadDistView() {
   //    (Theory §4.4 확정형 · `bearing.rs` 헤더).
   //  ⚠ 하중은 **현재 입력 패널 값**에서 읽는다. 입력을 고친 뒤 Solve 를 누르지 않으면
   //    기준선만 먼저 움직인다 — 그 사실을 화면에 적어 둔다.
-  const fy = bbInput?.operating.f_y_n ?? 0;
-  const fz = bbInput?.operating.f_z_n ?? 0;
+  // ⚠ `bbInput`(편집 중) 이 아니라 `resultInput`(Solve 시점 스냅샷) 을 읽는다.
+  //    그래야 기준선과 볼 하중의 시점이 항상 일치한다 (store.ts `resultInput` 주석).
+  const fy = resultInput?.operating.f_y_n ?? 0;
+  const fz = resultInput?.operating.f_z_n ?? 0;
   const loadMagN = Math.hypot(fy, fz);
   const loadPhiDeg = loadMagN > 0 ? ((toDeg(Math.atan2(fz, fy)) % 360) + 360) % 360 : null;
 
@@ -591,8 +593,8 @@ export default function BbLoadDistView() {
           </span>
         </p>
         <p className="mt-1 text-blue-200/70">
-          ⚠ 기준선의 하중값은 <b>현재 입력 패널</b>에서 읽는다. 입력을 고쳤다면 Solve 를 다시 눌러야 볼
-          하중과 짝이 맞는다.
+          기준선의 하중값은 <b>이 결과를 만든 Solve 시점의 입력</b>에서 읽는다. 입력을 편집해도 기준선은
+          움직이지 않으므로 볼 하중과 시점이 항상 일치한다.
         </p>
       </div>
 

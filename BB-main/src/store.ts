@@ -28,6 +28,14 @@ export interface AppState {
    */
   bbInput: BbInput | null;
   result: BbResult | null;
+  /**
+   * `result` 를 만들어낸 **Solve 시점의 입력 스냅샷**.
+   *
+   * `bbInput` 은 사용자가 계속 편집하므로 `result` 와 시점이 어긋난다.
+   * 결과와 짝이 맞는 입력을 읽어야 하는 뷰(예: `BbLoadDistView` 의 `F_r` 방위
+   * 기준선)는 `bbInput` 이 아니라 **이것**을 써야 한다. `SET_RESULT` 가 채운다.
+   */
+  resultInput: BbInput | null;
   dualResult: DualModeComparison | null;
   transientResult: TransientResult | null;
   dualViewMode: DualViewMode;
@@ -66,7 +74,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       // 아직 프리셋이 안 들어왔으면(=null) 부분 갱신은 의미가 없으므로 무시한다.
       return state.bbInput ? { ...state, bbInput: { ...state.bbInput, ...action.payload } } : state;
     case 'SET_RESULT':
-      return { ...state, result: action.payload, dualResult: null, error: null };
+      // 결과와 짝이 맞는 입력을 함께 고정한다 (`resultInput` 주석 참조).
+      return { ...state, result: action.payload, resultInput: state.bbInput, dualResult: null, error: null };
     case 'SET_DUAL_RESULT':
       // ⚠ `solve_bearing_dual` 은 이미 죽은 커맨드라 이 경로는 실행되지 않는다.
       // 최소 변경 방침상 dual 계열을 지금 제거하지 않으므로, TRB 결과를
@@ -85,7 +94,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_DUAL_VIEW_MODE':
       return { ...state, dualViewMode: action.payload };
     case 'CLEAR_RESULTS':
-      return { ...state, result: null, dualResult: null, transientResult: null, error: null };
+      return { ...state, result: null, resultInput: null, dualResult: null, transientResult: null, error: null };
     case 'TOGGLE_RESULTS_PANEL':
       return { ...state, resultsPanelOpen: !state.resultsPanelOpen };
     default:
