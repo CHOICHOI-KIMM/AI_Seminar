@@ -130,8 +130,8 @@ function LoadDistPolar({
   //  ※ 매끄러운 곡선이 필요하면 Rust 가 방위별 분포를 반환해야 한다 (§3.6.4.11 후속 별건).
   //
   //  φ 오름차순으로 정렬해 잇는다 — 입력 순서가 각도 순서라는 보장에 기대지 않는다.
-  const env = points
-    .map((p, i) => ({ phi: phiDeg[i], q: q[i], j: idx[i] }))
+  const env = phiDeg
+    .map((phi, i) => ({ phi, q: q[i], j: idx[i] }))
     .sort((a, b) => a.phi - b.phi);
   if (env.length > 0) {
     const closed = [...env, env[0]]; // ← 첫 점을 끝에 다시 붙여 다각형을 닫는다
