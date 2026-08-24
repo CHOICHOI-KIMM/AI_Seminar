@@ -116,17 +116,52 @@ function LoadDistPolar({
 
   const data: Plotly.Data[] = [];
 
-  // ① Q_j 막대 — 하중구간의 방위와 폭이 여기서 보인다 (C-7).
-  data.push({
-    type: 'barpolar',
-    r: q,
-    theta: phiDeg,
-    customdata: idx,
-    width: points.length > 0 ? (360 / points.length) * 0.55 : 10,
-    marker: { color: C_LOADED, line: { color: '#1e293b', width: 1 } },
-    name: 'Q_j',
-    hovertemplate: '볼 #%{customdata}<br>φ = %{theta:.9g}°<br>Q = %{r:.9g} N<extra></extra>',
-  } as Plotly.Data);
+  // ① Q_j envelope — 하중구간의 방위와 폭이 여기서 보인다 (C-7). §3.6.4.11
+  //
+  //  `barpolar`(부채꼴)를 envelope 으로 바꿨다. TRB `LoadDistChart` 와 같은 방식이다:
+  //    `scatterpolar` + `mode:'lines'` + `fill:'toself'` — **첫 점을 끝에 다시 붙여 닫는다.**
+  //
+  //  ⚠ **`line_shape:'spline'` 을 쓰지 말 것.** TRB 그림이 매끄러운 이유는 그리기 방식이 아니라
+  //    **데이터 밀도**(`angular_distribution` 의 촘촘한 각도 격자)다. BB 에는 `ball_results[]`
+  //    **16점**뿐이므로 스플라인은 하중구간 경계에서 **overshoot** 해 **없는 하중을 만들고 음수로
+  //    내려간다** — C-7 육안 판정이 망가진다. 그래서 **16점 직선 연결**이다.
+  //  ⚠ **`phase_sweep.curve` 를 여기에 쓰지 말 것.** 그것은 「위상 회전 시 **최대** 볼하중」이지
+  //    「**방위별** 하중분포」가 아니다 — **다른 물리량이다.**
+  //  ※ 매끄러운 곡선이 필요하면 Rust 가 방위별 분포를 반환해야 한다 (§3.6.4.11 후속 별건).
+  //
+  //  φ 오름차순으로 정렬해 잇는다 — 입력 순서가 각도 순서라는 보장에 기대지 않는다.
+  const env = points
+    .map((p, i) => ({ phi: phiDeg[i], q: q[i], j: idx[i] }))
+    .sort((a, b) => a.phi - b.phi);
+  if (env.length > 0) {
+    const closed = [...env, env[0]]; // ← 첫 점을 끝에 다시 붙여 다각형을 닫는다
+    data.push({
+      type: 'scatterpolar',
+      r: closed.map(e => e.q),
+      theta: closed.map(e => e.phi),
+      customdata: closed.map(e => e.j),
+      mode: 'lines',
+      fill: 'toself',
+      fillcolor: 'rgba(245,158,11,0.15)',
+      line: { color: C_LOADED, width: 2 },
+      name: 'Q_j envelope',
+      hovertemplate: '볼 #%{customdata}<br>φ = %{theta:.9g}°<br>Q = %{r:.9g} N<extra></extra>',
+    } as Plotly.Data);
+
+    // envelope 의 **꼭짓점**(= 실제 계산된 볼 하중). 이것을 찍어 두어야
+    // 「곡선은 16점을 직선으로 이은 것」이라는 사실이 화면에서 드러난다 —
+    // 매끄러워 보이는 선을 연속 분포로 오독하는 것을 막는다.
+    data.push({
+      type: 'scatterpolar',
+      r: env.map(e => e.q),
+      theta: env.map(e => e.phi),
+      customdata: env.map(e => e.j),
+      mode: 'markers',
+      marker: { size: 6, color: C_LOADED, line: { color: '#1e293b', width: 1 } },
+      name: `Q_j (볼 ${env.length}점)`,
+      hovertemplate: '볼 #%{customdata}<br>φ = %{theta:.9g}°<br>Q = %{r:.9g} N<extra></extra>',
+    } as Plotly.Data);
+  }
 
   // ② 볼 위치 링 — **비접촉 볼을 시각적으로 구분**한다. C-7 의 「하중구간」이 이것이다.
   //    막대만 그리면 Q = 0 인 볼은 화면에서 사라져 「몇 번 볼이 빠졌는가」를 못 본다.
