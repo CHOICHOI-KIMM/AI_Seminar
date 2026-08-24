@@ -6,7 +6,6 @@ import ComparisonChart from '../charts/ComparisonChart';
 import BearingView3D from '../BearingView3D';
 import SectionView2D from '../SectionView2D';
 import ProfileView from '../ProfileView';
-import GeometryView from '../GeometryView';
 import LubricationView from '../LubricationView';
 import DualModeToggle from '../DualModeToggle';
 import TransientView from '../TransientView';
@@ -33,7 +32,22 @@ const tabs: { key: CanvasTab; label: string; legacy?: boolean }[] = [
   { key: 'transient', label: 'Transient', legacy: true },
 ];
 
-export default function CanvasArea() {
+/**
+ * BB 뷰는 **prop 으로 주입받는다** — `App.tsx`(경계 밖)가 넘긴다.
+ *
+ * ⚠ 여기서 `src/bb/**` 를 직접 import 하면 ESLint 경계 규칙(§3.6.5.6,
+ *   `components/**` → `bb/**` 금지)에 걸린다. 그 규칙의 목적은
+ *   「TRB 잔존물이 BB 전용물에 의존하면 `components/` 를 통째로 못 지운다」이고,
+ *   주입 방식은 그 목적을 **그대로 지키면서** §3.6.4.3 의 「CanvasArea 배선」을
+ *   만족한다 — 의존 방향은 여전히 한쪽(`bb/` → `components/`)뿐이다.
+ *   S4·S5 의 `load`·`contour` 탭도 같은 방식으로 추가한다.
+ */
+interface CanvasAreaProps {
+  /** `geometry` 탭 내용 (S3: `bb/BbGeometryView`). */
+  geometryView: React.ReactNode;
+}
+
+export default function CanvasArea({ geometryView }: CanvasAreaProps) {
   const { state, dispatch } = useAppState();
   const { activeTab, result } = state;
 
@@ -67,16 +81,19 @@ export default function CanvasArea() {
 
       {/* Content */}
       <div className="flex-1 min-h-0 bg-canvas-subtle mx-3 mb-3 rounded-b-lg rounded-tr-lg border border-white/10 overflow-hidden">
-        {/* Input-only views — always available */}
+        {/* Input-only views — always available.
+            ⚠ `geometry` 가 여기 있는 이유: `bb_compute_geometry` 는 **하중과 무관**이라
+               Solve 를 누르지 않고도(= `result` 가 없어도) 볼 수 있다 (§3.6.4.7 ①).
+               결과를 기다리면 Level A 를 화면으로 확인하는 경로가 막힌다. */}
+        {activeTab === 'geometry' && geometryView}
         {activeTab === 'section' && <SectionView2D />}
         {activeTab === 'profile' && <ProfileView />}
         {activeTab === 'transient' && <TransientView />}
-        {activeTab !== 'section' && activeTab !== 'profile' && activeTab !== 'transient' && (
+        {activeTab !== 'geometry' && activeTab !== 'section' && activeTab !== 'profile' && activeTab !== 'transient' && (
           !result ? (
             <EmptyState />
           ) : (
             <>
-              {activeTab === 'geometry' && <GeometryView />}
               {activeTab === '3d' && <BearingView3D />}
               {activeTab === 'load' && <LoadDistChart />}
               {activeTab === 'contour' && <StressContourChart />}

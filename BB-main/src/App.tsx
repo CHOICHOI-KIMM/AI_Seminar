@@ -16,6 +16,9 @@ import CanvasArea from './components/CanvasArea';
 // `k_radial`·`mode` 를 읽어 **Solve 를 누르는 순간** 렌더 중 throw 했다
 // (S2 가 「남은 위험」으로 예고). **파일은 지우지 않는다** — §3.6.4.3.
 import BbResultsCard from './bb/BbResultsCard';
+// P4-S3-4: `geometry` 탭 내용. `CanvasArea`(components/) 가 `bb/` 를 직접 import 하면
+// ESLint 경계 규칙(§3.6.5.6)에 걸리므로 경계 밖인 여기서 주입한다.
+import BbGeometryView from './bb/BbGeometryView';
 import AlertPanel from './components/AlertPanel';
 import ProgressBar from './components/ProgressBar';
 
@@ -98,7 +101,7 @@ export default function App() {
 
           {/* Center: Canvas (Dark) */}
           <main className="flex-1 bg-canvas flex flex-col min-w-0 relative">
-            <CanvasArea />
+            <CanvasArea geometryView={<BbGeometryView />} />
             <ProgressBar />
           </main>
 

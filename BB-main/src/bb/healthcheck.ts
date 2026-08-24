@@ -5,8 +5,11 @@
 //
 // 목적 — 「화면이 떴다 + 솔버 왕복이 됐다 + 계약이 맞다」를 **로그만으로** 판정.
 //   ① 기본 프리셋을 Rust 에서 만들고 읽어 온다 (프리셋 왕복도 함께 확인)
-//   ② `bb_solve_bearing` 을 1회 호출한다
-//   ③ 받은 JSON 을 **생성 타입(ts-rs)의 형상**과 대조한다
+//   ② `bb_compute_geometry` 를 1회 호출한다 — **P4-S3-4 에서 추가**.
+//      S3 에서 `BbGeometryView` 가 이 커맨드에 처음 연결됐다 (§3.6.4.7 ①).
+//      `bb_solve_bearing` 과 달리 **하중과 무관**한 별도 경로라 왕복을 따로 확인해야 한다.
+//   ③ `bb_solve_bearing` 을 1회 호출한다
+//   ④ 받은 JSON 을 **생성 타입(ts-rs)의 형상**과 대조한다
 //      — 자동생성은 이름·형상을 묶을 뿐이고, `BbClearanceSpec`·`BbDof` 같은
 //        데이터 보유 enum 의 **실제 직렬화 표현**은 런타임에서만 확인된다.
 
@@ -15,6 +18,8 @@ import { info as logInfo, error as logError } from '@tauri-apps/plugin-log';
 import type { BbInput } from './generated/BbInput';
 import type { BbResult } from './generated/BbResult';
 import type { BallBearingKind } from './generated/BallBearingKind';
+import type { BbGeometryDerived } from './generated/BbGeometryDerived';
+import type { BbGeometrySummary } from './generated/BbGeometrySummary';
 
 interface PresetInfo {
   name: string;
@@ -26,6 +31,70 @@ const ALERT_LEVELS = ['Info', 'Warning', 'Critical'] as const;
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/**
+ * `commands::GeometryResponse` 형상 검사 (P4-S3-4).
+ *
+ * `BbGeometryDerived` 9필드 · `BbGeometrySummary` 13필드를 **전량** 확인한다.
+ * 필드 목록은 `src/bb/generated/` 를 그대로 옮긴 것이다 — 생성물이 바뀌면
+ * ③ 의 `git diff --exit-code src/bb/generated/` 가 먼저 걸리고,
+ * 여기서는 **실제 JSON 에 그 필드가 오는가**를 본다 (자동생성이 못 잡는 쪽).
+ */
+const DERIVED_FIELDS: readonly (keyof BbGeometryDerived)[] = [
+  'a_mm',
+  'alpha_0_rad',
+  'r_i_center_mm',
+  'gamma',
+  'sum_rho_i_per_mm',
+  'sum_rho_e_per_mm',
+  'f_rho_i',
+  'f_rho_e',
+  'g_r_op_mm',
+];
+const SUMMARY_FIELDS: readonly (keyof BbGeometrySummary)[] = [
+  ...DERIVED_FIELDS,
+  'osculation_inner',
+  'osculation_outer',
+  'ball_mass_g',
+  'n_dpw_mm_per_min',
+];
+
+function checkGeometryResponseShape(raw: unknown): string[] {
+  const bad: string[] = [];
+  if (!isRecord(raw)) return ['GeometryResponse 가 객체가 아니다'];
+
+  const derived = raw.derived;
+  if (!isRecord(derived)) {
+    bad.push('derived 가 객체가 아니다');
+  } else {
+    for (const f of DERIVED_FIELDS) {
+      if (typeof derived[f] !== 'number') bad.push(`derived.${f} 가 number 가 아니다`);
+    }
+  }
+
+  const summary = raw.summary;
+  if (!isRecord(summary)) {
+    bad.push('summary 가 객체가 아니다');
+  } else {
+    for (const f of SUMMARY_FIELDS) {
+      if (typeof summary[f] !== 'number') bad.push(`summary.${f} 가 number 가 아니다`);
+    }
+  }
+
+  // 공유 9필드는 두 구조체에서 **같은 값**이어야 한다.
+  // 어긋나면 요약이 파생값을 다시 계산하고 있다는 뜻이고, 그러면 화면 숫자와
+  // 검증 숫자가 갈라진다 (§3.6.4.2). 형상검증에 넣어 둔다.
+  if (isRecord(derived) && isRecord(summary)) {
+    for (const f of DERIVED_FIELDS) {
+      if (derived[f] !== summary[f]) {
+        bad.push(`derived.${f}(${String(derived[f])}) 와 summary.${f}(${String(summary[f])}) 가 다르다`);
+      }
+    }
+  }
+
+  if (!Array.isArray(raw.alerts)) bad.push('alerts 가 배열이 아니다');
+  return bad;
 }
 
 /**
@@ -130,6 +199,24 @@ async function run(): Promise<void> {
   );
 
   const input = rawInput as BbInput;
+
+  // ── bb_compute_geometry 왕복 (P4-S3-4) ────────────────────────────
+  // 하중과 무관한 별도 경로다 (§3.6.4.7 ①). `BbGeometryView` 가 쓰는 커맨드.
+  const rawGeom = await invoke<unknown>('bb_compute_geometry', { input });
+  const geomBad = checkGeometryResponseShape(rawGeom);
+  const gr = rawGeom as { summary: BbGeometrySummary; alerts: unknown[] };
+  await logInfo(
+    `[healthcheck] bb_compute_geometry` +
+      ` a_mm=${gr.summary?.a_mm}` +
+      ` alpha_0_rad=${gr.summary?.alpha_0_rad}` +
+      ` gamma=${gr.summary?.gamma}` +
+      ` n_dpw=${gr.summary?.n_dpw_mm_per_min}` +
+      ` alerts=${Array.isArray(gr.alerts) ? gr.alerts.length : 'n/a'}`
+  );
+  await logInfo(
+    `[healthcheck] BbGeometryDerived·BbGeometrySummary 형상검증 ${geomBad.length === 0 ? 'PASS' : `FAIL: ${geomBad.join(' | ')}`}`
+  );
+
   const rawResult = await invoke<unknown>('bb_solve_bearing', { input });
   const resultBad = checkBbResultShape(rawResult);
   const r = rawResult as BbResult;
@@ -152,7 +239,11 @@ async function run(): Promise<void> {
   );
 
   await logInfo(
-    `[healthcheck] 종료 — ${inputBad.length === 0 && resultBad.length === 0 && inKind === r.kind ? 'ALL PASS' : 'HAS FAILURES'}`
+    `[healthcheck] 종료 — ${
+      inputBad.length === 0 && geomBad.length === 0 && resultBad.length === 0 && inKind === r.kind
+        ? 'ALL PASS'
+        : 'HAS FAILURES'
+    }`
   );
 }
 
