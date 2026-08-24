@@ -361,11 +361,14 @@ fn a8_no_unit_conversion_constants_outside_util() {
     //    util.rs 의 명시적 변환 함수 안에만 존재할 수 있다」고 정한 유일한
     //    허용 지점이므로, 스캔에 넣으면 규약이 허용한 것을 규약 검사가 잡는
     //    모순이 된다. 이 제외는 A-8 신설 때부터의 설계이며 유지한다.
-    let sources: [(&str, &str); 6] = [
+    let sources: [(&str, &str); 8] = [
         ("bb/types.rs", include_str!("../src/solver/bb/types.rs")),
         ("bb/geometry.rs", include_str!("../src/solver/bb/geometry.rs")),
         ("bb/hertz.rs", include_str!("../src/solver/bb/hertz.rs")),
         ("bb/bearing.rs", include_str!("../src/solver/bb/bearing.rs")),
+        // P5-1 신설 — 수명·정정격도 mm·N·rad 로만 계산한다 (시간 환산은 UI 경계)
+        ("bb/life.rs", include_str!("../src/solver/bb/life.rs")),
+        ("bb/static_rating.rs", include_str!("../src/solver/bb/static_rating.rs")),
         ("common/types.rs", include_str!("../src/solver/common/types.rs")),
         ("mod.rs", include_str!("../src/solver/mod.rs")),
     ];
@@ -408,10 +411,14 @@ fn a8b_dimensional_fields_carry_unit_suffix() {
         "k_ellip_inner", "e_ellip_inner", "k_ellip_outer", "e_ellip_outer",
         "a_star_inner", "b_star_inner", "delta_star_inner",
         "a_star_outer", "b_star_outer", "delta_star_outer",
+        // P5-1 (Theory §7) — ISO 표에서 오는 무차원 계수·비
+        "f_0", "f_c", "b_m", "x_0", "y_0", "s_0", "a_1", "e_c",
     ];
     let suffixes = [
         "_mm", "_n", "_nmm", "_rad", "_mpa", "_per_mm", "_g_cm3", "_rpm", "_c",
         "_ms", "_g", "_mm_per_min", "_n_per_mm15",
+        // P5-1 — 수명 [10⁶ rev] · 동점도 [mm²/s]
+        "_mrev", "_mm2_s",
     ];
 
     let mut offenders = Vec::new();
@@ -522,11 +529,15 @@ fn a8d_no_roller_lineage_identifiers_in_solver() {
     // ⚠ 판정은 부분문자열이 아니라 `identifier_words` 의 **단어 단위**다
     //    (`Prescribed` ⊅ `rib`).
     // ⚠ `#[cfg(test)]` 이후는 픽스처라 제외한다 (a8 과 같은 방침).
-    let sources: [(&str, &str); 7] = [
+    let sources: [(&str, &str); 9] = [
         ("bb/types.rs", include_str!("../src/solver/bb/types.rs")),
         ("bb/geometry.rs", include_str!("../src/solver/bb/geometry.rs")),
         ("bb/hertz.rs", include_str!("../src/solver/bb/hertz.rs")),
         ("bb/bearing.rs", include_str!("../src/solver/bb/bearing.rs")),
+        // P5-1 신설 — 롤러(TRB) 판 life.rs·static_rating.rs 는 S0-1 에서 삭제되었다.
+        // 백지 신규가 옛 식별자를 되살리지 않았는지 기계로 고정한다.
+        ("bb/life.rs", include_str!("../src/solver/bb/life.rs")),
+        ("bb/static_rating.rs", include_str!("../src/solver/bb/static_rating.rs")),
         ("common/types.rs", include_str!("../src/solver/common/types.rs")),
         ("common/util.rs", include_str!("../src/solver/common/util.rs")),
         ("mod.rs", include_str!("../src/solver/mod.rs")),
