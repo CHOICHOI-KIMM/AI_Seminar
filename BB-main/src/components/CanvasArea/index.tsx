@@ -1,7 +1,5 @@
 import { useAppState, type CanvasTab } from '../../store';
-import LifeChart from '../charts/LifeChart';
 import ComparisonChart from '../charts/ComparisonChart';
-import BearingView3D from '../BearingView3D';
 import ProfileView from '../ProfileView';
 import LubricationView from '../LubricationView';
 import DualModeToggle from '../DualModeToggle';
@@ -16,16 +14,17 @@ import ThermalSpeedView from '../ThermalSpeedView';
 //   부수 효과로 **개조할 목록이 화면에 그대로 보인다.**
 //   S3 에서 geometry, S4 에서 load, **S5 에서 contour** 가 BB 뷰로 채워졌다 (셋 다 prop 주입).
 //   P4-3a 에서 **section** 이 `bb/BbAxialSectionView` 로 채워졌다 (같은 prop 주입).
-//   → 이로써 `legacy` 가 없는 4탭이 **전부** BB 뷰다.
+//   P4-3b 에서 **3d**, P5-2 에서 **life** 가 같은 방식으로 채워졌다.
+//   → 이로써 `legacy` 가 없는 6탭이 **전부** BB 뷰다.
 const tabs: { key: CanvasTab; label: string; legacy?: boolean }[] = [
   { key: 'geometry', label: 'Geometry' },
   { key: 'profile', label: 'Profile', legacy: true },
   { key: 'section', label: 'Section' },
-  { key: '3d', label: '3D View', legacy: true },
+  { key: '3d', label: '3D View' },
   { key: 'load', label: 'Load Distribution' },
   { key: 'contour', label: 'Stress Contour' },
   { key: 'lubrication', label: 'Lubrication', legacy: true },
-  { key: 'life', label: 'Life', legacy: true },
+  { key: 'life', label: 'Life' },
   { key: 'iso15312', label: 'Thermal Speed', legacy: true },
   { key: 'comparison', label: 'Comparison', legacy: true },
   { key: 'transient', label: 'Transient', legacy: true },
@@ -50,9 +49,20 @@ interface CanvasAreaProps {
   contourView: React.ReactNode;
   /** `section` 탭 내용 (P4-3a: `bb/BbAxialSectionView`). */
   sectionView: React.ReactNode;
+  /** `3d` 탭 내용 (P4-3b: `bb/BbBearingView3D`). */
+  view3d: React.ReactNode;
+  /** `life` 탭 내용 (P5-2: `bb/BbLifeView`). */
+  lifeView: React.ReactNode;
 }
 
-export default function CanvasArea({ geometryView, loadView, contourView, sectionView }: CanvasAreaProps) {
+export default function CanvasArea({
+  geometryView,
+  loadView,
+  contourView,
+  sectionView,
+  view3d,
+  lifeView,
+}: CanvasAreaProps) {
   const { state, dispatch } = useAppState();
   const { activeTab, result } = state;
 
@@ -101,11 +111,11 @@ export default function CanvasArea({ geometryView, loadView, contourView, sectio
             <EmptyState />
           ) : (
             <>
-              {activeTab === '3d' && <BearingView3D />}
+              {activeTab === '3d' && view3d}
               {activeTab === 'load' && loadView}
               {activeTab === 'contour' && contourView}
               {activeTab === 'lubrication' && <LubricationView />}
-              {activeTab === 'life' && <LifeChart />}
+              {activeTab === 'life' && lifeView}
               {activeTab === 'iso15312' && <ThermalSpeedView />}
               {activeTab === 'comparison' && <ComparisonChart />}
             </>

@@ -27,6 +27,10 @@ import BbStressContourView from './bb/BbStressContourView';
 // P4-3a: `section` 탭 내용 (축단면 뷰, Plan §3.6.4.8). 같은 prop 주입 규약(§3.6.5.6).
 // 이것으로 `legacy` 가 아닌 4탭(geometry·section·load·contour)이 전부 BB 뷰가 된다.
 import BbAxialSectionView from './bb/BbAxialSectionView';
+// P4-3b: `3d` 탭 — 볼·접촉선·하중 화살표를 X = 회전축 씬에 그린다.
+import BbBearingView3D from './bb/BbBearingView3D';
+// P5-2: `life` 탭 — ISO 281/16281 수명 + ISO 76 정정격 (한 탭 2단).
+import BbLifeView from './bb/BbLifeView';
 import AlertPanel from './components/AlertPanel';
 import ProgressBar from './components/ProgressBar';
 
@@ -116,6 +120,8 @@ export default function App() {
               loadView={<BbLoadDistView />}
               contourView={<BbStressContourView />}
               sectionView={<BbAxialSectionView />}
+              view3d={<BbBearingView3D />}
+              lifeView={<BbLifeView />}
             />
             <ProgressBar />
           </main>
