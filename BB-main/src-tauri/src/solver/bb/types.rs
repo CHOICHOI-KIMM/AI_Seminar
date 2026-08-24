@@ -755,7 +755,10 @@ pub struct BbLifeResult {
     pub l_10r_mrev: f64,
     /// 동등가 기준하중 `P_ref r` [N] — 식 (11)
     pub p_ref_r_n: f64,
-    /// ISO 281 카탈로그 동등가 반경하중 `P_r` [N]. α < 20° 에서는 `None`
+    /// ISO 281 카탈로그 동등가 반경하중 `P_r` [N].
+    ///
+    /// P5-1b 에서 Table 3 상단부를 구현해 **0° ≤ α ≤ 45° 전 구간**에서 산출된다.
+    /// `None` 은 이제 그 범위를 **벗어난 경우**뿐이다 (구 주석의 「α < 20° 면 None」은 무효).
     pub p_r_n: Option<f64>,
     /// 피로한계 전동체하중 `Q_u = min(Q_ui, Q_ue)` [N] — (B.1)(B.9)
     pub q_u_n: f64,
