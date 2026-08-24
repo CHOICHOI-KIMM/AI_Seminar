@@ -288,6 +288,47 @@ pub fn elliptic_k_e_quadrature(m: f64) -> (f64, f64) {
     (k_acc, e_acc)
 }
 
+/// 규격 표(格子點) 선형보간 — **정의역 밖은 `None`**.
+///
+/// `points` 는 **x 오름차순**이어야 한다. `y` 의 단조성은 **가정하지 않는다**.
+/// ISO 76 Table 1 의 `f_0` 는 γ = 0,09 에서 최대(16,5)를 갖는 **비단조** 표이므로
+/// (Theory §7.11), 값을 기준으로 탐색하는 구현은 틀린다. 여기서는 **x 만으로**
+/// 구간을 찾고 그 구간 안에서만 선형 내삽한다.
+///
+/// `cubic_spline_interpolate` 와 달리 **외삽·클램프를 하지 않는다** — 규격이
+/// 값을 주지 않은 곳에 값을 지어내지 않기 위함이다. 호출부가 `None` 을
+/// 명시적 오류로 승격시킨다.
+pub fn interpolate_linear_table(points: &[(f64, f64)], x: f64) -> Option<f64> {
+    let n = points.len();
+    if n == 0 {
+        return None;
+    }
+    if x < points[0].0 || x > points[n - 1].0 {
+        return None;
+    }
+    if n == 1 {
+        return Some(points[0].1);
+    }
+    // x 오름차순 격자에서 x 를 품는 구간을 이분탐색으로 찾는다.
+    let mut lo = 0usize;
+    let mut hi = n - 1;
+    while hi - lo > 1 {
+        let mid = (lo + hi) / 2;
+        if points[mid].0 <= x {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    let (x0, y0) = points[lo];
+    let (x1, y1) = points[hi];
+    let span = x1 - x0;
+    if span <= 0.0 {
+        return Some(y0);
+    }
+    Some(y0 + (y1 - y0) * (x - x0) / span)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

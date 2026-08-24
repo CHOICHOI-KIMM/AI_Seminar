@@ -1,4 +1,4 @@
-mod commands;
+pub mod commands;   // pub: 통합 테스트(tests/life_level_e.rs) 가 solve_life 를 직접 부른다
 mod error;
 mod presets;
 pub mod solver;   // pub: integration tests (tests/geometry_level_a.rs) 접근용
@@ -25,6 +25,7 @@ pub fn run() {
             commands::bb_compute_geometry,
             commands::bb_compute_contact,
             commands::bb_solve_bearing,
+            commands::bb_compute_life,
             presets::bb_preset_list,
             presets::bb_preset_save,
             presets::bb_preset_load,

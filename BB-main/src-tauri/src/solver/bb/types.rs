@@ -610,6 +610,176 @@ pub struct BbGeometrySummary {
     pub n_dpw_mm_per_min: f64,
 }
 
+// ═══════════════════════════════════════════════════════════════════
+//  수명 · 정정격 (P5-1, Theory §7)
+// ═══════════════════════════════════════════════════════════════════
+
+/// `C_u` 산출 경로 (ISO 281 Annex B).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
+pub enum BbFatigueLimitMethod {
+    /// 정밀법 (B.1)(B.9)(B.10)(B.11) — ISO 가 **우선**한다고 명시한 경로.
+    #[default]
+    Precise,
+    /// 간이법 (B.18)(B.19) — `C_0r` 로부터.
+    Simplified,
+}
+
+/// 수명 계산에만 필요한 추가 조건 (윤활·오염·신뢰도).
+///
+/// 기하·하중과 성격이 달라 `BbInput` 과 분리했다. 기본값은 **아무 값도 지어내지
+/// 않는 쪽**으로 잡았다 — `nu_mm2_s = 0` 이면 κ 를 산출하지 않고 `L_nmr` 을 비워 둔다.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
+pub struct BbLifeConditions {
+    /// 운전 온도에서의 윤활유 실동점도 ν [mm²/s]. **0 이면 κ·a_ISO 미산출**
+    #[serde(default)]
+    pub nu_mm2_s: f64,
+    /// 오염계수 `e_C` (ISO 281 Table 13, Theory §7.10). 기본 1 = 극청정
+    #[serde(default = "default_e_c")]
+    pub e_c: f64,
+    /// 신뢰도 계수 `a_1`. `L_10` (신뢰도 90 %) 기준이 1 이다
+    #[serde(default = "default_a_1")]
+    pub a_1: f64,
+    /// EP 첨가제 유무 (ISO 281 §9.3.3.4 의 κ = 1 / a_ISO ≤ 3 규칙)
+    #[serde(default)]
+    pub ep_additive: bool,
+    /// 내륜이 하중에 대해 회전하는가 (통상 `true`) — 식 (5)~(8) 의 지수 선택
+    #[serde(default = "default_true")]
+    pub inner_ring_rotating: bool,
+    /// `C_u` 산출 경로
+    #[serde(default)]
+    pub c_u_method: BbFatigueLimitMethod,
+}
+
+fn default_e_c() -> f64 {
+    1.0
+}
+
+fn default_a_1() -> f64 {
+    1.0
+}
+
+fn default_true() -> bool {
+    true
+}
+
+impl Default for BbLifeConditions {
+    fn default() -> Self {
+        Self {
+            nu_mm2_s: 0.0,
+            e_c: default_e_c(),
+            a_1: default_a_1(),
+            ep_additive: false,
+            inner_ring_rotating: true,
+            c_u_method: BbFatigueLimitMethod::default(),
+        }
+    }
+}
+
+impl BbLifeConditions {
+    pub fn validate(&self) -> Result<(), SolverError> {
+        if self.nu_mm2_s < 0.0 {
+            return Err(SolverError::InvalidInput(
+                "실동점도 ν 는 음수일 수 없습니다 [mm²/s]".into(),
+            ));
+        }
+        if !(0.0..=1.0).contains(&self.e_c) {
+            return Err(SolverError::InvalidInput(
+                "오염계수 e_C 는 [0, 1] 범위여야 합니다 (ISO 281 Table 13)".into(),
+            ));
+        }
+        if self.a_1 <= 0.0 {
+            return Err(SolverError::InvalidInput(
+                "신뢰도 계수 a_1 은 양수여야 합니다".into(),
+            ));
+        }
+        Ok(())
+    }
+}
+
+/// ISO 76 정정격 결과 (Theory §7.11~7.13).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
+pub struct BbStaticRatingResult {
+    /// ISO 76 Table 1 의 정정격 계수 `f_0` (무차원)
+    pub f_0: f64,
+    /// 표 진입에 쓴 γ = D_w cos α / D_pw (무차원)
+    pub gamma: f64,
+    /// 채택된 기본 정정격 반경하중 `C_0r` [N] (입력 override 가 있으면 그 값)
+    pub c_0r_n: f64,
+    /// 식 (76-1) 로 자체 산출한 `C_0r` [N] — 검산용
+    pub c_0r_computed_n: f64,
+    /// ISO 76 Table 2 의 `X_0` (무차원)
+    pub x_0: f64,
+    /// ISO 76 Table 2 의 `Y_0` (무차원)
+    pub y_0: f64,
+    /// 반경하중 `F_r = √(F_y² + F_z²)` [N]
+    pub f_r_n: f64,
+    /// 축하중 `F_a = |F_x|` [N]
+    pub f_a_n: f64,
+    /// 정적 등가 반경하중 `P_0r` [N] — (76-2)(76-3) 의 큰 쪽
+    pub p_0r_n: f64,
+    /// 정적 안전계수 `S_0` (무차원) — (76-14)
+    pub s_0: f64,
+    pub alerts: Vec<Alert>,
+}
+
+/// ISO 281 / 16281 수명 결과 (Theory §7.1~7.10).
+///
+/// 수명은 **10⁶ 회전** 단위(`_mrev`)로만 낸다 — 시간 환산은 UI 경계 몫이다 (D-10).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/bb/generated/"))]
+pub struct BbLifeResult {
+    /// ISO 281 Table 2 의 `f_c` (무차원)
+    pub f_c: f64,
+    /// ISO 281 Table 1 의 `b_m` (무차원)
+    pub b_m: f64,
+    /// 채택된 기본 동정격 반경하중 `C_r` [N]
+    pub c_r_n: f64,
+    /// ISO 281 식 (1)/(2) 로 자체 산출한 `C_r` [N] — 검산용
+    pub c_r_computed_n: f64,
+    /// 내륜 등가 공칭 전동체하중 `Q_ci` [N] — 식 (1)
+    pub q_ci_n: f64,
+    /// 외륜 등가 공칭 전동체하중 `Q_ce` [N] — 식 (2)
+    pub q_ce_n: f64,
+    /// 내륜 동등가 전동체하중 `Q_ei` [N] — 식 (5)/(6)
+    pub q_ei_n: f64,
+    /// 외륜 동등가 전동체하중 `Q_ee` [N] — 식 (7)/(8)
+    pub q_ee_n: f64,
+    /// 기본 기준정격수명 `L_10r` [10⁶ rev] — 식 (9)
+    pub l_10r_mrev: f64,
+    /// 동등가 기준하중 `P_ref r` [N] — 식 (11)
+    pub p_ref_r_n: f64,
+    /// ISO 281 카탈로그 동등가 반경하중 `P_r` [N]. α < 20° 에서는 `None`
+    pub p_r_n: Option<f64>,
+    /// 피로한계 전동체하중 `Q_u = min(Q_ui, Q_ue)` [N] — (B.1)(B.9)
+    pub q_u_n: f64,
+    /// 채택된 피로한계하중 `C_u` [N]
+    pub c_u_n: f64,
+    /// 정밀법 `C_u` [N] — (B.10)/(B.11)
+    pub c_u_precise_n: f64,
+    /// 간이법 `C_u` [N] — (B.18)/(B.19)
+    pub c_u_simplified_n: f64,
+    /// 기준 동점도 `ν₁` [mm²/s] — 식 (28)/(29)
+    pub nu_1_mm2_s: Option<f64>,
+    /// 점도비 `κ = ν/ν₁` (무차원) — 식 (27)
+    pub kappa: Option<f64>,
+    /// 수명 수정계수 `a_ISO` (무차원) — 식 (31)~(33)
+    pub a_iso: Option<f64>,
+    /// 신뢰도 계수 `a_1` (무차원)
+    pub a_1: f64,
+    /// 수정 기준정격수명 `L_nmr` [10⁶ rev] — 식 (13)
+    pub l_nmr_mrev: Option<f64>,
+    /// ISO 76 정정격 결과
+    pub static_rating: BbStaticRatingResult,
+    pub alerts: Vec<Alert>,
+}
+
 /// 정상상태 해석 결과 최상위.
 ///
 /// 수명(P4)·윤활(P5) 결과는 해당 Phase 에서 필드를 추가한다 (P1-S2 결정).

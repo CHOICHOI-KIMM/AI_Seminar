@@ -15,6 +15,7 @@ use tauri::{AppHandle, Emitter};
 use crate::solver::bb::bearing;
 use crate::solver::bb::geometry;
 use crate::solver::bb::hertz;
+use crate::solver::bb::life;
 use crate::solver::bb::types::*;
 use crate::solver::common::types::*;
 
@@ -153,4 +154,41 @@ pub async fn bb_solve_bearing(app: AppHandle, input: BbInput) -> Result<BbResult
     })
     .await
     .map_err(|e| format!("Task join error: {e}"))?
+}
+
+// ─── P5-1: 수명 · 정정격 ──────────────────────────────────────────────
+
+/// ISO 281/16281 수명 + ISO 76 정정격 (Theory §7).
+///
+/// 평형을 한 번 풀어 볼별 하중 `Q_j` 를 얻은 뒤 §7 사슬 전체를 계산한다.
+/// 결과의 수명 단위는 **10⁶ 회전**이다 — 시간 환산은 프론트엔드 몫이다 (D-10).
+#[tauri::command]
+pub async fn bb_compute_life(
+    input: BbInput,
+    conditions: BbLifeConditions,
+) -> Result<BbLifeResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        solve_life(&input, &conditions).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| format!("Task join error: {e}"))?
+}
+
+/// `bb_compute_life` 의 동기 본체 — 통합 테스트가 직접 부른다.
+pub fn solve_life(
+    input: &BbInput,
+    conditions: &BbLifeConditions,
+) -> Result<BbLifeResult, crate::error::SolverError> {
+    input.validate()?;
+    conditions.validate()?;
+    let derived = geometry::compute_geometry_derived(&input.geometry)?;
+    let contact = hertz::compute_contact_derived(&derived, &input.material)?;
+    let solved = bearing::solve_bearing(input)?;
+    let ball_loads_n: Vec<f64> = solved
+        .equilibrium
+        .ball_results
+        .iter()
+        .map(|b| b.q_n)
+        .collect();
+    life::compute_life(input, &derived, &contact, &ball_loads_n, conditions)
 }
