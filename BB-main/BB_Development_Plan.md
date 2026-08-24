@@ -1649,19 +1649,57 @@ Phase 5 는 P4 의 「솔버 먼저, 화면 나중」이 실제로 잘 작동했
 
 ---
 
-### Phase 4-3 — 3D 뷰 + 축단면 뷰 🔓
+### Phase 4-3 — 축단면 뷰 → 3D 뷰 🔓
 
 > **기존 엔진을 최대한 활용한다** — R3F 9.5 · three 0.183 · drei 10.7(`OrbitControls`·`Text`·`Html`)이
 > 이미 의존성에 있고, `BearingView3D`(262줄)에 `ForceArrow` 등 헬퍼가 있다.
 > **스택과 헬퍼는 재사용**하고 메쉬만 바꾼다 — 테이퍼 롤러 → **구**, 축 **Z → X**(D-7).
 
-**작업**
+> ### 🔎 코드 조사 결과 (2026-08-24) — 재사용 폭이 좁다
+>
+> **기존 `BearingView3D` 는 씬의 +Z 를 회전축**으로 쓴다. 반경평면이 **XY** 이고,
+> `LatheGeometry`(three 규약상 Y축 회전체)를 `rotation={[-π/2,0,0]}` 로 눕혀 Z축 회전체로 만든다.
+> BB 는 **X = 회전축**(D-7) · `φ=0` 이 **+Y** 라 **정면으로 어긋난다.**
+>
+> | 항목 | 기존 (Z축) | BB (X축) |
+> |---|---|---|
+> | 전동체 중심 | `(r cos ψ, r sin ψ, 0)` | **`(0, r cos φ, r sin φ)`** |
+> | `LatheGeometry` 회전 | `[-π/2, 0, 0]` | **`[0, 0, +π/2]`** |
+> | `ForceArrow` | **Z축 회전 1개** — XY 평면 전용 | 그대로 못 쓴다 |
+> | 카메라 `[80,80,60]` | Z축 등각 | 재설정 |
+>
+> **재사용 판정**
+>
+> | 자산 | 줄수 | 판정 |
+> |---|---:|---|
+> | `AxisLabels` · `colorScale`(레인보우 HSL) · `Html` 툴팁 | 43 | ✅ 무의존 |
+> | **`SectionView2D` 순수 유틸** — `Txt`·`CalloutDim`·`WidthDim`·**`AngleArc`**·`p2s`·`fmt`·마커 | **≈133** | ✅ **완전 무의존.** `AngleArc`(36줄)는 `α₀`·`α_j` 표시에 **그대로** |
+> | `ForceArrow` | 35 | ⚠ **평면 가정 박힘** → 방향벡터 일반화 필요 |
+> | 링 `LatheGeometry` 프로파일 / 롤러 루프 | 114 | ❌ 테이퍼·리브 의존. **구는 자세가 없어 롤러 자세 계산 전량 소멸** |
+> | `computeSectionGeometry` + `Annotations` 배치 | **238** | ❌ γ 경사축·사다리꼴·리브 전량 폐기 |
+>
+> ⚠️ **`BbResult`·`BbGeometrySummary` 어디에도 raceway 프로파일이 없다.** 단면도는
+> `BallBearingGeometry`(bore/OD/width/`r_i`/`r_e`/`D_w`/`D_pw`) + `alpha_0_rad` 로 **프론트에서 재구성**한다.
+>
+> ⚠️ 기존 3D 는 하중을 **`q/1000` kN** 으로 표시한다 — **BB 단위 정책(N) 위반**이다.
 
-| # | 산출 | 내용 |
+**작업 — 축단면 먼저, 3D 는 뒤에** (확정 2026-08-24)
+
+축단면이 **검증 가치가 더 높다** — **D-2d 미커버를 해소**하고 `AngleArc` 등 순수 유틸 133줄을 그대로 쓴다.
+3D 는 좌표계를 바닥에서 재설계해야 해 비용이 크다.
+
+| 단계 | 산출 | 내용 |
 |---|---|---|
-| 1 | `src/bb/BbBearingView3D.tsx` | 볼 세트(`sphereGeometry`) · 접촉각 방향 · 하중 화살표 · 하중구간 공간 위치 |
-| 2 | `src/bb/BbAxialSectionView.tsx` | §3.6.4.8 의 설계 — 곡률중심 `O_i`·`O_e` 와 `A = r_i+r_e−D_w` 도시, `α₀` ↔ `α_j` 겹쳐그리기 |
-| 3 | 배선 | `CanvasArea` 에 `view3d`·`sectionView` prop, `App.tsx` 주입 (**prop 주입 패턴** §3.6.5.6) |
+| **P4-3a** | `src/bb/BbAxialSectionView.tsx` | §3.6.4.8 설계 — 볼=원 · 궤도=홈반경 원호 · **곡률중심 `O_i`·`O_e` 와 `A = r_i+r_e−D_w` 도시** · **`α₀` ↔ `α_j` 겹쳐그리기** · `δ_x` 화살표 · 축 **X = 회전축** |
+| **P4-3b** | `src/bb/BbBearingView3D.tsx` | 볼 세트(`sphereGeometry`) · **접촉선 세그먼트**(볼별 내·외륜 접촉점을 잇는 짧은 선을 `α_j` 방향으로, `Q_j` 로 색·굵기) · 하중 화살표 · 하중구간 공간 위치 |
+| 배선 | `CanvasArea` 에 `sectionView`·`view3d` prop, `App.tsx` 주입 (**prop 주입** §3.6.5.6) | |
+
+**확정된 설계 결정**
+
+| 항목 | 결정 | 근거 |
+|---|---|---|
+| **`ForceArrow`** | **방향벡터 일반화** — `quaternion.setFromUnitVectors(Vector3(0,1,0), dir)` | 평면 가정을 없애면 **축하중 `F_x` 화살표도 같은 함수**로 그린다. BB 는 5-DOF 라 반경만으로 부족하다 |
+| **3D 의 접촉각** | **접촉선 세그먼트** | 구는 자세가 없어 볼 메쉬만으로는 `α_j` 가 안 보인다. `BallResult.alpha_rad` 를 그대로 쓰고 `Q_j` 로 색·굵기를 입혀 **하중구간과 접촉각을 동시에** 보인다 |
 
 **검증 임무** — 3D 는 미세 수치를 못 읽지만 **공간 직관은 3D 만 준다**
 
