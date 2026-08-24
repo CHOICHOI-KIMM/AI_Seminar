@@ -3,6 +3,11 @@ import type { BearingInput, DualModeComparison, TransientResult } from './types/
 // P4-S1-4: 해석 결과 타입을 Rust(solver/bb/types.rs) 자동생성본으로 교체 (Plan §3.6.5.5).
 // dualResult·transientResult 는 최소 변경 방침(§3.6.4.3)에 따라 TRB 타입 그대로 둔다.
 import type { BbResult } from './bb/generated/BbResult';
+// P4-S3-1: BB 입력을 store 로 승격 (Plan §3.6.5.2 S3 · S2 설계선택 #1 의 예고대로).
+// ⚠ 기존 `input: BearingInput`(TRB) 은 **그대로 둔다** — 타입을 바꾸면 `@ts-nocheck`
+//    가 아닌 `ThermalSpeedView`·`project.ts` 가 깨져 최소 변경 방침(§3.6.4.3)에 어긋난다.
+//    두 필드는 당분간 공존하고, 일괄 정리는 §3.6.4.6 시점에 한다.
+import type { BbInput } from './bb/generated/BbInput';
 
 export type CanvasTab = 'geometry' | 'profile' | 'section' | '3d' | 'load' | 'contour' | 'lubrication' | 'life' | 'iso15312' | 'comparison' | 'transient';
 export type DualViewMode = 'gen1' | 'gen3';
@@ -15,6 +20,13 @@ export interface SolverProgress {
 
 export interface AppState {
   input: BearingInput;
+  /**
+   * BB 입력 (Rust `solver/bb/types.rs` 대응 자동생성 타입).
+   *
+   * `null` 인 이유 — 기본값을 TS 로 다시 적지 않는다. Rust `presets.rs` 가 유일한
+   * 출처이며(S2 확정), 프리셋이 로드되기 전까지는 값이 존재하지 않는다.
+   */
+  bbInput: BbInput | null;
   result: BbResult | null;
   dualResult: DualModeComparison | null;
   transientResult: TransientResult | null;
@@ -29,6 +41,8 @@ export interface AppState {
 export type AppAction =
   | { type: 'SET_INPUT'; payload: BearingInput }
   | { type: 'UPDATE_INPUT'; payload: Partial<BearingInput> }
+  | { type: 'SET_BB_INPUT'; payload: BbInput }
+  | { type: 'UPDATE_BB_INPUT'; payload: Partial<BbInput> }
   | { type: 'SET_RESULT'; payload: BbResult }
   | { type: 'SET_DUAL_RESULT'; payload: DualModeComparison }
   | { type: 'SET_LOADING'; payload: boolean }
@@ -46,6 +60,11 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, input: action.payload };
     case 'UPDATE_INPUT':
       return { ...state, input: { ...state.input, ...action.payload } };
+    case 'SET_BB_INPUT':
+      return { ...state, bbInput: action.payload };
+    case 'UPDATE_BB_INPUT':
+      // 아직 프리셋이 안 들어왔으면(=null) 부분 갱신은 의미가 없으므로 무시한다.
+      return state.bbInput ? { ...state, bbInput: { ...state.bbInput, ...action.payload } } : state;
     case 'SET_RESULT':
       return { ...state, result: action.payload, dualResult: null, error: null };
     case 'SET_DUAL_RESULT':

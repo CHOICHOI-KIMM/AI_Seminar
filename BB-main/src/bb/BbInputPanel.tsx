@@ -226,12 +226,15 @@ export default function BbInputPanel() {
   const { state, dispatch } = useAppState();
   const { loading } = state;
 
-  // ⚠ `store.input` 은 아직 TRB `BearingInput` 타입이다 (§3.6.4.3 최소 변경 —
-  //    S1 에서 `result` 만 교체했다). BB 입력은 이 패널이 **지역 상태**로 들고,
-  //    솔버 결과만 `SET_RESULT` 로 store 에 넣는다.
-  //    S3 에서 `BbGeometryView` 가 `bb_compute_geometry` 를 부르려면 이 입력이
-  //    필요해지므로, 그때 store 로 끌어올린다 (S2 범위 밖).
-  const [input, setInput] = useState<BbInput | null>(null);
+  // P4-S3-1: BB 입력은 **store 로 승격**됐다 (`state.bbInput`).
+  //   `BbGeometryView` 가 `bb_compute_geometry` 를 부르려면 입력을 공유해야 하기
+  //   때문이며, S2 설계선택 #1 이 예고한 그대로다.
+  // ⚠ `store.input`(TRB `BearingInput`) 은 손대지 않는다 — 별도 필드로 공존시킨다.
+  const input = state.bbInput;
+  const setInput = useCallback(
+    (next: BbInput) => dispatch({ type: 'SET_BB_INPUT', payload: next }),
+    [dispatch],
+  );
 
   // 기본값을 TS 로 다시 적지 않는다 — Rust `presets.rs` 가 유일한 출처다.
   // 따라서 프리셋이 로드되기 전까지는 폼을 그리지 않는다.
@@ -273,7 +276,7 @@ export default function BbInputPanel() {
       }
       return merged;
     });
-  }, []);
+  }, [setInput]);
 
   const refreshPresets = useCallback(async () => {
     const list = await invoke<PresetInfo[]>('bb_preset_list');
@@ -317,26 +320,33 @@ export default function BbInputPanel() {
     });
 
   // ── 부분 갱신 도우미 ──
-  const patchGeometry = (p: Partial<BallBearingGeometry>) =>
-    setInput(cur => (cur ? { ...cur, geometry: { ...cur.geometry, ...p } } : cur));
-  const patchMaterial = (p: Partial<Material>) =>
-    setInput(cur => (cur ? { ...cur, material: { ...cur.material, ...p } } : cur));
-  const patchOperating = (p: Partial<BbOperatingConditions>) =>
-    setInput(cur => (cur ? { ...cur, operating: { ...cur.operating, ...p } } : cur));
-  const patchSolver = (p: Partial<BbSolverParams>) =>
-    setInput(cur => (cur ? { ...cur, solver: { ...cur.solver, ...p } } : cur));
+  // 부분 갱신은 `UPDATE_BB_INPUT`(얕은 병합)에 **완성된 하위 객체**를 실어 보낸다.
+  const patchGeometry = (p: Partial<BallBearingGeometry>) => {
+    if (!input) return;
+    dispatch({ type: 'UPDATE_BB_INPUT', payload: { geometry: { ...input.geometry, ...p } } });
+  };
+  const patchMaterial = (p: Partial<Material>) => {
+    if (!input) return;
+    dispatch({ type: 'UPDATE_BB_INPUT', payload: { material: { ...input.material, ...p } } });
+  };
+  const patchOperating = (p: Partial<BbOperatingConditions>) => {
+    if (!input) return;
+    dispatch({ type: 'UPDATE_BB_INPUT', payload: { operating: { ...input.operating, ...p } } });
+  };
+  const patchSolver = (p: Partial<BbSolverParams>) => {
+    if (!input) return;
+    dispatch({ type: 'UPDATE_BB_INPUT', payload: { solver: { ...input.solver, ...p } } });
+  };
 
   const setClearance = (tag: ClearanceTag, value: number) => {
     setClearanceDraft(prev => ({ ...prev, [tag]: value }));
     patchGeometry({ clearance: { [tag]: value } as BbClearanceSpec });
   };
 
-  const setDof = (key: DofKey, dof: BbDof) =>
-    setInput(cur =>
-      cur
-        ? { ...cur, solver: { ...cur.solver, dof_mask: { ...cur.solver.dof_mask, [key]: dof } } }
-        : cur,
-    );
+  const setDof = (key: DofKey, dof: BbDof) => {
+    if (!input) return;
+    patchSolver({ dof_mask: { ...input.solver.dof_mask, [key]: dof } });
+  };
 
   // ── 프리셋 조작 ──
   const handlePresetChange = async (name: string) => {
@@ -466,7 +476,7 @@ export default function BbInputPanel() {
                 key={k}
                 disabled={!!reason}
                 title={reason ?? 'Angular Contact Ball Bearing'}
-                onClick={() => setInput(cur => (cur ? { ...cur, kind: k } : cur))}
+                onClick={() => dispatch({ type: 'UPDATE_BB_INPUT', payload: { kind: k } })}
                 className={`flex-1 px-1 py-1 text-[12px] rounded border ${
                   input.kind === k
                     ? 'border-accent bg-accent/10 font-semibold'

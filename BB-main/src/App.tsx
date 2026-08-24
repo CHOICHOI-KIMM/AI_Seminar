@@ -17,6 +17,8 @@ import ProgressBar from './components/ProgressBar';
 
 const initialState: AppState = {
   input: defaultInput,
+  // P4-S3-1: BB 입력은 Rust 프리셋이 유일한 출처라 초기값이 없다 (`BbInputPanel` 이 기동 시 로드).
+  bbInput: null,
   result: null,
   dualResult: null,
   transientResult: null,
