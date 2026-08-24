@@ -28,10 +28,27 @@
 //    · `generated/BallResult.ts` 의 `phi_rad` 주석: 「D-8: φ_1 = 0 이 Y축 방향」 — 같은 결론.
 //    · Theory §4.4 확정형의 `F_y = Σ Q cos α cos φ` · `F_z = Σ Q cos α sin φ` 도 같다.
 //
-//  → 그래서 극좌표의 각도축을 **`φ [°]` 로 직접** 쓰고(회전·방향반전 없음),
+//  → 그래서 극좌표의 각도축은 **`φ [°]` 그 자체**이고(값은 손대지 않는다),
 //    「θ = 0 은 +Y 축」을 **화면에 명시**하며,
 //    외부 반경하중의 방위 `atan2(F_z, F_y)` 를 **같은 축 위에 기준선으로 겹쳐 그린다.**
 //    하중구간이 그 선과 정렬되는지가 한눈에 보이는 것 — 그것이 이 뷰의 핵심 임무다.
+//
+// ─────────────────────────────────────────────────────────────────────
+//  🔴 각도 **표시** 규약 — §3.6.4.10 (확정 2026-08-24)
+// ─────────────────────────────────────────────────────────────────────
+//  **0° 를 화면 아래에 두고 각도는 우측으로 증가**시킨다. 자의적 선택이 아니라 **규격 준수**다.
+//
+//    · Theory §4 — ISO 16281 **Annex A.2.2 NOTE**:
+//      「우수좌표계 기준이며 X 축이 베어링 공칭 회전축과 일치한다.
+//        **문서 내 모든 그림에서 Y 축은 지면 아래쪽을 향한다.**」
+//    · `φ = 0` 이 `+Y`(D-8) → **0° 는 화면 아래**.
+//    · 우수좌표계에서 `X(회전축) = 화면 밖` · `Y = 아래` → `Z = X × Y = 오른쪽`
+//      → `φ = 90°`(= `+Z`)가 **오른쪽** → **각도가 우측으로 증가**.
+//    두 요구가 하나의 규격 근거로 동시에 설명된다.
+//
+//  ⚠️ **데이터는 바뀌지 않는다.** `φ_j` 도 `atan2(F_z, F_y)` 도 그대로다 — **표시 방향만**이다.
+//    따라서 §3.6.4.2 의 검증 임무(하중구간 방위 정합)는 영향을 받지 않는다.
+//    오히려 ISO 그림과 방향이 같아져 대조가 쉬워진다.
 //
 // ─────────────────────────────────────────────────────────────────────
 //  단위 정책 (S2 확정 — 바꾸지 말 것)
@@ -156,11 +173,22 @@ function LoadDistPolar({
     title: { text: 'Q_j(φ) — 볼 하중 극좌표  ·  θ = 0 은 +Y 축', font: { size: 14, color: '#e2e8f0' } },
     polar: {
       bgcolor: 'transparent',
-      // ⚠ 각도축은 **φ 그 자체**다. 회전(`rotation`)·방향 반전을 넣지 않는다 —
-      //   넣는 순간 「하중구간이 어긋나 보이는 것」이 솔버 탓인지 화면 탓인지 갈리지 않는다.
+      // 🔴 각도 **표시** 규약 — §3.6.4.10 (구 주석의 「회전을 넣지 않는다」는 폐기됐다).
+      //   각도축의 **값**은 여전히 `φ` 그 자체다(데이터 무변경). 바꾸는 것은 **화면 배치**뿐이며,
+      //   그 배치는 ISO 16281 A.2.2 NOTE(「모든 그림에서 Y 축은 지면 아래」)가 정한다.
+      //   `φ=0`=+Y → 아래 · 우수좌표계 `Z = X × Y` → `φ=90°`=+Z → 오른쪽.
+      //
+      //   plotly.js 의 각도→화면 변환을 소스로 확인했다 (v3.4.0):
+      //     `plots/polar/set_convert.js` setConvertAngular:
+      //        dir = {clockwise:-1, counterclockwise:+1}[direction] ;  g = dir·θ + rotation
+      //     `traces/scatterpolar/plot.js:41-42`:  x = r·cos(g) ,  y = r·sin(g)   (y 는 위가 양)
+      //   → rotation = -90°, dir = +1 이면
+      //        θ=0   → g = -90° → (x,y) = (0, -r)  → **아래**
+      //        θ=90° → g =   0° → (x,y) = (+r, 0)  → **오른쪽**
+      //   즉 「0°는 아래, 90°는 오른쪽」이 성립한다. (계산이 아니라 소스의 변환식으로 확인)
       angularaxis: {
         direction: 'counterclockwise',
-        rotation: 0,
+        rotation: -90,
         dtick: 30,
         ticksuffix: '°',
         gridcolor: '#334155',
@@ -570,15 +598,26 @@ export default function BbLoadDistView() {
       {/* ── 🔴 방위 규약 명시 — 이 배너가 없으면 극좌표를 잘못 읽는다 ───────── */}
       <div className="p-2.5 rounded border bg-blue-500/10 border-blue-400/30 text-blue-100 text-[12px] leading-relaxed">
         <p className="font-semibold text-[13px] mb-1">
-          방위 규약 (D-8 · Theory §4.4 · solver/bb/bearing.rs)
+          방위 규약 (D-8 · Theory §4.4 · solver/bb/bearing.rs · 표시 규약 §3.6.4.10)
         </p>
         <p>
           극좌표의 각도축은 <span className="font-mono">φ</span> 그 자체다 —{' '}
           <span className="font-mono font-semibold">θ = 0 은 +Y 축</span>,{' '}
-          <span className="font-mono">θ = 90° 는 +Z 축</span>, 반시계 방향으로 증가한다. 볼 각위치는{' '}
+          <span className="font-mono">θ = 90° 는 +Z 축</span>. 볼 각위치는{' '}
           <span className="font-mono">φ_j = 2π(j−1)/Z</span> 이고 반경 단위벡터가{' '}
           <span className="font-mono">(cos φ_j, sin φ_j)</span> in{' '}
           <span className="font-mono">(Y, Z)</span> 다.
+        </p>
+        <p className="mt-1">
+          <span className="font-semibold">
+            화면 배치: 0° = +Y = <u>아래</u>, 90° = +Z = <u>오른쪽</u> (각도는 우측으로 증가)
+          </span>{' '}
+          — ISO 16281 Annex A.2.2 NOTE 「모든 그림에서 Y 축은 지면 아래쪽을 향한다」 + 우수좌표계{' '}
+          <span className="font-mono">Z = X × Y</span> (X = 회전축 = 화면 밖).{' '}
+          <span className="text-blue-200/80">
+            회전은 <b>표시만</b> 바꾼다 — <span className="font-mono">φ_j</span> 값도{' '}
+            <span className="font-mono">atan2(F_z, F_y)</span> 값도 그대로다.
+          </span>
         </p>
         <p className="mt-1">
           붉은 파선은 외부 반경하중의 방위 <span className="font-mono">φ_F = atan2(F_z, F_y)</span> ={' '}
