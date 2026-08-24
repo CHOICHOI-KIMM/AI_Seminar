@@ -11,7 +11,11 @@ import { openProjectFile, type ProjectFile, PROJECT_VERSION } from './project';
 // **파일은 지우지 않는다** — 최소 변경 방침(§3.6.4.3), 삭제는 §3.6.4.6 에서 일괄.
 import BbInputPanel from './bb/BbInputPanel';
 import CanvasArea from './components/CanvasArea';
-import ResultsCard from './components/ResultsCard';
+// P4-S3-3: 우측 상시 요약 카드를 BB 전용으로 교체 (Plan §3.6.5.2 S3).
+// 기존 `components/ResultsCard` 는 BB 에 없는 `result.life`·`static_rating`·
+// `k_radial`·`mode` 를 읽어 **Solve 를 누르는 순간** 렌더 중 throw 했다
+// (S2 가 「남은 위험」으로 예고). **파일은 지우지 않는다** — §3.6.4.3.
+import BbResultsCard from './bb/BbResultsCard';
 import AlertPanel from './components/AlertPanel';
 import ProgressBar from './components/ProgressBar';
 
@@ -99,7 +103,7 @@ export default function App() {
           </main>
 
           {/* Right: Results Sidebar */}
-          <ResultsCard />
+          <BbResultsCard />
         </div>
       </div>
     </AppContext>
