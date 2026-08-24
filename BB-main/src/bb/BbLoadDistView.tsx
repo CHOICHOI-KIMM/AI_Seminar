@@ -205,7 +205,10 @@ function LoadDistPolar({
 
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
-    title: { text: 'Q_j(φ) — 볼 하중 극좌표  ·  θ = 0 은 +Y 축', font: { size: 14, color: '#e2e8f0' } },
+    // 제목은 **`Load Distribution`** 으로 단순화한다 (§3.6.4.11).
+    // ⚠ 축 규약을 화면에서 지우면 방위 검증이 불가능해진다 — 제목에서 뺀 대신
+    //   차트 바로 위 **부제**와 상단 **방위 규약 배너**에 남긴다 (아래 JSX 참조).
+    title: { text: 'Load Distribution', font: { size: 14, color: '#e2e8f0' } },
     polar: {
       bgcolor: 'transparent',
       // 🔴 각도 **표시** 규약 — §3.6.4.10 (구 주석의 「회전을 넣지 않는다」는 폐기됐다).
@@ -244,14 +247,21 @@ function LoadDistPolar({
   };
 
   return (
-    <div className="h-[420px]">
-      <Plot
-        data={data}
-        layout={layout}
-        config={plotConfig}
-        style={{ width: '100%', height: '100%' }}
-        useResizeHandler
-      />
+    <div className="space-y-1">
+      {/* 🔴 축 규약 부제 — 제목을 `Load Distribution` 으로 줄인 대신 여기에 남긴다.
+          이것을 지우면 극좌표를 잘못 읽어 방위 검증 자체가 불가능해진다. */}
+      <p className="text-[11px] text-text-canvas/70 font-mono">
+        0° = +Y = 화면 아래 · 90° = +Z = 오른쪽 (각도 우측 증가) — ISO 16281 A.2.2
+      </p>
+      <div className="h-[420px]">
+        <Plot
+          data={data}
+          layout={layout}
+          config={plotConfig}
+          style={{ width: '100%', height: '100%' }}
+          useResizeHandler
+        />
+      </div>
     </div>
   );
 }
