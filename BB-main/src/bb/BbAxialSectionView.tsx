@@ -145,6 +145,10 @@ const C_REF = '#a3e635';
 const C_INNER = '#3b82f6';
 const C_OUTER = '#f97316';
 
+// `<marker>` id — **패널마다 유일**해야 한다 (사유는 `ArrowDefs` 주석).
+const MK_OVERVIEW = 'bbsec-arr-overview';
+const MK_DETAIL = 'bbsec-arr-detail';
+
 // ─── 기하 재구성 (Plan §4 Phase 4-3: raceway 프로파일이 결과에 없다) ───
 
 interface SectionFrame {
@@ -308,6 +312,7 @@ function WidthDim({
   label,
   s,
   fs,
+  marker,
 }: {
   y: number;
   xLeft: number;
@@ -316,6 +321,8 @@ function WidthDim({
   label: string;
   s: number;
   fs: number;
+  /** 이 패널 전용 `<marker>` id (패널마다 축척이 달라 공유하면 안 된다). */
+  marker: string;
 }) {
   return (
     <g>
@@ -328,8 +335,8 @@ function WidthDim({
         y2={y}
         stroke="#94a3b8"
         strokeWidth={s * 0.4}
-        markerStart="url(#arr)"
-        markerEnd="url(#arr)"
+        markerStart={`url(#${marker})`}
+        markerEnd={`url(#${marker})`}
       />
       <Txt x={(xLeft + xRight) / 2} y={y + fs * 0.7} text={label} fs={fs} anchor="middle" />
     </g>
@@ -349,6 +356,7 @@ function SlantDim({
   label,
   s,
   fs,
+  marker,
   color = '#94a3b8',
 }: {
   x1: number;
@@ -359,6 +367,8 @@ function SlantDim({
   label: string;
   s: number;
   fs: number;
+  /** 이 패널 전용 `<marker>` id. */
+  marker: string;
   color?: string;
 }) {
   const dx = x2 - x1;
@@ -381,8 +391,8 @@ function SlantDim({
         y2={by}
         stroke={color}
         strokeWidth={s * 0.45}
-        markerStart="url(#arr)"
-        markerEnd="url(#arr)"
+        markerStart={`url(#${marker})`}
+        markerEnd={`url(#${marker})`}
       />
       <Txt
         x={(ax + bx) / 2 + nxp * fs * 0.8}
@@ -462,12 +472,21 @@ function AngleArc({
   );
 }
 
-/** `<marker id="arr">` — SectionView2D 202–208 복사. */
-function ArrowDefs({ size }: { size: number }) {
+/**
+ * `<marker>` — SectionView2D 202–208 복사, **id 를 패널별로 분리**.
+ *
+ * ⚠ 인수 시점 코드는 두 패널이 **같은 `id="arr"`** 를 뿜었다. SVG 의 `url(#…)` 은
+ *   문서에서 **처음 만난** 요소를 잡으므로 상세 패널의 화살표가 개요 패널의 마커를
+ *   참조했다. 두 패널은 사용자좌표 축척이 서로 다르고(`markerUnits` 기본값이
+ *   `strokeWidth`) `markerWidth` 가 각 패널의 `fs` 로 정해지므로 **화살촉 크기가
+ *   조용히 틀린다.** 그래서 `idPrefix` 를 받아 유일 id 를 만든다.
+ *   (미사용이던 `arrHi` 마커는 참조하는 곳이 없어 함께 제거했다.)
+ */
+function ArrowDefs({ id, size }: { id: string; size: number }) {
   return (
     <defs>
       <marker
-        id="arr"
+        id={id}
         viewBox="0 0 6 3"
         refX="6"
         refY="1.5"
@@ -475,18 +494,6 @@ function ArrowDefs({ size }: { size: number }) {
         markerHeight={size * 0.5}
         orient="auto-start-reverse"
         fill="#94a3b8"
-      >
-        <path d="M0,0 L6,1.5 L0,3 Z" />
-      </marker>
-      <marker
-        id="arrHi"
-        viewBox="0 0 6 3"
-        refX="6"
-        refY="1.5"
-        markerWidth={size}
-        markerHeight={size * 0.5}
-        orient="auto-start-reverse"
-        fill={C_ALPHA}
       >
         <path d="M0,0 L6,1.5 L0,3 Z" />
       </marker>
@@ -505,6 +512,7 @@ function OverviewPanel({ f, loaded, detailHalfSpan }: { f: SectionFrame; loaded:
 
   const fs = f.rOD * 0.048;
   const s = f.rOD * 0.009;
+  const marker = MK_OVERVIEW;
 
   // 궤도 원호 — 홈반경 원의 접촉점 근방만 (폴리곤이 아니다, §3.6.3.3).
   const spanRad = (42 * Math.PI) / 180;
@@ -520,7 +528,7 @@ function OverviewPanel({ f, loaded, detailHalfSpan }: { f: SectionFrame; loaded:
       style={{ background: 'transparent', maxHeight: '46vh' }}
       preserveAspectRatio="xMidYMid meet"
     >
-      <ArrowDefs size={fs * 0.7} />
+      <ArrowDefs id={marker} size={fs * 0.7} />
       {/* §3.6.4.10 — **뒤집기 없음**. 수학좌표 (x, r) 이 그대로 SVG (x, y) 라
           **반경 r 이 커질수록 화면 아래**로 간다 (ISO 16281 A.2.2 의 Y-아래 규약). */}
       <g>
@@ -669,6 +677,7 @@ function OverviewPanel({ f, loaded, detailHalfSpan }: { f: SectionFrame; loaded:
           label={`B = ${num(f.halfB * 2)}`}
           s={s}
           fs={fs}
+          marker={marker}
         />
       </g>
     </svg>
@@ -712,6 +721,7 @@ function DetailPanel({
   const span = xMax - xMin;
   const fs = span * 0.042;
   const s = span * 0.007;
+  const marker = MK_DETAIL;
 
   // 각도는 화면 좌표 기준. 반경방향(수직) = 90°, 축방향(+X) = 0°.
   // 접촉각 α 는 수직에서 축쪽으로 재므로 접촉선 방향각 = 90° − α.
@@ -734,7 +744,7 @@ function DetailPanel({
       style={{ background: 'transparent', maxHeight: '52vh' }}
       preserveAspectRatio="xMidYMid meet"
     >
-      <ArrowDefs size={fs * 0.7} />
+      <ArrowDefs id={marker} size={fs * 0.7} />
       {/* §3.6.4.10 — 뒤집기 없음 (개요 패널과 동일). 반경 바깥 = 화면 아래. */}
       <g>
         {/* 반경 기준선(수직) — 접촉각을 재는 기준이다. */}
@@ -824,6 +834,7 @@ function DetailPanel({
           label={`A = r_i + r_e − D_w = ${num(f.aMm)} mm`}
           s={s}
           fs={fs * 0.85}
+          marker={marker}
           color={C_REF}
         />
 
@@ -845,7 +856,7 @@ function DetailPanel({
                   y2={stepDx[1]}
                   stroke={C_LOADED}
                   strokeWidth={s * 0.7}
-                  markerEnd="url(#arr)"
+                  markerEnd={`url(#${marker})`}
                 />
                 <Txt
                   x={(f.Oi[0] + stepDx[0]) / 2}
@@ -866,7 +877,7 @@ function DetailPanel({
                   y2={stepTilt[1]}
                   stroke={C_LOAD_DIR}
                   strokeWidth={s * 0.7}
-                  markerEnd="url(#arr)"
+                  markerEnd={`url(#${marker})`}
                 />
                 <Txt
                   x={(stepDx[0] + stepTilt[0]) / 2}
@@ -886,7 +897,7 @@ function DetailPanel({
                 y2={exI[1]}
                 stroke={C_UNLOADED}
                 strokeWidth={s * 0.7}
-                markerEnd="url(#arr)"
+                markerEnd={`url(#${marker})`}
               />
             )}
             <line
