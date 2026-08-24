@@ -576,8 +576,17 @@ async function run(): Promise<void> {
     `[healthcheck] kind 판별자 ${inKind === r.kind ? 'PASS' : `FAIL: input=${String(inKind)} result=${String(r.kind)}`}`
   );
 
+  // ── 탭 마운트 스윕 — 커맨드가 아니라 **화면**을 검사한다 ──────
+  const tabBad = await sweepTabs();
+  await logInfo(
+    `[healthcheck] 탭 마운트 스윕 ${
+      tabBad.length === 0 ? 'PASS' : `FAIL: ${tabBad.join(' / ')}`
+    }`
+  );
+
   await logInfo(
     `[healthcheck] 종료 — ${
+      tabBad.length === 0 &&
       inputBad.length === 0 &&
       geomBad.length === 0 &&
       resultBad.length === 0 &&
@@ -590,6 +599,99 @@ async function run(): Promise<void> {
         : 'HAS FAILURES'
     }`
   );
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+//  탭 마운트 스윕 — 「커맨드가 돈다」와 「화면이 뜬다」는 다른 문제다
+// ═══════════════════════════════════════════════════════════════════
+//
+//  위 스모크는 전부 **커맨드 왕복**이다. 그것만으로는 뷰 컴포넌트가 한 번도
+//  마운트되지 않아 렌더 크래시를 오류 브리지가 잡을 기회가 없다 —
+//  기본 탭(geometry) 외에는 DOM 에 존재하지도 않기 때문이다.
+//  실제로 P4-S1 때 `InputPanel` 렌더 크래시는 **마운트된 덕분에** 잡혔다.
+//
+//  그래서 여기서는 **사람이 하는 그대로** 한다: Solve 를 누르고 모든 탭을 눌러 본다.
+//  ⚠ 스토어를 직접 건드리지 않고 **DOM 버튼을 클릭**한다. 배선(prop 주입)까지
+//     함께 검사되기 때문이다 — 스토어를 직접 밀면 배선이 끊겨도 통과해 버린다.
+
+const TAB_LABELS = [
+  'Geometry',
+  'Section',
+  '3D View',
+  'Load Distribution',
+  'Stress Contour',
+  'Life',
+] as const;
+
+/** 결과가 있어야 내용이 나오는 탭 — `EmptyState` 가 보이면 실제 뷰가 안 뜬 것이다. */
+const NEEDS_RESULT: readonly string[] = ['3D View', 'Load Distribution', 'Stress Contour', 'Life'];
+
+const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+
+function buttonByText(text: string): HTMLButtonElement | null {
+  const all = Array.from(document.querySelectorAll('button'));
+  return (all.find(b => (b.textContent ?? '').trim() === text) as HTMLButtonElement) ?? null;
+}
+
+/** 조건이 참이 될 때까지 폴링. 시간 초과면 `null`. */
+async function waitUntil<T>(fn: () => T | null | false, timeoutMs: number, stepMs = 120): Promise<T | null> {
+  const t0 = Date.now();
+  for (;;) {
+    const v = fn();
+    if (v) return v as T;
+    if (Date.now() - t0 > timeoutMs) return null;
+    await sleep(stepMs);
+  }
+}
+
+async function sweepTabs(): Promise<string[]> {
+  const bad: string[] = [];
+
+  // ── ① 앱 마운트 대기 ────────────────────────────────────────────
+  //  헬스체크는 `createRoot(...).render()` **이전**에 시작되므로 반드시 기다려야 한다.
+  const solveBtn = await waitUntil(() => buttonByText('Solve'), 20_000);
+  if (!solveBtn) {
+    bad.push('Solve 버튼이 20 s 안에 나타나지 않았다 — 앱이 마운트되지 않았을 수 있다');
+    return bad;
+  }
+
+  // ── ② Solve — 결과 의존 탭을 실제로 채우기 위해 필요하다 ────────
+  solveBtn.click();
+  const solved = await waitUntil(() => {
+    const b = buttonByText('Solve'); // 진행 중에는 라벨이 '해석 중…' 이라 못 찾는다
+    return b !== null && !b.disabled;
+  }, 60_000);
+  if (!solved) {
+    bad.push('Solve 가 60 s 안에 끝나지 않았다');
+    return bad;
+  }
+  await sleep(300);
+
+  // ── ③ 탭을 하나씩 눌러 **마운트**시킨다 ─────────────────────────
+  for (const label of TAB_LABELS) {
+    const tab = buttonByText(label);
+    if (!tab) {
+      bad.push(`탭 버튼 '${label}' 을 찾지 못했다`);
+      continue;
+    }
+    tab.click();
+    // 렌더 + 디바운스(150 ms) + 커맨드 왕복을 넉넉히 기다린다.
+    await sleep(700);
+
+    const root = document.getElementById('root');
+    const text = root?.textContent ?? '';
+    if (NEEDS_RESULT.includes(label) && text.includes('No results yet')) {
+      bad.push(`'${label}' 이 EmptyState 를 보이고 있다 — 결과가 있는데도 실제 뷰가 뜨지 않았다`);
+    }
+    // 자리표시자가 남아 있으면 배선이 옛 stub 을 가리키는 것이다.
+    if (text.includes('P4-3b 준비 중') || text.includes('P5-2 준비 중')) {
+      bad.push(`'${label}' 에 자리표시자가 남아 있다 — prop 배선이 갱신되지 않았다`);
+    }
+    await logInfo(`[healthcheck] tab '${label}' 마운트 OK (${text.length} chars)`);
+  }
+
+  return bad;
 }
 
 /**
