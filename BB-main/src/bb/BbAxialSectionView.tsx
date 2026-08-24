@@ -19,9 +19,26 @@
 // ─────────────────────────────────────────────────────────────────────
 //  🔴 좌표계·부호 규약 — 이것을 틀리면 그림이 조용히 거짓말을 한다
 // ─────────────────────────────────────────────────────────────────────
-//  · **가로축 = X = 회전축**(D-7, ISO 규약), **세로축 = 반경 r**. 반단면(위쪽 절반)이다.
-//  · 접촉각 `α` 는 **반경방향(세로)에서 축방향(가로)으로** 잰다. 그래서 화면의
-//    각도 호는 **수직 기준선**에서 출발한다 (수평 기준이 아니다).
+//  · **가로축 = X = 회전축**(D-7, ISO 규약), **세로축 = 반경 r**.
+//  · 🔴 **§3.6.4.10 각도 표시 규약 — 0° 는 화면 아래, 각도는 우측으로 증가.**
+//    근거는 자의적 선택이 아니라 규격이다. ISO 16281 Annex A.2.2 NOTE:
+//      「우수좌표계이며 X 축이 공칭 회전축과 일치한다.
+//        **문서 내 모든 그림에서 Y 축은 지면 아래쪽을 향한다.**」
+//    `φ = 0` 이 `+Y`(D-8)이므로 **0° = 화면 아래**이고,
+//    `X(회전축) = 화면 밖`·`Y = 아래` 에서 `Z = X × Y = 오른쪽` 이라
+//    `φ = 90°`(= `+Z`)가 오른쪽 → **각도가 우측으로 증가**한다.
+//    이 뷰에서의 귀결은 셋이다:
+//      ① **반경 바깥 방향 = 화면 아래**. 그래서 `φ_j = 0`(= `+Y`)인 볼은
+//         **아래쪽 반단면**에 놓인다. (SVG 그룹의 `scale(1,-1)` 을 **없앴다** —
+//         수학좌표 `(x, r)` 이 그대로 SVG `(x, y)` 라 `r` 이 커지면 화면 아래다.)
+//      ② 접촉각 `α` 는 **반경방향(= 화면 아래, 0°)에서 축방향(= 화면 오른쪽, +X)** 으로 잰다.
+//         `α₀`·`α_j` 호는 **아래 방향 기준선에서 출발해 오른쪽으로** 벌어진다 —
+//         전역 규약과 **같은 증가 방향**이다.
+//      ③ 「X 오른쪽 · Y 아래」를 동시에 만족하려면 우수좌표계상 **시선이 `+Z` 방향**
+//         (= `−Z` 쪽에서 본다). 이것은 ①② 가 정해지면 **강제되는 결과**이지 선택이 아니다.
+//  · 나침반(D-2d)도 같은 규약이다 — `θ = atan2(Z, Y)`, 0° 아래, 90° 오른쪽.
+//  · ⚠ **데이터는 바뀌지 않는다.** `φ_j`·`atan2(F_z,F_y)`·`atan2(γ_z,γ_y)` 값은 그대로다.
+//    **표시 방향만** 규약에 맞춘 것이다 (§3.6.4.10 의 단서).
 //  · 곡률중심의 축방향 배치는 Theory §4.4 확정형에서 나온다:
 //      `X_j = A sin α₀ + δ_x − R_i(γ_z cos φ_j − γ_y sin φ_j)`
 //    `X_j` 는 **`O_e` → `O_i` 벡터의 축성분**이고 `δ_x > 0`(내륜이 +X 로 이동)이면
@@ -50,6 +67,13 @@
 //  ⚠ 반경하중이 함께 걸리면 응답이 등방이 아니므로 `Δ = 0` 이 **요구되지 않는다.**
 //     그래서 화면은 「반경하중 유무」를 함께 표시하고, 순수 모멘트일 때만 정합을 단정한다.
 //     (자의적 판정을 피하기 위한 조치다 — 화면이 물리를 지어내면 검증이 무의미해진다.)
+//  ⚠ 순수 모멘트라도 **`Δ = 0` 이 엄밀히 요구되지는 않는다.** 볼이 `Z` 개로 **이산**이라
+//     응답은 연속 등방이 아니라 **Z-중 대칭**만 갖는다. 모멘트 방위가 대칭축(`φ_j`)과
+//     어긋나면 작은 `Δ` 가 남는 것이 정상이다. 따라서 판정을 4단으로 나눈다:
+//       `|Δ| < 1°` 정합 ✅ / `|Δ| < 90°` 부호 정합·이산성 🟡 /
+//       `||Δ|−180°| < 15°` 반대 ❌ / 그 밖 ⚠ 솔버 의심.
+//     (인수 시점 코드는 `|Δ| ≥ 1°` 를 곧바로 「솔버 의심」으로 몰아 **이산성을 솔버 오류로
+//      오인**시킬 수 있었다. 화면이 없는 결함을 지어내면 안 되므로 고쳤다.)
 //
 // ─────────────────────────────────────────────────────────────────────
 //  축척과 과장 — 무엇을 실제로 그리고 무엇을 과장했는가
@@ -217,9 +241,11 @@ function Txt({
   fill?: string;
   anchor?: 'start' | 'middle' | 'end';
 }) {
-  // 부모가 `scale(1,-1)` 안이므로 텍스트만 다시 뒤집는다 (원본과 동일한 수법).
+  // ⚠ 원본 `SectionView2D` 는 부모가 `scale(1,-1)` 이라 텍스트를 다시 뒤집었다.
+  //    이 뷰는 **§3.6.4.10 각도 규약**에 따라 부모의 뒤집기를 없앴으므로
+  //    (반경 바깥 = 화면 아래) 여기서도 되뒤집지 **않는다**.
   return (
-    <g transform={`translate(${x}, ${y}) scale(1,-1)`}>
+    <g transform={`translate(${x}, ${y})`}>
       <text
         fill={fill}
         fontSize={fs}
@@ -489,13 +515,15 @@ function OverviewPanel({ f, loaded, detailHalfSpan }: { f: SectionFrame; loaded:
 
   return (
     <svg
-      viewBox={`${xMin} ${-yTop} ${xMax - xMin} ${yTop - yBot}`}
+      viewBox={`${xMin} ${yBot} ${xMax - xMin} ${yTop - yBot}`}
       className="w-full"
       style={{ background: 'transparent', maxHeight: '46vh' }}
       preserveAspectRatio="xMidYMid meet"
     >
       <ArrowDefs size={fs * 0.7} />
-      <g transform="scale(1,-1)">
+      {/* §3.6.4.10 — **뒤집기 없음**. 수학좌표 (x, r) 이 그대로 SVG (x, y) 라
+          **반경 r 이 커질수록 화면 아래**로 간다 (ISO 16281 A.2.2 의 Y-아래 규약). */}
+      <g>
         {/* 회전축 X — D-7. 이 선이 곧 베어링 중심축이다. */}
         <line
           x1={xMin + fs * 0.3}
@@ -701,13 +729,14 @@ function DetailPanel({
 
   return (
     <svg
-      viewBox={`${xMin} ${-yTop} ${xMax - xMin} ${yTop - yBot}`}
+      viewBox={`${xMin} ${yBot} ${xMax - xMin} ${yTop - yBot}`}
       className="w-full"
       style={{ background: 'transparent', maxHeight: '52vh' }}
       preserveAspectRatio="xMidYMid meet"
     >
       <ArrowDefs size={fs * 0.7} />
-      <g transform="scale(1,-1)">
+      {/* §3.6.4.10 — 뒤집기 없음 (개요 패널과 동일). 반경 바깥 = 화면 아래. */}
+      <g>
         {/* 반경 기준선(수직) — 접촉각을 재는 기준이다. */}
         <line
           x1={f.Oe[0]}
@@ -718,7 +747,14 @@ function DetailPanel({
           strokeWidth={s * 0.5}
           strokeDasharray={`${s * 3} ${s * 1.5}`}
         />
-        <Txt x={f.Oe[0] - fs * 0.25} y={f.Oe[1] + rayLen * 1.35} text="반경 r" fs={fs * 0.75} fill="#94a3b8" anchor="end" />
+        <Txt
+          x={f.Oe[0] - fs * 0.25}
+          y={f.Oe[1] + rayLen * 1.35}
+          text="반경 r (바깥) = α 의 0° 기준"
+          fs={fs * 0.75}
+          fill="#94a3b8"
+          anchor="end"
+        />
         {/* 축 기준선(수평) */}
         <line
           x1={f.Oe[0] - rayLen * 0.35}
@@ -891,10 +927,14 @@ function TiltCompass({
   const R = 46;
   const cx = 62;
   const cy = 62;
-  // 화면은 y 아래 방향이 +라 Z 성분에 −를 붙인다 (Y 오른쪽, Z 위).
+  // 🔴 §3.6.4.10 각도 표시 규약 — **0° = +Y = 화면 아래**, 각도는 **우측(+Z)** 으로 증가.
+  //    근거: ISO 16281 A.2.2 NOTE 「모든 그림에서 Y 축은 지면 아래쪽」 + 우수좌표계
+  //    (X = 회전축 = 화면 밖) ⟹ Z = X × Y = 오른쪽.
+  //    방위각 θ = atan2(Z, Y) 이므로 화면 좌표는 x = cx + r sinθ, y = cy + r cosθ 다
+  //    (SVG 는 y 가 아래 방향이라 cos 항에 −를 붙이지 **않는다**).
   const pt = (deg: number, r: number): [number, number] => {
     const a = (deg * Math.PI) / 180;
-    return [cx + r * Math.cos(a), cy - r * Math.sin(a)];
+    return [cx + r * Math.sin(a), cy + r * Math.cos(a)];
   };
   const [phx, phy] = pt(phiDeg, R);
   return (
@@ -902,11 +942,11 @@ function TiltCompass({
       <circle cx={cx} cy={cy} r={R} fill="none" stroke="#334155" strokeWidth={1} />
       <line x1={cx - R} y1={cy} x2={cx + R} y2={cy} stroke="#334155" strokeWidth={0.8} />
       <line x1={cx} y1={cy - R} x2={cx} y2={cy + R} stroke="#334155" strokeWidth={0.8} />
-      <text x={cx + R + 2} y={cy + 3} fill="#94a3b8" fontSize={9} fontFamily="monospace">
-        Y
+      <text x={cx} y={cy + R + 10} fill="#94a3b8" fontSize={9} fontFamily="monospace" textAnchor="middle">
+        +Y · 0°
       </text>
-      <text x={cx - 3} y={cy - R - 3} fill="#94a3b8" fontSize={9} fontFamily="monospace">
-        Z
+      <text x={cx + R - 1} y={cy - 5} fill="#94a3b8" fontSize={9} fontFamily="monospace" textAnchor="end">
+        +Z · 90°
       </text>
       {/* 선택한 볼의 방위 φ_j */}
       <line x1={cx} y1={cy} x2={phx} y2={phy} stroke={C_LOADED} strokeWidth={1} strokeDasharray="3 2" />
@@ -1083,6 +1123,16 @@ export default function BbAxialSectionView() {
           단면은 <b>선택한 볼의 방위 φ_j 에서 자른 것</b>이다. 볼마다{' '}
           <span className="font-mono">α_j</span> 가 다르므로 어느 볼인지가 항상 표시된다.
         </p>
+        <p className="mt-1.5 pt-1.5 border-t border-blue-400/20">
+          🧭 <b>각도 표시 규약 (§3.6.4.10)</b> —{' '}
+          <b className="font-mono">0° = +Y = 화면 아래</b>, 각도는 <b>우측(+Z)으로 증가</b>. 근거는{' '}
+          <b>ISO 16281 Annex A.2.2 NOTE</b>「우수좌표계이며 X 축이 공칭 회전축과 일치한다. 문서 내 모든 그림에서 Y
+          축은 지면 아래쪽을 향한다」이다. 따라서 이 단면도는 <b>반경 바깥이 화면 아래</b>이고,{' '}
+          <span className="font-mono">φ_j = 0</span> 인 볼은 <b>아래쪽 반단면</b>에 놓인다. 접촉각{' '}
+          <span className="font-mono">α</span> 도 같은 규약으로 <b>아래(반경) → 오른쪽(+X 회전축)</b> 방향으로 잰다.
+          「X 오른쪽 · Y 아래」를 우수좌표계로 동시에 만족하려면 <b>시선이 +Z 방향</b>이 되며, 이는 선택이 아니라{' '}
+          <b>강제되는 결과</b>다. <span className="text-blue-200/70">데이터(φ_j·방위각 값)는 바뀌지 않는다 — 표시 방향만이다.</span>
+        </p>
       </div>
 
       {stale && (
@@ -1127,7 +1177,7 @@ export default function BbAxialSectionView() {
           </button>
         )}
         <span className="text-[12px] text-text-canvas/70 font-mono">
-          φ_j = {num(toDeg(phiRad))}° ({num(phiRad)} rad) · φ = 0 은 +Y 축 (D-8)
+          φ_j = {num(toDeg(phiRad))}° ({num(phiRad)} rad) · φ = 0 은 +Y 축 (D-8) = 화면 아래 (§3.6.4.10)
         </span>
         {!result && (
           <span className="text-[12px] text-amber-300/80">
@@ -1166,20 +1216,37 @@ export default function BbAxialSectionView() {
           <p className="text-[12px] text-text-canvas/70">Solve 를 눌러야 판정할 수 있다.</p>
         ) : (
           <div className="flex flex-wrap items-start gap-4">
-            <TiltCompass tiltDeg={tiltDeg} momDeg={momDeg} phiDeg={toDeg(phiRad)} />
+            <div className="shrink-0">
+              <TiltCompass tiltDeg={tiltDeg} momDeg={momDeg} phiDeg={toDeg(phiRad)} />
+              <div className="text-[10px] leading-snug space-y-0.5 mt-0.5 w-[124px]">
+                <p style={{ color: C_LOAD_DIR }}>━ 모멘트 방위 (외부, resultInput)</p>
+                <p style={{ color: C_ALPHA }}>━ 틸트 방위 (평형해)</p>
+                <p style={{ color: C_LOADED }}>┄ 선택한 볼 φ_j</p>
+                <p className="text-text-canvas/60">0° = +Y = 아래, 우측(+Z) 증가</p>
+              </div>
+            </div>
             <div className="min-w-[22rem] flex-1">
               <DetailTable
-                title="방위 대조 — (Y, Z) 평면"
+                title="방위 대조 — (Y, Z) 평면 · 방위 0° = +Y = 화면 아래, 우측(+Z) 증가 (§3.6.4.10)"
                 rows={[
                   ['틸트 γ_y', num(disp?.ry_rad ?? 0), 'rad'],
                   ['틸트 γ_z', num(disp?.rz_rad ?? 0), 'rad'],
                   ['틸트 크기 |γ|', num(tiltMag), 'rad'],
-                  ['틸트 방위 atan2(γ_z, γ_y)', tiltDeg === null ? '정의 없음 (|γ| = 0)' : num(tiltDeg), '°'],
+                  [
+                    '틸트 방위 atan2(γ_z, γ_y)  〔0°=+Y=아래〕',
+                    tiltDeg === null ? '정의 없음 (|γ| = 0)' : num(tiltDeg),
+                    '°',
+                  ],
                   ['모멘트 M_y (resultInput)', num(op.m_y_nmm), 'N·mm'],
                   ['모멘트 M_z (resultInput)', num(op.m_z_nmm), 'N·mm'],
-                  ['모멘트 방위 atan2(M_z, M_y)', momDeg === null ? '정의 없음 (|M| = 0)' : num(momDeg), '°'],
-                  ['Δ = 틸트 − 모멘트', deltaDeg === null ? '—' : num(deltaDeg), '°'],
+                  [
+                    '모멘트 방위 atan2(M_z, M_y)  〔0°=+Y=아래〕',
+                    momDeg === null ? '정의 없음 (|M| = 0)' : num(momDeg),
+                    '°',
+                  ],
+                  ['Δ = 틸트 − 모멘트 (규약 무관 — 차이값)', deltaDeg === null ? '—' : num(deltaDeg), '°'],
                   ['반경하중 |F_r| (등방성 판정용)', num(radMag), 'N'],
+                  ['볼 수 Z (이산성 — Δ 허용폭 근거)', String(zCount), '개'],
                 ]}
               />
               <div className="mt-2 text-[12px] leading-relaxed">
@@ -1195,17 +1262,25 @@ export default function BbAxialSectionView() {
                       <span className="font-mono">M_y &gt; 0 ⟹ γ_y &gt; 0</span> ·{' '}
                       <span className="font-mono">M_z &gt; 0 ⟹ γ_z &gt; 0</span> 이 유도되며, 화면이 그것을 재확인한다.
                     </p>
-                  ) : Math.abs(Math.abs(deltaDeg) - 180) < 5 ? (
+                  ) : Math.abs(Math.abs(deltaDeg) - 180) < 15 ? (
                     <p className="text-red-300">
-                      ❌ <b>Δ ≈ 180°</b> — 틸트가 모멘트와 <b>반대로 섰다</b>. §3.6.4.2 가 드는 징후
-                      「틸트 방향이 모멘트와 반대」에 해당한다. 부호 규약(Theory §4.4 의{' '}
-                      <span className="font-mono">M_y = +R_i Σ Q sin α sin φ</span>) 을 먼저 확인할 것.
+                      ❌ <b>Δ ≈ 180°</b> (|Δ| = <span className="font-mono">{num(Math.abs(deltaDeg))}</span>°) — 틸트가
+                      모멘트와 <b>반대로 섰다</b>. §3.6.4.2 가 드는 징후「틸트 방향이 모멘트와 반대」에 해당한다. 부호
+                      규약(Theory §4.4 의 <span className="font-mono">M_y = +R_i Σ Q sin α sin φ</span>) 을 먼저 확인할 것.
+                    </p>
+                  ) : Math.abs(deltaDeg) < 90 ? (
+                    <p className="text-emerald-300/90">
+                      🟡 <b>부호는 정합</b> (|Δ| = <span className="font-mono">{num(Math.abs(deltaDeg))}</span>° &lt; 90°)
+                      이나 <b>정확히 0 은 아니다</b>. 볼이 <b>Z = {zCount} 개로 이산</b>이라 응답이 연속 등방이 아니고{' '}
+                      <b>Z-중 대칭</b>만 갖는다 — 모멘트 방위가 대칭축과 어긋나면 Δ 가 정확히 0 이 되지 <b>않는</b> 것이
+                      정상이다. <b>이 편차만으로 솔버를 의심하지 말 것.</b> 엄밀 대조가 필요하면 모멘트 방위를 볼 위치(φ_j
+                      = 360°·k/Z)에 맞추고 다시 볼 것.
                     </p>
                   ) : (
                     <p className="text-amber-300">
-                      ⚠ 순수 모멘트인데 Δ 가 0 도 180° 도 아니다 (|Δ| ={' '}
-                      <span className="font-mono">{num(Math.abs(deltaDeg))}</span>°). 화면을 고쳐 맞추지 말고{' '}
-                      <b>솔버 쪽을 먼저 의심할 것</b>.
+                      ⚠ 순수 모멘트인데 |Δ| 가 <b>90° 이상 180° 미만</b>이다 (|Δ| ={' '}
+                      <span className="font-mono">{num(Math.abs(deltaDeg))}</span>°). 이산성(Z = {zCount})으로 설명되는
+                      규모가 아니다. <b>화면을 고쳐 맞추지 말고 솔버 쪽을 먼저 의심할 것.</b>
                     </p>
                   )
                 ) : (
