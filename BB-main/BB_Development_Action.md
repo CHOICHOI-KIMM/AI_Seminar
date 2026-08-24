@@ -1781,3 +1781,95 @@ S1 의 기능 DoD 는 「앱이 뜨고 8탭 회색 표시, **콘솔 오류 0**�
 `components/ResultsCard`·`GeometryView` 는 **참조만 끊기고 파일은 그대로** 있다(삭제 0건).
 
 ---
+
+---
+
+## 260824 — P4-S4: 핵심 검증 뷰 (하중분포)
+
+**커밋** `c6f4509` · `835c232`. push 없음.
+
+| 단계 | 내용 |
+|---|---|
+| **S4-1** | `src/bb/BbLoadDistView.tsx` 신규 — `Q_j(φ)` 극좌표 · `α_j(φ)` · 위상 스윕 · 접촉타원 형상 · `BallResult` 11필드 전량 표 |
+| **S4-2** | `CanvasArea` 에 `loadView` prop · `App.tsx` 주입 · 헬스체크에 **위상 스윕 켠 왕복** 추가 |
+
+### 검사
+
+| 항목 | 결과 |
+|---|---|
+| `npm run build` | ✅ |
+| `npm run lint` | 44건 — baseline **증감 0**, `src/bb/**` **0건**, `@ts-nocheck` **0** |
+| `cargo test` | **147** (Rust 무변경) · clippy **0** · 생성물 diff 비어 있음 |
+| 삭제 | **0건**. `charts/LoadDistChart.tsx` 는 **읽기만** 하고 손대지 않았다 |
+
+### 🔴 방위 규약 — 소스 3곳 교차 확인
+
+이 뷰의 첫 검증 임무가 「하중구간이 하중 방향과 정렬되는가」인데, **축 정의가 틀리면 정상인데도 어긋나 보인다.** 그래서 코드에서 지어내지 않고 세 곳을 대조했다:
+
+1. `solver/bb/bearing.rs` 헤더 — `R_j = A cos α₀ + δ_y cos φ_j + δ_z sin φ_j`
+   → 반경 단위벡터가 `(cos φ_j, sin φ_j)` in `(Y, Z)` ⇒ **φ = 0 이 +Y, φ = 90° 가 +Z**
+2. `src/bb/generated/BallResult.ts` 의 `phi_rad` 주석 — 「D-8: φ_1 = 0 이 Y축 방향」
+3. `BB_Development_Theory.md` §4.4 — `F_y = ΣQ cos α cos φ`, `F_z = ΣQ cos α sin φ` (같은 축)
+
+**화면 명시**: 극좌표에 회전·방향반전을 **일절 넣지 않고** `φ` 를 그대로 쓰고(`rotation: 0`, CCW),
+제목에 `θ = 0 은 +Y 축`, 상단에 **방위 규약 배너**(φ_j 정의 · +Y/+Z 대응 · `φ_F` 실제값 · `|F_r|` · `F_y` · `F_z`).
+외부 반경하중 방위 `atan2(F_z, F_y)` 는 **붉은 파선 + 다이아몬드 팁**으로 같은 축 위에 겹친다.
+
+### §3.6.4.2 검증 항목 ↔ 화면 위치
+
+| 검증 항목 | 화면 |
+|---|---|
+| **C-4 · C-7 · D-2b/2c** — 하중구간 방위·폭·대칭성 | `LoadDistPolar`: `Q_j` barpolar + **볼 위치 링**(접촉=채운 원 / 비접촉=빈 원) + `F_r` 붉은 파선. `Load Zone (C-7)` 표에 `loaded_count/Z` · `Q_max` · `2π/Z` · `φ_F` · `|F_r|` |
+| **D-1 · C-2** — `α_j` 가 볼마다 다르고 하중에 따라 변함 | `AlphaCurve`: **접촉 볼만** 마커(선으로 잇지 않음), `α₀` 를 라임색 점선 기준선으로 겹쳐 벌어지는 방향 표시 |
+| **C-5** — `Q_max` 주기 `2π/Z` | `PhaseSweepChart`: 가로축 전체가 정확히 **한 주기**, `2π/Z` 위치에 눈금선+주석. 표에 주기(°/rad) · curve 길이 · worst Q/p 와 발생 `φ₀` · **`curve[0]` vs `equilibrium.q_max_n` 병기** |
+| **접촉타원 형상** | `ContactEllipse`: 볼별 `a`·`b` 그룹 막대(내/외륜 4계열) + 최대하중 볼의 **실제 축척 윤곽**(1:1, 내·외륜 겹침, 범례에 `a/b`). **내부 압력분포는 넣지 않았다 — S5 소관**(§3.6.4.4) |
+
+hover `%{:.9g}`, 표 유효숫자 9자리.
+
+### §3.6.1.4 대비 — 컴포넌트 분할 선반영
+
+같은 파일 안에서 **`LoadDistPolar`(3종 공통 — `BallResult` 를 모르고 `{phi_rad, q_n, loaded}` 중립 입력만 받는다)** 와 **`ContactEllipse`(BB 전용)** 로 갈라 두었다. 전동체별 `Q(φ)` 극좌표는 **롤러에도 그대로 쓰이는 부분**이다.
+
+### ⭐ 런타임 헬스체크 (④) — 위상 스윕까지 실증
+
+```
+[healthcheck] bb_solve_bearing (phase_sweep on, n_phase=36, Z=16)
+              curve_len=36 worst_q_max_n=1178.3682455081332 worst_q_max_phase_rad=0
+              worst_p_max_mpa=2031.1808980156152
+              period_2pi_over_z=0.39269908169872414
+              curve0_q=1178.3682455081332 base_q_max_n=1178.3682455081332
+[healthcheck] BbPhaseSweepResult 형상검증 PASS · 종료 — ALL PASS
+```
+
+**웹뷰 오류 0건.**
+
+| 확인 | 값 | 판정 |
+|---|---|---|
+| `curve_len` = `n_phase` | 36 | ✅ |
+| 주기 `2π/Z` | 0,3926990817 = **2π/16** | ✅ |
+| **순수 축하중은 위상 무의존** (C-5) | `worst_q_max_phase_rad = 0` | ✅ |
+| `curve[0]` ↔ 기본 해 `q_max_n` | 둘 다 1178,368245508 | ✅ **완전 일치** |
+
+> ⚠️ **관찰**: `worst_p_max_mpa = 2031,18` 로 **ISO 281 Annex B.3.1 피로한계 1 500 MPa 를 초과**한다.
+> 검증 픽스처가 고하중이라 그렇고, 솔버는 `CONTACT_STRESS_OVER_FATIGUE_LIMIT` **Warning** 을 낼 것이다
+> (4 000 MPa 미만이라 Critical 은 아니다). **⑤ 육안 확인 때 `AlertPanel` 에 이 경고가 뜨는지 봐야 한다**
+> — §3.6.4.2 의 `AlertPanel` 항목이 바로 이것이다.
+
+프로세스 종료(19개 트리 kill, 잔존 0).
+
+### 자동 수정 — **0건**
+
+빌드·린트가 첫 시도에 통과했다. (`CanvasArea` 의 `LoadDistChart` import 제거는 배선에 따른 필수 변경이지 오류 수정이 아니다.)
+
+**판단이 필요해 멈춘 것: 없음.**
+
+### ⚠ 상위 확인이 필요한 사항 1건 — `F_r` 기준선의 출처
+
+`F_r` 방위 파선을 **`state.bbInput.operating`**(현재 입력 패널)에서 읽는다.
+그런데 `result` 는 **마지막 Solve 시점**의 것이라, 입력을 고치고 Solve 를 누르지 않으면
+**기준선만 먼저 움직인다.**
+
+대안(평형 반력 `ΣQ_j cos α_j·(cos φ, sin φ)` 로부터 역산)은 결과와 항상 짝이 맞지만
+**「외부 하중 방위」와는 다른 물리량**이라 임의 대체하지 않았다. 배너에 경고 문구를 명시해 두었다.
+
+---
