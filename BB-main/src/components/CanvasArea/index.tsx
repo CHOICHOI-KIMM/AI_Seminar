@@ -2,7 +2,6 @@ import { useAppState, type CanvasTab } from '../../store';
 import LifeChart from '../charts/LifeChart';
 import ComparisonChart from '../charts/ComparisonChart';
 import BearingView3D from '../BearingView3D';
-import SectionView2D from '../SectionView2D';
 import ProfileView from '../ProfileView';
 import LubricationView from '../LubricationView';
 import DualModeToggle from '../DualModeToggle';
@@ -16,11 +15,12 @@ import ThermalSpeedView from '../ThermalSpeedView';
 //   틀린 건가」의 원인 분리가 쉽기 때문이다. 일괄 정리는 §3.6.4.6 시점에 한다.
 //   부수 효과로 **개조할 목록이 화면에 그대로 보인다.**
 //   S3 에서 geometry, S4 에서 load, **S5 에서 contour** 가 BB 뷰로 채워졌다 (셋 다 prop 주입).
-//   → 이로써 `legacy` 가 없는 3탭이 **전부** BB 뷰다.
+//   P4-3a 에서 **section** 이 `bb/BbAxialSectionView` 로 채워졌다 (같은 prop 주입).
+//   → 이로써 `legacy` 가 없는 4탭이 **전부** BB 뷰다.
 const tabs: { key: CanvasTab; label: string; legacy?: boolean }[] = [
   { key: 'geometry', label: 'Geometry' },
   { key: 'profile', label: 'Profile', legacy: true },
-  { key: 'section', label: 'Section', legacy: true },
+  { key: 'section', label: 'Section' },
   { key: '3d', label: '3D View', legacy: true },
   { key: 'load', label: 'Load Distribution' },
   { key: 'contour', label: 'Stress Contour' },
@@ -48,9 +48,11 @@ interface CanvasAreaProps {
   loadView: React.ReactNode;
   /** `contour` 탭 내용 (S5: `bb/BbStressContourView`). */
   contourView: React.ReactNode;
+  /** `section` 탭 내용 (P4-3a: `bb/BbAxialSectionView`). */
+  sectionView: React.ReactNode;
 }
 
-export default function CanvasArea({ geometryView, loadView, contourView }: CanvasAreaProps) {
+export default function CanvasArea({ geometryView, loadView, contourView, sectionView }: CanvasAreaProps) {
   const { state, dispatch } = useAppState();
   const { activeTab, result } = state;
 
@@ -89,7 +91,9 @@ export default function CanvasArea({ geometryView, loadView, contourView }: Canv
                Solve 를 누르지 않고도(= `result` 가 없어도) 볼 수 있다 (§3.6.4.7 ①).
                결과를 기다리면 Level A 를 화면으로 확인하는 경로가 막힌다. */}
         {activeTab === 'geometry' && geometryView}
-        {activeTab === 'section' && <SectionView2D />}
+        {/* ⚠ `section` 도 `geometry` 와 같이 **하중 무관**이다 — `bb_compute_geometry` 만으로
+               무하중 단면을 그린다. 결과를 기다리면 Level A 기하를 그림으로 보는 경로가 막힌다. */}
+        {activeTab === 'section' && sectionView}
         {activeTab === 'profile' && <ProfileView />}
         {activeTab === 'transient' && <TransientView />}
         {activeTab !== 'geometry' && activeTab !== 'section' && activeTab !== 'profile' && activeTab !== 'transient' && (

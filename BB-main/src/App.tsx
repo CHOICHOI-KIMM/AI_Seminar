@@ -24,6 +24,9 @@ import BbLoadDistView from './bb/BbLoadDistView';
 // P4-S5-2: `contour` 탭 내용. 같은 이유로 여기서 주입한다 (Plan §3.6.5.6 prop 주입 규약).
 // 이것으로 `legacy` 가 아닌 3탭(geometry·load·contour)이 전부 BB 뷰가 된다.
 import BbStressContourView from './bb/BbStressContourView';
+// P4-3a: `section` 탭 내용 (축단면 뷰, Plan §3.6.4.8). 같은 prop 주입 규약(§3.6.5.6).
+// 이것으로 `legacy` 가 아닌 4탭(geometry·section·load·contour)이 전부 BB 뷰가 된다.
+import BbAxialSectionView from './bb/BbAxialSectionView';
 import AlertPanel from './components/AlertPanel';
 import ProgressBar from './components/ProgressBar';
 
@@ -112,6 +115,7 @@ export default function App() {
               geometryView={<BbGeometryView />}
               loadView={<BbLoadDistView />}
               contourView={<BbStressContourView />}
+              sectionView={<BbAxialSectionView />}
             />
             <ProgressBar />
           </main>
