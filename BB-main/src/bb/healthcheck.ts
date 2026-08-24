@@ -504,6 +504,72 @@ async function run(): Promise<void> {
     }`
   );
 
+  // ── bb_compute_life (P5-1) ────────────────────────────────────────
+  // 등록만 되고 런타임에서 한 번도 불리지 않은 커맨드였다. 이것으로 BB 커맨드 4종을 전부 덮는다.
+  // 검사는 **형상 + 내부 항등**만 한다 — 수치 판정은 Level E (tests/life_level_e.rs) 의 몫이다.
+  const lifeBad: string[] = [];
+  let lifeLog = '';
+  try {
+    const rawLife = await invoke<unknown>('bb_compute_life', {
+      input,
+      // 전부 serde(default) 라 빈 객체면 기본값이 들어간다.
+      // ν 를 주지 않으면 κ·a_ISO·L_nmr 이 None 이어야 한다 (E-8 의 런타임 짝).
+      conditions: {},
+    });
+    if (!isRecord(rawLife)) {
+      lifeBad.push('BbLifeResult 가 객체가 아니다');
+    } else {
+      const L = rawLife as Record<string, unknown>;
+      const nums = [
+        'f_c', 'b_m', 'c_r_n', 'c_r_computed_n',
+        'q_ci_n', 'q_ce_n', 'q_ei_n', 'q_ee_n',
+        'l_10r_mrev', 'p_ref_r_n', 'q_u_n', 'c_u_n',
+        'c_u_precise_n', 'c_u_simplified_n', 'a_1',
+      ];
+      for (const k of nums) {
+        if (typeof L[k] !== 'number' || !Number.isFinite(L[k] as number)) {
+          lifeBad.push(`${k} 가 유한수가 아니다 (${String(L[k])})`);
+        }
+      }
+      // ν 미지정 → κ·a_ISO 는 null 이어야 한다 (지어내지 않는다).
+      // ⚠ `nu_1_mm2_s` 는 여기 넣으면 안 된다 — ISO 281 식 (28)(29) 의
+      //    `ν₁ = f(n, D_pw)` 는 **실동점도 ν 와 무관**해서 ν 없이도 계산된다.
+      //    (첫 작성 때 이것을 κ·a_ISO 와 묶어 오판했다. 솔버가 옳았다.)
+      for (const k of ['kappa', 'a_iso']) {
+        if (L[k] !== null && L[k] !== undefined) {
+          lifeBad.push(`ν 미지정인데 ${k} 가 산출됐다 (${String(L[k])})`);
+        }
+      }
+      // ν₁ 은 반대로 **항상** 나와야 한다 (n>0, D_pw>0 이므로)
+      if (typeof L.nu_1_mm2_s !== 'number' || !Number.isFinite(L.nu_1_mm2_s as number)) {
+        lifeBad.push(`nu_1_mm2_s 가 유한수가 아니다 (${String(L.nu_1_mm2_s)}) — 식 (28)(29) 는 ν 없이도 계산된다`);
+      }
+      // 내부 항등 — L_10r 은 (C_r / P_ref r)^3 이어야 한다 (ISO 16281 식 (9))
+      const cr = L.c_r_n as number;
+      const pr = L.p_ref_r_n as number;
+      const l10 = L.l_10r_mrev as number;
+      if (Number.isFinite(cr) && Number.isFinite(pr) && pr > 0 && Number.isFinite(l10)) {
+        const expect = Math.pow(cr / pr, 3);
+        const rel = Math.abs(l10 - expect) / Math.max(Math.abs(expect), 1e-30);
+        if (!(rel < 1e-9)) {
+          lifeBad.push(`L_10r(${l10}) ≠ (C_r/P_ref)³(${expect}) 상대차 ${rel}`);
+        }
+      }
+      lifeLog =
+        ` f_c=${String(L.f_c)} b_m=${String(L.b_m)} C_r=${String(L.c_r_n)} N` +
+        ` P_ref=${String(L.p_ref_r_n)} N L_10r=${String(L.l_10r_mrev)} Mrev` +
+        ` C_u=${String(L.c_u_n)} N kappa=${String(L.kappa)} a_iso=${String(L.a_iso)}`;
+    }
+  } catch (e) {
+    lifeBad.push(`호출 실패: ${String(e)}`);
+  }
+  await logInfo(`[healthcheck] bb_compute_life${lifeLog}`);
+  await logInfo(
+    `[healthcheck] BbLifeResult 형상·항등 검증 ${
+      lifeBad.length === 0 ? 'PASS' : `FAIL: ${lifeBad.join(' | ')}`
+    }`
+  );
+
   // 판별자 일치 — 입력의 kind 를 솔버가 그대로 반영해야 한다 (A-8c 의 런타임 짝)
   const inKind = isRecord(rawInput) ? rawInput.kind : undefined;
   await logInfo(
@@ -518,6 +584,7 @@ async function run(): Promise<void> {
       sweepBad.length === 0 &&
       contact0Bad.length === 0 &&
       contactQBad.length === 0 &&
+      lifeBad.length === 0 &&
       inKind === r.kind
         ? 'ALL PASS'
         : 'HAS FAILURES'
