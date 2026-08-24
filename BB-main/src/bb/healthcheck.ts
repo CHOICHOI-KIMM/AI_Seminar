@@ -14,6 +14,13 @@
 //      그런데 기본 프리셋은 `phase_sweep.enabled = false` 라(`BbPhaseSweep::default()`)
 //      ③ 의 왕복만으로는 그 경로가 **한 번도 실행되지 않는다.** 켠 입력을 따로 보내야
 //      「스윕이 실제로 채워지는가」가 로그로 판정된다.
+//   ③'' `bb_compute_contact` 를 **두 번** 왕복한다 — **P4-S5-2 에서 추가**.
+//      이 커맨드는 **등록만 되고 아무도 부르지 않던 마지막 하나**였다(§3.6.3.1).
+//      S5 의 `BbStressContourView` 가 (a) `q_n = 0` 하중무관 전처리(Level B 대조표)와
+//      (b) what-if 두 곳에서 쓴다. 이것을 넣으면 **BB 커맨드 3종을 헬스체크가 전부 덤는다.**
+//      ⚠ 시그니처는 `commands.rs::bb_compute_contact(input: BbInput, q_n: f64)` 이고,
+//        Tauri v2 는 인자를 **camelCase** 로 받으므로 JS 키는 `qN` 이다
+//        (`tauri-macros` 기본 `ArgumentCase::Camel` — 소스 확인).
 //   ④ 받은 JSON 을 **생성 타입(ts-rs)의 형상**과 대조한다
 //      — 자동생성은 이름·형상을 묶을 뿐이고, `BbClearanceSpec`·`BbDof` 같은
 //        데이터 보유 enum 의 **실제 직렬화 표현**은 런타임에서만 확인된다.
@@ -25,10 +32,26 @@ import type { BbResult } from './generated/BbResult';
 import type { BallBearingKind } from './generated/BallBearingKind';
 import type { BbGeometryDerived } from './generated/BbGeometryDerived';
 import type { BbGeometrySummary } from './generated/BbGeometrySummary';
+import type { BbContactDerived } from './generated/BbContactDerived';
+import type { BallResult } from './generated/BallResult';
 
 interface PresetInfo {
   name: string;
   modified: string;
+}
+
+/** `commands::ContactResponse` 대응 (Rust 쪽은 ts-rs 대상이 아니라 커맨드 전용 래퍼다). */
+interface ContactResponse {
+  derived: BbContactDerived;
+  q_n: number;
+  delta_mm: number;
+  a_inner_mm: number;
+  b_inner_mm: number;
+  p_max_inner_mpa: number;
+  a_outer_mm: number;
+  b_outer_mm: number;
+  p_max_outer_mpa: number;
+  alerts: unknown[];
 }
 
 const KINDS: readonly BallBearingKind[] = ['Acbb', 'Dgbb', 'FourPoint'];
@@ -205,6 +228,96 @@ function checkPhaseSweepShape(raw: unknown, expectedN: number, z: number): strin
   return bad;
 }
 
+/**
+ * `commands::ContactResponse` 형상 + 물리 항등 검사 (P4-S5-2).
+ *
+ * `BbContactDerived` 14필드를 **전량** 확인하고, 하중 의존 6필드와 `alerts` 를 본다.
+ * 값의 옳고 그름(Level B)은 `cargo test` 소관이고 여기서는 **왕복과 계약**을 본다.
+ *
+ * 다만 다음 두 가지는 **자체 항등**이라 런타임에서 싸게 확인할 수 있어 함께 넣는다:
+ *   · `q_n = 0` 이면 타원이 없어야 한다 (`hertz::contact_ellipse` 가 `(0,0,0)` 반환).
+ *   · `q_n > 0` 이면 `a ≥ b > 0` 이고 `p_max = 3Q/(2π a b)` 여야 한다 (Theory §6.3).
+ *     화면(`BbStressContourView`)이 그리는 **반타원체 압력분포와 같은 항등**이다 —
+ *     화면이 지어낸 식으로 그리고 있지 않다는 것이 여기서 증명된다.
+ */
+const DERIVED_CONTACT_FIELDS: readonly (keyof BbContactDerived)[] = [
+  'chi_inner',
+  'chi_outer',
+  'k_ellip_inner',
+  'e_ellip_inner',
+  'k_ellip_outer',
+  'e_ellip_outer',
+  'a_star_inner',
+  'b_star_inner',
+  'delta_star_inner',
+  'a_star_outer',
+  'b_star_outer',
+  'delta_star_outer',
+  'e_star_mpa',
+  'c_p_n_per_mm15',
+];
+
+const CONTACT_LOAD_FIELDS = [
+  'q_n',
+  'delta_mm',
+  'a_inner_mm',
+  'b_inner_mm',
+  'p_max_inner_mpa',
+  'a_outer_mm',
+  'b_outer_mm',
+  'p_max_outer_mpa',
+] as const;
+
+function checkContactResponseShape(raw: unknown, qRequested: number): string[] {
+  const bad: string[] = [];
+  if (!isRecord(raw)) return ['ContactResponse 가 객체가 아니다'];
+
+  const d = raw.derived;
+  if (!isRecord(d)) {
+    bad.push('derived 가 객체가 아니다');
+  } else {
+    for (const f of DERIVED_CONTACT_FIELDS) {
+      const v = d[f];
+      if (typeof v !== 'number' || !Number.isFinite(v)) bad.push(`derived.${f} 가 유한 number 가 아니다`);
+    }
+  }
+
+  for (const f of CONTACT_LOAD_FIELDS) {
+    const v = raw[f];
+    if (typeof v !== 'number' || !Number.isFinite(v)) bad.push(`${f} 가 유한 number 가 아니다`);
+  }
+  if (!Array.isArray(raw.alerts)) bad.push('alerts 가 배열이 아니다');
+
+  // 요청한 하중을 그대로 되돌려 주는가.
+  // ⚠ 이것이 **인자 키가 실제로 전달됐다는 증거**다 — Tauri 는 누락된 인자를 기본값으로
+  //   때우지 않지만, 키 이름을 틀리면(`q_n` 으로 보내면) 커맨드 자체가 거부된다.
+  if (raw.q_n !== qRequested) bad.push(`q_n 이 요청값과 다르다: ${String(raw.q_n)} ≠ ${qRequested}`);
+
+  const races: [string, number, number, number][] = [
+    ['inner', raw.a_inner_mm as number, raw.b_inner_mm as number, raw.p_max_inner_mpa as number],
+    ['outer', raw.a_outer_mm as number, raw.b_outer_mm as number, raw.p_max_outer_mpa as number],
+  ];
+  for (const [name, a, b, p] of races) {
+    if (qRequested === 0) {
+      // `hertz::contact_ellipse` 는 `q_n <= 0` 에서 `(0, 0, 0)` 을 돌려준다.
+      // 이 경로가 S5 화면의 「하중 무관 전처리」 표를 만든다 — 타원이 나오면 안 된다.
+      if (a !== 0 || b !== 0 || p !== 0) {
+        bad.push(`q_n=0 인데 ${name} 타원이 0 이 아니다: a=${a} b=${b} p_max=${p}`);
+      }
+      continue;
+    }
+    if (!(b > 0) || !(a >= b)) bad.push(`${name}: a ≥ b > 0 이 아니다 (a=${a}, b=${b})`);
+    if (a > 0 && b > 0 && p > 0) {
+      const pIdent = (3 * qRequested) / (2 * Math.PI * a * b);
+      const rel = Math.abs(pIdent - p) / p;
+      if (!(rel < 1e-9)) {
+        bad.push(`${name}: p_max ≠ 3Q/(2πab) — 솔버 ${p} vs 항등 ${pIdent} (상대차 ${rel})`);
+      }
+    }
+  }
+  return bad;
+}
+
 /** `BbInput` 쪽에서 런타임에만 확인 가능한 데이터 보유 enum 표현 검사 */
 function checkBbInputShape(raw: unknown): string[] {
   const bad: string[] = [];
@@ -313,6 +426,84 @@ async function run(): Promise<void> {
     `[healthcheck] BbPhaseSweepResult 형상검증 ${sweepBad.length === 0 ? 'PASS' : `FAIL: ${sweepBad.join(' | ')}`}`
   );
 
+  // ── ③'' bb_compute_contact 왕복 2회 (P4-S5-2) ─────────────────────
+  // 등록만 되고 한 번도 불리지 않던 **마지막 커맨드**다(§3.6.3.1). 이것으로 BB 커맨드 3종
+  // (`bb_compute_geometry` · `bb_solve_bearing` · `bb_compute_contact`)을 헬스체크가 전부 덮는다.
+  //
+  //  (a) `q_n = 0` — S5 화면의 **Level B 대조표**(χ · a* · b* · δ*) 경로.
+  //      하중을 넣지 않았으므로 타원·응력은 나오지 않아야 한다.
+  const rawContact0 = await invoke<unknown>('bb_compute_contact', { input, qN: 0 });
+  const contact0Bad = checkContactResponseShape(rawContact0, 0);
+  const c0 = rawContact0 as ContactResponse;
+  await logInfo(
+    `[healthcheck] bb_compute_contact (q_n=0, 하중무관 전처리)` +
+      ` chi_inner=${c0.derived?.chi_inner}` +
+      ` chi_outer=${c0.derived?.chi_outer}` +
+      ` a_star_inner=${c0.derived?.a_star_inner}` +
+      ` b_star_inner=${c0.derived?.b_star_inner}` +
+      ` delta_star_inner=${c0.derived?.delta_star_inner}` +
+      ` a_star_outer=${c0.derived?.a_star_outer}` +
+      ` b_star_outer=${c0.derived?.b_star_outer}` +
+      ` e_star_mpa=${c0.derived?.e_star_mpa}` +
+      ` c_p=${c0.derived?.c_p_n_per_mm15}`
+  );
+
+  //  (b) 평형 해의 **최대하중 볼 Q_j** 를 그대로 넣는다 — S5 화면의 「선택 볼 Q_j 넣기」와 같은 경로.
+  //      §3.6.4.7 이 「화면과 검증 결과가 **같은 숫자**여야 한다」고 하는 바로 그 지점을
+  //      로그로 실증한다: what-if 경로(`bb_compute_contact`)와 평형 경로(`ball_results[]`)가
+  //      같은 `Q` 에서 같은 타원을 내지 않으면 두 경로 중 하나가 틀린 것이다.
+  const ballsHc: BallResult[] = r.equilibrium?.ball_results ?? [];
+  let topHc = -1;
+  for (let i = 0; i < ballsHc.length; i++) {
+    if (topHc < 0 || ballsHc[i].q_n > ballsHc[topHc].q_n) topHc = i;
+  }
+  const qTop = topHc >= 0 ? ballsHc[topHc].q_n : 0;
+  const rawContactQ = await invoke<unknown>('bb_compute_contact', { input, qN: qTop });
+  const contactQBad = checkContactResponseShape(rawContactQ, qTop);
+  const cq = rawContactQ as ContactResponse;
+  if (topHc >= 0 && qTop > 0) {
+    const b0 = ballsHc[topHc];
+    const cmp: [string, number, number][] = [
+      ['a_inner_mm', cq.a_inner_mm, b0.a_inner_mm],
+      ['b_inner_mm', cq.b_inner_mm, b0.b_inner_mm],
+      ['p_max_inner_mpa', cq.p_max_inner_mpa, b0.p_max_inner_mpa],
+      ['a_outer_mm', cq.a_outer_mm, b0.a_outer_mm],
+      ['b_outer_mm', cq.b_outer_mm, b0.b_outer_mm],
+      ['p_max_outer_mpa', cq.p_max_outer_mpa, b0.p_max_outer_mpa],
+    ];
+    for (const [f, x, y] of cmp) {
+      const rel = y === 0 ? Math.abs(x) : Math.abs(x - y) / Math.abs(y);
+      if (!(rel < 1e-9)) {
+        contactQBad.push(`${f}: bb_compute_contact ${x} ≠ ball_results[${topHc}] ${y} (상대차 ${rel})`);
+      }
+    }
+    // χ 는 a/b 그 자체다 (`BbContactDerived` 주석). 「타원비가 1 에 가까움」(§3.6.4.2 징후)의 근원값이라
+    // 화면이 내는 `a/b` 와 솔버가 푼 `χ` 가 같은지 여기서 못 박아 둔다.
+    if (cq.b_inner_mm > 0 && cq.derived.chi_inner > 0) {
+      const chiRel = Math.abs(cq.derived.chi_inner - cq.a_inner_mm / cq.b_inner_mm) / cq.derived.chi_inner;
+      if (!(chiRel < 1e-9)) {
+        contactQBad.push(
+          `chi_inner(${cq.derived.chi_inner}) ≠ a_i/b_i(${cq.a_inner_mm / cq.b_inner_mm}) 상대차 ${chiRel}`
+        );
+      }
+    }
+  }
+  await logInfo(
+    `[healthcheck] bb_compute_contact (q_n=Q_max=${qTop}, 최대하중 볼 #${topHc + 1} 대조)` +
+      ` delta_mm=${cq.delta_mm}` +
+      ` a_i=${cq.a_inner_mm} b_i=${cq.b_inner_mm} p_i=${cq.p_max_inner_mpa}` +
+      ` a_e=${cq.a_outer_mm} b_e=${cq.b_outer_mm} p_e=${cq.p_max_outer_mpa}` +
+      ` sigma_hu_mpa=1500` +
+      ` alerts=${Array.isArray(cq.alerts) ? cq.alerts.length : 'n/a'}`
+  );
+  await logInfo(
+    `[healthcheck] ContactResponse 형상·항등 검증 ${
+      contact0Bad.length === 0 && contactQBad.length === 0
+        ? 'PASS'
+        : `FAIL: ${[...contact0Bad, ...contactQBad].join(' | ')}`
+    }`
+  );
+
   // 판별자 일치 — 입력의 kind 를 솔버가 그대로 반영해야 한다 (A-8c 의 런타임 짝)
   const inKind = isRecord(rawInput) ? rawInput.kind : undefined;
   await logInfo(
@@ -325,6 +516,8 @@ async function run(): Promise<void> {
       geomBad.length === 0 &&
       resultBad.length === 0 &&
       sweepBad.length === 0 &&
+      contact0Bad.length === 0 &&
+      contactQBad.length === 0 &&
       inKind === r.kind
         ? 'ALL PASS'
         : 'HAS FAILURES'

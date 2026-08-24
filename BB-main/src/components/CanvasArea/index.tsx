@@ -1,5 +1,4 @@
 import { useAppState, type CanvasTab } from '../../store';
-import StressContourChart from '../charts/StressContourChart';
 import LifeChart from '../charts/LifeChart';
 import ComparisonChart from '../charts/ComparisonChart';
 import BearingView3D from '../BearingView3D';
@@ -16,8 +15,8 @@ import ThermalSpeedView from '../ThermalSpeedView';
 //   지우지 않는 이유 — 검증 중에는 변경이 적을수록 「솔버가 틀린 건가, 화면이
 //   틀린 건가」의 원인 분리가 쉽기 때문이다. 일괄 정리는 §3.6.4.6 시점에 한다.
 //   부수 효과로 **개조할 목록이 화면에 그대로 보인다.**
-//   `legacy` 가 없는 3탭(geometry·load·contour)이 S3~S5 에서 BB 뷰가 붙을 자리다.
-//   S3 에서 geometry, **S4 에서 load** 가 BB 뷰로 채워졌다 (둘 다 prop 주입).
+//   S3 에서 geometry, S4 에서 load, **S5 에서 contour** 가 BB 뷰로 채워졌다 (셋 다 prop 주입).
+//   → 이로써 `legacy` 가 없는 3탭이 **전부** BB 뷰다.
 const tabs: { key: CanvasTab; label: string; legacy?: boolean }[] = [
   { key: 'geometry', label: 'Geometry' },
   { key: 'profile', label: 'Profile', legacy: true },
@@ -47,9 +46,11 @@ interface CanvasAreaProps {
   geometryView: React.ReactNode;
   /** `load` 탭 내용 (S4: `bb/BbLoadDistView`). */
   loadView: React.ReactNode;
+  /** `contour` 탭 내용 (S5: `bb/BbStressContourView`). */
+  contourView: React.ReactNode;
 }
 
-export default function CanvasArea({ geometryView, loadView }: CanvasAreaProps) {
+export default function CanvasArea({ geometryView, loadView, contourView }: CanvasAreaProps) {
   const { state, dispatch } = useAppState();
   const { activeTab, result } = state;
 
@@ -98,7 +99,7 @@ export default function CanvasArea({ geometryView, loadView }: CanvasAreaProps) 
             <>
               {activeTab === '3d' && <BearingView3D />}
               {activeTab === 'load' && loadView}
-              {activeTab === 'contour' && <StressContourChart />}
+              {activeTab === 'contour' && contourView}
               {activeTab === 'lubrication' && <LubricationView />}
               {activeTab === 'life' && <LifeChart />}
               {activeTab === 'iso15312' && <ThermalSpeedView />}
