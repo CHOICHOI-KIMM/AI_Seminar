@@ -19,6 +19,8 @@ import BbResultsCard from './bb/BbResultsCard';
 // P4-S3-4: `geometry` 탭 내용. `CanvasArea`(components/) 가 `bb/` 를 직접 import 하면
 // ESLint 경계 규칙(§3.6.5.6)에 걸리므로 경계 밖인 여기서 주입한다.
 import BbGeometryView from './bb/BbGeometryView';
+// P4-S4-2: `load` 탭 내용. 같은 이유로 여기서 주입한다 (Plan §3.6.5.6 prop 주입 규약).
+import BbLoadDistView from './bb/BbLoadDistView';
 import AlertPanel from './components/AlertPanel';
 import ProgressBar from './components/ProgressBar';
 
@@ -101,7 +103,7 @@ export default function App() {
 
           {/* Center: Canvas (Dark) */}
           <main className="flex-1 bg-canvas flex flex-col min-w-0 relative">
-            <CanvasArea geometryView={<BbGeometryView />} />
+            <CanvasArea geometryView={<BbGeometryView />} loadView={<BbLoadDistView />} />
             <ProgressBar />
           </main>
 

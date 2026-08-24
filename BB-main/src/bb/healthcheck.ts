@@ -9,6 +9,11 @@
 //      S3 에서 `BbGeometryView` 가 이 커맨드에 처음 연결됐다 (§3.6.4.7 ①).
 //      `bb_solve_bearing` 과 달리 **하중과 무관**한 별도 경로라 왕복을 따로 확인해야 한다.
 //   ③ `bb_solve_bearing` 을 1회 호출한다
+//   ③' **위상 스윕을 켠 입력**으로 `bb_solve_bearing` 을 한 번 더 호출한다 — **P4-S4-2 에서 추가**.
+//      S4 의 `BbLoadDistView` 가 `result.phase_sweep` 으로 **C-5(주기 2π/Z)** 를 화면에서 본다.
+//      그런데 기본 프리셋은 `phase_sweep.enabled = false` 라(`BbPhaseSweep::default()`)
+//      ③ 의 왕복만으로는 그 경로가 **한 번도 실행되지 않는다.** 켠 입력을 따로 보내야
+//      「스윕이 실제로 채워지는가」가 로그로 판정된다.
 //   ④ 받은 JSON 을 **생성 타입(ts-rs)의 형상**과 대조한다
 //      — 자동생성은 이름·형상을 묶을 뿐이고, `BbClearanceSpec`·`BbDof` 같은
 //        데이터 보유 enum 의 **실제 직렬화 표현**은 런타임에서만 확인된다.
@@ -150,6 +155,56 @@ function checkBbResultShape(raw: unknown): string[] {
   return bad;
 }
 
+/**
+ * `BbPhaseSweepResult` 형상 검사 (P4-S4-2).
+ *
+ * **`Option<T>` 가 `null` 이 아니라 실제로 채워졌는가**부터 본다 — S4 의 `BbLoadDistView` 가
+ * C-5(주기 `2π/Z`)를 그 필드로만 그린다. 비어 있으면 화면에는 「스윕 꺼짐」만 뜨고
+ * 검증 항목 하나가 조용히 사라진다.
+ *
+ * `curve` 는 `Array<[number, number]>` = `(φ₀, Q_max)` 이력이다. 솔버(`bearing.rs`)는
+ * `φ₀ ∈ [0, 2π/Z)` 를 `n_phase` 분할하므로 **길이 = `n_phase`** 이고 **`φ₀ < 2π/Z`** 여야 한다.
+ * 값의 옳고 그름(⑤ 육안·Level C-5)이 아니라 **형상과 정의역**만 본다.
+ */
+function checkPhaseSweepShape(raw: unknown, expectedN: number, z: number): string[] {
+  const bad: string[] = [];
+  if (!isRecord(raw)) return ['BbResult 가 객체가 아니다'];
+
+  const ps = raw.phase_sweep;
+  if (!isRecord(ps)) {
+    return [`phase_sweep 가 채워지지 않았다 (enabled=true 인데 ${JSON.stringify(ps)})`];
+  }
+
+  for (const f of ['worst_q_max_n', 'worst_q_max_phase_rad', 'worst_p_max_mpa', 'worst_p_max_phase_rad']) {
+    const v = ps[f];
+    if (typeof v !== 'number' || !Number.isFinite(v)) bad.push(`phase_sweep.${f} 가 유한 number 가 아니다`);
+  }
+
+  const span = (2 * Math.PI) / z;
+  if (!Array.isArray(ps.curve)) {
+    bad.push('phase_sweep.curve 가 배열이 아니다');
+  } else {
+    if (ps.curve.length !== expectedN) {
+      bad.push(`curve 길이가 n_phase 와 다르다: ${ps.curve.length} ≠ ${expectedN}`);
+    }
+    for (const [i, pt] of ps.curve.entries()) {
+      if (!Array.isArray(pt) || pt.length !== 2 || typeof pt[0] !== 'number' || typeof pt[1] !== 'number') {
+        bad.push(`curve[${i}] 가 (φ₀, Q_max) 쌍이 아니다: ${JSON.stringify(pt)}`);
+        continue;
+      }
+      if (pt[0] < 0 || pt[0] >= span) {
+        bad.push(`curve[${i}].φ₀=${pt[0]} 가 [0, 2π/Z=${span}) 밖이다`);
+      }
+    }
+  }
+
+  const wq = ps.worst_q_max_phase_rad;
+  if (typeof wq === 'number' && (wq < 0 || wq >= span)) {
+    bad.push(`worst_q_max_phase_rad=${wq} 가 [0, 2π/Z=${span}) 밖이다`);
+  }
+  return bad;
+}
+
 /** `BbInput` 쪽에서 런타임에만 확인 가능한 데이터 보유 enum 표현 검사 */
 function checkBbInputShape(raw: unknown): string[] {
   const bad: string[] = [];
@@ -232,6 +287,32 @@ async function run(): Promise<void> {
     `[healthcheck] BbResult 형상검증 ${resultBad.length === 0 ? 'PASS' : `FAIL: ${resultBad.join(' | ')}`}`
   );
 
+  // ── ③' 위상 스윕을 켠 입력으로 한 번 더 (P4-S4-2) ─────────────────
+  // 기본 프리셋은 `phase_sweep.enabled = false` 다. S4 의 화면이 C-5 를 보려면
+  // 이 경로가 실제로 채워져야 하므로 **켠 입력을 따로 만들어** 왕복시킨다.
+  const sweepN = 36;
+  const sweepInput: BbInput = {
+    ...input,
+    solver: { ...input.solver, phase_sweep: { enabled: true, n_phase: sweepN } },
+  };
+  const rawSweep = await invoke<unknown>('bb_solve_bearing', { input: sweepInput });
+  const sweepBad = checkPhaseSweepShape(rawSweep, sweepN, input.geometry.z);
+  const sr = rawSweep as BbResult;
+  const ps = sr.phase_sweep;
+  await logInfo(
+    `[healthcheck] bb_solve_bearing (phase_sweep on, n_phase=${sweepN}, Z=${input.geometry.z})` +
+      ` curve_len=${ps?.curve.length}` +
+      ` worst_q_max_n=${ps?.worst_q_max_n}` +
+      ` worst_q_max_phase_rad=${ps?.worst_q_max_phase_rad}` +
+      ` worst_p_max_mpa=${ps?.worst_p_max_mpa}` +
+      ` period_2pi_over_z=${(2 * Math.PI) / input.geometry.z}` +
+      ` curve0_q=${ps?.curve[0]?.[1]}` +
+      ` base_q_max_n=${sr.equilibrium?.q_max_n}`
+  );
+  await logInfo(
+    `[healthcheck] BbPhaseSweepResult 형상검증 ${sweepBad.length === 0 ? 'PASS' : `FAIL: ${sweepBad.join(' | ')}`}`
+  );
+
   // 판별자 일치 — 입력의 kind 를 솔버가 그대로 반영해야 한다 (A-8c 의 런타임 짝)
   const inKind = isRecord(rawInput) ? rawInput.kind : undefined;
   await logInfo(
@@ -240,7 +321,11 @@ async function run(): Promise<void> {
 
   await logInfo(
     `[healthcheck] 종료 — ${
-      inputBad.length === 0 && geomBad.length === 0 && resultBad.length === 0 && inKind === r.kind
+      inputBad.length === 0 &&
+      geomBad.length === 0 &&
+      resultBad.length === 0 &&
+      sweepBad.length === 0 &&
+      inKind === r.kind
         ? 'ALL PASS'
         : 'HAS FAILURES'
     }`
