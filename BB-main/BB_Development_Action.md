@@ -1688,3 +1688,96 @@ S1 의 기능 DoD 는 「앱이 뜨고 8탭 회색 표시, **콘솔 오류 0**�
 > 즉 **기동 시 크래시는 사라졌으나 Solve 후 크래시는 S3 까지 남는다.**
 
 ---
+
+---
+
+## 260824 — P4-S3: 기하 뷰 + 결과 카드
+
+**커밋** `6d9bc3e` · `35394d2` · `53dfb54` · `247bb26`. push 없음.
+
+| 단계 | 내용 |
+|---|---|
+| **S3-1** | `store.ts` 에 **`bbInput` 신규 필드** + `SET_BB_INPUT`/`UPDATE_BB_INPUT`. `BbInputPanel` 을 지역상태 → store 구독으로 |
+| **S3-2** | `src/bb/BbGeometryView.tsx` 신규 — **`bb_compute_geometry` 첫 연결**, Derived 9 + Summary 13 **전 필드** |
+| **S3-3** | `src/bb/BbResultsCard.tsx` 신규 + `App.tsx` 의 `<ResultsCard/>` → `<BbResultsCard/>` |
+| **S3-4** | `CanvasArea` geometry 탭 배선 + **헬스체크에 `bb_compute_geometry` 왕복 추가** |
+
+### 검사
+
+| 항목 | 결과 |
+|---|---|
+| `npm run build` | ✅ |
+| `npm run lint` | 44건 — baseline 대비 **증감 0**, `src/bb/**` **0건**, `@ts-nocheck` **0** |
+| `cargo test` | **147** (증감 0 — S3 는 Rust 무변경) |
+| `cargo clippy` | 0 |
+| `git diff --exit-code src/bb/generated/` | 비어 있음 |
+
+### ⭐ 런타임 헬스체크 (④) — Level A 가 화면 숫자와 **정확히** 일치
+
+```
+[healthcheck] bb_compute_geometry a_mm=0.5750000000000011
+              alpha_0_rad=0.6981317007977318 gamma=0.12585015851240353
+              n_dpw=105000 alerts=0
+[healthcheck] BbGeometryDerived·BbGeometrySummary 형상검증 PASS
+[healthcheck] bb_solve_bearing kind=Acbb converged=true loaded_count=16 q_max_n=1178.368
+[healthcheck] BbResult 형상검증 PASS · kind 판별자 PASS · 종료 — ALL PASS
+```
+
+**웹뷰 오류 0건.** `ResultsCard` 크래시 위험도 해소됐다(`BbResultsCard` 로 교체).
+
+**손계산 대조** — §3.6.4.2 검증 매핑의 첫 항목(`GeometryView` ↔ **Level A**)이 실증됐다:
+
+| 값 | 화면 | 손계산 | 판정 |
+|---|---|---|---|
+| `A = r_i + r_e − D_w` | 0,575000000 | 5,98 + 6,095 − 11,5 = **0,575** | ✅ |
+| `α₀` | 0,6981317008 rad | 40° = **0,6981317008** | ✅ |
+| `γ = D_w cos α₀ / D_pw` | 0,1258501585 | 11,5·cos40°/70 = **0,1258501585** | ✅ |
+| `n·D_pw` | 105 000 | 1 500 rpm × 70 = **105 000** (< 1e6 → `alerts=0`) | ✅ |
+
+프로세스 종료(19개 트리 kill, 잔존 0).
+
+### 🔴 Plan 의 실제 모순을 발견해 해소했다
+
+§3.6.4.3 은 「`CanvasArea` 가 BB 탭을 **배선**」, §3.6.5.6 은 「`components/**` → `bb/**` import **금지**」.
+`CanvasArea` 는 `components/` 에 있으므로 **두 요구가 정면 충돌**한다.
+
+→ **prop 주입으로 해소**. `CanvasArea` 에 `geometryView: React.ReactNode` prop 을 두고
+**경계 밖인 `App.tsx` 가 주입**한다. 의존 방향이 한쪽으로 유지되고, eslint 설정도 손대지 않는다.
+**Plan §3.6.5.6 에 규약으로 승격**했다 (S4·S5 도 `loadView`·`contourView` prop 을 추가).
+
+### 표시 필드 — 전 필드 누락 없음 (§3.6.4.2 대조용)
+
+**`BbGeometryDerived` 9/9** — `A`(A.3) · `α₀`(A.1, **°+rad 병기**) · `R_i`(A.4) · `γ` ·
+`Σρ_i`(E.4) · `Σρ_e`(E.5) · `F_i(ρ)`(E.6) · `F_e(ρ)`(E.7) · `G_r op`
+
+**`BbGeometrySummary` 13/13** — 앞 9개는 Derived 와 **일부러 중복 표시**(두 구조체가 갈라지면 화면에서 바로 보인다) + `f_i`·`f_e` 오스큘레이션 · `ball_mass_g` · `n·D_pw`
+
+입력 원본(`BallBearingGeometry` 10필드)도 상단에 함께 내어 **파생값의 출처를 대조**할 수 있게 했다. 유효숫자 9자리.
+
+### `BbResultsCard`
+
+`δ_x`/`δ_y`/`δ_z`/`γ_y`/`γ_z` 를 **성분마다 한 줄**로 내고, **`δ_z`·`γ_y` 는 앰버 배경 + `D-2a` 배지**로 강조했다 — §3.6.4.2 상 이 카드가 **축퇴 항등성을 육안 확인하는 유일한 곳**이다.
+그 외 `Q_max` · `loaded/Z` · `α_j` 범위 · 내외륜 `p_max` · `converged`/`iterations`/`residual_norm` · `kind` · `elapsed_ms` · 위상스윕 유무.
+
+### 자동 수정 (전량)
+
+| # | 내용 | 사유 |
+|---|---|---|
+| 1 | `BbGeometryView` effect 의 `setResponse(null)` 동기 호출 제거 → 조기반환 | `react-hooks/set-state-in-effect` 1건 발생(증감 0 위반) |
+| 2 | `BbInputPanel` `adoptInput` 의존성 `[]` → `[setInput]` | store 승격으로 외부 의존 발생 |
+
+### 근거를 남긴 설계 선택 3건
+
+| # | 선택 | 근거 |
+|---|---|---|
+| 1 | **`bbInput` 을 `BbInput \| null` 로** | 기본값을 TS 로 다시 적으면 「Rust `presets.rs` 가 유일한 출처」(S2 확정)를 깬다. 프리셋 로드 전에는 값이 없다 |
+| 2 | **재호출 트리거가 `geometry` 가 아니라 `bbInput` 전체** | `compute_geometry_summary` 가 `operating`·`material` 도 받는다(`n·D_pw` ← rpm, `ball_mass_g` ← 밀도). `geometry` 만 구독하면 **rpm·밀도 변경 시 낡은 값이 남는다.** 150 ms 디바운스 |
+| 3 | **접촉각을 ° 와 rad 로 병기** | 단위 정책은 「접촉각만 °」이나 검증 대조를 위해 rad 를 **가산**. 정책 변경이 아니다 |
+
+### `store.input`(TRB) ↔ `bbInput`(BB) 공존 확인
+
+`input`·`SET_INPUT`/`UPDATE_INPUT`·`defaultInput` 을 **전혀 건드리지 않고** 별도 필드를 추가했다.
+`state.input` 소비처 10곳 전수 grep — 전부 미변경. 특히 **`@ts-nocheck` 가 아닌 `ThermalSpeedView`·`project.ts` 가 `tsc -b` 를 통과**함으로써 타입 파괴가 없음이 확인된다.
+`components/ResultsCard`·`GeometryView` 는 **참조만 끊기고 파일은 그대로** 있다(삭제 0건).
+
+---

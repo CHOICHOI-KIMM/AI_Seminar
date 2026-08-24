@@ -1323,6 +1323,29 @@ Rust 쪽 `tauri-plugin-log` 는 **이미 의존성에 있다**(`lib.rs` 에서 �
 
 Rust 쪽은 그대로다 — `solver/common/` 은 `solver/bb/` 를 참조하지 않는다 (S0-2 에서 확인, `common/mod.rs` 주석에 명시).
 
+**⚠ 규칙 충돌과 그 해소 (S3 에서 발견, 2026-08-24)**
+
+§3.6.4.3 은 「`CanvasArea` 가 BB 탭 3개를 **배선**한다」고 하고, 위 규칙은
+「`components/**` 가 `bb/**` 를 import 하지 못한다」고 한다. `CanvasArea` 는 `components/` 에 있으므로
+**두 요구가 정면으로 충돌**한다. 직접 import 하면 규칙 위반이고, 규칙을 풀면 경계가 무너진다.
+
+→ **해소: prop 주입.** `CanvasArea` 에 `geometryView` · `loadView` · `contourView` 를
+`React.ReactNode` prop 으로 두고, **경계 밖인 `App.tsx` 가 `<BbGeometryView/>` 등을 주입**한다.
+
+```tsx
+// App.tsx — 경계 밖이므로 양쪽을 안다
+<CanvasArea geometryView={<BbGeometryView />} />
+```
+
+| | 결과 |
+|---|---|
+| 의존 방향 | `components/` → `bb/` **없음** (규칙 목적 그대로 유지) |
+| 배선 | 성립 |
+| §3.6.4.6 일괄 삭제 | `components/` 를 통째로 지워도 `bb/` 가 안 깨진다 |
+| eslint 설정 | **손대지 않는다** |
+
+**S4·S5 도 같은 방식으로 `loadView`·`contourView` prop 을 추가한다.**
+
 > ✅ **S1 착수를 막는 미결정은 없다.**
 
 ---
