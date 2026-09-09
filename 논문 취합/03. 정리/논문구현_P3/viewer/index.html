@@ -157,20 +157,46 @@
             <li>후속은 <b>모델 크레이트 변경</b>(부호 통일·비균일 p̄ 창)이 필요 → 별건(연구자 결정). 이 패널은 <b>"왜 안 맞는지"를 보여주는 증거</b>로 유지한다.</li>
           </ul>
         </div>
-        <div class="row" style="align-items:center;">
-          <button class="run" id="lit2010Run" style="margin-top:0;">실행 (Fig 7 + Fig 8)</button>
-          <span class="note" id="lit2010Status" style="margin:0; flex:1; min-width:240px;">실행 전 — Fig 8 속도 sweep 은 최대 ~30 s 걸릴 수 있습니다.</span>
-        </div>
+        <!-- 디지타이징 곡선 재현 (원문 Fig 7 (a)/(b) · Fig 8) — 오라클(그래프 판독)만, 솔버 곡선 없음 -->
+        <div class="note" style="font-size:11px;">아래 그림은 원문 Figure 의 <b>디지타이징 곡선(그래프 판독)만</b> 원문 축 범위로 재현한 것 — 정량 verbatim 아님(불확도: Fig 7 ±1.5 % FS, Fig 8 ±1 % FS). 파랑 = 압력 · 초록 = 유막/간극(우축).</div>
         <div class="row">
-          <canvas id="lit2010Fig7" width="880" height="460"></canvas>
-          <div class="card" id="lit2010Fig7Meta" style="flex:1; min-width:260px; font-size:12px;">Fig 7 메타: (실행 전)</div>
+          <div>
+            <canvas id="lit2010Fig7a" width="560" height="360"></canvas>
+            <div style="font-size:12px; color:#334155; text-align:center; margin-top:2px;">(a) Deolalikar et al. [11] — p_h = 0.63 GPa, 순수 rolling</div>
+          </div>
+          <div>
+            <canvas id="lit2010Fig7b" width="560" height="360"></canvas>
+            <div style="font-size:12px; color:#334155; text-align:center; margin-top:2px;">(b) Present model (2010) — p_h = 0.63 GPa, 순수 rolling</div>
+          </div>
         </div>
-        <div class="note" style="font-size:11px;">범례: <b>p</b> = p/p_h (좌축) · <b>h</b> = hR_x/b² (우축) · <b>점선</b> = 오라클 그래프 판독(Deol. = Deolalikar 참조해, 2010 = 원문 모델) · <b>실선</b> = 본 솔버(접촉 중심 섭동).</div>
+        <div style="font-size:12px; color:#334155; margin:2px 0 8px;"><b>Fig. 7</b> Pressure and clearances solution for pure rolling conditions: (a) from Deolalikar et al. [11], (b) present model. Case of p_h = 0.63 GPa.</div>
         <div class="row">
-          <canvas id="lit2010Fig8" width="880" height="460"></canvas>
-          <div class="card" id="lit2010Fig8Meta" style="flex:1; min-width:260px; font-size:12px;">Fig 8 메타: (실행 전)</div>
+          <div>
+            <canvas id="lit2010Fig8" width="880" height="460"></canvas>
+            <div style="font-size:12px; color:#334155; margin:2px 0 8px;"><b>Fig. 8</b> Contact load and contact (dry) area ratios as function of speed, calculated with the present model in pure rolling conditions for the bump example of Deolalikar et al. [11], p_h = 1 GPa. (원문 그림 제목 "Pure Sliding, Stationary Bump" — 캡션과 모순, 기록만.)</div>
+          </div>
         </div>
-        <div class="card" style="overflow-x:auto; margin-top:8px;"><table id="lit2010Fig8Table"></table></div>
+
+        <!-- 본 솔버 결과 — 물리 비교 불성립 판정이라 기본 접힘 (증거 보존용) -->
+        <details class="refs" style="margin-top:8px;">
+          <summary>🔧 본 솔버 결과 오버레이 (참고 — 위 판정대로 물리 비교 불성립, 증거 보존용)</summary>
+          <div style="padding:0 12px 12px;">
+            <div class="row" style="align-items:center;">
+              <button class="run" id="lit2010Run" style="margin-top:0;">실행 (Fig 7 + Fig 8)</button>
+              <span class="note" id="lit2010Status" style="margin:0; flex:1; min-width:240px;">실행 전 — Fig 8 속도 sweep 은 최대 ~30 s 걸릴 수 있습니다.</span>
+            </div>
+            <div class="row">
+              <canvas id="lit2010Fig7" width="880" height="460"></canvas>
+              <div class="card" id="lit2010Fig7Meta" style="flex:1; min-width:260px; font-size:12px;">Fig 7 메타: (실행 전)</div>
+            </div>
+            <div class="note" style="font-size:11px;">범례: <b>p</b> = p/p_h (좌축) · <b>h</b> = hR_x/b² (우축) · <b>점선</b> = 오라클 그래프 판독(Deol. = Deolalikar 참조해, 2010 = 원문 모델) · <b>실선</b> = 본 솔버(접촉 중심 섭동).</div>
+            <div class="row">
+              <canvas id="lit2010Fig8Solver" width="880" height="460"></canvas>
+              <div class="card" id="lit2010Fig8Meta" style="flex:1; min-width:260px; font-size:12px;">Fig 8 메타: (실행 전)</div>
+            </div>
+            <div class="card" style="overflow-x:auto; margin-top:8px;"><table id="lit2010Fig8Table"></table></div>
+          </div>
+        </details>
       </div>
     </details>
   </section>
@@ -514,6 +540,52 @@ async function loadLit2010Oracle() {
   } catch (e) { LIT2010_ORACLE = null; }
   $("lit2010State").textContent = LIT2010_ORACLE ? "· 오라클 로드됨" : "· 오라클 미생성 (본 솔버 곡선만 표시)";
   l2(LIT2010_ORACLE ? "oracleLoaded" : "oracleMissing");
+  drawLit2010Fig7ab(); drawLit2010Fig8Oracle(); // 디지타이징 곡선은 부팅 시 즉시 표시
+}
+
+// ── 디지타이징 곡선 재현 (원문 축 범위 고정, 솔버 곡선 없음 — 표시 계층, 물리 0) ──
+const L2_BLUE = "#1d4ed8", L2_GREEN = "#15803d";
+function drawLit2010Fig7ab() {
+  const o = LIT2010_ORACLE?.fig7 || null;
+  const panel = (canvasId, src, yMax, pLabel, hLabel) => {
+    const c = $(canvasId);
+    const ctx = c.getContext("2d"); ctx.clearRect(0, 0, c.width, c.height);
+    if (!src || !Array.isArray(src.xOverB)) {
+      ctx.fillStyle = "#991b1b"; ctx.font = "bold 13px sans-serif";
+      ctx.fillText("오라클 미생성 — 디지타이징 곡선 없음", 60, 40); return;
+    }
+    linePlot(c, {
+      series: [
+        { x: src.xOverB, y: src.pOverPh, label: "pressure", color: L2_BLUE },
+        { x: src.xOverB, y: src.hDimless, label: "clearance", color: L2_GREEN, axis: "right" },
+      ],
+      xRange: [-1.5, 1.5], yRange: [0, yMax], yRangeRight: [0, 1],
+      xLabel: "x/b", yLabel: pLabel, yLabelRight: hLabel,
+    });
+  };
+  panel("lit2010Fig7a", o?.deolalikar, 8, "Pressure (p/P_H)", "Film Thickness (hR_x/b²)");
+  panel("lit2010Fig7b", o?.model2010, 7, "p/p_h", "hR_x/(b²)");
+}
+function drawLit2010Fig8Oracle() {
+  const o = LIT2010_ORACLE?.fig8 || null;
+  const c = $("lit2010Fig8");
+  const ctx = c.getContext("2d"); ctx.clearRect(0, 0, c.width, c.height);
+  if (!o || !Array.isArray(o.speeds)) {
+    ctx.fillStyle = "#991b1b"; ctx.font = "bold 13px sans-serif";
+    ctx.fillText("오라클 미생성 — 디지타이징 곡선 없음", 60, 40); return;
+  }
+  const points = [];
+  const mk = o.areaMarkers;
+  if (mk && Array.isArray(mk.speeds)) mk.speeds.forEach((x, i) => points.push({ x, y: mk.areaRatioPct[i], color: L2_GREEN, axis: "right" }));
+  linePlot(c, {
+    series: [
+      { x: o.speeds, y: o.loadRatioPct, label: "Contact Load Ratio", color: L2_BLUE },
+      { x: o.speeds, y: o.areaRatioPct, label: "Contact Area Ratio", color: L2_GREEN, axis: "right" },
+    ],
+    points,
+    xRange: [0, 1.5], yRange: [0, 4], yRangeRight: [-0.2, 0.4],
+    xLabel: "(U2+U1)/2, [m/s]", yLabel: "Contact Load Ratio, (%)", yLabelRight: "Contact Area Ratio, (%)",
+  });
 }
 
 // Fig 7 — 좌축 p/p_h · 우축 hR_x/b² · x = x/b. r = WASM fig7 결과(없으면 null → 오라클만).
@@ -596,7 +668,7 @@ function drawLit2010Fig8(r) {
   const mk = o?.areaMarkers;
   if (mk && Array.isArray(mk.speeds) && Array.isArray(mk.areaRatioPct))
     mk.speeds.forEach((x, i) => points.push({ x, y: mk.areaRatioPct[i], color: "#b91c1c", axis: "right" }));
-  const c = $("lit2010Fig8");
+  const c = $("lit2010Fig8Solver"); // 솔버 오버레이 캔버스(접힌 하위 섹션) — 상단 lit2010Fig8 은 디지타이징 전용
   if (!series.length && !points.length) {
     const ctx = c.getContext("2d"); ctx.clearRect(0, 0, c.width, c.height);
     ctx.fillStyle = "#991b1b"; ctx.font = "bold 14px sans-serif";

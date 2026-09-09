@@ -58,6 +58,8 @@ export function linePlot(canvas, opts) {
   if (ymax === ymin) ymax = ymin + 1;
   const pad = 0.06 * (ymax - ymin);
   ymin -= pad; ymax += pad;
+  // opts.yRange=[y0,y1]: 고정 y 범위 (문헌 그림 축과 정합 — 표시 계층)
+  if (opts.yRange) { ymin = opts.yRange[0]; ymax = opts.yRange[1]; }
 
   // 우측 보조축 범위 (Δh_w 등 스케일이 다른 시리즈 — 배율 조작 없이 제 크기로)
   let ys2 = [];
@@ -70,6 +72,7 @@ export function linePlot(canvas, opts) {
     if (ymax2 === ymin2) ymax2 = ymin2 + 1;
     const p2 = 0.06 * (ymax2 - ymin2); ymin2 -= p2; ymax2 += p2;
   }
+  if (opts.yRangeRight) { ymin2 = opts.yRangeRight[0]; ymax2 = opts.yRangeRight[1]; }
 
   const xl = opts.xLog;
   const tx = (x) => xl
