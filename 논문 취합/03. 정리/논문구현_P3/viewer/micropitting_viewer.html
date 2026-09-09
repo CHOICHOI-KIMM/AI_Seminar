@@ -72,7 +72,7 @@
 <body>
 <header>
   <h1>Micropitting P3 뷰어 — Morales-Espejel &amp; Brizmer (2011) M1~M6 정적 체인</h1>
-  <div class="sub">SSOT: Rust <code>micropitting_model</code> → WASM · JS 물리식 0건 · <b>자립판</b> 빌드 2026-09-09 21:34 · src 0d3f27b11e81</div>
+  <div class="sub">SSOT: Rust <code>micropitting_model</code> → WASM · JS 물리식 0건 · <b>자립판</b> 빌드 2026-09-09 21:44 · src 05d813a5d69f</div>
 </header>
 <nav>
   <button data-tab="tab1" class="active">① 참조곡선</button>
@@ -189,7 +189,7 @@
               <canvas id="lit2010Fig7" width="880" height="460"></canvas>
               <div class="card" id="lit2010Fig7Meta" style="flex:1; min-width:260px; font-size:12px;">Fig 7 메타: (실행 전)</div>
             </div>
-            <div class="note" style="font-size:11px;">범례: <b>p</b> = p/p_h (좌축) · <b>h</b> = hR_x/b² (우축) · <b>점선</b> = 오라클 그래프 판독(Deol. = Deolalikar 참조해, 2010 = 원문 모델) · <b>실선</b> = 본 솔버(접촉 중심 섭동).</div>
+            <div class="note" style="font-size:11px;">범례: <b>p</b> = p/p_h (좌축) · <b>h</b> = hR_x/b² (우축) · <b>점선</b> = 원문 모델 Fig 7(b) 그래프 판독 · <b>실선</b> = 본 솔버(접촉 중심 섭동). Deolalikar (a) 는 오버레이 대상 아님.</div>
             <div class="row">
               <canvas id="lit2010Fig8Solver" width="880" height="460"></canvas>
               <div class="card" id="lit2010Fig8Meta" style="flex:1; min-width:260px; font-size:12px;">Fig 8 메타: (실행 전)</div>
@@ -685,7 +685,7 @@ const $ = (id) => document.getElementById(id);
 const boot = $("boot");
 
 // 자립판: fetch 기반 신선도 가드 불가 → 빌드 정보 표시(검사는 build_standalone.py --check)
-const __BUILD_INFO__ = { time: "2026-09-09 21:34", hash: "0d3f27b11e81" };
+const __BUILD_INFO__ = { time: "2026-09-09 21:44", hash: "05d813a5d69f" };
 boot.textContent = `자립판 로딩… (빌드 ${__BUILD_INFO__.time} · src ${__BUILD_INFO__.hash})`;
 
 // ── Worker 부팅 ──
@@ -4672,11 +4672,10 @@ function drawLit2010Fig7(r) {
     if (!src || !Array.isArray(src.xOverB) || !Array.isArray(src[key])) return;
     series.push({ x: src.xOverB, y: src[key], label, color, dash, axis });
   };
-  add(o?.deolalikar, "pOverPh", "p Deol.", "#9ca3af", true);
-  add(o?.model2010, "pOverPh", "p 2010", "#b45309", true);
+  // 오버레이 대상 = (b) 2010 원문 모델만 (Deolalikar (a) 는 상단 재현 패널에만; 연구자 지시)
+  add(o?.model2010, "pOverPh", "p 2010(b)", "#b45309", true);
   if (r) series.push({ x: l2Arr(r.xOverB), y: l2Arr(r.pOverPh), label: "p 본솔버", color: "#2563eb" });
-  add(o?.deolalikar, "hDimless", "h Deol.", "#6b7280", true, "right");
-  add(o?.model2010, "hDimless", "h 2010", "#0891b2", true, "right");
+  add(o?.model2010, "hDimless", "h 2010(b)", "#0891b2", true, "right");
   if (r) series.push({ x: l2Arr(r.xOverB), y: l2Arr(r.hDimless), label: "h 본솔버", color: "#dc2626", axis: "right" });
   const c = $("lit2010Fig7");
   if (!series.length) {
@@ -4687,7 +4686,7 @@ function drawLit2010Fig7(r) {
   }
   linePlot(c, {
     series,
-    title: "Fig 7 — bump 중앙단면 (p_h=0.63 GPa, S=0)",
+    title: "Fig 7(b) 2010 모델 vs 본 솔버 — bump 중앙단면 (p_h=0.63 GPa, S=0)",
     xLabel: "x/b", yLabel: "p/p_h [-]", yLabelRight: "hR_x/b² [-]",
   });
 }
@@ -4714,8 +4713,6 @@ function fig7MetaHtml(r) {
   if (o) {
     if (l2Num(o.bumpHalfWidthOverB)) h += row("오라클 bump 반폭/b (h≈0 구간 기준)", l2Fmt(o.bumpHalfWidthOverB, 3));
     if (l2Num(o.bumpHalfWidthOverB_cuspBased)) h += row("오라클 bump 반폭/b (cusp 기준 대안 판독)", l2Fmt(o.bumpHalfWidthOverB_cuspBased, 3));
-    for (const [k, v] of Object.entries(o.landmarks || {}))
-      h += row(`오라클 landmark · ${k}`, typeof v === "object" && v !== null ? JSON.stringify(v) : l2Fmt(v, 3));
     const u = LIT2010_ORACLE?.uncertainty?.fig7;
     if (u !== undefined) h += row("오라클 판독 불확도", typeof u === "object" ? JSON.stringify(u) : String(u));
   } else {
@@ -4773,8 +4770,6 @@ function fig8MetaHtml(r) {
   h += row("격자", `${g.nx ?? "—"}×${g.ny ?? "—"}`);
   const u = LIT2010_ORACLE?.uncertainty?.fig8;
   if (u !== undefined) h += row("오라클 판독 불확도", typeof u === "object" ? JSON.stringify(u) : String(u));
-  const lm = LIT2010_ORACLE?.fig8?.landmarks;
-  if (lm) for (const [k, v] of Object.entries(lm)) h += row(`오라클 landmark · ${k}`, typeof v === "object" && v !== null ? JSON.stringify(v) : l2Fmt(v, 3));
   if (!LIT2010_ORACLE) h += row("오라클", '<span style="color:#991b1b;">오라클 미생성 — 문헌 대조값 없음</span>');
   h += `</table>`;
   const flags = l2Arr(m.estimatedFlags), asm = l2Arr(m.assumptions);
@@ -5080,4 +5075,4 @@ try {
 </body>
 </html>
 
-<!-- STANDALONE_SRC_HASH:0d3f27b11e81 -->
+<!-- STANDALONE_SRC_HASH:05d813a5d69f -->
