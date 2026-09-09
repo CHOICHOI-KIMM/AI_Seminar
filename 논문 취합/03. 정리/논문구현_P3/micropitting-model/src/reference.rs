@@ -430,6 +430,100 @@ pub const ARCHARD1953_FIG7_SLOPE_STELLITE: f64 = 0.98;
 pub const ARCHARD1953_FIG7_SLOPE_STD_ERR: f64 = 0.015;
 
 // ═════════════════════════════════════════════════════════════════════════
+//  Hamrock–Dowson 1977 — **점접촉** 중앙유막 폐형식 (★ 선접촉 Dowson–Toyoda 와 혼용 금지)
+// ═════════════════════════════════════════════════════════════════════════
+//
+// ★ 카테고리: **POINT contact** (타원/원 접촉). 우리 M6 flow-balance 의 `h̄` 는
+//   **Dowson–Toyoda LINE contact** 식으로 산출한다 — 두 식의 무차원군·지수가 다르므로
+//   섞지 않는다(Venner 1997↔2000 과 같은 카테고리 오류; 총괄계획 L476).
+// ★ E′ 규약: 이 식의 E′ 는 **논문 E′** = 2/[(1−ν₁²)/E₁ + (1−ν₂²)/E₂] = **2·E_red**
+//   (규약 조정표 §1.4). 표준 `MaterialProps::e_red` 를 넣으려면 호출측이 `2·e_red` 로 치환.
+// ★ 용도: 2010 ME 논문(Deolalikar 구형 범프) Fig 7/8 재현에서 셸이 중앙유막 앵커를
+//   다른 (ū, p_h) 로 **스케일**하는 근거([`hd_point_scale`]) + 앵커 자체의 독립 sanity.
+//   모델 생산코드는 이 식을 쓰지 않는다(leaf 불변식).
+
+/// Hamrock–Dowson (1977) 점접촉 중앙유막 계수 `2.69`.
+pub const HD1977_COEF: f64 = 2.69;
+/// H–D 점접촉 속도수 지수 `U^0.67`.
+pub const HD1977_EXP_U: f64 = 0.67;
+/// H–D 점접촉 재료수 지수 `G^0.53`.
+pub const HD1977_EXP_G: f64 = 0.53;
+/// H–D 점접촉 하중수 지수 `W^−0.067` (하중에 매우 둔감 — 점접촉의 특징).
+pub const HD1977_EXP_W: f64 = -0.067;
+/// H–D 타원비 항 `1 − 0.61·e^{−0.73k}` 의 계수·지수.
+pub const HD1977_ELLIP_COEF: f64 = 0.61;
+/// 동 지수.
+pub const HD1977_ELLIP_EXP: f64 = 0.73;
+
+/// Hamrock–Dowson (1977) **점접촉** 중앙유막 `h_c` [m]:
+///
+/// ```text
+///   h_c = 2.69 · U^0.67 · G^0.53 · W^−0.067 · (1 − 0.61·e^{−0.73k}) · R_x
+///   U = η0·ū/(E′·R_x)   G = α·E′   W = F/(E′·R_x²)
+/// ```
+/// - `eta0` [Pa·s] · `u_mean` [m/s] · `alpha_visc` [1/Pa] · `f_load` [N] · `r_x` [m]
+/// - `e_prime` **논문 E′** [Pa] (= 2·E_red — 표준 `e_red` 를 넣지 말 것)
+/// - `k_ellip` 타원비 `k = a/b` (원접촉 `k = 1`; `k→∞` 이면 타원항 → 1)
+///
+/// 비물리 입력(≤0 인 물성/기하/속도/하중)은 `0` 반환(호출측 방어).
+pub fn hamrock_dowson_point_hc(
+    eta0: f64,
+    u_mean: f64,
+    alpha_visc: f64,
+    f_load: f64,
+    e_prime: f64,
+    r_x: f64,
+    k_ellip: f64,
+) -> f64 {
+    if !(eta0 > 0.0 && u_mean > 0.0 && alpha_visc > 0.0 && f_load > 0.0 && e_prime > 0.0 && r_x > 0.0) {
+        return 0.0;
+    }
+    let u = eta0 * u_mean / (e_prime * r_x);
+    let g = alpha_visc * e_prime;
+    let w = f_load / (e_prime * r_x * r_x);
+    let ellip = 1.0 - HD1977_ELLIP_COEF * (-HD1977_ELLIP_EXP * k_ellip.max(0.0)).exp();
+    HD1977_COEF * u.powf(HD1977_EXP_U) * g.powf(HD1977_EXP_G) * w.powf(HD1977_EXP_W) * ellip * r_x
+}
+
+/// H–D 점접촉 **스케일 인자** `u_ratio^0.67 · w_ratio^−0.067` [-].
+///
+/// 기하·유체·재료를 고정하고 (속도, 하중)만 바꿀 때 `h_c` 의 비 — `U ∝ ū`, `W ∝ F` 이므로
+/// `h_c(ū,F)/h_c(ū₀,F₀) = (ū/ū₀)^0.67 · (F/F₀)^−0.067`. `ratio = 1` 이면 정확히 1.
+///
+/// 점접촉에서 최대 Hertz 압 `p_h ∝ F^{1/3}` 이므로 하중비를 `p_h` 로 쓰려면
+/// `w_ratio = (p_h/p_h₀)³` 를 넣는다(호출측 책임 — 여기서는 순수 비만 계산).
+#[inline]
+pub fn hd_point_scale(u_ratio: f64, w_ratio: f64) -> f64 {
+    u_ratio.powf(HD1977_EXP_U) * w_ratio.powf(HD1977_EXP_W)
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+//  Morales-Espejel et al. 2010 — Table 2 출판 운전조건 (Deolalikar 구형 범프 사례)
+// ═════════════════════════════════════════════════════════════════════════
+//
+// 출판 **값만** 등재(그래프 추정치 b·F·R_x·h_c 앵커는 셸이 `estimated` 태그로 소유).
+// E′ 는 논문 규약(= 2·E_red). 뉴턴 유체이므로 Eyring τ0 는 표에 없다(셸이 τ0→큰 값으로 억제).
+
+/// ME2010 Table 2 — 논문 E′ [Pa] (= 2·E_red; 표준 `e_red = 109.5e9`).
+pub const ME2010_E_PRIME_PA: f64 = 219.0e9;
+/// ME2010 Table 2 — 기준 점도 η0 [Pa·s].
+pub const ME2010_ETA0_PAS: f64 = 0.075;
+/// ME2010 Table 2 — 압점도 α [1/Pa].
+pub const ME2010_ALPHA_VISC: f64 = 16.7e-9;
+/// ME2010 Table 2 — Fig 7 평균 구름속도 ū [m/s].
+pub const ME2010_FIG7_U_MEAN: f64 = 0.15;
+/// ME2010 Table 2 — Fig 7 최대 Hertz 압 [Pa].
+pub const ME2010_FIG7_P_H: f64 = 0.63e9;
+/// ME2010 — Fig 8 최대 Hertz 압 [Pa].
+pub const ME2010_FIG8_P_H: f64 = 1.0e9;
+/// ME2010 — 구형 범프 높이 [m] (Deolalikar 사례).
+pub const ME2010_BUMP_HEIGHT_M: f64 = 1.2e-6;
+/// ME2010 — 구형 범프 밑면 반경 [m].
+pub const ME2010_BUMP_RADIUS_M: f64 = 18.0e-6;
+/// ME2010 본문 — 중앙유막이 범프 높이의 "약 8분의 1" (앵커 `h_c ≈ 1.2 µm/8 = 0.15 µm` 의 근거).
+pub const ME2010_HC_OVER_BUMP_RATIO: f64 = 1.0 / 8.0;
+
+// ═════════════════════════════════════════════════════════════════════════
 //  구조 가드 — leaf 불변식의 기계적 강제 (계획 §4.1)
 // ═════════════════════════════════════════════════════════════════════════
 
@@ -698,6 +792,79 @@ mod tests {
         // τ_W/σ_W = 1/√3 → a_DV = 3(1/√3 − ½) ≈ 0.2320508 (SKF 채택값과 문헌 교차검증).
         let a = desimone2006_alpha_dv(1.0 / 3.0_f64.sqrt());
         assert_relative_eq!(a, 0.232_050_807_568_877_2, max_relative = 1e-12);
+    }
+
+    // ── Hamrock–Dowson 1977 점접촉 (전사·극한·단조성; 물리검증 아님) ──
+
+    /// 스케일 헬퍼 항등: ratio=1 → 정확히 1; 지수 상수와 정합(2배 속도 → 2^0.67).
+    #[test]
+    fn hd_point_scale_identity_and_exponents() {
+        assert_eq!(hd_point_scale(1.0, 1.0), 1.0, "ratio 1 → 정확히 1");
+        assert_relative_eq!(hd_point_scale(2.0, 1.0), 2.0_f64.powf(0.67), max_relative = 1e-12);
+        assert_relative_eq!(hd_point_scale(1.0, 8.0), 8.0_f64.powf(-0.067), max_relative = 1e-12);
+        // 분리성: scale(u,w) = scale(u,1)·scale(1,w).
+        assert_relative_eq!(
+            hd_point_scale(3.0, 5.0),
+            hd_point_scale(3.0, 1.0) * hd_point_scale(1.0, 5.0),
+            max_relative = 1e-12
+        );
+        // 단조: 속도↑ → ↑, 하중↑ → ↓ (약하게).
+        assert!(hd_point_scale(2.0, 1.0) > 1.0 && hd_point_scale(0.5, 1.0) < 1.0);
+        assert!(hd_point_scale(1.0, 2.0) < 1.0 && hd_point_scale(1.0, 0.5) > 1.0);
+    }
+
+    /// 폐형식이 자신의 스케일 헬퍼와 정합(식의 U·W 의존이 지수대로 전사되었는지).
+    #[test]
+    fn hamrock_dowson_hc_scales_like_helper() {
+        let (eta0, u, a, f, ep, rx) = (0.075, 0.15, 16.7e-9, 43.0, 219.0e9, 0.04);
+        let h0 = hamrock_dowson_point_hc(eta0, u, a, f, ep, rx, 1.0);
+        assert!(h0 > 0.0 && h0.is_finite());
+        let h_u = hamrock_dowson_point_hc(eta0, 2.0 * u, a, f, ep, rx, 1.0);
+        let h_w = hamrock_dowson_point_hc(eta0, u, a, 8.0 * f, ep, rx, 1.0);
+        assert_relative_eq!(h_u / h0, hd_point_scale(2.0, 1.0), max_relative = 1e-10);
+        assert_relative_eq!(h_w / h0, hd_point_scale(1.0, 8.0), max_relative = 1e-10);
+        // 단조성: ū↑ → h_c↑, F↑ → h_c↓, η0↑ → h_c↑.
+        assert!(h_u > h0 && h_w < h0);
+        assert!(hamrock_dowson_point_hc(2.0 * eta0, u, a, f, ep, rx, 1.0) > h0);
+    }
+
+    /// 타원비 극한: k→∞ → 타원항 1; k=0 → (1−0.61); 비물리 입력 → 0.
+    #[test]
+    fn hamrock_dowson_ellipticity_limits_and_guards() {
+        let (eta0, u, a, f, ep, rx) = (0.075, 0.15, 16.7e-9, 43.0, 219.0e9, 0.04);
+        let h_inf = hamrock_dowson_point_hc(eta0, u, a, f, ep, rx, 1e6);
+        let h_0 = hamrock_dowson_point_hc(eta0, u, a, f, ep, rx, 0.0);
+        let h_1 = hamrock_dowson_point_hc(eta0, u, a, f, ep, rx, 1.0);
+        assert_relative_eq!(h_0 / h_inf, 1.0 - HD1977_ELLIP_COEF, max_relative = 1e-9);
+        assert!(h_0 < h_1 && h_1 < h_inf, "타원항 단조 증가");
+        assert_relative_eq!(
+            h_1 / h_inf,
+            1.0 - HD1977_ELLIP_COEF * (-HD1977_ELLIP_EXP).exp(),
+            max_relative = 1e-9
+        );
+        for bad in [
+            (0.0, u, a, f, ep, rx),
+            (eta0, 0.0, a, f, ep, rx),
+            (eta0, u, 0.0, f, ep, rx),
+            (eta0, u, a, 0.0, ep, rx),
+            (eta0, u, a, f, 0.0, rx),
+            (eta0, u, a, f, ep, -1.0),
+        ] {
+            assert_eq!(hamrock_dowson_point_hc(bad.0, bad.1, bad.2, bad.3, bad.4, bad.5, 1.0), 0.0);
+        }
+    }
+
+    /// ME2010 Table 2 상수 전사 sanity: E′ = 2·E_red(109.5 GPa) 규약 정합, 범프 비 8:1 근거.
+    #[test]
+    fn me2010_table2_constants_consistent() {
+        assert_relative_eq!(ME2010_E_PRIME_PA, 2.0 * 109.5e9, max_relative = 1e-12);
+        assert_relative_eq!(
+            ME2010_BUMP_HEIGHT_M * ME2010_HC_OVER_BUMP_RATIO,
+            0.15e-6,
+            max_relative = 1e-12
+        );
+        assert!(ME2010_FIG8_P_H > ME2010_FIG7_P_H);
+        assert!(ME2010_BUMP_RADIUS_M > ME2010_BUMP_HEIGHT_M);
     }
 
     #[test]

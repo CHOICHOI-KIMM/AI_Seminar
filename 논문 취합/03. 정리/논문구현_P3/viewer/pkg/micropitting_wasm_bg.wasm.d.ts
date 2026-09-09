@@ -1,6 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export const lit2010_fig7_json: (a: number, b: number) => [number, number];
+export const lit2010_fig8_json: (a: number, b: number) => [number, number];
 export const reference_curve_json: (a: number, b: number, c: number, d: number) => [number, number];
 export const reference_tables_json: () => [number, number];
 export const solve_chain_json: (a: number, b: number) => [number, number];

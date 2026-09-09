@@ -2,6 +2,16 @@
 /* eslint-disable */
 
 /**
+ * ME2010 Fig 7 (범프 중앙단면): overrides JSON(`{}` = 기본) → 프로파일 JSON.
+ */
+export function lit2010_fig7_json(overrides_json: string): string;
+
+/**
+ * ME2010 Fig 8 (속도 스윕 하중분율): overrides JSON(`{}` = 기본) → points JSON.
+ */
+export function lit2010_fig8_json(overrides_json: string): string;
+
+/**
  * 참조곡선: kind + params JSON → CurveResp JSON.
  */
 export function reference_curve_json(kind: string, params_json: string): string;
@@ -35,6 +45,8 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly lit2010_fig7_json: (a: number, b: number) => [number, number];
+    readonly lit2010_fig8_json: (a: number, b: number) => [number, number];
     readonly reference_curve_json: (a: number, b: number, c: number, d: number) => [number, number];
     readonly reference_tables_json: () => [number, number];
     readonly solve_chain_json: (a: number, b: number) => [number, number];

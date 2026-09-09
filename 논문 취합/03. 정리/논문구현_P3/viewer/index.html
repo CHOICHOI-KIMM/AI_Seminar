@@ -63,6 +63,10 @@
   .dedge.locked { stroke: #94a3b8; stroke-dasharray: 5 3; }
   .dcap { font: italic 9.5px "Segoe UI", sans-serif; fill: #64748b; }
   .flash { outline: 3px solid #38bdf8 !important; transition: outline 0.2s; }
+  /* 문헌 검증 #1 (2010 Fig 7·8) */
+  .estTag { display: inline-block; font-size: 10px; font-weight: 700; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 3px; padding: 0 4px; margin-left: 4px; vertical-align: middle; }
+  #lit2010Fig8Table { font-size: 11.5px; }
+  #lit2010Fig8Table td.bad { color: #991b1b; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -114,8 +118,61 @@
       <b style="color:#64748b">C=자기일관·항등·가정 — 회귀가드일 뿐 검증 아님</b> ·
       <b style="color:#7c3aed">X=상태갱신(모델 한계의 정직 기록)</b> ·
       <b style="color:#dc2626">OPEN=미결·이월</b></div>
-    <div class="note" id="vcProvenance" style="font-size:11px;"></div>
-    <div class="card" style="overflow-x:auto;"><table id="vcTable"></table></div>
+    <details class="refs" id="vcBox" open>
+      <summary>✅ 검증 데이터 <span id="vcCount">(VC · 로딩 중)</span></summary>
+      <div style="padding:0 12px 12px;">
+        <div class="note" id="vcProvenance" style="font-size:11px;"></div>
+        <div class="card" style="overflow-x:auto;"><table id="vcTable"></table></div>
+      </div>
+    </details>
+
+    <!-- 문헌 검증 #1 — Morales-Espejel et al. (2010) Fig 7·8. 표시 전용(R8: 물리 0건).
+         WASM 진입점 lit2010_fig7_json / lit2010_fig8_json · 오라클 lit2010_oracle.json (그래프 판독). -->
+    <details class="refs" id="lit2010Box">
+      <summary>📄 문헌 검증 #1 — (2010) Micro-Geometry Effects on the Sliding Friction Transition in EHL · Fig 7·8 (Deolalikar bump)
+        <span id="lit2010State" style="font-weight:400; color:#64748b;"></span></summary>
+      <div style="padding:0 12px 12px;">
+        <div class="note warn" style="font-weight:500; line-height:1.55;">
+          ⚠️ <b>범위·정직성 고지 (문헌 검증 #1)</b>
+          <ol style="margin:4px 0 0 18px; padding:0;">
+            <li><b>범위 = Fig 7·8 만</b> (최소 스파이크). 원문 다른 그림·마찰 전이 곡선은 다루지 않는다.</li>
+            <li>원문 Fig 7 은 <b>x/b∈[−1.5, 1.5] 전(全) 접촉역 해</b>(Hertz 포락선·입구/출구 포함)인 반면, 본 솔버는
+              <b>접촉 중심 섭동(perturbation) 솔버</b> → 비교 가능한 것은 <b>bump 의 국소 교란</b>(피크 p/p_h · 유막 함몰)뿐이며
+              포락선·입구/출구 형상은 비교 대상이 아니다.</li>
+            <li><b>b · R_x · F 는 그래프에서 역추정한 추정값</b>(원문 미기재) — 아래 표의 <span class="estTag">추정</span> 태그.</li>
+            <li>오라클 곡선은 <b>그래프 판독값</b>(verbatim 수치 아님) — 판독 불확도는 오라클 파일의 uncertainty 항목 참조.</li>
+            <li>Fig 8 은 <b>캡션대로 S=0</b> 로 계산. 그림 제목은 "Pure Sliding, Stationary Bump" 라 <b>원문 내부 모순</b>이 있음 — 기록만 하고 해석하지 않는다.</li>
+            <li>h_c 는 원문 명시 앵커(bump 높이/8)를 Hamrock–Dowson 지수로 속도 스케일링한 값.</li>
+            <li>Newtonian 유체는 τ₀=1 GPa 로 근사.</li>
+          </ol>
+          <div style="margin-top:4px;">→ <b>정량 일치 주장 금지</b> · 경향·국소 피크 대조 전용. 미수렴은 숨기지 않고 표시한다.</div>
+        </div>
+        <!-- 스파이크 결과 판정 (2026-09-09) — 작업결과 §문헌검증#1 P6. 튜닝 없이 나온 결과를 그대로 적는다. -->
+        <div class="note" style="border-color:#fca5a5; background:#fff1f2; color:#7f1d1d; line-height:1.55;">
+          🔴 <b>스파이크 판정 (2026-09-09): 배관은 완성, 물리 비교는 현 모델로 불성립.</b>
+          아래 곡선은 솔버가 <b>튜닝 없이</b> 낸 그대로이며 원문과 맞지 않는다 — 이것이 이 스파이크의 결과다.
+          <ul style="margin:4px 0 0 18px; padding:0;">
+            <li><b>현 M1+M2+M6 은 고립 bump 를 자기일관적으로 표현하지 못한다.</b> Fig 7: 우리 피크가 bump 정점이 아닌 x/b≈−0.9(창 가장자리 고스트, p_lim 클램프)에 서고 정점 압력은 0 · 정점 유막은 h̄+bump 높이(유막 "구멍") · φ_bl=0. Fig 8: 접촉이 bump 가 아닌 <b>평탄부</b>에서 발생해 30 %→0 계단(원문 1.4→0.4 % 완만 감소).</li>
+            <li>원인 ① <b>M1/M2 거칠기 부호 규약 상충</b>(M1: +rough=돌기·간극↓ / M2: +rough=간극↑) — 영평균 사인 입력에선 위상 반전으로 보여 기존 오라클(크기 기반) 전부 통과 = <b>잠재 결함, 조사 중</b>. ② 창 전체에 균일 p̄=p_h 를 거는 M1/M6 창 모델(원문 Fig 7 은 Hertz 포락 포함 전접촉 해). ③ S=0 에서 particular 압력 소멸 + 주기창 상보파 고스트(x/b=±1).</li>
+            <li>후속은 <b>모델 크레이트 변경</b>(부호 통일·비균일 p̄ 창)이 필요 → 별건(연구자 결정). 이 패널은 <b>"왜 안 맞는지"를 보여주는 증거</b>로 유지한다.</li>
+          </ul>
+        </div>
+        <div class="row" style="align-items:center;">
+          <button class="run" id="lit2010Run" style="margin-top:0;">실행 (Fig 7 + Fig 8)</button>
+          <span class="note" id="lit2010Status" style="margin:0; flex:1; min-width:240px;">실행 전 — Fig 8 속도 sweep 은 최대 ~30 s 걸릴 수 있습니다.</span>
+        </div>
+        <div class="row">
+          <canvas id="lit2010Fig7" width="880" height="460"></canvas>
+          <div class="card" id="lit2010Fig7Meta" style="flex:1; min-width:260px; font-size:12px;">Fig 7 메타: (실행 전)</div>
+        </div>
+        <div class="note" style="font-size:11px;">범례: <b>p</b> = p/p_h (좌축) · <b>h</b> = hR_x/b² (우축) · <b>점선</b> = 오라클 그래프 판독(Deol. = Deolalikar 참조해, 2010 = 원문 모델) · <b>실선</b> = 본 솔버(접촉 중심 섭동).</div>
+        <div class="row">
+          <canvas id="lit2010Fig8" width="880" height="460"></canvas>
+          <div class="card" id="lit2010Fig8Meta" style="flex:1; min-width:260px; font-size:12px;">Fig 8 메타: (실행 전)</div>
+        </div>
+        <div class="card" style="overflow-x:auto; margin-top:8px;"><table id="lit2010Fig8Table"></table></div>
+      </div>
+    </details>
   </section>
 
   <!-- ③ 단일스텝 필드 -->
@@ -432,7 +489,206 @@ async function loadVC() {
       `<td>${it.summary}</td><td>${it.expected}</td><td>${badge[it.status] || it.status}</td><td>${it.note}</td>`;
     t.appendChild(tr);
   }
+  // 요약줄 건수 — 데이터에서 집계 (하드코딩 금지)
+  const gc = {};
+  for (const it of d.items) gc[it.grade] = (gc[it.grade] || 0) + 1;
+  const order = ["A", "B", "C", "X", "OPEN"];
+  const gs = order.filter((g) => gc[g]).map((g) => `${g}${gc[g]}`).join("/");
+  $("vcCount").textContent = `(VC ${d.items.length}건 · ${gs} 등급)`;
 }
+
+// ── ② 문헌 검증 #1 — Morales-Espejel et al. (2010) Fig 7·8 ──
+// ★ R8: 여기는 표시·단위표기만. 곡선·피크·수렴 판정 전부 WASM(lit2010_fig7_json/fig8_json) 이 낸다.
+//   오라클(lit2010_oracle.json) 은 그래프 판독값 — 있으면 겹쳐 그리고, 없으면 "미생성" 표시.
+const l2 = (n) => fetch(`/__viewer__/lit2010/${n}`).catch(() => {});
+let LIT2010_ORACLE = null;
+const l2Num = (v) => v !== null && v !== undefined && Number.isFinite(v); // null-safe (serde ∞ → null)
+const l2Fmt = (v, d = 3) => !l2Num(v) ? "—" : (Math.abs(v) >= 1e4 || (v !== 0 && Math.abs(v) < 1e-3)) ? v.toExponential(d) : String(Math.round(v * 10 ** d) / 10 ** d);
+const l2Arr = (a) => Array.isArray(a) ? a : [];
+const L2_EST = '<span class="estTag">추정</span>';
+
+async function loadLit2010Oracle() {
+  try {
+    const d = await (await fetch("./lit2010_oracle.json")).json();
+    LIT2010_ORACLE = d && (d.fig7 || d.fig8) ? d : null;
+  } catch (e) { LIT2010_ORACLE = null; }
+  $("lit2010State").textContent = LIT2010_ORACLE ? "· 오라클 로드됨" : "· 오라클 미생성 (본 솔버 곡선만 표시)";
+  l2(LIT2010_ORACLE ? "oracleLoaded" : "oracleMissing");
+}
+
+// Fig 7 — 좌축 p/p_h · 우축 hR_x/b² · x = x/b. r = WASM fig7 결과(없으면 null → 오라클만).
+function drawLit2010Fig7(r) {
+  const o = LIT2010_ORACLE?.fig7 || null;
+  const series = [];
+  const add = (src, key, label, color, dash, axis) => {
+    if (!src || !Array.isArray(src.xOverB) || !Array.isArray(src[key])) return;
+    series.push({ x: src.xOverB, y: src[key], label, color, dash, axis });
+  };
+  add(o?.deolalikar, "pOverPh", "p Deol.", "#9ca3af", true);
+  add(o?.model2010, "pOverPh", "p 2010", "#b45309", true);
+  if (r) series.push({ x: l2Arr(r.xOverB), y: l2Arr(r.pOverPh), label: "p 본솔버", color: "#2563eb" });
+  add(o?.deolalikar, "hDimless", "h Deol.", "#6b7280", true, "right");
+  add(o?.model2010, "hDimless", "h 2010", "#0891b2", true, "right");
+  if (r) series.push({ x: l2Arr(r.xOverB), y: l2Arr(r.hDimless), label: "h 본솔버", color: "#dc2626", axis: "right" });
+  const c = $("lit2010Fig7");
+  if (!series.length) {
+    const ctx = c.getContext("2d"); ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle = "#991b1b"; ctx.font = "bold 14px sans-serif";
+    ctx.fillText("Fig 7 — 표시할 곡선 없음 (오라클 미생성 · 솔버 미실행)", 60, 40);
+    return;
+  }
+  linePlot(c, {
+    series,
+    title: "Fig 7 — bump 중앙단면 (p_h=0.63 GPa, S=0)",
+    xLabel: "x/b", yLabel: "p/p_h [-]", yLabelRight: "hR_x/b² [-]",
+  });
+}
+
+function fig7MetaHtml(r) {
+  const m = r.meta || {}, d = r.diagnostics || {}, o = LIT2010_ORACLE?.fig7 || null;
+  const conv = !!(d.outerConverged && d.shareConverged);
+  const g = m.grid || {};
+  let h = conv ? `<div class="note okbadge" style="margin-top:0;">수렴 ✅ (outer ${d.outerIters ?? "—"} / share ${d.shareIters ?? "—"} · 하중잔차 ${l2Fmt(d.loadResidual, 2)})</div>`
+                : `<div class="note warn" style="margin-top:0;">⚠️ 미수렴 — outer ${d.outerConverged ? "✅" : "✗"} / share ${d.shareConverged ? "✅" : "✗"} (iters ${d.outerIters ?? "—"}/${d.shareIters ?? "—"} · 잔차 ${l2Fmt(d.loadResidual, 2)}) — 이 곡선을 신뢰하지 말 것</div>`;
+  h += `<table style="width:100%;">`;
+  const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+  h += row("p_h / ū / S", `${l2Fmt(l2Num(m.pH) ? m.pH * 1e-9 : null, 3)} GPa / ${l2Fmt(m.uMean)} m/s / ${l2Fmt(m.S)}`);
+  h += row("τ₀ (Newtonian 근사)", `${l2Fmt(l2Num(m.tau0) ? m.tau0 * 1e-9 : null, 2)} GPa`);
+  h += row("b" + L2_EST, `${l2Fmt(l2Num(m.bEst) ? m.bEst * 1e6 : null, 2)} µm`);
+  h += row("R_x" + L2_EST, `${l2Fmt(l2Num(m.rXEst) ? m.rXEst * 1e3 : null, 3)} mm`);
+  h += row("F" + L2_EST, `${l2Fmt(m.fEst, 2)} N/m`);
+  h += row("h_c (앵커 bump/8)", `${l2Fmt(l2Num(m.hC) ? m.hC * 1e9 : null, 1)} nm`);
+  h += row("bump 높이 / 반폭", `${l2Fmt(l2Num(m.bumpH) ? m.bumpH * 1e9 : null, 1)} nm / ${l2Fmt(l2Num(m.bumpR) ? m.bumpR * 1e6 : null, 2)} µm`);
+  h += row("격자", `${g.nx ?? "—"}×${g.ny ?? "—"} · l_x=${l2Fmt(l2Num(g.lx) ? g.lx * 1e6 : null, 1)} µm · l_y=${l2Fmt(l2Num(g.ly) ? g.ly * 1e6 : null, 1)} µm`);
+  h += row("<b>peak p/p_h (본 솔버)</b>", `<b>${l2Fmt(r.peakPOverPh, 3)}</b>`);
+  h += row("min h (본 솔버)", `${l2Fmt(l2Num(r.minH) ? r.minH * 1e9 : null, 1)} nm`);
+  h += row("φ_bl", l2Fmt(r.phiBl, 4));
+  if (o) {
+    if (l2Num(o.bumpHalfWidthOverB)) h += row("오라클 bump 반폭/b (h≈0 구간 기준)", l2Fmt(o.bumpHalfWidthOverB, 3));
+    if (l2Num(o.bumpHalfWidthOverB_cuspBased)) h += row("오라클 bump 반폭/b (cusp 기준 대안 판독)", l2Fmt(o.bumpHalfWidthOverB_cuspBased, 3));
+    for (const [k, v] of Object.entries(o.landmarks || {}))
+      h += row(`오라클 landmark · ${k}`, typeof v === "object" && v !== null ? JSON.stringify(v) : l2Fmt(v, 3));
+    const u = LIT2010_ORACLE?.uncertainty?.fig7;
+    if (u !== undefined) h += row("오라클 판독 불확도", typeof u === "object" ? JSON.stringify(u) : String(u));
+  } else {
+    h += row("오라클", '<span style="color:#991b1b;">오라클 미생성 — 문헌 대조값 없음</span>');
+  }
+  h += `</table>`;
+  const flags = l2Arr(m.estimatedFlags), asm = l2Arr(m.assumptions);
+  if (flags.length) h += `<div class="note" style="font-size:11px;"><b>추정 플래그(WASM 원본)</b>: ${flags.join(" · ")}</div>`;
+  if (asm.length) h += `<div class="note" style="font-size:11px;"><b>가정(WASM 원본)</b>: ${asm.join(" · ")}</div>`;
+  return h;
+}
+
+// Fig 8 — 좌축 φ_bl(하중분담) % · 우축 접촉면적비 % · x = ū [m/s] 0–1.5 선형.
+function drawLit2010Fig8(r) {
+  const o = LIT2010_ORACLE?.fig8 || null;
+  const series = [], points = [];
+  const pts = l2Arr(r?.points);
+  if (o && Array.isArray(o.speeds)) {
+    if (Array.isArray(o.loadRatioPct)) series.push({ x: o.speeds, y: o.loadRatioPct, label: "φ_bl% 판독", color: "#93c5fd", dash: true });
+    if (Array.isArray(o.areaRatioPct)) series.push({ x: o.speeds, y: o.areaRatioPct, label: "면적% 판독", color: "#fca5a5", dash: true, axis: "right" });
+  }
+  if (pts.length) {
+    series.push({ x: pts.map((p) => p.uMean), y: pts.map((p) => p.loadRatioPct), label: "φ_bl% 본솔버", color: "#2563eb" });
+    series.push({ x: pts.map((p) => p.uMean), y: pts.map((p) => p.areaRatioPct), label: "면적% 본솔버", color: "#dc2626", axis: "right" });
+  }
+  const mk = o?.areaMarkers;
+  if (mk && Array.isArray(mk.speeds) && Array.isArray(mk.areaRatioPct))
+    mk.speeds.forEach((x, i) => points.push({ x, y: mk.areaRatioPct[i], color: "#b91c1c", axis: "right" }));
+  const c = $("lit2010Fig8");
+  if (!series.length && !points.length) {
+    const ctx = c.getContext("2d"); ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle = "#991b1b"; ctx.font = "bold 14px sans-serif";
+    ctx.fillText("Fig 8 — 표시할 곡선 없음 (오라클 미생성 · 솔버 미실행)", 60, 40);
+    return;
+  }
+  linePlot(c, {
+    series, points, xRange: [0, 1.5],
+    title: "Fig 8 — φ_bl·접촉면적비 vs 속도 (p_h=1 GPa, S=0)",
+    xLabel: "ū [m/s]", yLabel: "φ_bl 하중분담 [%]", yLabelRight: "접촉면적비 [%]",
+  });
+}
+
+function fig8MetaHtml(r) {
+  const m = r.meta || {}, pts = l2Arr(r.points);
+  const nConv = pts.filter((p) => p.converged).length;
+  const g = m.grid || {};
+  let h = pts.length && nConv === pts.length
+    ? `<div class="note okbadge" style="margin-top:0;">전 점 수렴 ✅ (${nConv}/${pts.length})</div>`
+    : `<div class="note warn" style="margin-top:0;">⚠️ 미수렴 점 존재 — ${pts.length - nConv}/${pts.length} (표의 ⚠️ 행은 신뢰하지 말 것)</div>`;
+  h += `<table style="width:100%;">`;
+  const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+  h += row("p_h / S", `${l2Fmt(l2Num(m.pH) ? m.pH * 1e-9 : null, 2)} GPa / ${l2Fmt(m.S)}`);
+  h += row("h_c 앵커", `${l2Fmt(l2Num(m.hCAnchor) ? m.hCAnchor * 1e9 : null, 1)} nm`);
+  h += row("h_c 식 (WASM 원본)", `<code style="font-size:11px;">${m.hCFormula ?? "—"}</code>`);
+  h += row("격자", `${g.nx ?? "—"}×${g.ny ?? "—"}`);
+  const u = LIT2010_ORACLE?.uncertainty?.fig8;
+  if (u !== undefined) h += row("오라클 판독 불확도", typeof u === "object" ? JSON.stringify(u) : String(u));
+  const lm = LIT2010_ORACLE?.fig8?.landmarks;
+  if (lm) for (const [k, v] of Object.entries(lm)) h += row(`오라클 landmark · ${k}`, typeof v === "object" && v !== null ? JSON.stringify(v) : l2Fmt(v, 3));
+  if (!LIT2010_ORACLE) h += row("오라클", '<span style="color:#991b1b;">오라클 미생성 — 문헌 대조값 없음</span>');
+  h += `</table>`;
+  const flags = l2Arr(m.estimatedFlags), asm = l2Arr(m.assumptions);
+  if (flags.length) h += `<div class="note" style="font-size:11px;"><b>추정 플래그</b>: ${flags.join(" · ")}</div>`;
+  if (asm.length) h += `<div class="note" style="font-size:11px;"><b>가정</b>: ${asm.join(" · ")}</div>`;
+  return h;
+}
+
+function fig8TableHtml(r) {
+  const pts = l2Arr(r.points);
+  let h = "<tr><th>ū [m/s]</th><th>h_c [nm]</th><th>φ_bl [%]</th><th>면적비 [%]</th><th>접촉점</th><th>수렴</th><th>iters (outer/share)</th><th>하중잔차</th></tr>";
+  for (const p of pts) {
+    const ok = !!p.converged;
+    h += `<tr><td>${l2Fmt(p.uMean, 3)}</td><td>${l2Fmt(l2Num(p.hC) ? p.hC * 1e9 : null, 1)}</td>` +
+      `<td>${l2Fmt(p.loadRatioPct, 2)}</td><td>${l2Fmt(p.areaRatioPct, 2)}</td><td>${p.contactCount ?? "—"}</td>` +
+      `<td class="${ok ? "" : "bad"}">${ok ? "✅" : "⚠️ 미수렴"}</td>` +
+      `<td>${p.outerIters ?? "—"} / ${p.shareIters ?? "—"}</td><td>${l2Fmt(p.loadResidual, 2)}</td></tr>`;
+  }
+  if (!pts.length) h += `<tr><td colspan="8">점 없음</td></tr>`;
+  return h;
+}
+
+$("lit2010Run").onclick = async () => {
+  const btn = $("lit2010Run"), st = $("lit2010Status");
+  btn.disabled = true; btn.textContent = "계산 중…";
+  st.className = "note"; st.style.margin = "0";
+  const t0 = performance.now();
+  try {
+    st.textContent = "계산 중… Fig 7 (bump 중앙단면)";
+    const r7 = await call("lit2010fig7", { overrides: {} });
+    if (!r7 || !r7.ok) throw new Error("fig7: " + (r7?.error || "ok=false"));
+    drawLit2010Fig7(r7);
+    $("lit2010Fig7Meta").innerHTML = fig7MetaHtml(r7);
+    l2("fig7Done/" + (r7.diagnostics?.outerConverged && r7.diagnostics?.shareConverged ? "conv" : "NONCONV"));
+
+    st.textContent = `계산 중… Fig 8 속도 sweep (최대 ~30 s) — Fig 7 완료 ${Math.round(performance.now() - t0)} ms`;
+    const r8 = await call("lit2010fig8", { overrides: {} });
+    if (!r8 || !r8.ok) throw new Error("fig8: " + (r8?.error || "ok=false"));
+    drawLit2010Fig8(r8);
+    $("lit2010Fig8Meta").innerHTML = fig8MetaHtml(r8);
+    $("lit2010Fig8Table").innerHTML = fig8TableHtml(r8);
+    const pts = l2Arr(r8.points), nc = pts.filter((p) => p.converged).length;
+    l2(`fig8Done/${nc}of${pts.length}`);
+    st.className = "note okbadge";
+    st.textContent = `완료 — Fig 7 + Fig 8 (${pts.length}점, 수렴 ${nc}/${pts.length}) · ${Math.round(performance.now() - t0)} ms` +
+      (LIT2010_ORACLE ? "" : " · 오라클 미생성(문헌 곡선 없음)");
+  } catch (e) {
+    const msg = String(e && e.message || e);
+    st.className = "note warn";
+    if (msg.includes("미빌드")) {
+      st.textContent = `솔버 진입점 미빌드 (lit2010_*) — pkg 재빌드 필요. 오라클 곡선만 표시. [${msg}]`;
+      l2("solverMissing");
+    } else {
+      st.textContent = "오류: " + msg;
+      l2("error/" + encodeURIComponent(msg).slice(0, 120));
+    }
+    // 실패해도 오라클만으로 그려 상태를 보여준다 (무증상 금지)
+    drawLit2010Fig7(null); drawLit2010Fig8(null);
+  } finally {
+    btn.disabled = false; btn.textContent = "실행 (Fig 7 + Fig 8)";
+  }
+};
 
 // ── ③ 단일스텝 필드 ──
 $("runChain").onclick = async () => {
@@ -642,6 +898,9 @@ try {
   await loadVC();
   await loadRefs();
   step("loadedVC");
+  // 문헌 검증 #1: 오라클 로드(없으면 미생성 표시) + 오라클-only 초기 플롯. 실패해도 부팅은 계속.
+  try { await loadLit2010Oracle(); drawLit2010Fig7(null); drawLit2010Fig8(null); }
+  catch (e) { l2("initError/" + encodeURIComponent(String(e)).slice(0, 100)); }
   // 자가 스모크: 소형 체인 1회 (16×4, 판정용 — 표시는 안 함)
   const smoke = await call("chain", {
     grid: { nx: 16, ny: 4, lx: 5.2e-4, ly: 1.3e-4 },
@@ -656,6 +915,11 @@ try {
   document.title = pass ? "VIEWER-PASS" : "VIEWER-FAIL";
   if (pass && new URLSearchParams(location.search).has("autorun")) {
     $("runChain").click(); // 검수용: 렌더 경로까지 기계 확인 (autorunPlotted self-report)
+  }
+  if (pass && new URLSearchParams(location.search).has("lit2010")) {
+    // 검수용: 문헌 검증 #1 섹션을 펼치고 실행 (self-report /__viewer__/lit2010/…)
+    $("lit2010Box").open = true;
+    $("lit2010Run").click();
   }
   fetch(`/__viewer__/${document.title}`).catch(() => {});
 } catch (e) {

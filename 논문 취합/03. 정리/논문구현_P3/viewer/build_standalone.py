@@ -27,12 +27,17 @@ if hasattr(sys.stdout, "reconfigure"):
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "micropitting_viewer.html")
 SRCS = ["index.html", "plot.js", "worker.js", "vc_data.json", "refs_data.json",
+        "lit2010_oracle.json",  # 문헌 검증 #1 오라클 (선택 — 부재 시 null 인라인, 해시엔 빈 바이트)
         os.path.join("pkg", "micropitting_wasm.js"),
         os.path.join("pkg", "micropitting_wasm_bg.wasm")]
+OPTIONAL = {"lit2010_oracle.json"}
 
 
 def read(p, binary=False):
-    with open(os.path.join(HERE, p), "rb" if binary else "r",
+    full = os.path.join(HERE, p)
+    if p in OPTIONAL and not os.path.exists(full):
+        return b"" if binary else ""
+    with open(full, "rb" if binary else "r",
               encoding=None if binary else "utf-8") as f:
         return f.read()
 
@@ -50,6 +55,7 @@ def build():
     worker = read("worker.js")
     vc = read("vc_data.json").strip()
     refs = read("refs_data.json").strip()
+    oracle = read("lit2010_oracle.json").strip() or "null"  # 부재 → null → 뷰어가 "오라클 미생성" 표시
     glue = read(os.path.join("pkg", "micropitting_wasm.js"))
     wasm_b64 = base64.b64encode(read(os.path.join("pkg", "micropitting_wasm_bg.wasm"), binary=True)).decode()
 
@@ -72,6 +78,16 @@ def build():
     w = re.sub(r"^import init, \{.*?\} from \"\./pkg/micropitting_wasm\.js\";",
                "", w, flags=re.S)  # 멀티라인 import 형
     assert "import init" not in w, "worker import 미제거"
+    # 네임스페이스 import(lit2010 진입점 — 부재 허용) → 인라인 스코프의 함수를 지연 조회하는 객체.
+    # typeof 는 미선언 식별자에도 안전("undefined") → 진입점 미빌드 시 worker 가 "미빌드" 를 보고한다.
+    old = 'import * as __wasmNs from "./pkg/micropitting_wasm.js";'
+    assert old in w, "worker 네임스페이스 import 못 찾음"
+    w = w.replace(old,
+                  "const __wasmNs = {\n"
+                  "  get lit2010_fig7_json() { return typeof lit2010_fig7_json === \"function\" ? lit2010_fig7_json : undefined; },\n"
+                  "  get lit2010_fig8_json() { return typeof lit2010_fig8_json === \"function\" ? lit2010_fig8_json : undefined; },\n"
+                  "};", 1)
+    assert not re.search(r"^import ", w, flags=re.M), "worker 에 미처리 import 잔존"
     w2 = re.sub(r"^const ready = init\(\).*$",
                 'const ready = Promise.resolve(); wstep("initDone");', w, flags=re.M)
     assert w2 != w, "worker ready 패치 실패"
@@ -134,9 +150,13 @@ def build():
     old = 'const d = await (await fetch("./refs_data.json")).json();'
     assert old in html
     html = html.replace(old, "const d = __REFS_DATA__;", 1)
+    old = 'const d = await (await fetch("./lit2010_oracle.json")).json();'
+    assert old in html
+    html = html.replace(old, "const d = __LIT2010_ORACLE__;", 1)
     html = html.replace("// ── ② 검증 탭 ──",
                         "// ── ② 검증 탭 ──\nconst __VC_DATA__ = " + vc +
-                        ";\nconst __REFS_DATA__ = " + refs + ";", 1)
+                        ";\nconst __REFS_DATA__ = " + refs +
+                        ";\nconst __LIT2010_ORACLE__ = " + oracle + ";", 1)
 
     # ── 해시 마커 (--check 용) ──
     html += f"\n<!-- STANDALONE_SRC_HASH:{ih} -->\n"

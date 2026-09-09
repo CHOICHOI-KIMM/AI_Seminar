@@ -1,6 +1,46 @@
 /* @ts-self-types="./micropitting_wasm.d.ts" */
 
 /**
+ * ME2010 Fig 7 (범프 중앙단면): overrides JSON(`{}` = 기본) → 프로파일 JSON.
+ * @param {string} overrides_json
+ * @returns {string}
+ */
+export function lit2010_fig7_json(overrides_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(overrides_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.lit2010_fig7_json(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
+ * ME2010 Fig 8 (속도 스윕 하중분율): overrides JSON(`{}` = 기본) → points JSON.
+ * @param {string} overrides_json
+ * @returns {string}
+ */
+export function lit2010_fig8_json(overrides_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(overrides_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.lit2010_fig8_json(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * 참조곡선: kind + params JSON → CurveResp JSON.
  * @param {string} kind
  * @param {string} params_json

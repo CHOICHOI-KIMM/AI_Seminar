@@ -45,6 +45,7 @@ use micropitting_model::types::{
     Field2, Grid, MaterialProps, OperatingConditions, PartialLubInput, PartialLubResult, WearResult,
 };
 use serde::{Deserialize, Serialize};
+use std::f64::consts::PI;
 
 // ─────────────────────────────────────────────────────────────────────────
 //  숙제 1 — 차원 검사 (조립 직전 관문)
@@ -1011,6 +1012,418 @@ pub fn run_reference_tables() -> String {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+//  S④ — 문헌 재현: Morales-Espejel et al. 2010 Fig 7 / Fig 8 (Deolalikar 구형 범프)
+//
+//  ★ 역할: 사례 **조립**(격자·범프 기하·운전조건·앵커 스케일)과 **슬라이스**만. 물리는
+//    전부 `partial_lub::solve_partial_traced`(M1+M2+M6) 가 낸다. 여기서 만드는 수는
+//    (a) 출판값(reference::ME2010_*), (b) 그래프 추정치(`estimated` 태그), (c) 가정
+//    (`assumptions` 태그) 셋뿐이며 전부 `meta` 에 노출된다 — 튜닝 금지(정직성).
+//  ★ 범프 부호: M1 규약(`s=rough1+rough2`, 간극 `h=max(s)−s`) 을 따른다 → **양수 = 돌출**.
+//    (M2 는 `s` 를 간극 섭동으로 정의해 부호 규약이 M1 과 반대다 — 모델 사안, 셸 불변경.)
+//  ★ 중앙유막 h̄: 논문 본문 "범프(1.2 µm)의 약 8분의 1" 을 (ū=0.15, p_h=0.63 GPa) 앵커로
+//    두고, 다른 (ū, p_h) 는 Hamrock–Dowson 점접촉 지수([`refr::hd_point_scale`]) 로 스케일.
+//    `W ∝ F ∝ p_h³`(점접촉) ⇒ `h_c = h_c₀·(ū/ū₀)^0.67·(p_h/p_h₀)^−0.201`.
+// ─────────────────────────────────────────────────────────────────────────
+
+/// 구형 캡(spherical cap) 범프 높이장 [m] — **기하만**(물리 없음). 도메인 중앙 격자점
+/// `(nx/2, ny/2)` 에 정점을 두어 `j = ny/2` 중앙단면이 정점을 지난다.
+///
+/// 구 반경 `R_s = (r_b² + h_b²)/(2h_b)`; `r ≤ r_b` 에서 `z = √(R_s² − r²) − (R_s − h_b)`
+/// (정점 `h_b`, 밑면 가장자리 정확히 0), 밖은 0. 양수 = 돌출(M1 규약).
+pub fn spherical_bump_field(grid: &Grid, h_b: f64, r_b: f64) -> Result<Field2, String> {
+    if grid.nx == 0 || grid.ny == 0 || !(grid.lx > 0.0) || !(grid.ly > 0.0) {
+        return Err(format!("격자 비물리: nx={} ny={} lx={} ly={}", grid.nx, grid.ny, grid.lx, grid.ly));
+    }
+    if !(h_b > 0.0) || !(r_b > 0.0) {
+        return Err(format!("범프 비물리: h_b={h_b} r_b={r_b} (둘 다 양수)"));
+    }
+    let r_s = (r_b * r_b + h_b * h_b) / (2.0 * h_b);
+    let (dx, dy) = (grid.dx(), grid.dy());
+    let (xc, yc) = ((grid.nx / 2) as f64 * dx, (grid.ny / 2) as f64 * dy);
+    let mut f = Field2::zeros(grid.nx, grid.ny);
+    for j in 0..grid.ny {
+        let y = j as f64 * dy - yc;
+        for i in 0..grid.nx {
+            let x = i as f64 * dx - xc;
+            let r2 = x * x + y * y;
+            if r2 <= r_b * r_b {
+                f.set(i, j, (r_s * r_s - r2).sqrt() - (r_s - h_b));
+            }
+        }
+    }
+    Ok(f)
+}
+
+/// ME2010 재현 override — **전 필드 선택**(`{}` = 기본 사례). 알 수 없는 키는 구조적 거부.
+///
+/// `speeds` 는 Fig 8 전용, `uMean` 은 Fig 7 전용 — 서로 다른 그림에 넣으면 오류.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
+pub struct Lit2010Overrides {
+    /// 최대 Hertz 압 [Pa] (Fig 7 기본 0.63e9 · Fig 8 기본 1.0e9).
+    pub p_h: Option<f64>,
+    /// 평균 구름속도 [m/s] (**Fig 7 전용**, 기본 0.15).
+    pub u_mean: Option<f64>,
+    /// 속도 스윕 [m/s] (**Fig 8 전용**, 기본 12점).
+    pub speeds: Option<Vec<f64>>,
+    /// Eyring τ0 [Pa] (기본 1e9 = 뉴턴 근사).
+    pub tau0: Option<f64>,
+    pub e_red: Option<f64>,
+    pub eta0: Option<f64>,
+    pub alpha_visc: Option<f64>,
+    pub nu: Option<f64>,
+    pub hardness: Option<f64>,
+    pub p_lim: Option<f64>,
+    pub temp: Option<f64>,
+    /// 그래프 추정 Hertz 반폭 [m] (기본 180e-6).
+    pub b_est: Option<f64>,
+    /// 그래프 추정 등가반경 R_x [m] (기본 0.040).
+    pub r_x_est: Option<f64>,
+    /// 중앙유막 앵커 [m] @ (ū=0.15, p_h=0.63e9) (기본 0.15e-6).
+    pub h_c_anchor: Option<f64>,
+    pub bump_h: Option<f64>,
+    pub bump_r: Option<f64>,
+    /// 범프 부호 `+1`(M1 규약: 양수=돌출, **기본**) 또는 `−1`(M2 규약: 간극 섭동).
+    /// 두 모듈의 규약이 반대라 단일 국소 범프에서는 어느 쪽도 자기일관이 아니다 — 진단용
+    /// 노출(meta.caveats 참조). 튜닝 knob 아님.
+    pub bump_sign: Option<f64>,
+    pub nx: Option<usize>,
+    pub ny: Option<usize>,
+    pub lx: Option<f64>,
+    pub ly: Option<f64>,
+}
+
+/// 앵커 조건(논문 Fig 7 운전점): `h_c = 0.15 µm @ ū = 0.15 m/s, p_h = 0.63 GPa`.
+const LIT2010_ANCHOR_U: f64 = refr::ME2010_FIG7_U_MEAN;
+const LIT2010_ANCHOR_PH: f64 = refr::ME2010_FIG7_P_H;
+/// 그래프 추정 Hertz 반폭 b [m] (Fig 7 x/b 축 눈금에서 역산 — `estimated`).
+const LIT2010_B_EST: f64 = 180.0e-6;
+/// 그래프 추정 등가반경 R_x [m] (`R_x = 4E′b³/(3F)`, F 는 아래 — `estimated`).
+const LIT2010_RX_EST: f64 = 0.040;
+/// Fig 8 기본 속도 스윕 [m/s].
+const LIT2010_FIG8_SPEEDS: [f64; 12] =
+    [0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.45, 0.6, 0.9, 1.2, 1.5];
+/// 기본 격자: lx = 2·b_est(x/b ∈ [−1,1]), ly = b_est; 512×128 → dx = 0.70 µm(범프 반경 25.6점),
+/// dy = 1.41 µm(12.8점). 실측(네이티브 release, `examples/lit2010_native.rs`, 2026-09-09):
+/// 512×128 Fig 7 0.54 s · Fig 8(12점) 6.3 s / 512×256 Fig 7 1.23 s · Fig 8 14.4 s(2.3×).
+/// 두 격자의 피크 p/p_h 동일(6.349), min h 차 1.6 % → wasm(네이티브 대비 2~3× 느림) 에서
+/// 30 s 예산을 지키는 512×128 채택. `nx`/`ny` override 로 상향 가능.
+const LIT2010_NX: usize = 512;
+const LIT2010_NY: usize = 128;
+
+/// 조립된 사례(격자·범프·물성·운전점 + 메타 태그).
+struct Lit2010Case {
+    grid: Grid,
+    rough1: Field2,
+    mat: MaterialProps,
+    op_base: OperatingConditions,
+    b_est: f64,
+    r_x_est: f64,
+    f_est: f64,
+    h_c_anchor: f64,
+    bump_h: f64,
+    bump_r: f64,
+    bump_sign: f64,
+}
+
+impl Lit2010Case {
+    fn build(o: &Lit2010Overrides, p_h_default: f64) -> Result<Self, String> {
+        let p_h = o.p_h.unwrap_or(p_h_default);
+        let e_red = o.e_red.unwrap_or(refr::ME2010_E_PRIME_PA / 2.0); // 표준 E_red = E′/2
+        let b_est = o.b_est.unwrap_or(LIT2010_B_EST);
+        let r_x_est = o.r_x_est.unwrap_or(LIT2010_RX_EST);
+        let h_c_anchor = o.h_c_anchor.unwrap_or(refr::ME2010_BUMP_HEIGHT_M * refr::ME2010_HC_OVER_BUMP_RATIO);
+        let bump_h = o.bump_h.unwrap_or(refr::ME2010_BUMP_HEIGHT_M);
+        let bump_r = o.bump_r.unwrap_or(refr::ME2010_BUMP_RADIUS_M);
+        let nx = o.nx.unwrap_or(LIT2010_NX);
+        let ny = o.ny.unwrap_or(LIT2010_NY);
+        let lx = o.lx.unwrap_or(2.0 * b_est);
+        let ly = o.ly.unwrap_or(b_est);
+        for (name, v) in [
+            ("pH", p_h), ("eRed", e_red), ("bEst", b_est), ("rXEst", r_x_est),
+            ("hCAnchor", h_c_anchor), ("bumpH", bump_h), ("bumpR", bump_r), ("lx", lx), ("ly", ly),
+        ] {
+            if !(v > 0.0) || !v.is_finite() {
+                return Err(format!("{name} 는 유한 양수여야 한다: {v}"));
+            }
+        }
+        if nx < 8 || ny < 4 || nx > 4096 || ny > 4096 {
+            return Err(format!("격자 범위 밖: nx={nx} ny={ny} (8≤nx≤4096, 4≤ny≤4096)"));
+        }
+        if 2.0 * bump_r >= lx.min(ly) {
+            return Err(format!("범프 지름 {}이 도메인 {}×{} 에 안 들어간다", 2.0 * bump_r, lx, ly));
+        }
+        let bump_sign = o.bump_sign.unwrap_or(1.0);
+        if bump_sign != 1.0 && bump_sign != -1.0 {
+            return Err(format!("bumpSign 은 +1 또는 -1: {bump_sign}"));
+        }
+        let grid = Grid::new(nx, ny, lx, ly);
+        let mut rough1 = spherical_bump_field(&grid, bump_h, bump_r)?;
+        if bump_sign < 0.0 {
+            for v in rough1.data.iter_mut() {
+                *v = -*v;
+            }
+        }
+        // ★ 숙제 1: 조립 직전 관문(자체 생성이라도 예외 없이).
+        check_dims("rough1", &grid, &rough1)?;
+        // 점접촉 Hertz: F = 2π b² p_h/3 (그래프 추정 b 에서 — `estimated`).
+        let f_est = 2.0 * PI * b_est * b_est * p_h / 3.0;
+        let mat = MaterialProps {
+            e_red,
+            nu: o.nu.unwrap_or(0.3),
+            hardness: o.hardness.unwrap_or(7.0e9),
+            p_lim: o.p_lim.unwrap_or(4.0e9),
+        };
+        let op_base = OperatingConditions {
+            p_h,
+            u_mean: LIT2010_ANCHOR_U, // 그림별로 덮어씀
+            u2: LIT2010_ANCHOR_U,
+            slide_roll: 0.0, // 순수 구름 S=0 (논문 사례)
+            eta0: o.eta0.unwrap_or(refr::ME2010_ETA0_PAS),
+            alpha_visc: o.alpha_visc.unwrap_or(refr::ME2010_ALPHA_VISC),
+            tau0: o.tau0.unwrap_or(1.0e9), // 뉴턴 유체 근사: Eyring 억제
+            temp: o.temp.unwrap_or(348.15),
+            r_x: r_x_est,
+        };
+        Ok(Lit2010Case {
+            grid, rough1, mat, op_base, b_est, r_x_est, f_est, h_c_anchor, bump_h, bump_r, bump_sign,
+        })
+    }
+
+    /// 범프 반경 안의 M6 접촉점 수(`h_tran < 0` = M6 접촉 판정 `h_sep + fluct < 0` 와 동일).
+    /// 기하 마스크 집계 — 물리 아님. "접촉이 범프에서 나는가, 평탄부에서 나는가" 를 드러낸다.
+    fn contact_in_bump(&self, h_tran: &Field2) -> usize {
+        let (dx, dy) = (self.grid.dx(), self.grid.dy());
+        let (xc, yc) = ((self.grid.nx / 2) as f64 * dx, (self.grid.ny / 2) as f64 * dy);
+        let r2 = self.bump_r * self.bump_r;
+        let mut n = 0usize;
+        for j in 0..self.grid.ny {
+            let y = j as f64 * dy - yc;
+            for i in 0..self.grid.nx {
+                let x = i as f64 * dx - xc;
+                if x * x + y * y <= r2 && h_tran.at(i, j) < 0.0 {
+                    n += 1;
+                }
+            }
+        }
+        n
+    }
+
+    /// 앵커 스케일 중앙유막 `h_c(ū, p_h)` [m] — 지수는 reference(H–D 점접촉) 소유.
+    fn h_c(&self, u_mean: f64, p_h: f64) -> f64 {
+        let w_ratio = (p_h / LIT2010_ANCHOR_PH).powi(3); // 점접촉 F ∝ p_h³
+        self.h_c_anchor * refr::hd_point_scale(u_mean / LIT2010_ANCHOR_U, w_ratio)
+    }
+
+    /// 한 운전점 실행 — `_traced` 만(R5) · `partial_lub::`(R4).
+    fn solve(&self, u_mean: f64, p_h: f64) -> Result<(PartialLubResult, Diagnostics, f64), String> {
+        if !(u_mean > 0.0) || !u_mean.is_finite() {
+            return Err(format!("uMean 는 유한 양수여야 한다: {u_mean}"));
+        }
+        let h_bar = self.h_c(u_mean, p_h);
+        if !(h_bar > 0.0) {
+            return Err(format!("h_bar 비물리: {h_bar}"));
+        }
+        let input = PartialLubInput {
+            grid: self.grid,
+            rough1: self.rough1.clone(),
+            rough2: Field2::zeros(self.grid.nx, self.grid.ny), // 표면 2 매끈
+            mat: self.mat,
+            op: OperatingConditions { p_h, u_mean, u2: u_mean, ..self.op_base },
+            h_bar,
+        };
+        let (res, tr) = partial_lub::solve_partial_traced(&input);
+        let d = Diagnostics {
+            outer_converged: tr.outer_converged,
+            share_converged: tr.share.converged,
+            outer_iters: tr.outer_iters,
+            share_iters: tr.share.iters,
+            load_residual: tr.share.load_residual,
+            flow_balance_residual: tr.share.flow_balance_residual,
+            mu_eff: tr.mu_eff,
+            p_bar: tr.p_bar,
+            asperity_degenerate: tr.share.asperity_degenerate,
+            contact_count: tr.share.contact_count,
+        };
+        Ok((res, d, h_bar))
+    }
+
+    /// 공통 meta (그림별 키는 호출측이 덧붙임).
+    fn meta_common(&self, p_h: f64) -> serde_json::Value {
+        let hc_hd = refr::hamrock_dowson_point_hc(
+            self.op_base.eta0, LIT2010_ANCHOR_U, self.op_base.alpha_visc,
+            2.0 * PI * self.b_est * self.b_est * LIT2010_ANCHOR_PH / 3.0,
+            2.0 * self.mat.e_red, self.r_x_est, 1.0,
+        );
+        serde_json::json!({
+            "pH": p_h,
+            "S": 0.0,
+            "tau0": self.op_base.tau0,
+            "eRed": self.mat.e_red,
+            "ePrimePaper": 2.0 * self.mat.e_red,
+            "eta0": self.op_base.eta0,
+            "alphaVisc": self.op_base.alpha_visc,
+            "bEst": self.b_est,
+            "rXEst": self.r_x_est,
+            "fEst": self.f_est,
+            "hCAnchor": self.h_c_anchor,
+            "hCAnchorAt": { "uMean": LIT2010_ANCHOR_U, "pH": LIT2010_ANCHOR_PH },
+            "hCFormula": "hC = hCAnchor·(uMean/0.15)^0.67·(pH/0.63e9)^(-0.201)  [Hamrock–Dowson 1977 point-contact exponents; W∝pH³]",
+            "hCHamrockDowsonAtAnchor": hc_hd,
+            "bumpH": self.bump_h,
+            "bumpR": self.bump_r,
+            "bumpSign": self.bump_sign,
+            "bumpSphereRadius": (self.bump_r * self.bump_r + self.bump_h * self.bump_h) / (2.0 * self.bump_h),
+            "grid": { "nx": self.grid.nx, "ny": self.grid.ny, "lx": self.grid.lx, "ly": self.grid.ly,
+                      "dx": self.grid.dx(), "dy": self.grid.dy(),
+                      "bumpPointsAcrossRadiusX": self.bump_r / self.grid.dx(),
+                      "bumpPointsAcrossRadiusY": self.bump_r / self.grid.dy() },
+            "estimatedFlags": [
+                "bEst: Hertz half-width read from Fig 7 x/b axis (graph inference)",
+                "fEst = 2π·bEst²·pH/3 (point-contact Hertz from bEst)",
+                "rXEst = 4E′·bEst³/(3·fEst) ≈ 0.040 m (from bEst, fEst)",
+                "hCAnchor = bumpH/8 from paper text ('about eight times smaller'), scaled with H–D point-contact exponents",
+                "tau0 = 1e9 Pa as Newtonian approximation (Eyring suppressed)",
+            ],
+            "assumptions": [
+                "nu = 0.3", "hardness = 7e9 Pa", "pLim = 4e9 Pa (plastic clamp)", "temp = 348.15 K (unused placeholder)",
+                "surface 2 smooth (rough2 = 0); bump on surface 1; pure rolling S = 0 (u2 = uMean)",
+                "M1/M6 window model: mean pressure p̄ = pH is applied uniformly over the window (lx = 2·bEst) — the Hertzian macro-pressure variation across x/b is NOT modelled; pOverPh is p_tran/pH on a flat p̄",
+                "bump sign follows M1 (positive = protrusion); M2 defines roughness as a gap perturbation (opposite sign) — model-level convention, unchanged here",
+                "h̄ from anchor scaling, not from the model's line-contact Dowson–Toyoda",
+            ],
+            // ★ 정직성: 2026-09-09 진단(examples/lit2010_native.rs + 부호 실험)에서 관측된 모델 한계.
+            //   셸에서 고치지 않는다(물리 모듈 불변경). 뷰어는 캡션으로 노출할 것.
+            "caveats": [
+                "M1 and M2 use opposite sign conventions for `rough` (M1: height, M2: gap perturbation). For zero-mean periodic waviness this is invisible; for a single one-sided bump it is not.",
+                "bumpSign=+1 (default): M1 loads the bump tip (p_dry = pLim) but the uniform window pressure p̄ = pH flattens the whole window (h_dry ≈ 0 everywhere), so the M6 merged fluctuation is M2's alone, which reads the bump as a film INCREASE → h_tran at the bump ≈ h̄ + bumpH, p_tran at the bump cavitates to 0, and any low-h̄ contact appears in the flat region, not on the bump (see contactCountInBump).",
+                "bumpSign=-1: the film closes on the bump but M1 sees a dimple (p_dry at bump = 0), so the asperity load fraction is carried by flat-region points; phiBl stays ~1-2 % almost independent of h̄.",
+                "Pure rolling S=0 makes M2's particular solution vanish (Q ∝ u2−ū = 0); only the complementary wave (inlet ratio g = 0.5, propagated lx/2) remains, which places a half-amplitude ghost copy of the bump at x/b = ±1 (periodic edge).",
+                "Consequently phiBl / loadRatioPct / areaRatioPct here quantify the M6 flow-balance outcome of this chain, NOT bump-asperity load sharing as in ME2010 Fig 8. Do not read them as a reproduction.",
+            ],
+        })
+    }
+}
+
+fn lit2010_err(e: String) -> String {
+    serde_json::to_string(&serde_json::json!({ "ok": false, "error": e })).unwrap_or_default()
+}
+
+fn parse_overrides(json: &str) -> Result<Lit2010Overrides, String> {
+    let s = if json.trim().is_empty() { "{}" } else { json };
+    serde_json::from_str(s).map_err(|e| format!("overrides parse failed: {e}"))
+}
+
+/// ME2010 **Fig 7** — 범프 중앙단면(j = ny/2) 압력·유막 프로파일. `overrides` JSON(`{}` = 기본).
+pub fn run_lit2010_fig7(overrides_json: &str) -> String {
+    match lit2010_fig7_inner(overrides_json) {
+        Ok(v) => v.to_string(),
+        Err(e) => lit2010_err(e),
+    }
+}
+
+fn lit2010_fig7_inner(overrides_json: &str) -> Result<serde_json::Value, String> {
+    let o = parse_overrides(overrides_json)?;
+    if o.speeds.is_some() {
+        return Err("`speeds` 는 Fig 8 전용 — Fig 7 은 `uMean` 단일값".into());
+    }
+    let case = Lit2010Case::build(&o, refr::ME2010_FIG7_P_H)?;
+    let u_mean = o.u_mean.unwrap_or(refr::ME2010_FIG7_U_MEAN);
+    let p_h = case.op_base.p_h;
+    let (res, diag, h_c) = case.solve(u_mean, p_h)?;
+
+    let (nx, ny) = (case.grid.nx, case.grid.ny);
+    let j0 = ny / 2;
+    let dx = case.grid.dx();
+    let xc = (nx / 2) as f64 * dx;
+    let x_over_b: Vec<f64> = (0..nx).map(|i| (i as f64 * dx - xc) / case.b_est).collect();
+    let p_over_ph: Vec<f64> = (0..nx).map(|i| res.p_tran.at(i, j0) / p_h).collect();
+    let h_m: Vec<f64> = (0..nx).map(|i| res.h_tran.at(i, j0)).collect();
+    let h_dimless: Vec<f64> =
+        h_m.iter().map(|&h| h * case.r_x_est / (case.b_est * case.b_est)).collect();
+    let (i_peak, peak) = p_over_ph
+        .iter()
+        .cloned()
+        .enumerate()
+        .fold((0usize, f64::NEG_INFINITY), |a, (i, v)| if v > a.1 { (i, v) } else { a });
+    let min_h = h_m.iter().cloned().fold(f64::INFINITY, f64::min);
+    let peak_field = res.p_tran.max().unwrap_or(0.0) / p_h;
+    let min_h_field = res.h_tran.min().unwrap_or(0.0);
+    let ic = nx / 2;
+
+    let mut meta = case.meta_common(p_h);
+    meta["uMean"] = serde_json::json!(u_mean);
+    meta["hC"] = serde_json::json!(h_c);
+    meta["sliceJ"] = serde_json::json!(j0);
+    Ok(serde_json::json!({
+        "ok": true,
+        "meta": meta,
+        "xOverB": x_over_b,
+        "pOverPh": p_over_ph,
+        "hM": h_m,
+        "hDimless": h_dimless,
+        "peakPOverPh": peak,
+        "peakXOverB": x_over_b[i_peak],
+        "minH": min_h,
+        "peakPOverPhField": peak_field,
+        "minHField": min_h_field,
+        // 범프 정점(격자점 (nx/2, ny/2)) 값 — "범프 위에서 무슨 일이 나는가" 를 직접 노출.
+        "pOverPhAtBump": res.p_tran.at(ic, j0) / p_h,
+        "hAtBump": res.h_tran.at(ic, j0),
+        "phiBl": res.phi_bl,
+        "contactCountInBump": case.contact_in_bump(&res.h_tran),
+        "diagnostics": diag,
+    }))
+}
+
+/// ME2010 **Fig 8** — 속도 스윕(p_h = 1 GPa, S = 0) 하중분율. `overrides` JSON(`{}` = 기본).
+pub fn run_lit2010_fig8(overrides_json: &str) -> String {
+    match lit2010_fig8_inner(overrides_json) {
+        Ok(v) => v.to_string(),
+        Err(e) => lit2010_err(e),
+    }
+}
+
+fn lit2010_fig8_inner(overrides_json: &str) -> Result<serde_json::Value, String> {
+    let o = parse_overrides(overrides_json)?;
+    if o.u_mean.is_some() {
+        return Err("`uMean` 은 Fig 7 전용 — Fig 8 은 `speeds` 배열".into());
+    }
+    let case = Lit2010Case::build(&o, refr::ME2010_FIG8_P_H)?;
+    let speeds: Vec<f64> = o.speeds.clone().unwrap_or_else(|| LIT2010_FIG8_SPEEDS.to_vec());
+    if speeds.is_empty() || speeds.len() > 64 {
+        return Err(format!("speeds 는 1~64 점: {}", speeds.len()));
+    }
+    for &u in &speeds {
+        if !(u > 0.0) || !u.is_finite() {
+            return Err(format!("speeds 원소는 유한 양수여야 한다: {u}"));
+        }
+    }
+    let p_h = case.op_base.p_h;
+    let n_total = (case.grid.nx * case.grid.ny) as f64;
+    let mut points = Vec::with_capacity(speeds.len());
+    for &u in &speeds {
+        let (res, d, h_c) = case.solve(u, p_h)?;
+        points.push(serde_json::json!({
+            "uMean": u,
+            "hC": h_c,
+            "phiBl": res.phi_bl,
+            "loadRatioPct": 100.0 * res.phi_bl,
+            "areaRatioPct": 100.0 * d.contact_count as f64 / n_total,
+            "contactCount": d.contact_count,
+            "contactCountInBump": case.contact_in_bump(&res.h_tran),
+            "converged": d.outer_converged && d.share_converged,
+            "outerIters": d.outer_iters,
+            "shareIters": d.share_iters,
+            "loadResidual": d.load_residual,
+            "asperityDegenerate": d.asperity_degenerate,
+        }));
+    }
+    let meta = case.meta_common(p_h);
+    Ok(serde_json::json!({ "ok": true, "meta": meta, "points": points }))
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 //  WASM 경계 — wasm32 에서만
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -1057,6 +1470,20 @@ pub fn reference_tables_json() -> String {
 #[wasm_bindgen]
 pub fn solve_chain_json(input_json: &str) -> String {
     run_chain(input_json)
+}
+
+/// ME2010 Fig 7 (범프 중앙단면): overrides JSON(`{}` = 기본) → 프로파일 JSON.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn lit2010_fig7_json(overrides_json: &str) -> String {
+    run_lit2010_fig7(overrides_json)
+}
+
+/// ME2010 Fig 8 (속도 스윕 하중분율): overrides JSON(`{}` = 기본) → points JSON.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn lit2010_fig8_json(overrides_json: &str) -> String {
+    run_lit2010_fig8(overrides_json)
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -1276,5 +1703,155 @@ mod tests {
         v2["slice_j"] = serde_json::json!(99);
         let r2: serde_json::Value = serde_json::from_str(&run_chain(&v2.to_string())).unwrap();
         assert_eq!(r2["ok"], false);
+    }
+
+    // ── S④: ME2010 Fig 7/8 — 구조·범위만(물리 단정 금지; 관측 한계는 meta.caveats) ──
+
+    /// 작은 격자(테스트 속도용). 범프 반경 18 µm 가 dx=5.6 µm 에 3.2점 — 구조 검증엔 충분.
+    const SMALL: &str = r#"{"nx":64,"ny":16}"#;
+
+    #[test]
+    fn s4_bump_field_is_spherical_cap_geometry() {
+        let g = Grid::new(64, 32, 360e-6, 180e-6);
+        let (hb, rb) = (1.2e-6, 18e-6);
+        let f = spherical_bump_field(&g, hb, rb).unwrap();
+        assert!(check_dims("bump", &g, &f).is_ok());
+        let (ic, jc) = (32usize, 16usize);
+        assert!((f.at(ic, jc) - hb).abs() < 1e-18, "정점 = h_b");
+        // 반경 방향 단조 감소, 밑면 밖 0, 전부 ≥0 (M1 규약: 양수 = 돌출).
+        let mut prev = f.at(ic, jc);
+        for i in ic..64 {
+            let v = f.at(i, jc);
+            assert!(v <= prev + 1e-18 && v >= 0.0, "i={i}: {v} > {prev}");
+            let x = (i - ic) as f64 * g.dx();
+            if x > rb {
+                assert_eq!(v, 0.0, "밑면 밖은 0 (x={x})");
+            }
+            prev = v;
+        }
+        // 구 캡 형상: 정점 아래 1점의 값이 구 방정식과 일치.
+        let r_s = (rb * rb + hb * hb) / (2.0 * hb);
+        let x1 = g.dx();
+        let expect = (r_s * r_s - x1 * x1).sqrt() - (r_s - hb);
+        assert!((f.at(ic + 1, jc) - expect).abs() < 1e-18);
+        // 비물리 거부(패닉 아님).
+        assert!(spherical_bump_field(&g, 0.0, rb).is_err());
+        assert!(spherical_bump_field(&g, hb, -1.0).is_err());
+        assert!(spherical_bump_field(&Grid::new(0, 4, 1e-4, 1e-4), hb, rb).is_err());
+    }
+
+    #[test]
+    fn s4_fig7_returns_profile_structure() {
+        let out = run_lit2010_fig7(SMALL);
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["ok"], true, "{out}");
+        let n = 64;
+        for k in ["xOverB", "pOverPh", "hM", "hDimless"] {
+            let a = v[k].as_array().unwrap_or_else(|| panic!("{k} 배열"));
+            assert_eq!(a.len(), n, "{k} 길이 = nx");
+            assert!(a.iter().all(|x| x.as_f64().map_or(false, f64::is_finite)), "{k} 유한");
+        }
+        // x/b ∈ [−1, 1) (lx = 2b, 중앙 격자점이 0).
+        let x = v["xOverB"].as_array().unwrap();
+        assert!((x[n / 2].as_f64().unwrap()).abs() < 1e-12, "중앙 = 0");
+        assert!((x[0].as_f64().unwrap() + 1.0).abs() < 1e-12, "좌단 = −1");
+        // hDimless = h·R_x/b² 항등(셸 산술).
+        let m = &v["meta"];
+        let (rx, b) = (m["rXEst"].as_f64().unwrap(), m["bEst"].as_f64().unwrap());
+        let h0 = v["hM"][3].as_f64().unwrap();
+        assert!((v["hDimless"][3].as_f64().unwrap() - h0 * rx / (b * b)).abs() <= 1e-12 * (h0 * rx / (b * b)).abs());
+        // 피크 > 1 (범프가 압력을 집중시킴 — 위치는 단정하지 않음), φ_bl ∈ [0,1].
+        assert!(v["peakPOverPh"].as_f64().unwrap() > 1.0, "{}", v["peakPOverPh"]);
+        let phi = v["phiBl"].as_f64().unwrap();
+        assert!((0.0..=1.0).contains(&phi));
+        assert!(v["peakXOverB"].as_f64().is_some() && v["pOverPhAtBump"].as_f64().is_some());
+        // 진단 비-Option(R5) + 정직성 메타.
+        assert!(v["diagnostics"]["outerConverged"].is_boolean());
+        assert!(v["diagnostics"]["contactCount"].is_u64());
+        assert!(!m["estimatedFlags"].as_array().unwrap().is_empty());
+        assert!(!m["assumptions"].as_array().unwrap().is_empty());
+        assert!(!m["caveats"].as_array().unwrap().is_empty());
+        // 기본 사례 = 앵커점 → hC 정확히 0.15 µm (hd_point_scale(1,1)=1).
+        assert_eq!(m["hC"].as_f64().unwrap(), 0.15e-6);
+        assert_eq!(m["S"], 0.0);
+        assert_eq!(m["bumpSign"], 1.0);
+        assert_eq!(m["grid"]["nx"], 64);
+    }
+
+    #[test]
+    fn s4_fig8_returns_twelve_points_in_range() {
+        let out = run_lit2010_fig8(SMALL);
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["ok"], true, "{out}");
+        let pts = v["points"].as_array().unwrap();
+        assert_eq!(pts.len(), 12);
+        assert_eq!(v["meta"]["pH"], 1.0e9);
+        let mut prev_u = 0.0;
+        let mut prev_hc = 0.0;
+        for p in pts {
+            let u = p["uMean"].as_f64().unwrap();
+            let hc = p["hC"].as_f64().unwrap();
+            let phi = p["phiBl"].as_f64().unwrap();
+            assert!(u > prev_u && hc > prev_hc, "스윕 오름차순·hC 단조(앵커 스케일, 셸 산술)");
+            assert!((0.0..=1.0).contains(&phi), "φ_bl ∈ [0,1]: {phi}");
+            assert!((p["loadRatioPct"].as_f64().unwrap() - 100.0 * phi).abs() < 1e-9);
+            let area = p["areaRatioPct"].as_f64().unwrap();
+            assert!((0.0..=100.0).contains(&area));
+            assert!(p["contactCountInBump"].as_u64().unwrap() <= p["contactCount"].as_u64().unwrap());
+            assert!(p["converged"].is_boolean() && p["loadResidual"].as_f64().unwrap().is_finite());
+            prev_u = u;
+            prev_hc = hc;
+        }
+    }
+
+    /// 앵커 스케일이 reference(H–D 점접촉 지수)를 그대로 통과하는지 — 셸 산술 무결성.
+    #[test]
+    fn s4_hc_scaling_passes_through_reference() {
+        let out = run_lit2010_fig8(r#"{"nx":32,"ny":8,"pH":0.63e9,"speeds":[0.15,0.3]}"#);
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["ok"], true, "{out}");
+        let h0 = v["points"][0]["hC"].as_f64().unwrap();
+        let h1 = v["points"][1]["hC"].as_f64().unwrap();
+        assert_eq!(h0, 0.15e-6, "앵커점 항등");
+        assert!((h1 / h0 - refr::hd_point_scale(2.0, 1.0)).abs() < 1e-12);
+        // p_h 의존: W ∝ p_h³ → (p_h/p_h₀)^(−0.201).
+        let out2 = run_lit2010_fig8(r#"{"nx":32,"ny":8,"speeds":[0.15]}"#);
+        let v2: serde_json::Value = serde_json::from_str(&out2).unwrap();
+        let h2 = v2["points"][0]["hC"].as_f64().unwrap();
+        let expect = 0.15e-6 * refr::hd_point_scale(1.0, (1.0e9_f64 / 0.63e9).powi(3));
+        assert!((h2 - expect).abs() < 1e-20, "{h2} vs {expect}");
+    }
+
+    #[test]
+    fn s4_bad_overrides_are_structured_errors_not_panics() {
+        let bad = [
+            r#"{"nx":64,"ny":16,"foo":1}"#,                // unknown key
+            r#"{"nx":64,"ny":16,"speeds":[0.1]}"#,         // speeds 는 fig8 전용
+            r#"{"nx":64,"ny":16,"bumpSign":2}"#,           // ±1 만
+            r#"{"nx":64,"ny":16,"pH":-1}"#,                // 비물리
+            r#"{"nx":64,"ny":16,"bumpR":200e-6}"#,         // 도메인보다 큰 범프
+            r#"{"nx":2,"ny":2}"#,                          // 격자 하한
+            r#"{"nx":64,"ny":16,"uMean":0}"#,              // 속도 0
+            r#"not json"#,
+        ];
+        for b in bad {
+            let v: serde_json::Value = serde_json::from_str(&run_lit2010_fig7(b)).unwrap();
+            assert_eq!(v["ok"], false, "fig7 should reject: {b}");
+            assert!(v["error"].is_string());
+        }
+        // fig8 전용 거부: uMean · 빈/음수 speeds.
+        for b in [
+            r#"{"nx":64,"ny":16,"uMean":0.1}"#,
+            r#"{"nx":64,"ny":16,"speeds":[]}"#,
+            r#"{"nx":64,"ny":16,"speeds":[0.1,-0.2]}"#,
+        ] {
+            let v: serde_json::Value = serde_json::from_str(&run_lit2010_fig8(b)).unwrap();
+            assert_eq!(v["ok"], false, "fig8 should reject: {b}");
+        }
+        // bumpSign=−1 은 허용(진단용) 되고 meta 에 기록된다.
+        let v: serde_json::Value =
+            serde_json::from_str(&run_lit2010_fig7(r#"{"nx":64,"ny":16,"bumpSign":-1}"#)).unwrap();
+        assert_eq!(v["ok"], true);
+        assert_eq!(v["meta"]["bumpSign"], -1.0);
     }
 }

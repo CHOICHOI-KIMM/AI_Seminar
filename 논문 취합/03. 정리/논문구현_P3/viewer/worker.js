@@ -7,6 +7,16 @@ import init, {
   reference_curve_json,
   reference_tables_json,
 } from "./pkg/micropitting_wasm.js";
+// 문헌검증 #1 (2010 Fig 7·8) 진입점 — 네임스페이스 import: 이름붙은 import 는 pkg 에 export 가
+// 아직 없으면 모듈 링크 자체가 실패해 worker 전체가 죽는다(무증상). 네임스페이스로 받아
+// 호출 시점에 부재를 검사해 "미빌드" 를 명시적으로 보고한다. (자립판 빌더가 이 줄을 치환)
+import * as __wasmNs from "./pkg/micropitting_wasm.js";
+const LIT2010 = { fig7: "lit2010_fig7_json", fig8: "lit2010_fig8_json" };
+function lit2010Call(which, overrides) {
+  const fn = __wasmNs[LIT2010[which]];
+  if (typeof fn !== "function") throw new Error(`솔버 진입점 미빌드 (${LIT2010[which]})`);
+  return JSON.parse(fn(JSON.stringify(overrides || {})));
+}
 
 const wstep = (n) => fetch(`/__viewer__/w/${n}`).catch(() => {});
 wstep("moduleEval");
@@ -54,6 +64,12 @@ self.onmessage = async (ev) => {
       result = JSON.parse(reference_curve_json(payload.kind, JSON.stringify(payload.params || {})));
     } else if (cmd === "refTables") {
       result = JSON.parse(reference_tables_json());
+    } else if (cmd === "lit2010fig7") {
+      // 2010 Fig 7 (bump 중앙단면) — overrides 는 그대로 전달, 기본 "{}" (물리 0건)
+      result = lit2010Call("fig7", payload && payload.overrides);
+    } else if (cmd === "lit2010fig8") {
+      // 2010 Fig 8 (속도 sweep) — 수십 초 걸릴 수 있음
+      result = lit2010Call("fig8", payload && payload.overrides);
     } else {
       throw new Error(`unknown cmd: ${cmd}`);
     }

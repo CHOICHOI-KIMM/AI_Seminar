@@ -40,14 +40,20 @@ export function linePlot(canvas, opts) {
 
   const leftSeries = drawSeries.filter((s) => s.axis !== "right");
   const rightSeries = drawSeries.filter((s) => s.axis === "right");
+  const leftPts = (opts.points || []).filter((p) => p.axis !== "right");
+  const rightPts = (opts.points || []).filter((p) => p.axis === "right");
   let xs = [], ys = [];
   for (const s of drawSeries) xs = xs.concat(s.x);
   for (const s of leftSeries) ys = ys.concat(s.y);
-  for (const p of opts.points || []) { xs.push(p.x); ys.push(p.y); }
+  for (const p of opts.points || []) xs.push(p.x);
+  for (const p of leftPts) ys.push(p.y);
   if (!xs.length) return;
   xs = xs.filter(Number.isFinite); ys = ys.filter(Number.isFinite);
-  if (!xs.length || !ys.length) return;
-  const xmin0 = Math.min(...xs), xmax0 = Math.max(...xs);
+  if (!xs.length) return;
+  if (!ys.length) ys = [0]; // 좌축 시리즈 전부 null(미생성) 이어도 우축만으로 그린다
+  // opts.xRange=[x0,x1]: 고정 x 범위 (문헌 그림 축과 정합 — 표시 계층)
+  const xmin0 = opts.xRange ? opts.xRange[0] : Math.min(...xs);
+  const xmax0 = opts.xRange ? opts.xRange[1] : Math.max(...xs);
   let ymin = Math.min(...ys, 0), ymax = Math.max(...ys);
   if (ymax === ymin) ymax = ymin + 1;
   const pad = 0.06 * (ymax - ymin);
@@ -56,6 +62,7 @@ export function linePlot(canvas, opts) {
   // 우측 보조축 범위 (Δh_w 등 스케일이 다른 시리즈 — 배율 조작 없이 제 크기로)
   let ys2 = [];
   for (const s of rightSeries) ys2 = ys2.concat(s.y);
+  for (const p of rightPts) ys2.push(p.y);
   ys2 = ys2.filter(Number.isFinite);
   let ymin2 = 0, ymax2 = 1;
   if (ys2.length) {
@@ -141,7 +148,9 @@ export function linePlot(canvas, opts) {
     let started = false;
     for (let i = 0; i < s.x.length; i++) {
       if (xl && !(s.x[i] > 0)) continue;
-      if (!Number.isFinite(s.y[i])) continue;
+      // null/NaN(serde ∞ 또는 오라클 판독 공백) = 선 끊김 — 공백을 직선으로 메우지 않는다
+      if (!Number.isFinite(s.y[i]) || !Number.isFinite(s.x[i])) { started = false; continue; }
+      if (opts.xRange && (s.x[i] < xmin0 || s.x[i] > xmax0)) { started = false; continue; }
       const px = tx(s.x[i]), py = tyf(s.y[i]);
       if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
     }
@@ -149,10 +158,13 @@ export function linePlot(canvas, opts) {
     ctx.setLineDash([]);
   });
 
-  // 점 (문헌 데이터)
+  // 점 (문헌 데이터) — p.axis==="right" 이면 우측 보조축 기준
   (opts.points || []).forEach((p) => {
+    if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) return;
+    if (opts.xRange && (p.x < xmin0 || p.x > xmax0)) return;
+    const pyf = p.axis === "right" ? ty2 : ty;
     ctx.fillStyle = p.color || "#0f172a";
-    ctx.beginPath(); ctx.arc(tx(p.x), ty(p.y), 4, 0, 2 * Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(tx(p.x), pyf(p.y), 4, 0, 2 * Math.PI); ctx.fill();
     ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
   });
 
