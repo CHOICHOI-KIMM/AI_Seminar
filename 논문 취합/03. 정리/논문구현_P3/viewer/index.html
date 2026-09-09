@@ -189,7 +189,7 @@
               <canvas id="lit2010Fig7" width="880" height="460"></canvas>
               <div class="card" id="lit2010Fig7Meta" style="flex:1; min-width:260px; font-size:12px;">Fig 7 메타: (실행 전)</div>
             </div>
-            <div class="note" style="font-size:11px;">범례: <b>p</b> = p/p_h (좌축) · <b>h</b> = hR_x/b² (우축) · <b>점선</b> = 원문 모델 Fig 7(b) 그래프 판독 · <b>실선</b> = 본 솔버(접촉 중심 섭동). Deolalikar (a) 는 오버레이 대상 아님.</div>
+            <div class="note" style="font-size:11px;">범례: <b>p</b> = p/p_h (좌축) · <b>h</b> = hR_x/b² (우축) · <b>연한 점선</b> = 원문 모델 Fig 7(b) 그래프 판독 · <b>진한 실선</b> = 본 솔버(접촉 중심 섭동). 같은 색 계열끼리 비교(파랑=압력, 빨강=간극). Deolalikar (a) 는 오버레이 대상 아님.</div>
             <div class="row">
               <canvas id="lit2010Fig8Solver" width="880" height="460"></canvas>
               <div class="card" id="lit2010Fig8Meta" style="flex:1; min-width:260px; font-size:12px;">Fig 8 메타: (실행 전)</div>
@@ -597,10 +597,11 @@ function drawLit2010Fig7(r) {
     series.push({ x: src.xOverB, y: src[key], label, color, dash, axis });
   };
   // 오버레이 대상 = (b) 2010 원문 모델만 (Deolalikar (a) 는 상단 재현 패널에만; 연구자 지시)
-  add(o?.model2010, "pOverPh", "p 2010(b)", "#b45309", true);
-  if (r) series.push({ x: l2Arr(r.xOverB), y: l2Arr(r.pOverPh), label: "p 본솔버", color: "#2563eb" });
-  add(o?.model2010, "hDimless", "h 2010(b)", "#0891b2", true, "right");
-  if (r) series.push({ x: l2Arr(r.xOverB), y: l2Arr(r.hDimless), label: "h 본솔버", color: "#dc2626", axis: "right" });
+  // 색 체계(직관 비교): 양(quantity)별 동일 계열 — 압력=파랑, 간극=빨강(우축 라벨색) · 문헌=연한 점선, 본 솔버=진한 실선
+  add(o?.model2010, "pOverPh", "p 2010(b)", "#93c5fd", true);
+  if (r) series.push({ x: l2Arr(r.xOverB), y: l2Arr(r.pOverPh), label: "p 본솔버", color: "#1d4ed8" });
+  add(o?.model2010, "hDimless", "h 2010(b)", "#fca5a5", true, "right");
+  if (r) series.push({ x: l2Arr(r.xOverB), y: l2Arr(r.hDimless), label: "h 본솔버", color: "#b91c1c", axis: "right" });
   const c = $("lit2010Fig7");
   if (!series.length) {
     const ctx = c.getContext("2d"); ctx.clearRect(0, 0, c.width, c.height);
