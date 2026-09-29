@@ -4,3 +4,7 @@
 # MinerU 중간 산출물(전체 논문명이 반복되는 깊은 경로 + 대용량 origin.pdf 사본) — 커밋 제외
 .mineru_out/
 **/.mineru_out/
+
+# Python 바이트코드 캐시
+__pycache__/
+*.pyc

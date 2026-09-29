@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>순수구름 EHL 거칠기 감쇠 이론 — Hooke &amp; Li 2006 Part 1</title>
+<style>
+:root{
+  --paper:#FBFAF7; --ink:#15191F; --ink-2:#4A525C; --ink-3:#7C848E;
+  --rule:#D3D7DC; --rule-2:#E8EAEC;
+  --short:#14606E;      /* 단파장 = 거의 그대로 통과 */
+  --mid:#B8862A;        /* 전이 */
+  --long:#A03B22;       /* 장파장 = 평탄화 */
+  --tint:#EDF3F4; --tint-warm:#FAF1EB;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",
+         system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16.5px; line-height:1.72;
+  -webkit-font-smoothing:antialiased; word-break:keep-all;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+
+/* ── 비대칭 2단: 좌측 좁은 마커 열 + 우측 본문 ── */
+.sec{display:grid;grid-template-columns:104px minmax(0,1fr);gap:0 30px;
+     padding:58px 0;border-top:1px solid var(--rule)}
+.sec:first-of-type{border-top:none}
+.mk{font-family:var(--mono);font-size:12px;letter-spacing:.02em;
+    color:var(--ink-3);line-height:1.5;padding-top:.55em}
+.mk b{display:block;color:var(--ink);font-weight:600;font-size:13px}
+.bd{min-width:0}
+@media(max-width:760px){
+  .sec{grid-template-columns:1fr;gap:0;padding:40px 0}
+  .mk{padding-top:0;margin-bottom:14px}
+  .mk b{display:inline;margin-right:8px}
+}
+
+h1{font-size:clamp(28px,4.6vw,44px);line-height:1.18;letter-spacing:-.02em;
+   font-weight:680;margin:0 0 14px}
+h2{font-size:clamp(20px,2.6vw,26px);line-height:1.3;letter-spacing:-.014em;
+   font-weight:660;margin:0 0 16px}
+h3{font-size:17px;font-weight:650;margin:30px 0 10px;letter-spacing:-.008em}
+h4{font-size:15px;font-weight:640;margin:22px 0 8px;color:var(--ink-2)}
+p{margin:0 0 15px;max-width:74ch}
+a{color:var(--short)}
+strong{font-weight:640}
+em{font-style:normal;background:linear-gradient(transparent 62%,var(--tint) 62%)}
+
+/* ── 헤더 ── */
+header{padding:64px 0 10px}
+.sub{color:var(--ink-2);font-size:17px;max-width:66ch;margin:0 0 26px}
+.meta{display:flex;flex-wrap:wrap;gap:0 26px;font-size:13.5px;color:var(--ink-3);
+      font-family:var(--mono);border-top:1px solid var(--rule);padding-top:14px}
+.meta span{padding:3px 0}
+
+/* ── 수식 ── */
+.eq{margin:20px 0;padding:16px 18px 16px 20px;background:#fff;
+    border:1px solid var(--rule);border-left:3px solid var(--short);
+    position:relative;overflow-x:auto}
+.eq .n{position:absolute;right:12px;top:10px;font-family:var(--mono);
+       font-size:11.5px;color:var(--ink-3)}
+.f{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+   font-size:17.5px;line-height:2.05;white-space:nowrap}
+.f i{font-style:italic;padding:0 .06em}
+.f sub{font-size:.68em;font-style:italic}
+.f sup{font-size:.68em}
+.fr{display:inline-block;vertical-align:-.62em;text-align:center;margin:0 .25em}
+.fr>span{display:block;padding:0 .3em}
+.fr>span:first-child{border-bottom:1.2px solid var(--ink);padding-bottom:.05em}
+.note{font-size:13.5px;color:var(--ink-2);margin-top:8px;line-height:1.6}
+
+/* ── 표 ── */
+table{width:100%;border-collapse:collapse;font-size:14px;margin:18px 0}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--rule-2)}
+th{font-weight:640;font-size:12.5px;color:var(--ink-2);
+   border-bottom:1.5px solid var(--rule);white-space:nowrap}
+td:first-child,th:first-child{text-align:left}
+tbody tr:hover{background:#fff}
+.num{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* ── 배지 ── */
+.b{display:inline-block;font-size:11.5px;font-family:var(--mono);
+   padding:1px 7px;border-radius:2px;line-height:1.7;white-space:nowrap}
+.b-ok{background:var(--tint);color:var(--short)}
+.b-no{background:var(--tint-warm);color:var(--long)}
+.b-mid{background:#FAF6EA;color:#8A6314}
+
+/* ── 강조 블록 ── */
+.call{border:1px solid var(--rule);border-top:3px solid var(--long);
+      background:#fff;padding:20px 22px;margin:24px 0}
+.call.ok{border-top-color:var(--short)}
+.call h4{margin:0 0 8px;color:var(--ink);font-size:15.5px}
+.call p:last-child{margin-bottom:0}
+
+/* ── 도해 ── */
+figure{margin:26px 0;background:#fff;border:1px solid var(--rule);padding:18px}
+figcaption{font-size:13px;color:var(--ink-2);margin-top:12px;line-height:1.6;
+           border-top:1px solid var(--rule-2);padding-top:10px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.lg{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;
+    color:var(--ink-2);margin-top:12px}
+.lg i{display:inline-block;width:16px;height:3px;vertical-align:middle;
+      margin-right:6px;border-radius:1px}
+
+ul,ol{margin:0 0 15px;padding-left:1.25em;max-width:74ch}
+li{margin-bottom:7px}
+li::marker{color:var(--ink-3)}
+hr{border:none;border-top:1px solid var(--rule);margin:34px 0}
+
+.tag{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+footer{padding:46px 0 70px;border-top:1px solid var(--rule);
+       font-size:13.5px;color:var(--ink-3);line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>순수구름 EHL 접촉의<br>거칠기 감쇠 이론</h1>
+  <p class="sub">Hooke &amp; Li (2006) Part 1 — 저진폭 정현파 거칠기에 대한 섭동 해석.
+  이론 구조, 가정과 적용범위, 그리고 대형 테이퍼 롤러 베어링 마이크로피팅 예측에
+  쓸 수 있는가에 대한 검토.</p>
+  <div class="meta">
+    <span>Proc. IMechE Part C, 220(C6), 901–913</span>
+    <span>DOI 10.1243/09544062C03405</span>
+    <span>정리 2026-08-28</span>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="mk"><b>핵심</b>마스터커브</div>
+  <div class="bd">
+    <h2>이론 전체가 하나의 곡선으로 압축된다</h2>
+    <p>거칠기가 EHL 접촉을 통과하면 진폭이 줄어든다. 얼마나 줄어드는지는
+    <em>거칠기 파장을 입구 압력 스윕 길이로 나눈 비</em> 하나로 거의 결정된다.
+    이 비를 무차원 파장 <span class="f"><i>Λ</i></span> 라 하면, 감쇠는 아래
+    한 곡선 위에 놓인다. 하중·속도·점도가 달라도 <span class="f"><i>Λ</i></span> 로
+    묶으면 같은 곡선이 된다.</p>
+
+    <figure>
+      <svg id="hero" viewBox="0 0 860 430" role="img"
+           aria-label="무차원 파장에 대한 진폭비 마스터커브와 운전점 5개"></svg>
+      <div class="lg">
+        <span><i style="background:#14606E"></i>횡방향 <span class="f"><i>θ</i></span>=0°</span>
+        <span><i style="background:#B8862A"></i>45°</span>
+        <span><i style="background:#A03B22"></i>축방향 90°</span>
+        <span style="color:var(--ink-3)">● 우리 TRB 운전점 (횡방향, λ=10~500 µm)</span>
+      </div>
+      <figcaption>진폭비 <span class="f"><i>H</i>/<i>A</i></span> 는 <span class="f"><i>Λ</i></span> ≈ 0.1 아래에서
+      1(변형 없음)에 가깝고, <span class="f"><i>Λ</i></span> ≈ 1 부근에서 급격히 떨어져
+      <span class="f"><i>Λ</i></span> ≳ 10 에서 0(완전 평탄화)에 이른다. 원문 Fig. 6 의 곡선맞춤식
+      (19)–(21) 로 재작도했고, 우리 5개 운전점을 겹쳐 표시했다.</figcaption>
+    </figure>
+
+    <div class="eq"><span class="n">(20)</span><div class="f">
+      <i>Λ</i> = <span class="fr"><span><i>λ</i></span><span><i>b</i></span></span>
+      <i>P</i><sup>1.5</sup> <i>S</i><sup>−2</sup> ,
+      &nbsp;&nbsp; <i>λ</i> = <span class="fr"><span>2π</span><span>√(<i>ω</i><sup>2</sup>+<i>ξ</i><sup>2</sup>)</span></span> ,
+      &nbsp;&nbsp; tan <i>θ</i> = <i>ξ</i>/<i>ω</i>
+    </div>
+    <p class="note"><i>b</i> = Hertz 반접촉폭, <i>P</i> = <i>α p</i><sub>Hertz</sub> (Greenwood 하중 파라미터),
+    <i>S</i> = <i>G U</i><sup>0.25</sup> (Greenwood 속도 파라미터), <i>G</i> = <i>αE′</i>,
+    <i>U</i> = <i>η</i><sub>0</sub><i>u</i>/(<i>E′R</i><sub>eff</sub>).
+    <i>θ</i> = 0 은 롤링 방향으로 파형이 변하는 횡방향 거칠기, <i>θ</i> = 90° 는 접촉 축을 따라 변하는 축방향 거칠기.</p>
+    </div>
+
+    <p><span class="f"><i>P</i><sup>1.5</sup><i>S</i><sup>−2</sup></span> 는 입구 압력 스윕 길이를
+    <span class="f"><i>b</i></span> 로 정규화한 양의 역수 역할을 한다. 하중이 커지면
+    (<span class="f"><i>P</i></span> 증가) 입구 스윕이 짧아져 같은 파장이라도
+    <span class="f"><i>Λ</i></span> 가 커지고, 따라서 더 강하게 평탄화된다.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="mk"><b>1</b>이론 구조</div>
+  <div class="bd">
+    <h2>평활해 위에 얹는 1차 섭동</h2>
+    <p>출발점은 거칠기가 없는 매끄러운 선접촉의 정확한 해다. 논문은 이것을
+    다중격자 solver 로 먼저 얻는다. Reynolds 방정식은</p>
+
+    <div class="eq"><span class="n">(1)</span><div class="f">
+      <span class="fr"><span>∂</span><span>∂<i>x</i></span></span>
+      (<i>ζ</i> <span class="fr"><span>∂<i>p</i></span><span>∂<i>x</i></span></span>) +
+      <span class="fr"><span>∂</span><span>∂<i>y</i></span></span>
+      (<i>ζ</i> <span class="fr"><span>∂<i>p</i></span><span>∂<i>y</i></span></span>) =
+      <i>u</i> <span class="fr"><span>∂<i>ρh</i></span><span>∂<i>x</i></span></span> +
+      <span class="fr"><span>∂<i>ρh</i></span><span>∂<i>t</i></span></span> ,
+      &nbsp;&nbsp; <i>ζ</i> = <i>ρh</i><sup>3</sup>/12<i>η</i>
+    </div>
+    <p class="note">순수구름만 다루므로 <strong>비뉴턴 효과는 무시</strong>된다. 이것이
+    rolling–sliding 판과의 첫 번째 구조적 차이이며, 유동계수
+    <i>ζ</i> 가 방향에 무관한 단일값이 되어 <i>x</i>·<i>y</i> 로 나눌 필요가 없어진다.</p>
+    </div>
+
+    <p>여기에 저진폭 정현파 거칠기를 넣는다. 파수는 <span class="f"><i>x</i></span> 방향
+    <span class="f"><i>ω</i></span>, <span class="f"><i>y</i></span> 방향 <span class="f"><i>ξ</i></span>,
+    표면과 함께 속도 <span class="f"><i>u</i></span> 로 이동한다.</p>
+
+    <div class="eq"><span class="n">(2)(3)</span><div class="f">
+      <i>r</i> = <i>A</i> cos(<i>ωx</i> − <i>ωut</i>) cos(<i>ξy</i>)
+      = Re[<i>R</i>(<i>x</i>) e<sup>−i<i>ωut</i></sup>] cos(<i>ξy</i>) ,
+      &nbsp;&nbsp; <i>R</i>(<i>x</i>) = <i>A</i>e<sup>i<i>ωx</i></sup>
+    </div></div>
+
+    <p>진폭이 낮으므로 계의 응답은 선형이고, 압력·간극을 포함한 모든 변수가
+    같은 주파수 <span class="f"><i>ωu</i></span> 로 진동한다. 압력 섭동
+    <span class="f"><i>δp</i></span>, 그것이 만드는 탄성변형 <span class="f"><i>δw</i></span>,
+    합쳐진 간극 변화 <span class="f"><i>δh</i></span> 를 복소진폭으로 쓰면
+    <span class="f"><i>H</i>(<i>x</i>) = <i>R</i>(<i>x</i>) + <i>W</i>(<i>x</i>)</span> 이고,
+    <span class="f"><i>W</i>(<i>x</i>) = ∫<i>K</i>(<i>x</i>−<i>x</i>′)<i>P</i>(<i>x</i>′)d<i>x</i>′</span> 이다.</p>
+
+    <p>이 섭동들을 식 (1) 에 대입하고 1차 항만 모으면 <span class="f"><i>P</i>(<i>x</i>)</span> 에 대한
+    선형 상미분방정식을 얻는다. <strong>이론의 전부가 이 한 식이다.</strong></p>
+
+    <div class="eq"><span class="n">(9)</span><div class="f">
+      <span class="fr"><span>d</span><span>d<i>x</i></span></span>
+      (<i>ζ</i> <span class="fr"><span>d<i>P</i></span><span>d<i>x</i></span></span> +
+       <i>Z</i> <span class="fr"><span>d<i>p</i></span><span>d<i>x</i></span></span>) −
+      <i>ξ</i><sup>2</sup><i>ζP</i> =
+      <i>u</i> <span class="fr"><span>d<i>S</i></span><span>d<i>x</i></span></span> −
+      i<i>ωuS</i>
+    </div>
+    <p class="note"><i>S</i>, <i>Z</i> 는 각각 밀도–간극 곱 <i>ρh</i> 와 유동계수 <i>ζ</i> 의 섭동으로,
+    압력–밀도(Dowson–Higginson)·압력–점도(Roelands) 관계에서 얻는다.
+    좌변 첫 항이 Poiseuille 확산, 우변이 Couette 이류와 스퀴즈다.</p>
+    </div>
+
+    <div class="call ok">
+      <h4>rolling–sliding 판과 무엇이 다른가</h4>
+      <p>Hooke 외 2007 (Part C 221) 은 <span class="f"><i>Q</i></span>, <span class="f"><i>C</i></span> 를 통한
+      폐형 전달함수와, 별도 파수 <span class="f"><i>ψ</i></span> 를 갖는 보완파를 쓴다.
+      그 정식화는 미끄럼이 만드는 전단(유효 Eyring 응력 <span class="f"><i>τ</i><sub>e</sub></span>)에서
+      감쇠를 얻는다. <strong>본 논문에는 <span class="f"><i>Q</i></span>·<span class="f"><i>C</i></span>·<span class="f"><i>ψ</i></span> 도,
+      분리된 보완파도 없다.</strong> 식 (9) 를 직접 수치로 풀고 그 결과를
+      <span class="f"><i>Λ</i></span> 로 곡선맞춤한 것이 전부다. 따라서 미끄럼이 0 이어도 축퇴하지 않는다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="mk"><b>2</b>수치 해법</div>
+  <div class="bd">
+    <h2>파장에 따라 세 가지 방법을 갈아탄다</h2>
+    <p>식 (9) 는 유한차분으로 이산화한다. 이때 두 가지가 필수다. 첫째,
+    <span class="f"><i>x</i></span> 미분에 <strong>후방차분</strong>을 써야 안정하다 —
+    다중격자 solver 를 포함한 EHL 해법 전반이 공유하는 성질이다. 둘째,
+    <span class="f">i<i>ωu</i></span> 대신 스퀴즈 파라미터
+    <span class="f"><i>Q</i> = i(2<i>u</i>/d<i>x</i>) tan(<i>ω</i>d<i>x</i>/2)</span> 를 쓴다.
+    점도가 높아 좌변이 작아지는 영역에서 <em>간극이 엔트레인먼트 속도로 변하지 않은 채
+    이송되도록</em> 보장하기 위해서다. 차이는 0.02% 미만이지만 이송 오차가 누적되면 커진다.</p>
+
+    <p>탄성 영향계수는 FFT 로 얻는다. <span class="f">cos(<i>ω</i><sub>j</sub><i>x</i>)cos(<i>ξy</i>)</span>
+    형태의 압력이 만드는 변형이
+    <span class="f">4/(<i>E′</i>√(<i>ξ</i><sup>2</sup>+<i>ω</i><sub>j</sub><sup>2</sup>))</span> 배라는
+    고전 결과(Johnson)를 역변환하는 방식으로, 이전의 수치적분보다 빠르고 정확하다.</p>
+
+    <h3>세 가지 해법과 전환 지점</h3>
+    <div class="tw"><table>
+      <thead><tr><th>해법</th><th>적용 <span class="f"><i>λ</i>/<i>b</i></span></th><th>절점 수</th>
+      <th>핵심 근사</th><th>오차(진폭/위상)</th></tr></thead>
+      <tbody>
+      <tr><td>완전해</td><td class="num">&gt; 0.03</td><td class="num">≤ 2,000</td>
+          <td style="text-align:left">없음 (조밀 연립)</td><td class="num">2% / 2°</td></tr>
+      <tr><td>근사 1</td><td class="num">0.005 ~ 0.03</td><td class="num">≤ 20,000</td>
+          <td style="text-align:left">국소 유연도 <i>W</i>=<i>kP</i>, 식 (15)</td><td class="num">2% / 5°</td></tr>
+      <tr><td>근사 2</td><td class="num">&lt; 0.005</td><td class="num">1,000</td>
+          <td style="text-align:left">완만 진폭 포락, 식 (18a)(18b)</td><td class="num">낮음</td></tr>
+      </tbody></table></div>
+    <p class="note">원문은 근사 1 의 하한을 "λ/b = 0.05" 로 적었으나, 같은 절에서
+    근사 1 의 이산화 오차가 "λ/b 가 0.006 을 넘으면 2%" 라 하고 Fig. 1 에서 근사 2 를
+    λ/b &lt; 0.01 에만 표시한 것으로 보아 <strong>0.005 의 오식</strong>으로 판단된다.
+    이 문서는 0.005 로 표기했다.</p>
+
+    <div class="eq"><span class="n">(15)</span><div class="f">
+      <i>W</i> = <i>P</i> · <span class="fr"><span>4</span>
+      <span><i>E′</i>√(<i>ω</i><sup>2</sup>+<i>ξ</i><sup>2</sup>)</span></span> = <i>kP</i>
+    </div>
+    <p class="note">파장이 입구 길이보다 충분히 짧으면 압력 섭동이 "완만히 변하는 진폭의
+    정현파"가 되므로, 비국소 적분을 국소 곱셈으로 대체할 수 있다.
+    진폭이 한 주기마다 두 배가 되는 극단에서도 진폭 오차 0.6%, 위상 오차 6°.
+    조밀 연립이 띠행렬이 되어 절점을 10배 늘릴 수 있다.</p>
+    </div>
+
+    <p>정확도 검증은 절점 수를 늘려가며 외삽하는 방식으로 했다. 파장당 60절점이면
+    진폭 오차 2%, 위상 오차 2°. 30절점이면 5%, 5°. 장파장에서는 입구 영역에
+    절점이 충분해야 하므로 접촉 전체에 최소 400절점이 필요하다.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="mk"><b>3</b>물리</div>
+  <div class="bd">
+    <h2>파장에 따라 지배 메커니즘이 바뀐다</h2>
+    <p>같은 이론이 파장에 따라 전혀 다른 물리를 서술한다. 이것이 단일 마스터커브에
+    가려지기 쉬운 부분이며, 마이크로피팅 판단에는 오히려 이쪽이 중요하다.</p>
+
+    <figure>
+      <svg id="regimes" viewBox="0 0 860 340" role="img"
+           aria-label="장·중·단 파장 세 영역에서의 간극과 압력 섭동 개형"></svg>
+      <figcaption>원문 Fig. 3 의 거동을 개형으로 재작도. 위에서부터
+      <span class="f"><i>λ</i>/<i>b</i></span> = 3.0(장), 0.7(중), 0.1(단).
+      왼쪽이 간극 섭동, 오른쪽이 압력 섭동. 세로 실선은 접촉 출구.</figcaption>
+    </figure>
+
+    <h3>장파장 — 유효 반경이 바뀐다</h3>
+    <p>파장이 접촉폭보다 길면 거칠기는 사실상 <strong>접촉의 유효 곡률반경을 주기적으로
+    바꾸는 것</strong>과 같다. 반경이 커지면 Hertz 접촉폭이 넓어지고, 하중이 일정하다는
+    조건 하에 중앙 압력이 내려가고 양끝 압력이 올라간다. 간극 섭동은 입구에서 생성되어
+    접촉을 통과하므로 균일하지 않고, <em>최대 간극이 미변형 표면의 최대점보다 뒤처진다.</em></p>
+
+    <h3>중간 파장 — 입구에서 만들어져 그대로 실려간다</h3>
+    <p>간극과 압력 섭동의 크기가 접촉 아래에서 거의 일정하다.
+    <strong>간극 섭동은 입구에서 생성되어 거의 변하지 않은 채 접촉을 통과한다.</strong>
+    이 영역에서 압력은 주로 표면 탄성으로 결정되고 압축성은 부차적이다.
+    출구에서 보이는 이중 압력 스파이크는 거칠기가 스파이크 위치를 출구 쪽으로
+    이동시키면서 먼저 음, 다음 양의 섭동을 만들기 때문이다.</p>
+
+    <h3>단파장 — 압축성이 지배한다</h3>
+    <p>여기서 거동이 바뀐다. 표면 변형이 거의 없고 간극 변동이 미변형 표면과 가깝게 남는다.
+    <strong>이 압력 섭동은 입구에서 생성되는 것이 아니라 유체 압축성에서 온다.</strong>
+    간극이 접촉에 진입할 때 압력과 점도가 커지면서 일정량의 유체가 갇히고, 그것이 중앙으로
+    이동하면서 매끄러운 접촉 간극이 줄어 갇힌 부피가 압축된다. 간극이 큰 곳은 압력이
+    평활값보다 낮고, 작은 곳은 높아진다.</p>
+
+    <div class="call">
+      <h4>압축성은 실무에서 무시해도 되는가 — 조건부로 그렇다</h4>
+      <p>논문은 실제 기어 표면을 측정해 푸리에 변환한 결과(Fig. 5), 전형적 Hertz 폭보다
+      짧은 파장에서 <strong>스펙트럼 진폭이 급격히 떨어진다</strong>는 점을 근거로 삼는다.
+      압축성 피크는 입구 생성 피크보다 약 20배 짧은 파장에서 나타나므로, 그 파장대의
+      거칠기 진폭이 작으면 기여도 작다. 해당 기어 표면에 적용했을 때 압축성이 압력 섭동을
+      바꾸는 폭은 <strong>모든 운전조건에서 5% 미만</strong>이었다.</p>
+      <p>바꿔 말하면 이 근거는 <em>표면의 스펙트럼 형상에 의존한다.</em> 단파장 성분이 큰
+      표면(예: 러프한 가공면, 런인 전 표면)에서는 다시 확인해야 한다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="mk"><b>4</b>근사식</div>
+  <div class="bd">
+    <h2>실제로 쓰는 것은 이 네 줄이다</h2>
+    <p>섭동 해석 자체는 운전조건 하나당 PC 로 약 20분이 걸린다(2006년 기준). 그래서
+    논문은 결과에 곡선을 맞춰 즉시 계산 가능한 식을 제공한다. 압력비를 거칠기 방향
+    <span class="f"><i>θ</i></span> 에 대한 푸리에 급수로 전개하고, 그 계수를
+    <span class="f"><i>Λ</i></span> 의 함수로 결정한 것이다. 대칭성 때문에 코사인 항만 필요하고,
+    실수부는 짝수 조화, 허수부는 홀수 조화만 갖는다. 세 항이면 충분했다.</p>
+
+    <div class="eq"><span class="n">(19)</span><div class="f">
+      <span class="fr"><span><i>Pλ</i></span><span><i>E′A</i></span></span> =
+      − <span class="fr"><span>π</span><span>2</span></span>
+      [(1 + cos 2<i>θ</i>) <i>f</i><sub>1</sub>(<i>Λ</i>) +
+       (1 − cos 2<i>θ</i>) <i>f</i><sub>2</sub>(<i>Λ</i>)]
+      + i cos <i>θ</i> · <i>f</i><sub>3</sub>(<i>Λ</i>)
+    </div></div>
+
+    <div class="eq"><div class="f" style="line-height:2.6">
+      <i>f</i><sub>1</sub> = <span class="fr"><span>0.5</span>
+        <span>1 + 0.285/<i>Λ</i> + 1.012/<i>Λ</i><sup>2</sup></span></span>
+      &nbsp;&nbsp;&nbsp;
+      <i>f</i><sub>2</sub> = <span class="fr"><span>0.5</span>
+        <span>1 + 0.226/<i>Λ</i> + 0.292/<i>Λ</i><sup>2</sup></span></span>
+      <br>
+      <i>f</i><sub>3</sub> = <span class="fr"><span>−0.221/<i>Λ</i> + 0.0221/<i>Λ</i><sup>2</sup></span>
+        <span>1 − 2.042/<i>Λ</i> + 2.585/<i>Λ</i><sup>2</sup> − 1.197/<i>Λ</i><sup>3</sup> + 0.228/<i>Λ</i><sup>4</sup></span></span>
+    </div>
+    <p class="note"><i>f</i><sub>1</sub>·<i>f</i><sub>3</sub> 는 횡방향 결과로,
+    <i>f</i><sub>2</sub> 는 축방향 결과로 최소제곱 맞춤했다. 맞춤에는
+    <span class="f"><i>λ</i>/<i>b</i> &lt; 2</span> 인 결과만 사용했다.</p>
+    </div>
+
+    <h3>압력과 간극은 같은 것의 두 얼굴이다</h3>
+    <p>진폭비는 별도로 계산하지 않는다. 압력비에서 <strong>탄성 관계로 직접 나온다.</strong></p>
+
+    <div class="eq" style="border-left-color:var(--long)"><span class="n">(21)</span><div class="f">
+      <span class="fr"><span><i>H</i></span><span><i>A</i></span></span> =
+      1 + <span class="fr"><span>2</span><span>π</span></span>
+      <span class="fr"><span><i>Pλ</i></span><span><i>E′A</i></span></span>
+    </div>
+    <p class="note">거칠기 방향과 무관하게 성립한다. 식 (15) 에
+    <span class="f"><i>λ</i> = 2π/√(<i>ω</i><sup>2</sup>+<i>ξ</i><sup>2</sup>)</span> 를 넣으면 바로 얻어진다.</p>
+    </div>
+
+    <p>이 식을 뒤집으면 물리가 드러난다.</p>
+    <div class="eq" style="border-left-color:var(--long)"><div class="f">
+      <i>P</i> = <span class="fr"><span>π<i>E′</i></span><span>2<i>λ</i></span></span> (<i>H</i> − <i>A</i>)
+      = − <span class="fr"><span><i>E′κ</i></span><span>4</span></span> (<i>A</i> − <i>H</i>) ,
+      &nbsp;&nbsp; <i>κ</i> = √(<i>ω</i><sup>2</sup>+<i>ξ</i><sup>2</sup>)
+    </div></div>
+
+    <div class="call">
+      <h4>압력 리플은 "평탄화된 양" 그 자체다</h4>
+      <p>압력 섭동은 <em>거칠기가 얼마나 눌렸는가</em>에 정확히 비례한다. 눌리지 않으면
+      (<span class="f"><i>H</i>=<i>A</i></span>) 압력 리플은 0 이고, 완전히 평탄화되면
+      (<span class="f"><i>H</i>=0</span>) 압력비가 <span class="f">−π/2</span> 로 포화한다.
+      논문이 장파장 극한값을 "원 프로파일을 완전히 평탄화하는 데 필요한 압력 리플"이라
+      부르는 것이 이 뜻이다. 두 결과가 독립이 아니라 <strong>탄성 심볼
+      <span class="f">|<i>k</i>|<sup>−1</sup></span> 로 묶인 하나의 양</strong>이다.</p>
+      <p>압력 섭동의 부호가 음인 이유도 여기서 나온다. 최대 압력은 미변형 거칠기가
+      간극을 가장 좁게 만드는 위치에서 발생한다.</p>
+    </div>
+
+    <figure>
+      <svg id="press" viewBox="0 0 860 330" role="img"
+           aria-label="무차원 압력비의 파장 의존성"></svg>
+      <div class="lg">
+        <span><i style="background:#14606E"></i>횡방향 0°</span>
+        <span><i style="background:#B8862A"></i>45°</span>
+        <span><i style="background:#A03B22"></i>축방향 90°</span>
+        <span style="color:var(--ink-3)">파선 — 완전 평탄화 한계 π/2</span>
+      </div>
+      <figcaption>압력비 |<span class="f"><i>Pλ</i>/<i>E′A</i></span>| 는 단파장에서 0,
+      장파장에서 π/2 로 포화한다. 압력을 <span class="f"><i>Pb</i>/<i>E′A</i></span> 가 아니라
+      <span class="f"><i>Pλ</i>/<i>E′A</i></span> 로 무차원화한 것은 식 (15) 의 압력–변형 관계를
+      더 잘 반영하고, 거칠기 각 성분의 상대적 중요도를 정확히 드러내기 때문이다.</figcaption>
+    </figure>
+
+    <h3>장파장 보정</h3>
+    <p>파장이 접촉폭보다 길면 식 (19) 만으로 부족하다. 이 영역에서는 거칠기가
+    유효 반경을 바꾸는 순수 탄성 문제에 가까워지므로, 별도의 맞춤식을 더한다.</p>
+    <div class="eq"><span class="n">(23)(24)(25)</span><div class="f" style="line-height:2.5">
+      <i>F</i> = <span class="fr"><span><i>λ</i></span><span><i>b</i></span></span>
+      (<i>P</i><sub>x</sub><sup>1.25</sup> + <i>P</i><sub>y</sub><sup>1.25</sup>)<sup>0.8</sup> ,
+      &nbsp; <i>P</i><sub>x</sub> = (<i>ωb</i>)<sup>2</sup>/8
+      <br>
+      <i>P</i><sub>y</sub> = 0.06(1 − e<sup>−90<i>ξb</i></sup>) + 0.21(<i>ξb</i>) + 0.005(<i>ξb</i>)<sup>2</sup>
+      <br>
+      <span class="fr"><span><i>Pλ</i></span><span><i>E′A</i></span></span><sub>총</sub> =
+      (·)<sub>단파장</sub> + (·)<sub>장파장</sub> + <span class="fr"><span>π</span><span>2</span></span>
+    </div>
+    <p class="note">두 식이 모두 −π/2 로 포화하므로 단순 합산 시 이중계산이 발생한다.
+    마지막의 +π/2 가 그것을 상쇄한다. 장파장에서는 <i>F</i> &gt; π/2 이고
+    ∂<i>F</i>/∂<i>λ</i> &lt; 0 이면 −π/2 로 클리핑한다(식 24).
+    <strong>압력 섭동은 장파장에서 커질 수 있으나 간극 섭동은 작으므로,
+    간극만 필요하면 식 (19)(21) 만으로 충분하다.</strong></p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="mk"><b>5</b>가정과 한계</div>
+  <div class="bd">
+    <h2>무엇을 전제하고 무엇을 버렸는가</h2>
+
+    <h3>가정 — 명시적</h3>
+    <div class="tw"><table>
+      <thead><tr><th style="width:26%">가정</th><th>내용</th><th style="width:30%">깨지면 생기는 일</th></tr></thead>
+      <tbody>
+      <tr><td>순수구름</td><td style="text-align:left">SRR = 0. 두 표면이 같은 속도</td>
+          <td style="text-align:left">미끄럼이 있으면 전단 유발 감쇠가 추가된다 → rolling–sliding 판 필요</td></tr>
+      <tr><td>뉴턴 유체</td><td style="text-align:left">순수구름이므로 전단박화 무시</td>
+          <td style="text-align:left"><i>ζ</i> 가 방향별로 갈라져 단일값을 못 쓴다</td></tr>
+      <tr><td>저진폭</td><td style="text-align:left">응답이 선형이 될 만큼 <i>A</i> 가 작을 것</td>
+          <td style="text-align:left">2차항 발생. 정량 기준은 본문에 없다</td></tr>
+      <tr><td>정현파 단일 성분</td><td style="text-align:left">Part 1 은 단일 <i>ω</i>, <i>ξ</i></td>
+          <td style="text-align:left">일반 거칠기는 Part 2 의 중첩으로 처리</td></tr>
+      <tr><td>선접촉</td><td style="text-align:left">해석은 선접촉</td>
+          <td style="text-align:left">타원비 &gt; 1 이면 점·타원접촉에도 적용 가능(Hooke &amp; Venner 2000)</td></tr>
+      <tr><td>완전유막</td><td style="text-align:left">캐비테이션 없음</td>
+          <td style="text-align:left">총 압력이 음이 되면 정식 밖</td></tr>
+      <tr><td>하중 일정</td><td style="text-align:left">거칠기 진동이 총 하중을 바꾸지 않음</td>
+          <td style="text-align:left"><i>ξ</i>=0 에서는 표면간격이 시간에 따라 진동해야 하며,
+          수치적으로 무한 변형계수를 100 정도로 대체한다</td></tr>
+      </tbody></table></div>
+
+    <h3>적용범위 — 검증된 구간</h3>
+    <div class="tw"><table>
+      <thead><tr><th>항목</th><th>논문이 실제로 계산한 범위</th><th>비고</th></tr></thead>
+      <tbody>
+      <tr><td><i>P</i> = <i>αp</i><sub>Hertz</sub></td><td class="num">10 · 20 · 40</td>
+          <td style="text-align:left">3수준만</td></tr>
+      <tr><td><i>S</i> = <i>GU</i><sup>0.25</sup></td><td class="num">3.36 ~ 9.51</td>
+          <td style="text-align:left">9개 조합</td></tr>
+      <tr><td><i>p</i><sub>Hertz</sub></td><td class="num">0.5 · 1.0 · 2.0 GPa</td>
+          <td style="text-align:left">Roelands·Dowson–Higginson 포함 위해 필요</td></tr>
+      <tr><td><i>λ</i>/<i>b</i></td><td class="num">10<sup>−4</sup> ~ 10<sup>2</sup></td>
+          <td style="text-align:left">단 곡선맞춤은 <i>λ</i>/<i>b</i> &lt; 2 만 사용</td></tr>
+      <tr><td>거칠기 방향 <i>θ</i></td><td class="num">9개 방향</td>
+          <td style="text-align:left">0°~90°</td></tr>
+      <tr><td>유체</td><td style="text-align:left">Roelands 압력–점도 + Dowson–Higginson 압력–밀도</td>
+          <td style="text-align:left">광유 기준</td></tr>
+      </tbody></table></div>
+
+    <h3>가능성 — 이 이론이 실제로 주는 것</h3>
+    <ul>
+      <li>다중격자 완전해석이 점접촉 1 mm 구간에 <strong>약 5시간</strong>, 공간정확도를
+      두 배로 올리면 정확도의 세제곱에 비례해 <strong>약 40시간</strong>. 타원접촉은 타원비에 비례해 더 늘어난다.
+      섭동 해석은 운전조건당 20분, 곡선맞춤식은 즉시.</li>
+      <li>완전해석은 파장당 30절점 기준으로 <strong>접촉폭의 1/8 보다 긴 특징만</strong> 다룰 수 있다.
+      섭동 해석은 λ/b = 10<sup>−4</sup> 까지 내려간다.</li>
+      <li>감쇠가 <strong>파장/입구길이 비와 방향</strong> 두 가지로 정리된다는 물리적 통찰.
+      "비슷해 보이는 거칠기가 왜 전혀 다른 압력분포를 만드는가"에 답한다.</li>
+      <li>압력과 간극 섭동이 <strong>접촉을 거의 변하지 않고 실려가므로</strong>,
+      접촉 중앙에서 구한 값으로 다른 위치도 추정할 수 있다.</li>
+    </ul>
+
+    <h3>한계 — 명시적으로 남는 것</h3>
+    <div class="tw"><table>
+      <thead><tr><th style="width:24%">한계</th><th>내용</th></tr></thead>
+      <tbody>
+      <tr><td>저진폭 기준 부재</td><td style="text-align:left">"low amplitude" 의 정량 기준을
+        본 논문은 제시하지 않는다. rolling–sliding 판(Part 2, 2007)의 "간극 변동 &lt; 유막의 50~75%"
+        같은 명시 조건이 여기엔 없다.</td></tr>
+      <tr><td>중앙 기준</td><td style="text-align:left">근사식은 <strong>엄밀히는 접촉 중앙에만</strong> 적용된다.
+        다른 위치는 "거의 변하지 않고 실려간다"는 관찰에 근거한 추정이다.</td></tr>
+      <tr><td>압축성 의존성</td><td style="text-align:left">단파장 압력 리플은 유체의 정확한
+        압력–점도·압력–밀도 특성에 <strong>매우 민감</strong>하다. 필요하면 해당 유체로 전체
+        섭동 해석을 다시 해야 한다.</td></tr>
+      <tr><td>전환부 오차</td><td style="text-align:left">세 해법의 전환 지점 부근에서 오차가
+        5%·5° 로 오르고, 아래쪽 전환에서 <strong>위상 곡선에 작은 불연속</strong>이 생긴다.</td></tr>
+      <tr><td>혼합윤활 미포함</td><td style="text-align:left">돌기 접촉·하중분담이 없다.
+        완전유막 EHL 안에서의 거칠기 변형만 다룬다.</td></tr>
+      <tr><td>열효과 미포함</td><td style="text-align:left">등온. 마찰 발열과 온도장 변화는 없다.</td></tr>
+      <tr><td>기아윤활 미포함</td><td style="text-align:left">충분급유 전제. 그리스 윤활의 급유 부족은 별도 보정 필요.</td></tr>
+      </tbody></table></div>
+  </div>
+</section>
+
+<section class="sec" id="appendix">
+  <div class="mk"><b>부록</b>TRB 적용성</div>
+  <div class="bd">
+    <h2>대형 TRB 마이크로피팅 예측에 쓸 수 있는가</h2>
+    <p>풍력 메인베어링 테이퍼 롤러 베어링 5개 대표 운전점에 이 이론을 적용하고,
+    가정별로 적합성을 판정한다. 결론부터: <strong>중하중 2개 운전점은 그대로 쓸 수 있고,
+    나머지 3개는 조건부이며, 그 조건이 무엇인지 아래에 명시한다.</strong></p>
+
+    <h3>A.1 대상 조건</h3>
+    <p class="tag">공통: <i>E′</i> = 230.8 GPa · <i>R</i><sub>x</sub> = 53.52 mm ·
+    <i>η</i><sub>0</sub> = 0.1878 Pa·s · <i>α</i> = 20.8 GPa⁻¹ ·
+    <i>σ</i> = 0.30 µm · SRR = 2.6×10⁻⁴ · 그리스 윤활</p>
+
+    <div class="tw"><table>
+      <thead><tr><th>운전점</th><th>ū [m/s]</th><th><i>h</i><sub>c</sub> [µm]</th>
+      <th><i>p</i><sub>max</sub> [GPa]</th><th><i>b</i> [mm]</th>
+      <th><i>P</i></th><th><i>S</i></th><th><i>P</i><sup>1.5</sup><i>S</i><sup>−2</sup></th>
+      <th><i>Λ</i><sub>film</sub></th></tr></thead>
+      <tbody id="tblOp"></tbody>
+    </table></div>
+
+    <h3>A.2 검증범위 대조 — 3개 운전점이 밖에 있다</h3>
+    <figure>
+      <svg id="envelope" viewBox="0 0 860 300" role="img"
+           aria-label="논문 검증범위와 우리 운전점의 위치"></svg>
+      <figcaption>가로 <span class="f"><i>P</i></span>, 세로 <span class="f"><i>S</i></span>.
+      회색 영역이 논문이 실제로 계산한 9개 조합의 범위
+      (<span class="f"><i>P</i></span> = 10·20·40, <span class="f"><i>S</i></span> = 3.36~9.51).
+      우리 중하중 3개 운전점은 <span class="f"><i>P</i></span> = 7.76 으로 왼쪽 밖에 있다.</figcaption>
+    </figure>
+
+    <div class="call">
+      <h4>중하중 3점은 외삽이다</h4>
+      <p><span class="f"><i>P</i></span> = 7.76 은 논문 최저값 10 보다 낮고,
+      <span class="f"><i>p</i><sub>Hertz</sub></span> = 0.373 GPa 역시 최저 0.5 GPa 보다 낮다.
+      곡선맞춤식은 계산된 9개 조합 사이를 보간하도록 만들어진 것이므로,
+      그 밖에서는 보증되지 않는다.</p>
+      <p>다만 <strong>외삽의 방향이 유리하다.</strong> 하중이 낮을수록 입구 스윕이 길어져
+      <span class="f"><i>Λ</i></span> 가 작아지고, 그 영역에서는 곡선이
+      <span class="f"><i>H</i>/<i>A</i></span> → 1 로 평탄하게 수렴한다. 즉 외삽 구간이
+      곡선의 완만한 쪽이라 오차가 증폭되기 어렵다. <span class="f"><i>S</i></span> 는
+      전 운전점이 범위 안이다.</p>
+    </div>
+
+    <h3>A.3 감쇠 결과</h3>
+    <figure>
+      <svg id="atten" viewBox="0 0 860 330" role="img"
+           aria-label="운전점별 파장에 따른 진폭비"></svg>
+      <div class="lg" id="lgOp"></div>
+      <figcaption>횡방향 거칠기 기준. 파장이 길수록 강하게 평탄화된다.
+      하중이 클수록(극한 &gt; 고하중 &gt; 중하중) 같은 파장에서 더 많이 눌린다.</figcaption>
+    </figure>
+
+    <h3>A.4 압력 리플 — 마이크로피팅의 실제 입력</h3>
+    <p>마이크로피팅은 국소 표면응력에서 나오므로, 우리에게 중요한 것은 감쇠 자체가 아니라
+    <strong>감쇠가 만드는 압력 리플</strong>이다. 식 (19)(21) 로 계산한 값을
+    <span class="f"><i>A</i> = <i>σ</i> = 0.30 µm</span> 기준으로 정리하면:</p>
+
+    <figure>
+      <svg id="ripple" viewBox="0 0 860 330" role="img"
+           aria-label="운전점별 파장에 따른 압력 리플의 최대압력 대비 비율"></svg>
+      <figcaption>세로축은 압력 리플 / <span class="f"><i>p</i><sub>max</sub></span>.
+      절대값이 아니라 비율이므로, 최대압력이 낮은 중하중 운전점에서 비율이 커 보일 수 있다.
+      마이크로피팅 판단에는 절대 응력이 함께 필요하다.</figcaption>
+    </figure>
+
+    <div class="tw"><table>
+      <thead><tr><th>운전점</th><th><i>λ</i> [µm]</th><th><i>λ</i>/<i>b</i></th><th><i>Λ</i></th>
+      <th>|<i>H</i>/<i>A</i>|</th><th><i>A</i><sub>d</sub>/<i>h</i><sub>c</sub></th>
+      <th>리플 [GPa]</th><th>/<i>p</i><sub>max</sub></th></tr></thead>
+      <tbody id="tblFull"></tbody>
+    </table></div>
+
+    <div class="call">
+      <h4>가장 중요한 숫자</h4>
+      <p>극한 DLC1.3 운전점, <span class="f"><i>λ</i></span> = 100 µm 에서 압력 리플이
+      <strong>0.286 GPa</strong> 로 <span class="f"><i>p</i><sub>max</sub></span> = 1.86 GPa 의
+      <strong>15.4%</strong> 다. 국소 최대 접촉압력이 2.15 GPa 로 올라간다는 뜻이다.
+      접촉응력–수명 관계를 9제곱으로 근사하면 <strong>수명 약 3.6배 감소</strong>에 해당한다.
+      거칠기 사양이 마이크로피팅에 실질적 영향을 미친다는 것을 이 한 줄이 보여준다.</p>
+      <p class="note" style="margin-top:10px">9제곱 근사는 Hertz 응력–피로수명의 통상적
+      민감도로 든 예시이며, 실제 GBLM 수명 계산은 별도 절차를 따른다.</p>
+    </div>
+
+    <h3>A.5 rolling–sliding 판과의 대비 — 결정적 차이</h3>
+    <p>앞선 검토에서 Hooke 외 2007 (rolling–sliding) 정식화를 우리 조건에 적용했을 때
+    <span class="f">|<i>h</i><sub>a</sub>/<i>A</i>|</span> = 1.000 (감쇠 없음)이 나왔다.
+    같은 조건을 순수구름 판으로 계산하면 전혀 다르다.</p>
+
+    <div class="tw"><table>
+      <thead><tr><th>운전점 (<i>λ</i> = 500 µm)</th>
+      <th>rolling–sliding 판 |<i>h</i><sub>a</sub>/<i>A</i>|</th>
+      <th>순수구름 판 |<i>H</i>/<i>A</i>|</th><th>차이</th></tr></thead>
+      <tbody>
+      <tr><td>정지·초저속 0.5 rpm</td><td class="num">0.998</td><td class="num">0.389</td>
+          <td><span class="b b-no">완전 불일치</span></td></tr>
+      <tr><td>DLC1.2-a 3.5 rpm</td><td class="num">1.000</td><td class="num">0.777</td>
+          <td><span class="b b-no">완전 불일치</span></td></tr>
+      <tr><td>정격상단 7 rpm</td><td class="num">1.000</td><td class="num">0.864</td>
+          <td><span class="b b-no">완전 불일치</span></td></tr>
+      <tr><td>고하중스텝 3.5 rpm</td><td class="num">0.099</td><td class="num">0.579</td>
+          <td><span class="b b-no">반대 방향</span></td></tr>
+      <tr><td>극한 DLC1.3 1 rpm</td><td class="num">0.017</td><td class="num">0.224</td>
+          <td><span class="b b-no">반대 방향</span></td></tr>
+      </tbody></table></div>
+
+    <p>원인은 명확하다. rolling–sliding 판의 감쇠 파라미터
+    <span class="f"><i>Q</i></span> 는 유효 Eyring 응력
+    <span class="f"><i>τ</i><sub>e</sub> = <i>η</i><sub>x</sub>·Δ<i>u</i>/<i>h</i></span> 에 비례하는데,
+    SRR ≈ 0 이면 <span class="f">Δ<i>u</i> → 0</span> 이므로
+    <span class="f"><i>τ</i><sub>e</sub></span> 가 3자릿수 작아지고
+    <span class="f"><i>Q</i> → 0</span>, 따라서 <span class="f"><i>h</i><sub>a</sub> → <i>A</i></span> 가 된다.
+    그 정식화에서 감쇠는 <em>미끄럼이 만드는 전단</em>에서 나오기 때문이다.</p>
+
+    <div class="call ok">
+      <h4>순수구름 판이 왜 축퇴하지 않는가</h4>
+      <p>순수구름 판의 무차원 파장 <span class="f"><i>Λ</i> = (<i>λ</i>/<i>b</i>)<i>P</i><sup>1.5</sup><i>S</i><sup>−2</sup></span> 에는
+      <span class="f"><i>τ</i><sub>e</sub></span> 도 Δ<span class="f"><i>u</i></span> 도 들어가지 않는다.
+      하중(<span class="f"><i>P</i></span>)과 속도(<span class="f"><i>S</i></span>)만으로 정의되며,
+      이 둘은 SRR = 0 에서도 잘 정의된다. 감쇠의 물리적 원천이 다르기 때문이다 —
+      <strong>미끄럼 전단이 아니라 입구 압력 스윕에서의 탄성 변형</strong>이다.</p>
+      <p>즉 우리 조건에서 rolling–sliding 판을 쓰면 감쇠와 압력 리플을 모두 0 으로
+      과소평가하게 된다. <strong>순수구름 판 채택은 개선이 아니라 필수 교정이다.</strong></p>
+    </div>
+
+    <h3>A.6 가정별 적합성 판정</h3>
+    <div class="tw"><table>
+      <thead><tr><th style="width:20%">가정</th><th style="width:12%">판정</th><th>근거</th></tr></thead>
+      <tbody>
+      <tr><td>순수구름</td><td><span class="b b-ok">적합</span></td>
+        <td style="text-align:left">SRR = 2.6×10⁻⁴. 온-어펙스 설계로 미끄럼이 사실상 없다.
+        <strong>이 이론의 전제와 우리 조건이 정확히 일치한다.</strong></td></tr>
+      <tr><td>뉴턴 유체</td><td><span class="b b-ok">적합</span></td>
+        <td style="text-align:left">미끄럼이 없으므로 전단율이 낮고 전단박화가 발생하지 않는다.
+        비뉴턴 무시가 오히려 정당하다.</td></tr>
+      <tr><td>선접촉</td><td><span class="b b-ok">적합</span></td>
+        <td style="text-align:left">TRB 롤러–레이스웨이는 선접촉이다. 논문 해석과 접촉형상이 같다.</td></tr>
+      <tr><td>등온</td><td><span class="b b-ok">적합</span></td>
+        <td style="text-align:left">0.5~7 rpm 저속이고 미끄럼이 없어 마찰 발열이 작다.</td></tr>
+      <tr><td>곡선맞춤 <i>λ</i>/<i>b</i> &lt; 2</td><td><span class="b b-ok">적합</span></td>
+        <td style="text-align:left">우리 범위 0.006 ~ 1.45. 전부 맞춤 구간 안.</td></tr>
+      <tr><td><i>S</i> 범위</td><td><span class="b b-ok">적합</span></td>
+        <td style="text-align:left">4.34 ~ 8.38, 논문 3.36 ~ 9.51 안.</td></tr>
+      <tr><td><i>P</i> · <i>p</i><sub>Hertz</sub> 범위</td><td><span class="b b-mid">조건부</span></td>
+        <td style="text-align:left">중하중 3점이 <i>P</i> = 7.76 (&lt; 10),
+        <i>p</i><sub>Hertz</sub> = 0.373 GPa (&lt; 0.5). 외삽이나 곡선의 완만한 쪽이라
+        오차 증폭은 제한적일 것으로 본다. <strong>검증 필요.</strong></td></tr>
+      <tr><td>저진폭</td><td><span class="b b-no">위반</span></td>
+        <td style="text-align:left">정지·초저속과 극한 DLC1.3 에서
+        <i>A</i><sub>d</sub>/<i>h</i><sub>c</sub> 가 1.5 를 넘는다. 선형 섭동 전제가 깨진다.</td></tr>
+      <tr><td>완전유막</td><td><span class="b b-no">위반</span></td>
+        <td style="text-align:left"><i>Λ</i><sub>film</sub> = 0.57 · 1.70 · 0.61 인 3개 운전점은
+        혼합윤활 영역이다. 돌기 접촉이 발생하므로 완전유막 섭동해 단독으로는 다룰 수 없다.</td></tr>
+      <tr><td>그리스 윤활</td><td><span class="b b-mid">조건부</span></td>
+        <td style="text-align:left">논문은 광유 기준 Roelands·Dowson–Higginson 을 쓴다.
+        기유 점도로 대체하는 근사가 필요하고, <strong>기아윤활 보정이 없다.</strong></td></tr>
+      <tr><td>단파장 압축성</td><td><span class="b b-mid">조건부</span></td>
+        <td style="text-align:left">극한 운전점의 <i>λ</i> = 10 µm 성분은 <i>λ</i>/<i>b</i> = 0.006 으로
+        근사 2 영역이다. 압축성 기여가 커질 수 있고, 논문의 "5% 미만" 근거는
+        기어 표면 스펙트럼에 의존한다. 우리 표면 PSD 로 재확인 필요.</td></tr>
+      </tbody></table></div>
+
+    <h3>A.7 종합 판정</h3>
+    <div class="tw"><table>
+      <thead><tr><th>운전점</th><th><i>Λ</i><sub>film</sub></th>
+      <th>범위</th><th>저진폭</th><th>종합</th><th style="width:34%">필요 조치</th></tr></thead>
+      <tbody>
+      <tr><td>정지·초저속 0.5 rpm</td><td class="num">0.57</td>
+        <td><span class="b b-no">외삽</span></td><td><span class="b b-no">위반</span></td>
+        <td><span class="b b-no">단독 불가</span></td>
+        <td style="text-align:left">하중분담 경로로 이관. 완전유막 섭동해 적용 불가</td></tr>
+      <tr><td>DLC1.2-a 3.5 rpm</td><td class="num">2.24</td>
+        <td><span class="b b-mid">외삽</span></td><td><span class="b b-ok">만족</span></td>
+        <td><span class="b b-ok">사용 가능</span></td>
+        <td style="text-align:left">P 외삽 오차만 Tribo-X 로 교차검증</td></tr>
+      <tr><td>정격상단 7 rpm</td><td class="num">3.64</td>
+        <td><span class="b b-mid">외삽</span></td><td><span class="b b-ok">만족</span></td>
+        <td><span class="b b-ok">사용 가능</span></td>
+        <td style="text-align:left">동일</td></tr>
+      <tr><td>고하중스텝 3.5 rpm</td><td class="num">1.70</td>
+        <td><span class="b b-ok">범위 내</span></td><td><span class="b b-mid">경계</span></td>
+        <td><span class="b b-mid">조건부</span></td>
+        <td style="text-align:left"><i>A</i><sub>d</sub>/<i>h</i><sub>c</sub> = 0.57 로 50% 기준 초과,
+        75% 기준 내. 비선형 보정 검토</td></tr>
+      <tr><td>극한 DLC1.3 1 rpm</td><td class="num">0.61</td>
+        <td><span class="b b-ok">범위 내</span></td><td><span class="b b-no">위반</span></td>
+        <td><span class="b b-no">단독 불가</span></td>
+        <td style="text-align:left">하중분담 경로로 이관. 다만 <strong>압력 리플이 가장 큰 운전점</strong>이므로
+        가장 중요하다 — 별도 처리 필요</td></tr>
+      </tbody></table></div>
+
+    <div class="call">
+      <h4>가장 불편한 결론</h4>
+      <p>압력 리플이 가장 크고 따라서 마이크로피팅에 가장 결정적인 두 운전점(정지·초저속,
+      극한 DLC1.3)이 <strong>저진폭 가정을 가장 심하게 위반</strong>한다.
+      유막이 얇아 <span class="f"><i>Λ</i><sub>film</sub></span> 이 1 미만인 것과
+      같은 원인이다. 이론이 잘 맞는 곳에서는 답이 별로 중요하지 않고,
+      답이 중요한 곳에서는 이론이 잘 안 맞는다.</p>
+      <p>이것은 이 이론의 결함이 아니라 <strong>경계가 올바르게 작동하는 신호</strong>다.
+      해당 구간은 애초에 하중분담 + 탄소성 건접촉 경로가 담당하도록 설계되어 있다.
+      순수구름 섭동해는 그 경로 안에서 <em>유체 담당분</em>을 계산하는 부품으로 쓰인다.</p>
+    </div>
+
+    <h3>A.8 실행 권고</h3>
+    <ol>
+      <li><strong>순수구름 판으로 전면 교체한다.</strong> rolling–sliding 판은 우리 SRR 에서
+      감쇠와 압력 리플을 모두 0 으로 과소평가한다. 이는 선택이 아니라 교정이다.</li>
+      <li><strong>중하중 2점(DLC1.2-a, 정격상단)을 우선 적용한다.</strong> 가정을 모두 만족하고,
+      DLC 시간 점유율도 가장 높다.</li>
+      <li><strong><i>P</i> 외삽 오차를 Tribo-X 로 교차검증한다.</strong>
+      <i>p</i><sub>Hertz</sub> = 0.373 GPa 구간에서 유막·리플이 얼마나 벌어지는지 확인.</li>
+      <li><strong>저진폭 위반 2점은 하중분담 경로로 이관한다.</strong> 다만 압력 리플이
+      가장 큰 구간이므로 우선순위를 낮추면 안 된다.</li>
+      <li><strong>우리 표면 PSD 로 압축성 기여를 재확인한다.</strong> 논문의 "5% 미만" 근거는
+      기어 표면 스펙트럼에 의존하며, 우리 레이스웨이 가공면은 다를 수 있다.</li>
+      <li><strong>그리스 기아윤활 보정을 별도로 얹는다.</strong> 본 이론은 충분급유 전제다.</li>
+    </ol>
+  </div>
+</section>
+
+<footer>
+  <p>출처: C. J. Hooke, K. Y. Li, <em style="background:none;font-style:italic">Rapid calculation of the
+  pressures and clearances in rough, elastohydrodynamically lubricated contacts under pure rolling.
+  Part 1: low amplitude, sinusoidal roughness</em>, Proc. IMechE Part C: J. Mechanical Engineering
+  Science, 220(C6), 2006, 901–913.</p>
+  <p>부록의 수치는 위 논문 식 (19)–(21) 을 우리 운전조건에 적용해 산출한 것으로,
+  논문에 실린 값이 아니다. <i>A</i> = <i>σ</i> = 0.30 µm 단일 정현파 가정이며,
+  실제 거칠기는 스펙트럼이므로 파장별 진폭 배분이 별도로 필요하다.</p>
+</footer>
+
+</div>
+
+<script>
+const D={"t0":{"H":[0.9999,0.9999,0.9999,0.9999,0.9999,0.9999,0.9998,0.9998,0.9998,0.9998,0.9998,0.9998,0.9997,0.9997,0.9997,0.9997,0.9996,0.9996,0.9996,0.9995,0.9995,0.9994,0.9994,0.9993,0.9993,0.9992,0.9991,0.9991,0.999,0.9989,0.9988,0.9987,0.9986,0.9984,0.9983,0.9981,0.998,0.9978,0.9976,0.9974,0.9972,0.9969,0.9967,0.9964,0.9961,0.9957,0.9954,0.995,0.9945,0.9941,0.9936,0.993,0.9924,0.9918,0.991,0.9903,0.9895,0.9886,0.9876,0.9865,0.9854,0.9841,0.9828,0.9813,0.9798,0.9781,0.9762,0.9742,0.9721,0.9698,0.9673,0.9646,0.9617,0.9586,0.9553,0.9517,0.9479,0.9438,0.9394,0.9348,0.9299,0.9247,0.9193,0.9136,0.9077,0.9015,0.8951,0.8884,0.8813,0.8739,0.8661,0.8577,0.8489,0.8395,0.8295,0.8188,0.8076,0.7958,0.7834,0.7704,0.7568,0.7428,0.7282,0.7132,0.6978,0.6819,0.6657,0.6491,0.6322,0.6149,0.5974,0.5797,0.5617,0.5436,0.5253,0.5069,0.4885,0.4701,0.4518,0.4336,0.4155,0.3978,0.3803,0.3631,0.3464,0.3301,0.3142,0.2989,0.2841,0.2699,0.2562,0.2431,0.2305,0.2185,0.207,0.1961,0.1858,0.1759,0.1665,0.1576,0.1492,0.1412,0.1337,0.1265,0.1198,0.1134,0.1074,0.1017,0.0963,0.0912,0.0864,0.0819,0.0776,0.0735,0.0697,0.0661,0.0627,0.0595,0.0564,0.0536,0.0508,0.0483,0.0459,0.0436,0.0414,0.0393,0.0374,0.0356,0.0338,0.0322,0.0306,0.0292,0.0278,0.0264,0.0252,0.024,0.0228,0.0218,0.0208,0.0198,0.0189,0.018,0.0172,0.0164,0.0156,0.0149,0.0142,0.0136,0.013,0.0124,0.0118,0.0113,0.0108,0.0103,0.0099,0.0094,0.009,0.0086,0.0082,0.0079,0.0075,0.0072,0.0069,0.0066,0.0063,0.006,0.0058,0.0055,0.0053,0.0051,0.0048,0.0046,0.0044,0.0042,0.0041,0.0039,0.0037,0.0036,0.0034,0.0033],"P":[0.0002,0.0002,0.0002,0.0002,0.0002,0.0002,0.0003,0.0003,0.0003,0.0003,0.0004,0.0004,0.0004,0.0005,0.0005,0.0005,0.0006,0.0006,0.0007,0.0008,0.0008,0.0009,0.001,0.0011,0.0012,0.0013,0.0014,0.0015,0.0016,0.0018,0.0019,0.0021,0.0023,0.0025,0.0027,0.0029,0.0032,0.0034,0.0037,0.0041,0.0044,0.0048,0.0052,0.0057,0.0062,0.0067,0.0073,0.0079,0.0086,0.0093,0.0101,0.011,0.0119,0.0129,0.0141,0.0153,0.0166,0.018,0.0195,0.0212,0.023,0.0249,0.0271,0.0294,0.0319,0.0346,0.0375,0.0407,0.0442,0.048,0.0521,0.0567,0.0617,0.0672,0.0732,0.08,0.0875,0.0959,0.1054,0.116,0.128,0.1414,0.1564,0.1729,0.191,0.2104,0.231,0.2526,0.2747,0.2971,0.3196,0.3419,0.3639,0.3857,0.4072,0.4286,0.45,0.4714,0.4931,0.515,0.5373,0.5599,0.583,0.6065,0.6305,0.6547,0.6793,0.7041,0.729,0.7541,0.7792,0.8042,0.8291,0.8539,0.8785,0.9028,0.9268,0.9506,0.974,0.997,1.0196,1.0419,1.0637,1.0851,1.1059,1.1263,1.1462,1.1655,1.1842,1.2024,1.22,1.2369,1.2532,1.2689,1.2839,1.2984,1.3122,1.3253,1.3379,1.3499,1.3614,1.3722,1.3826,1.3924,1.4017,1.4105,1.4189,1.4269,1.4344,1.4415,1.4482,1.4546,1.4606,1.4663,1.4717,1.4768,1.4816,1.4862,1.4905,1.4946,1.4984,1.5021,1.5055,1.5088,1.5119,1.5148,1.5176,1.5202,1.5227,1.525,1.5272,1.5293,1.5313,1.5332,1.535,1.5367,1.5383,1.5399,1.5413,1.5427,1.544,1.5452,1.5464,1.5476,1.5486,1.5496,1.5506,1.5515,1.5524,1.5532,1.554,1.5548,1.5555,1.5562,1.5568,1.5574,1.558,1.5586,1.5591,1.5596,1.5601,1.5606,1.561,1.5615,1.5619,1.5623,1.5626,1.563,1.5633,1.5636,1.564,1.5642,1.5645,1.5648,1.5651,1.5653,1.5655,1.5658,1.566,1.5662]},"t45":{"H":[0.9998,0.9998,0.9997,0.9997,0.9997,0.9997,0.9996,0.9996,0.9996,0.9995,0.9995,0.9994,0.9994,0.9993,0.9993,0.9992,0.9992,0.9991,0.999,0.9989,0.9988,0.9987,0.9986,0.9985,0.9984,0.9982,0.9981,0.9979,0.9977,0.9975,0.9973,0.9971,0.9968,0.9966,0.9963,0.9959,0.9956,0.9952,0.9948,0.9944,0.9939,0.9934,0.9928,0.9922,0.9915,0.9908,0.99,0.9892,0.9883,0.9873,0.9862,0.9851,0.9838,0.9825,0.981,0.9794,0.9777,0.9759,0.9739,0.9718,0.9695,0.9671,0.9644,0.9616,0.9585,0.9552,0.9517,0.948,0.9439,0.9396,0.935,0.9301,0.9249,0.9194,0.9134,0.9072,0.9005,0.8935,0.8861,0.8783,0.8701,0.8616,0.8526,0.8433,0.8336,0.8236,0.8132,0.8025,0.7914,0.78,0.7681,0.7559,0.7433,0.7303,0.7169,0.7031,0.689,0.6746,0.6598,0.6448,0.6295,0.6141,0.5984,0.5827,0.5668,0.5509,0.5349,0.519,0.503,0.487,0.4711,0.4552,0.4395,0.4238,0.4082,0.3928,0.3775,0.3625,0.3476,0.333,0.3187,0.3047,0.291,0.2777,0.2647,0.2522,0.2401,0.2284,0.2172,0.2064,0.1961,0.1862,0.1767,0.1677,0.1591,0.1509,0.1431,0.1357,0.1287,0.122,0.1157,0.1097,0.1041,0.0987,0.0936,0.0888,0.0842,0.0799,0.0759,0.072,0.0683,0.0649,0.0616,0.0585,0.0556,0.0528,0.0502,0.0477,0.0454,0.0432,0.0411,0.0391,0.0372,0.0354,0.0337,0.0321,0.0305,0.0291,0.0277,0.0264,0.0252,0.024,0.0229,0.0218,0.0208,0.0199,0.019,0.0181,0.0173,0.0165,0.0157,0.015,0.0144,0.0137,0.0131,0.0125,0.012,0.0114,0.0109,0.0104,0.01,0.0095,0.0091,0.0087,0.0083,0.008,0.0076,0.0073,0.007,0.0067,0.0064,0.0061,0.0059,0.0056,0.0054,0.0051,0.0049,0.0047,0.0045,0.0043,0.0041,0.004,0.0038,0.0036,0.0035,0.0033,0.0032,0.0031,0.0029,0.0028],"P":[0.0003,0.0004,0.0004,0.0004,0.0005,0.0005,0.0006,0.0006,0.0007,0.0007,0.0008,0.0009,0.0009,0.001,0.0011,0.0012,0.0013,0.0014,0.0016,0.0017,0.0018,0.002,0.0022,0.0024,0.0026,0.0028,0.003,0.0033,0.0036,0.0039,0.0042,0.0046,0.005,0.0054,0.0059,0.0064,0.0069,0.0075,0.0081,0.0088,0.0096,0.0104,0.0113,0.0123,0.0133,0.0144,0.0157,0.017,0.0184,0.02,0.0217,0.0235,0.0254,0.0276,0.0298,0.0323,0.035,0.0378,0.0409,0.0443,0.0479,0.0517,0.0559,0.0604,0.0652,0.0703,0.0759,0.0818,0.0882,0.095,0.1022,0.11,0.1184,0.1273,0.1368,0.1469,0.1578,0.1695,0.1819,0.1952,0.2095,0.2247,0.2411,0.2585,0.2769,0.2965,0.317,0.3384,0.3605,0.3833,0.4064,0.43,0.4537,0.4777,0.5019,0.5263,0.5509,0.5757,0.6006,0.6258,0.6512,0.6767,0.7023,0.728,0.7538,0.7795,0.8052,0.8307,0.8561,0.8811,0.9059,0.9303,0.9543,0.9779,1.0009,1.0235,1.0455,1.067,1.0879,1.1083,1.1281,1.1473,1.166,1.184,1.2015,1.2184,1.2347,1.2504,1.2655,1.2801,1.2941,1.3075,1.3203,1.3326,1.3444,1.3556,1.3664,1.3766,1.3863,1.3956,1.4044,1.4128,1.4208,1.4283,1.4355,1.4424,1.4488,1.455,1.4608,1.4663,1.4715,1.4765,1.4812,1.4856,1.4898,1.4938,1.4976,1.5012,1.5046,1.5078,1.5109,1.5137,1.5165,1.5191,1.5216,1.5239,1.5261,1.5282,1.5302,1.5321,1.534,1.5357,1.5373,1.5388,1.5403,1.5417,1.5431,1.5443,1.5455,1.5467,1.5478,1.5488,1.5498,1.5507,1.5516,1.5525,1.5533,1.5541,1.5548,1.5555,1.5562,1.5568,1.5574,1.558,1.5586,1.5591,1.5596,1.5601,1.5606,1.561,1.5614,1.5618,1.5622,1.5626,1.5629,1.5633,1.5636,1.5639,1.5642,1.5645,1.5647,1.565,1.5652,1.5655,1.5657,1.5659,1.5661,1.5663,1.5665,1.5667]},"t90":{"H":[0.9997,0.9996,0.9996,0.9996,0.9995,0.9995,0.9994,0.9994,0.9993,0.9993,0.9992,0.9991,0.9991,0.999,0.9989,0.9988,0.9987,0.9986,0.9985,0.9983,0.9982,0.998,0.9979,0.9977,0.9975,0.9973,0.997,0.9968,0.9965,0.9962,0.9959,0.9955,0.9951,0.9947,0.9942,0.9937,0.9932,0.9926,0.992,0.9913,0.9906,0.9898,0.9889,0.988,0.987,0.9859,0.9847,0.9834,0.982,0.9805,0.9789,0.9771,0.9752,0.9732,0.971,0.9686,0.966,0.9633,0.9603,0.9571,0.9537,0.95,0.946,0.9418,0.9373,0.9324,0.9272,0.9217,0.9158,0.9095,0.9028,0.8957,0.8881,0.8801,0.8716,0.8627,0.8532,0.8433,0.8328,0.8218,0.8104,0.7984,0.7858,0.7728,0.7593,0.7453,0.7308,0.7159,0.7006,0.6848,0.6687,0.6523,0.6356,0.6186,0.6015,0.5841,0.5667,0.5491,0.5316,0.514,0.4965,0.4792,0.4619,0.4449,0.4281,0.4116,0.3953,0.3794,0.3639,0.3487,0.3339,0.3195,0.3056,0.2921,0.279,0.2664,0.2543,0.2426,0.2313,0.2205,0.2101,0.2002,0.1907,0.1816,0.1729,0.1646,0.1567,0.1491,0.1419,0.1351,0.1285,0.1223,0.1164,0.1108,0.1054,0.1003,0.0955,0.0909,0.0865,0.0824,0.0784,0.0747,0.0711,0.0678,0.0645,0.0615,0.0586,0.0558,0.0532,0.0507,0.0484,0.0461,0.044,0.042,0.04,0.0382,0.0364,0.0348,0.0332,0.0317,0.0303,0.0289,0.0276,0.0264,0.0252,0.024,0.023,0.022,0.021,0.0201,0.0192,0.0183,0.0175,0.0168,0.016,0.0153,0.0147,0.014,0.0134,0.0128,0.0123,0.0117,0.0112,0.0108,0.0103,0.0099,0.0094,0.009,0.0086,0.0083,0.0079,0.0076,0.0073,0.007,0.0067,0.0064,0.0061,0.0059,0.0056,0.0054,0.0051,0.0049,0.0047,0.0045,0.0043,0.0041,0.004,0.0038,0.0036,0.0035,0.0034,0.0032,0.0031,0.0029,0.0028,0.0027,0.0026,0.0025,0.0024,0.0023],"P":[0.0005,0.0006,0.0006,0.0007,0.0007,0.0008,0.0009,0.001,0.001,0.0011,0.0012,0.0013,0.0015,0.0016,0.0017,0.0019,0.002,0.0022,0.0024,0.0026,0.0028,0.0031,0.0034,0.0036,0.004,0.0043,0.0047,0.0051,0.0055,0.006,0.0065,0.0071,0.0077,0.0083,0.009,0.0098,0.0107,0.0116,0.0126,0.0136,0.0148,0.0161,0.0174,0.0189,0.0205,0.0222,0.0241,0.0261,0.0283,0.0307,0.0332,0.036,0.0389,0.0422,0.0456,0.0494,0.0534,0.0577,0.0624,0.0674,0.0728,0.0785,0.0847,0.0914,0.0985,0.1061,0.1143,0.123,0.1323,0.1422,0.1527,0.1639,0.1758,0.1883,0.2017,0.2157,0.2306,0.2462,0.2626,0.2799,0.2979,0.3167,0.3364,0.3569,0.3781,0.4001,0.4228,0.4463,0.4703,0.4951,0.5203,0.5461,0.5724,0.599,0.626,0.6533,0.6807,0.7082,0.7358,0.7634,0.7908,0.8181,0.8452,0.8719,0.8983,0.9243,0.9498,0.9748,0.9992,1.0231,1.0463,1.0689,1.0908,1.112,1.1325,1.1523,1.1714,1.1898,1.2074,1.2244,1.2407,1.2563,1.2712,1.2855,1.2992,1.3122,1.3247,1.3365,1.3479,1.3586,1.3689,1.3787,1.388,1.3968,1.4052,1.4132,1.4208,1.428,1.4349,1.4414,1.4476,1.4535,1.4591,1.4644,1.4694,1.4742,1.4788,1.4831,1.4872,1.4911,1.4948,1.4983,1.5017,1.5049,1.5079,1.5108,1.5136,1.5162,1.5187,1.521,1.5233,1.5254,1.5275,1.5294,1.5313,1.533,1.5347,1.5363,1.5378,1.5393,1.5407,1.542,1.5433,1.5445,1.5456,1.5467,1.5478,1.5488,1.5497,1.5506,1.5515,1.5523,1.5531,1.5539,1.5546,1.5553,1.556,1.5566,1.5572,1.5578,1.5583,1.5589,1.5594,1.5599,1.5603,1.5608,1.5612,1.5616,1.562,1.5624,1.5627,1.5631,1.5634,1.5637,1.564,1.5643,1.5646,1.5648,1.5651,1.5653,1.5655,1.5658,1.566,1.5662,1.5664,1.5665,1.5667,1.5669,1.5671,1.5672]},"L":[0.01,0.01043,0.01088,0.01134,0.01183,0.01234,0.01287,0.01342,0.014,0.0146,0.01523,0.01588,0.01656,0.01728,0.01802,0.01879,0.0196,0.02044,0.02132,0.02223,0.02319,0.02419,0.02522,0.02631,0.02744,0.02862,0.02985,0.03113,0.03247,0.03386,0.03531,0.03683,0.03841,0.04006,0.04178,0.04358,0.04545,0.0474,0.04944,0.05156,0.05378,0.05609,0.0585,0.06101,0.06363,0.06636,0.06921,0.07219,0.07529,0.07852,0.08189,0.08541,0.08908,0.0929,0.0969,0.10106,0.1054,0.10992,0.11465,0.11957,0.12471,0.13006,0.13565,0.14148,0.14755,0.15389,0.1605,0.1674,0.17459,0.18208,0.18991,0.19806,0.20657,0.21544,0.2247,0.23435,0.24441,0.25491,0.26586,0.27728,0.28919,0.30161,0.31457,0.32808,0.34217,0.35687,0.3722,0.38819,0.40486,0.42225,0.44039,0.4593,0.47903,0.49961,0.52107,0.54345,0.56679,0.59114,0.61653,0.64301,0.67063,0.69944,0.72948,0.76081,0.79349,0.82758,0.86312,0.9002,0.93886,0.97919,1.02125,1.06512,1.11087,1.15858,1.20835,1.26025,1.31438,1.37084,1.42972,1.49113,1.55518,1.62198,1.69165,1.76431,1.84009,1.91913,2.00157,2.08754,2.17721,2.27072,2.36826,2.46998,2.57608,2.68673,2.80213,2.92249,3.04802,3.17895,3.31549,3.4579,3.60643,3.76134,3.9229,4.0914,4.26714,4.45043,4.64159,4.84096,5.0489,5.26576,5.49194,5.72784,5.97387,6.23047,6.49809,6.7772,7.0683,7.37191,7.68856,8.0188,8.36324,8.72247,9.09712,9.48787,9.89541,10.32045,10.76375,11.22608,11.70828,12.21119,12.7357,13.28274,13.85328,14.44832,15.06892,15.71618,16.39124,17.0953,17.8296,18.59544,19.39417,20.22721,21.09604,22.00218,22.94725,23.93291,24.9609,26.03305,27.15126,28.31749,29.53382,30.80239,32.12546,33.50535,34.94451,36.44549,38.01095,39.64364,41.34646,43.12243,44.97468,46.90648,48.92127,51.0226,53.21418,55.4999,57.88381,60.3701,62.9632,65.66767,68.48831,71.4301,74.49826,77.6982,81.03559,84.51633,88.14658,91.93276,95.88158,100.0],"op":[{"name":"정지·초저속","color":"#7A1E12","P":7.76,"S":4.34,"b":0.34600000000000003,"h":0.195,"pmax":0.373,"pts":[{"lam":10,"L":0.0331,"H":0.999,"p":0.0117,"pct":3.13,"Ad":1.54,"lb":0.0289},{"lam":20,"L":0.0663,"H":0.996,"p":0.0231,"pct":6.19,"Ad":1.53,"lb":0.0578},{"lam":50,"L":0.1657,"H":0.975,"p":0.0553,"pct":14.82,"Ad":1.5,"lb":0.1445},{"lam":100,"L":0.3313,"H":0.912,"p":0.1226,"pct":32.86,"Ad":1.4,"lb":0.289},{"lam":200,"L":0.6627,"H":0.761,"p":0.1838,"pct":49.28,"Ad":1.17,"lb":0.578},{"lam":500,"L":1.6567,"H":0.389,"p":0.1458,"pct":39.09,"Ad":0.6,"lb":1.4451}]},{"name":"DLC1.2-a","color":"#B4432A","P":7.76,"S":7.04,"b":0.34600000000000003,"h":0.751,"pmax":0.373,"pts":[{"lam":10,"L":0.0126,"H":1.0,"p":0.0017,"pct":0.46,"Ad":0.4,"lb":0.0289},{"lam":20,"L":0.0252,"H":0.999,"p":0.0034,"pct":0.91,"Ad":0.4,"lb":0.0578},{"lam":50,"L":0.0629,"H":0.996,"p":0.0083,"pct":2.23,"Ad":0.4,"lb":0.1445},{"lam":100,"L":0.1259,"H":0.985,"p":0.0162,"pct":4.34,"Ad":0.39,"lb":0.289},{"lam":200,"L":0.2517,"H":0.945,"p":0.0323,"pct":8.66,"Ad":0.38,"lb":0.578},{"lam":500,"L":0.6293,"H":0.777,"p":0.0698,"pct":18.7,"Ad":0.31,"lb":1.4451}]},{"name":"정격상단","color":"#C98A2E","P":7.76,"S":8.38,"b":0.34600000000000003,"h":1.213,"pmax":0.373,"pts":[{"lam":10,"L":0.0089,"H":1.0,"p":0.0009,"pct":0.23,"Ad":0.25,"lb":0.0289},{"lam":20,"L":0.0178,"H":1.0,"p":0.0017,"pct":0.45,"Ad":0.25,"lb":0.0578},{"lam":50,"L":0.0445,"H":0.998,"p":0.0042,"pct":1.13,"Ad":0.25,"lb":0.1445},{"lam":100,"L":0.089,"H":0.992,"p":0.0082,"pct":2.21,"Ad":0.25,"lb":0.289},{"lam":200,"L":0.178,"H":0.971,"p":0.0159,"pct":4.26,"Ad":0.24,"lb":0.578},{"lam":500,"L":0.445,"H":0.864,"p":0.045,"pct":12.07,"Ad":0.21,"lb":1.4451}]},{"name":"고하중스텝","color":"#2E7F8C","P":22.34,"S":7.04,"b":0.9959999999999999,"h":0.529,"pmax":1.074,"pts":[{"lam":10,"L":0.0214,"H":1.0,"p":0.0049,"pct":0.45,"Ad":0.57,"lb":0.01},{"lam":20,"L":0.0427,"H":0.998,"p":0.0097,"pct":0.9,"Ad":0.57,"lb":0.0201},{"lam":50,"L":0.1068,"H":0.989,"p":0.0235,"pct":2.19,"Ad":0.56,"lb":0.0502},{"lam":100,"L":0.2136,"H":0.959,"p":0.0457,"pct":4.26,"Ad":0.54,"lb":0.1004},{"lam":200,"L":0.4272,"H":0.872,"p":0.105,"pct":9.78,"Ad":0.49,"lb":0.2008},{"lam":500,"L":1.0681,"H":0.579,"p":0.1116,"pct":10.39,"Ad":0.33,"lb":0.502}]},{"name":"극한DLC1.3","color":"#123E52","P":38.69,"S":5.15,"b":1.7249999999999999,"h":0.185,"pmax":1.86,"pts":[{"lam":10,"L":0.0526,"H":0.997,"p":0.0293,"pct":1.57,"Ad":1.62,"lb":0.0058},{"lam":20,"L":0.1053,"H":0.989,"p":0.0572,"pct":3.08,"Ad":1.6,"lb":0.0116},{"lam":50,"L":0.2632,"H":0.94,"p":0.1426,"pct":7.67,"Ad":1.53,"lb":0.029},{"lam":100,"L":0.5263,"H":0.827,"p":0.2855,"pct":15.35,"Ad":1.34,"lb":0.058},{"lam":200,"L":1.0526,"H":0.585,"p":0.276,"pct":14.84,"Ad":0.95,"lb":0.1159},{"lam":500,"L":2.6316,"H":0.224,"p":0.1747,"pct":9.39,"Ad":0.36,"lb":0.2899}]}]};
+const $=s=>document.querySelector(s);
+const NS="http://www.w3.org/2000/svg";
+const C={s:"#14606E",m:"#B8862A",l:"#A03B22",ink:"#15191F",g:"#7C848E",r:"#D3D7DC"};
+function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e}
+function txt(x,y,s,o={}){const t=el("text",Object.assign({x,y,fill:o.fill||C.g,
+  "font-size":o.fs||11.5,"font-family":"ui-monospace,Menlo,monospace",
+  "text-anchor":o.a||"middle"},o.extra||{}));t.textContent=s;return t}
+const lg=v=>Math.log10(v);
+
+/* ── 히어로: 마스터커브 ── */
+(function(){
+  const sv=$("#hero"),W=860,H=430,L=64,R=24,T=18,B=52;
+  const x=v=>L+(lg(v)-(-2))/(2-(-2))*(W-L-R);
+  const y=v=>T+(1-v)*(H-T-B);
+  for(let i=0;i<=5;i++){const v=i/5;
+    sv.appendChild(el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:C.r,"stroke-width":1}));
+    sv.appendChild(txt(L-10,y(v)+4,v.toFixed(1),{a:"end"}));}
+  for(let e=-2;e<=2;e++){const X=x(Math.pow(10,e));
+    sv.appendChild(el("line",{x1:X,x2:X,y1:T,y2:H-B,stroke:C.r,"stroke-width":1,
+      "stroke-dasharray":e===0?"none":"2 4"}));
+    sv.appendChild(txt(X,H-B+20,"10"+(e<0?"⁻"+String(-e):e===0?"⁰":String(e)),{fs:12}));}
+  sv.appendChild(txt(L-46,(T+H-B)/2,"H / A",{a:"middle",fs:12.5,fill:C.ink,
+    extra:{transform:`rotate(-90 ${L-46} ${(T+H-B)/2})`}}));
+  sv.appendChild(txt((L+W-R)/2,H-14,"무차원 파장  Λ = (λ/b) P¹·⁵ S⁻²",{fs:12.5,fill:C.ink}));
+  const cols={t0:C.s,t45:C.m,t90:C.l};
+  for(const k in cols){let d="";
+    D.L.forEach((Lv,i)=>{d+=(i?"L":"M")+x(Lv).toFixed(1)+" "+y(Math.min(1,D[k].H[i])).toFixed(1)});
+    sv.appendChild(el("path",{d,fill:"none",stroke:cols[k],"stroke-width":2.4,
+      "stroke-linejoin":"round"}));}
+  /* 영역 라벨 */
+  sv.appendChild(txt(x(0.03),T+26,"거의 통과",{fs:12.5,fill:C.s}));
+  sv.appendChild(txt(x(30),H-B-24,"완전 평탄화",{fs:12.5,fill:C.l}));
+  /* 운전점 */
+  D.op.forEach(o=>o.pts.forEach(p=>{
+    if(p.L<0.01||p.L>100)return;
+    sv.appendChild(el("circle",{cx:x(p.L),cy:y(p.H),r:4.2,fill:o.color,
+      stroke:"#fff","stroke-width":1.4,opacity:.92}));}));
+})();
+
+/* ── 3개 파장 영역 개형 ── */
+(function(){
+  const sv=$("#regimes"),W=860,H=340;
+  const rows=[{lab:"장  λ/b = 3.0",k:"long"},{lab:"중  λ/b = 0.7",k:"mid"},
+              {lab:"단  λ/b = 0.1",k:"short"}];
+  const cols=[C.l,C.m,C.s];
+  const panelW=(W-190)/2, x0=[130,130+panelW+40];
+  sv.appendChild(txt(130+panelW/2,16,"간극 섭동  δh",{fs:12.5,fill:C.ink}));
+  sv.appendChild(txt(x0[1]+panelW/2,16,"압력 섭동  δp",{fs:12.5,fill:C.ink}));
+  rows.forEach((r,ri)=>{
+    const yc=64+ri*98, amp=28;
+    sv.appendChild(txt(118,yc+4,r.lab,{a:"end",fs:12,fill:cols[ri]}));
+    [0,1].forEach(ci=>{
+      const X=x0[ci];
+      sv.appendChild(el("line",{x1:X,x2:X+panelW,y1:yc,y2:yc,stroke:C.r,"stroke-width":1}));
+      sv.appendChild(el("line",{x1:X+panelW*0.78,x2:X+panelW*0.78,y1:yc-40,y2:yc+40,
+        stroke:C.ink,"stroke-width":1.2}));
+      let d="";
+      for(let i=0;i<=200;i++){
+        const t=i/200, X0=X+t*panelW; let v=0;
+        const nx=(t-0.28)*4;                       /* 접촉좌표 −1..1 근처 */
+        const env=t<0.18?0:(t>0.80?0:1);
+        if(r.k==="long"){
+          const w=Math.cos(2*Math.PI*t*1.1);
+          v = ci===0 ? (t<0.2?-1:0.35*w+0.15) : (t<0.2?0:(t<0.76?-0.45*w:0));
+          if(ci===1&&t>0.74&&t<0.79) v=1.0*Math.sin((t-0.74)/0.05*Math.PI);
+        } else if(r.k==="mid"){
+          const w=Math.cos(2*Math.PI*t*6.2);
+          v = ci===0 ? 0.62*w : (t<0.18?0:(t<0.78?-0.58*w:0));
+          if(ci===1&&t>0.755&&t<0.79) v=-1.15*Math.sin((t-0.755)/0.035*2*Math.PI);
+          if(ci===0&&t>0.755&&t<0.79) v=1.1;
+        } else {
+          const w=Math.cos(2*Math.PI*t*22);
+          const ell=(t>0.18&&t<0.78)?Math.sqrt(Math.max(0,1-Math.pow((t-0.48)/0.30,2))):0;
+          v = ci===0 ? 0.92*w : -1.0*ell*w;
+        }
+        d+=(i?"L":"M")+X0.toFixed(1)+" "+(yc-v*amp).toFixed(1);
+      }
+      sv.appendChild(el("path",{d,fill:"none",stroke:cols[ri],"stroke-width":1.7,
+        "stroke-linejoin":"round"}));
+    });
+  });
+})();
+
+/* ── 압력비 곡선 ── */
+(function(){
+  const sv=$("#press"),W=860,H=330,L=64,R=24,T=18,B=52;
+  const x=v=>L+(lg(v)+2)/4*(W-L-R), y=v=>T+(1-v/1.8)*(H-T-B);
+  for(let i=0;i<=6;i++){const v=i*0.3;
+    sv.appendChild(el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:C.r,"stroke-width":1}));
+    sv.appendChild(txt(L-10,y(v)+4,v.toFixed(1),{a:"end"}));}
+  for(let e=-2;e<=2;e++){const X=x(Math.pow(10,e));
+    sv.appendChild(el("line",{x1:X,x2:X,y1:T,y2:H-B,stroke:C.r,"stroke-width":1,
+      "stroke-dasharray":e===0?"none":"2 4"}));
+    sv.appendChild(txt(X,H-B+20,"10"+(e<0?"⁻"+String(-e):e===0?"⁰":String(e)),{fs:12}));}
+  sv.appendChild(el("line",{x1:L,x2:W-R,y1:y(Math.PI/2),y2:y(Math.PI/2),
+    stroke:C.ink,"stroke-width":1.3,"stroke-dasharray":"6 4"}));
+  sv.appendChild(txt(W-R-6,y(Math.PI/2)-8,"π/2  완전 평탄화",{a:"end",fs:12,fill:C.ink}));
+  sv.appendChild(txt(L-46,(T+H-B)/2,"| Pλ / E′A |",{fs:12.5,fill:C.ink,
+    extra:{transform:`rotate(-90 ${L-46} ${(T+H-B)/2})`}}));
+  sv.appendChild(txt((L+W-R)/2,H-14,"무차원 파장  Λ",{fs:12.5,fill:C.ink}));
+  const cols={t0:C.s,t45:C.m,t90:C.l};
+  for(const k in cols){let d="";
+    D.L.forEach((Lv,i)=>{d+=(i?"L":"M")+x(Lv).toFixed(1)+" "+y(Math.min(1.8,D[k].P[i])).toFixed(1)});
+    sv.appendChild(el("path",{d,fill:"none",stroke:cols[k],"stroke-width":2.4}));}
+})();
+
+/* ── 검증범위 봉투 ── */
+(function(){
+  const sv=$("#envelope"),W=860,H=300,L=64,R=180,T=20,B=48;
+  const x=v=>L+(v-0)/45*(W-L-R), y=v=>T+(1-(v-2)/9)*(H-T-B);
+  [0,10,20,30,40].forEach(v=>{
+    sv.appendChild(el("line",{x1:x(v),x2:x(v),y1:T,y2:H-B,stroke:C.r,"stroke-width":1}));
+    sv.appendChild(txt(x(v),H-B+20,String(v),{fs:12}));});
+  [2,4,6,8,10].forEach(v=>{
+    sv.appendChild(el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:C.r,"stroke-width":1}));
+    sv.appendChild(txt(L-10,y(v)+4,String(v),{a:"end"}));});
+  sv.appendChild(el("rect",{x:x(10),y:y(9.51),width:x(40)-x(10),height:y(3.36)-y(9.51),
+    fill:"#EDF3F4",stroke:C.s,"stroke-width":1.2,"stroke-dasharray":"5 3"}));
+  sv.appendChild(txt(x(25),y(9.51)-9,"논문 검증범위",{fs:12,fill:C.s}));
+  [10,20,40].forEach(P=>[3.36,4,4.75,5.05,6,6.73,7.13,8,9.51].forEach(S=>{}));
+  const tested=[[10,4.75],[20,4.00],[40,3.36],[10,7.13],[20,6.00],[40,5.05],
+                [10,9.51],[20,8.00],[40,6.73]];
+  tested.forEach(([P,S])=>sv.appendChild(el("circle",{cx:x(P),cy:y(S),r:3.4,
+    fill:"none",stroke:C.s,"stroke-width":1.4})));
+  D.op.forEach((o,i)=>{
+    sv.appendChild(el("circle",{cx:x(o.P),cy:y(o.S),r:5.2,fill:o.color,
+      stroke:"#fff","stroke-width":1.6}));
+    sv.appendChild(txt(W-R+12,T+22+i*24,"● "+o.name+"  P="+o.P+"  S="+o.S,
+      {a:"start",fs:12,fill:o.color}));});
+  sv.appendChild(txt((L+W-R)/2,H-12,"하중 파라미터  P = α p_Hertz",{fs:12.5,fill:C.ink}));
+  sv.appendChild(txt(L-44,(T+H-B)/2,"S = G U⁰·²⁵",{fs:12.5,fill:C.ink,
+    extra:{transform:`rotate(-90 ${L-44} ${(T+H-B)/2})`}}));
+})();
+
+/* ── 운전점 감쇠 ── */
+(function(){
+  const sv=$("#atten"),W=860,H=330,L=64,R=200,T=18,B=50;
+  const lams=[10,20,50,100,200,500];
+  const x=v=>L+(lg(v)-1)/(lg(500)-1)*(W-L-R), y=v=>T+(1-v)*(H-T-B);
+  for(let i=0;i<=5;i++){const v=i/5;
+    sv.appendChild(el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:C.r,"stroke-width":1}));
+    sv.appendChild(txt(L-10,y(v)+4,v.toFixed(1),{a:"end"}));}
+  lams.forEach(l=>{sv.appendChild(el("line",{x1:x(l),x2:x(l),y1:T,y2:H-B,
+    stroke:C.r,"stroke-width":1,"stroke-dasharray":"2 4"}));
+    sv.appendChild(txt(x(l),H-B+20,String(l),{fs:12}));});
+  D.op.forEach((o,i)=>{
+    let d="";o.pts.forEach((p,j)=>{d+=(j?"L":"M")+x(lams[j]).toFixed(1)+" "+y(p.H).toFixed(1)});
+    sv.appendChild(el("path",{d,fill:"none",stroke:o.color,"stroke-width":2.2}));
+    o.pts.forEach((p,j)=>sv.appendChild(el("circle",{cx:x(lams[j]),cy:y(p.H),r:3.4,
+      fill:o.color})));
+    sv.appendChild(txt(W-R+12,T+22+i*24,"— "+o.name,{a:"start",fs:12.5,fill:o.color}));});
+  sv.appendChild(txt(L-46,(T+H-B)/2,"| H / A |",{fs:12.5,fill:C.ink,
+    extra:{transform:`rotate(-90 ${L-46} ${(T+H-B)/2})`}}));
+  sv.appendChild(txt((L+W-R)/2,H-12,"거칠기 파장  λ [µm]",{fs:12.5,fill:C.ink}));
+})();
+
+/* ── 압력 리플 막대 ── */
+(function(){
+  const sv=$("#ripple"),W=860,H=330,L=64,R=200,T=18,B=50;
+  const lams=[10,20,50,100,200,500];
+  const mx=52, gw=(W-L-R)/lams.length;
+  const y=v=>T+(1-v/mx)*(H-T-B);
+  [0,10,20,30,40,50].forEach(v=>{
+    sv.appendChild(el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:C.r,"stroke-width":1}));
+    sv.appendChild(txt(L-10,y(v)+4,v+"%",{a:"end"}));});
+  lams.forEach((l,j)=>{
+    const bx=L+j*gw+gw*0.12, bw=gw*0.76/5;
+    D.op.forEach((o,i)=>{
+      const v=o.pts[j].pct, h=Math.max(1,(H-T-B)*v/mx);
+      sv.appendChild(el("rect",{x:bx+i*bw,y:y(v),width:bw-1.5,height:h,fill:o.color,opacity:.88}));});
+    sv.appendChild(txt(L+j*gw+gw/2,H-B+20,String(l),{fs:12}));});
+  D.op.forEach((o,i)=>sv.appendChild(txt(W-R+12,T+22+i*24,"■ "+o.name,
+    {a:"start",fs:12.5,fill:o.color})));
+  sv.appendChild(txt(L-48,(T+H-B)/2,"리플 / p_max",{fs:12.5,fill:C.ink,
+    extra:{transform:`rotate(-90 ${L-48} ${(T+H-B)/2})`}}));
+  sv.appendChild(txt((L+W-R)/2,H-12,"거칠기 파장  λ [µm]",{fs:12.5,fill:C.ink}));
+})();
+
+/* ── 표 ── */
+(function(){
+  const film=[0.57,2.24,3.64,1.70,0.61], u=[0.044,0.305,0.610,0.305,0.087];
+  const k=D.op.map(o=>Math.pow(o.P,1.5)/(o.S*o.S));
+  $("#tblOp").innerHTML=D.op.map((o,i)=>`<tr><td>${o.name}</td>
+    <td class="num">${u[i]}</td><td class="num">${o.h}</td><td class="num">${o.pmax}</td>
+    <td class="num">${o.b.toFixed(3)}</td><td class="num">${o.P}</td><td class="num">${o.S}</td>
+    <td class="num">${k[i].toFixed(3)}</td><td class="num">${film[i]}</td></tr>`).join("");
+  $("#tblFull").innerHTML=D.op.map(o=>o.pts.map((p,j)=>`<tr>
+    <td>${j===0?o.name:""}</td><td class="num">${p.lam}</td><td class="num">${p.lb.toFixed(3)}</td>
+    <td class="num">${p.L.toFixed(3)}</td><td class="num">${p.H.toFixed(3)}</td>
+    <td class="num" style="color:${p.Ad>0.75?"#A03B22":p.Ad>0.5?"#B8862A":"inherit"}">${p.Ad.toFixed(2)}</td>
+    <td class="num">${p.p.toFixed(4)}</td>
+    <td class="num" style="color:${p.pct>10?"#A03B22":"inherit"}">${p.pct.toFixed(1)}%</td></tr>`).join("")).join("");
+  $("#lgOp").innerHTML=D.op.map(o=>`<span><i style="background:${o.color}"></i>${o.name}</span>`).join("");
+})();
+</script>
+</body>
+</html>
