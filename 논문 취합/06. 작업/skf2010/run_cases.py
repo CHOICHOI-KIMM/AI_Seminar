@@ -1,8 +1,14 @@
 """SKF(2010) 모델 검증 실행 — 계획서 §6.
 
-현재 구현: V0 (M2 단일 정현파 해석/극한 검사).
+    python run_cases.py        # V0 (M2 단위검사)
+    python run_cases.py v1     # V1 (Leeds flat-top, SKF Fig 2 / Leeds Fig 3 대조)
 """
 from __future__ import annotations
+
+import csv
+import os
+import sys
+import warnings
 
 import numpy as np
 import matplotlib
@@ -174,7 +180,7 @@ def v0_5_complementary_wave():
 
 
 def v0_6_amplitude_reduction():
-    """식 (24) 진폭감쇠 곡선의 극한과 단조성, 그리고 U1 3안 비교."""
+    """식 (24) 진폭감쇠 곡선의 극한과 단조성, 식 (22) 정의역."""
     nab = np.logspace(-2, 2, 200)
     ht = M2.total_amplitude(1.0, nab)
     rec("V0-6", "nabla->0 에서 h_t/r_a -> 1", f"{ht[0]:.6f}", abs(ht[0] - 1) < 2e-3)
@@ -182,19 +188,19 @@ def v0_6_amplitude_reduction():
     rec("V0-6", "h_t/r_a 단조감소", "단조감소" if all(np.diff(ht) < 0) else "비단조",
         bool(all(np.diff(ht) < 0)))
 
-    # U1 3안: 순수구름 S=0 (Newtonian, Q=0 -> K=1) 및 정지범프 S=-2
-    rows = []
-    for S in (0.0, -2.0):
-        for name in M2.U1_VARIANTS:
-            nn, K = M2.ar_param_nn(10.0, 0.0, S, name)
-            rows.append((S, name, nn, K))
-    nan_A = np.isnan([r[2] for r in rows if r[0] == -2 and r[1] == "A_paper"][0])
-    rec("V0-6", "U1 변형 A(논문표기) 는 S=-2 에서 정의 불가",
-        "NaN 발생" if nan_A else "값 존재", bool(nan_A))
-    okB = [r[2] for r in rows if r[0] == -2 and r[1] == "B_half"][0]
-    rec("V0-6", "U1 변형 B(1+S/2) 는 S=-2 에서 nabla_nn=0 (감쇠 없음)",
-        f"nabla_nn={okB:.3e}", abs(okB) < 1e-12)
-    return nab, ht, rows
+    # 식 (22) 논문 표기: 논문 그림 조건 S = 0 (Fig 1/2a/7/8), +1, -1 (Fig 2b,c) 에서
+    # 유한·비음수, 범위 밖 S < -1 은 오류. (Newtonian, Q = 0 -> K = 1, nabla = 10)
+    vals = {S: M2.ar_param_nn(10.0, 0.0, S)[0] for S in (0.0, 1.0, -1.0)}
+    finite = all(np.isfinite(v) and v >= 0.0 for v in vals.values())
+    try:
+        M2.ar_param_nn(10.0, 0.0, -2.0)
+        guarded = False
+    except ValueError:
+        guarded = True
+    rec("V0-6", "식(22): S=0,+1,-1 에서 유한·비음수, S<-1 은 오류",
+        f"S=0: {vals[0.0]:.3f}, +1: {vals[1.0]:.3f}, -1: {vals[-1.0]:.3f}, "
+        f"S=-2 {'오류' if guarded else '통과(잘못)'}", finite and guarded)
+    return nab, ht
 
 
 # ---------------------------------------------------------------- V0-7
@@ -221,9 +227,8 @@ def v0_7_ar_param_crosscheck():
 def v0_8_assembly():
     """조립 일관성: h_a + h_cf = h_t (계획서 §2.2(c))."""
     case = C.DEOLALIKAR
-    out = M2.ripple_component(r_a=0.6e-6, lam_x=100e-6, lam_y=150e-6,
-                              h=case.h_cen, case=case, S=0.0,
-                              ar_param=case.ar_param(100e-6))
+    out = M2.ripple_component(r_a=0.6e-6, wx=2 * np.pi / 100e-6,
+                              wy=2 * np.pi / 150e-6, h=case.h_cen, case=case, S=0.0)
     resid = abs(out["h_a"] + out["h_cf"] - out["h_t"])
     rec("V0-8", "h_a + h_cf = h_t 항등", f"잔차 {resid:.2e} m", resid < 1e-18)
     rec("V0-8", "순수구름에서 h_a = r_a (복소부 0)",
@@ -241,13 +246,13 @@ def plot_v0(nab, ht, path="figures/V0_amplitude_reduction.png"):
     fig, ax = plt.subplots(figsize=(7, 4.4))
     ax.semilogx(nab, ht, "k-", lw=2,
                 label=r"eq.(24) with $\nabla$  (Venner-Lubrecht)")
-    for name, ls in zip(("A_paper", "B_half", "C_abs"), ("--", "-.", ":")):
-        nn = np.array([M2.ar_param_nn(v, 0.0, 0.0, name)[0] for v in nab])
+    for S, ls in zip((0.0, 1.0, -1.0), ("--", "-.", ":")):
+        nn = np.array([M2.ar_param_nn(v, 0.0, S)[0] for v in nab])
         ax.semilogx(nab, M2.total_amplitude(1.0, nn), ls, lw=1.6,
-                    label=f"eq.(22) $\\nabla_{{nn}}$, S=0, U1={name}")
+                    label=f"eq.(22) $\\nabla_{{nn}}$, S={S:+.0f}")
     ax.set_xlabel(r"$\nabla$")
     ax.set_ylabel(r"$h_{\rm t}/r_{\rm a}$")
-    ax.set_title("V0-6  amplitude reduction (eq. 24) and U1 variants")
+    ax.set_title("V0-6  amplitude reduction: eq.(24) with eq.(22), Newtonian Q=0")
     ax.grid(True, which="both", alpha=0.3)
     ax.legend(fontsize=8)
     fig.tight_layout()
@@ -265,7 +270,7 @@ def run_v0():
     v0_3_pure_rolling()
     v0_4_flattening_limit()
     v0_5_complementary_wave()
-    nab, ht, u1rows = v0_6_amplitude_reduction()
+    nab, ht = v0_6_amplitude_reduction()
     v0_7_ar_param_crosscheck()
     v0_8_assembly()
     png = plot_v0(nab, ht)
@@ -277,14 +282,169 @@ def run_v0():
     npass = sum(r[3] for r in RESULTS)
     print("-" * 110)
     print(f"{npass}/{len(RESULTS)} PASS    그림: {png}")
-
-    print("\n[U1 3안 비교]  ar_param=10, Q=0")
-    print(f"{'S':>6}{'variant':>10}{'nabla_nn':>14}{'K':>8}")
-    for S, name, nn, K in u1rows:
-        print(f"{S:>6.1f}{name:>10}{nn:>14.4f}{K:>8.3f}")
     return npass == len(RESULTS)
 
 
+# ================================================================= V1
+
+
+def flat_top_patch(n=255, periods=3):
+    """Leeds 정사각 flat-top 배열(계획서 K9): 윗변 90 um, 간격 35 um, 높이 0.30 um,
+    구름방향 대비 45 도. 격자 주기는 x·y 모두 125*sqrt(2) um 이므로 한 변을 그 정수배로
+    잡으면 FFT 가 정확히 주기적이다. 중심 결함은 원점(접촉 중심)에 놓는다.
+    반환: (간극 섭동 r[iy, ix] = -(z - mean z), 한 변 L)"""
+    P, half = 125e-6, 45e-6
+    L = periods * np.sqrt(2.0) * P
+    g = np.arange(n) * L / n
+    X, Y = np.meshgrid(g, g)
+    uc = ((X + Y) / np.sqrt(2.0) + P / 2) % P - P / 2
+    vc = ((X - Y) / np.sqrt(2.0) + P / 2) % P - P / 2
+    z = np.where((np.abs(uc) <= half) & (np.abs(vc) <= half), 0.30e-6, 0.0)
+    return -(z - z.mean()), L
+
+
+SKF_CENTRE_UM = 250.0   # 가정: SKF Fig 1 도메인(0~500 um) 중앙 = 접촉 중심 (사용자 결정 2026-09-29)
+
+
+def load_fig2(key):
+    """디지타이징한 SKF Fig 2 (digitize_fig2.py). 반환: 접촉중심 기준 x [m], dh [m], dp [Pa]."""
+    d = np.genfromtxt(f"ref_data/V1_skf_fig2_{key}.csv", delimiter=",", skip_header=2,
+                      encoding="utf-8")
+    return (d[:, 0] - SKF_CENTRE_UM) * 1e-6, d[:, 1] * 1e-6, d[:, 2] * 1e9
+
+
+def run_v1():
+    """V1: Leeds flat-top (계획서 K9·K11), SKF Fig 2 와 점별 비교 — 판정 없이 보고.
+
+    사용자 결정(2026-09-29): 식 (21) 은 논문 풀이법(Hooke 교대 풀이, U11), 곡선은 이미지 색상
+    자동 추출, 스냅숏은 접촉중심 가정 + 거칠기 위상 1개를 Delta h 최소제곱으로 맞춤
+    (Delta p 는 독립 비교). S = +-1 은 U9 두 안을 모두 계산해 보고만 한다(선택은 사용자).
+    """
+    warnings.simplefilter("ignore", RuntimeWarning)
+    case, h = C.LEEDS, 0.302e-6                 # h: Leeds/SKF Table 1 중앙유막
+    r, L = flat_top_patch()
+    n = r.shape[0]
+    w = 2.0 * np.pi * np.fft.fftfreq(n, d=L / n)
+    wy, wx = np.meshgrid(w, w, indexing="ij")
+    live = (wx != 0) | (wy != 0)
+    eta = case.eta0 * np.exp(case.alpha * case.p_h)
+    B = C.bulk_modulus(case.p_h)
+
+    # ---- V1-1 식 (21) 논문 풀이법 수렴 + 독립 풀이(뉴턴+연속법) 근 대조
+    for S in (0.0, 1.0, -1.0):
+        tau = M2.tau_mean_eyring(eta, S * case.u_bar, h, case.tau0)
+        ex, ey = M2.eta_equivalent(eta, tau, case.tau0)
+        u2 = case.u_bar * (1 + S / 2)
+        ps, it, ok = M2.solve_psi(wx, wy, h, case.E_eff, B, case.u_bar, u2, ex, ey)
+        pn, _, _ = M2.solve_psi_newton(wx, wy, h, case.E_eff, B, case.u_bar, u2, ex, ey)
+        diff = np.max(np.abs(ps - pn)[live] / np.maximum(np.abs(pn[live]), 1.0))
+        rec("V1-1", f"S={S:+.0f}: 식(21) 논문 풀이 수렴, 뉴턴 근과 일치",
+            f"{it}회 {'수렴' if ok else '미수렴'}, 차 {diff:.0e}, min Im {ps[live].imag.min():.1e}",
+            ok and diff < 1e-9 and ps[live].imag.min() > 0)
+
+    # ---- V1-2 점별 비교 (판정 없음)
+    shifts = np.arange(0.0, 125e-6 * np.sqrt(2.0), 0.5e-6)   # y = 0 선의 한 주기
+    fits = {}
+    for S, key in ((0.0, "a"), (1.0, "b"), (-1.0, "c")):
+        xs, dh_s, dp_s = load_fig2(key)
+        m = np.abs(xs) <= case.a_x
+        xs, dh_s, dp_s = xs[m], dh_s[m], dp_s[m]
+        fh, fp = np.isfinite(dh_s), np.isfinite(dp_s)
+        for mode in (("complex",) if S == 0 else ("complex", "magnitude")):
+            dh, dp, resid, _ = M2.ripple_line(r, L, case, S, h, xs, mode, shifts=shifts)
+            rec("V1-2", f"S={S:+.0f} {mode}: 단면 실수성", f"허수/실수 {resid:.0e}", resid < 1e-10)
+            rms_h = np.sqrt(np.mean((dh[:, fh] - dh_s[fh]) ** 2, axis=1))
+            k = int(np.argmin(rms_h))
+            rms_p = np.sqrt(np.mean((dp[k, fp] - dp_s[fp]) ** 2))
+            fits[(S, mode)] = dict(
+                xs=xs, dh=dh[k], dp=dp[k], s=shifts[k], n_h=int(fh.sum()), n_p=int(fp.sum()),
+                nr_h=rms_h[k] / np.ptp(dh_s[fh]), nr_p=rms_p / np.ptp(dp_s[fp]),
+                cor_h=np.corrcoef(dh[k, fh], dh_s[fh])[0, 1],
+                cor_p=np.corrcoef(dp[k, fp], dp_s[fp])[0, 1],
+                pp_h=np.ptp(dh[k]), pp_h_s=np.ptp(dh_s[fh]),
+                pp_p=np.ptp(dp[k]), pp_p_s=np.ptp(dp_s[fp]))
+
+    fig2 = [plot_fig2_style("paper")] + [plot_fig2_style(m, fits) for m in ("complex", "magnitude")]
+
+    print(f"{'ID':<7}{'항목':<42}{'관측':<48}판정")
+    print("-" * 105)
+    for tid, label, obs, ok in RESULTS:
+        print(f"{tid:<7}{label:<42}{obs:<48}{'PASS' if ok else 'FAIL'}")
+    print("-" * 105)
+    print(f"\n[점별 비교 — 판정 없음]  접촉중심 x_SKF = {SKF_CENTRE_UM:.0f} um 가정, 위상 s 는 Delta h RMS 최소")
+    print(f"{'S':>3} {'U9':<10}{'s[um]':>7} | {'Δh 정규화RMS':>11} {'상관':>6} {'진폭(본/SKF)':>16} | "
+          f"{'Δp 정규화RMS':>11} {'상관':>6} {'진폭(본/SKF) GPa':>18}")
+    for (S, mode), f in fits.items():
+        print(f"{S:+3.0f} {mode:<10}{f['s']*1e6:7.1f} | {f['nr_h']:11.1%} {f['cor_h']:6.3f} "
+              f"{f['pp_h']*1e6:7.3f}/{f['pp_h_s']*1e6:.3f} um | {f['nr_p']:11.1%} {f['cor_p']:6.3f} "
+              f"{f['pp_p']/1e9:8.3f}/{f['pp_p_s']/1e9:.3f}")
+    print("Fig 2 형식 그림: " + ", ".join(fig2))
+    return all(r_[3] for r_ in RESULTS)
+
+
+SKF_RED, SKF_BLUE = "#ef2b1d", "#3a68a4"     # SKF Fig 2 곡선 색 (이미지에서 추출)
+
+
+def plot_fig2_style(source, fits=None):
+    """SKF 2010 Fig 2 와 같은 형식의 3패널 그림 (사용자 결정 2026-09-29).
+
+    source = "paper": 디지타이징 곡선(급변 구간 NaN 은 앞뒤 유효점을 이어 수직 급변 재현)
+             "complex" / "magnitude": 본 계산(U9 안별). 곡선은 접촉 내부(|x| <= a_x)만.
+    축은 논문과 같다: x 50~450 um (SKF 좌표 = 접촉중심 기준 x + 250 um, 위·아래),
+    좌 Delta h -0.4~0.4 um, 우 Delta p -5~2 GPa, 점선 격자.
+    """
+    path = f"figures/V1_fig2_{'paper' if source == 'paper' else 'ours_' + source}.png"
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    fig, axes = plt.subplots(3, 1, figsize=(6.8, 15.0))
+    caps = ("(a) Middle-plane profile, S = 0", "(b) Middle-plane profile, S = 1",
+            "(c) Middle-plane profile, S = -1")
+    for ax, key, S, cap in zip(axes, ("a", "b", "c"), (0.0, 1.0, -1.0), caps):
+        if source == "paper":
+            xk, hk, pk = load_fig2(key)
+            mh, mp = np.isfinite(hk), np.isfinite(pk)
+            xh, dh, xp, dp = xk[mh], hk[mh], xk[mp], pk[mp]
+        else:
+            f = fits[(S, "complex" if S == 0 else source)]
+            xh = xp = f["xs"]
+            dh, dp = f["dh"], f["dp"]
+        xh_um, xp_um = xh * 1e6 + SKF_CENTRE_UM, xp * 1e6 + SKF_CENTRE_UM
+        ax2 = ax.twinx()
+        ax.plot(xh_um, dh * 1e6, color=SKF_RED, lw=1.6)
+        ax2.plot(xp_um, dp / 1e9, color=SKF_BLUE, lw=1.6)
+        ax.set_xlim(50, 450)
+        ax.set_ylim(-0.4, 0.4)
+        ax2.set_ylim(-5, 2)
+        ax.set_xticks(np.arange(50, 451, 50))
+        ax.set_yticks(np.arange(-0.4, 0.41, 0.1))
+        ax2.set_yticks(np.arange(-5, 3, 1))
+        ax.grid(True, ls=":", color="0.4", lw=0.6)
+        top = ax.twiny()
+        top.set_xlim(ax.get_xlim())
+        top.set_xticks(np.arange(50, 451, 50))
+        top.set_xlabel(r"x, [$\mu$ m]", color=SKF_BLUE)
+        top.tick_params(axis="x", colors=SKF_BLUE)
+        ax.set_xlabel(r"x, [$\mu$ m]" + f"\n{cap}", color=SKF_RED)
+        ax.tick_params(axis="x", colors=SKF_RED)
+        ax.tick_params(axis="y", colors=SKF_RED)
+        ax2.tick_params(axis="y", colors=SKF_BLUE)
+        ax.set_ylabel(r"$\Delta$ h, [$\mu$ m]", color=SKF_RED)
+        ax2.set_ylabel(r"$\Delta$ p, [GPa]", color=SKF_BLUE)
+        i = int(np.argmin(dh))
+        ax.annotate(r"$\Delta$ h", (xh_um[i] + 12, dh[i] * 1e6 + 0.02), fontsize=10)
+        j = int(np.argmax(dp))
+        ax2.annotate(r"$\Delta$ p", (xp_um[j] + 12, dp[j] / 1e9 + 0.35), fontsize=10)
+        if source != "paper":
+            ax.axvline(SKF_CENTRE_UM - C.LEEDS.a_x * 1e6, color="0.6", lw=0.8, ls="--")
+            ax.axvline(SKF_CENTRE_UM + C.LEEDS.a_x * 1e6, color="0.6", lw=0.8, ls="--")
+    title = ("SKF 2010 Fig 2 (digitized)" if source == "paper" else
+             f"This work (U9: {source}; S = 0 common), same format as SKF Fig 2; dashed = contact edges")
+    fig.suptitle(title, fontsize=9)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+    return path
+
+
 if __name__ == "__main__":
-    ok = run_v0()
+    ok = run_v1() if sys.argv[1:] == ["v1"] else run_v0()
     raise SystemExit(0 if ok else 1)

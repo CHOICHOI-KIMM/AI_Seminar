@@ -175,6 +175,22 @@ DEOLALIKAR = Case(
     p_lim=4.5e9,
 )
 
+# 계획서 §4.1 K8·K12: SKF Fig 8 — 같은 범프, p_h = 1.0 GPa (SKF 캡션 값), 순수구름 S = 0.
+# 그림 내부 제목("Pure Sliding, Stationary Bump")은 캡션과 충돌하나 캡션을 따른다.
+# Purdue 원조건 1.045 GPa 는 참조 곡선(Purdue Fig 6)의 조건일 뿐 계산에 쓰지 않는다.
+DEOLALIKAR_FIG8 = Case(
+    name="Deolalikar bump (p_h = 1.0 GPa, pure rolling) - SKF Fig 8",
+    E_eff=DEOLALIKAR.E_eff,
+    eta0=DEOLALIKAR.eta0,
+    alpha=DEOLALIKAR.alpha,
+    u_bar=DEOLALIKAR.u_bar,        # 속도 스윕 시 at_speed() 로 교체
+    Rx=DEOLALIKAR.Rx,
+    Ry=DEOLALIKAR.Ry,
+    p_h=1.0e9,
+    tau0=None,
+    p_lim=DEOLALIKAR.p_lim,
+)
+
 # 계획서 §4.1 K11: Felix-Quinonez(Leeds 2005) flat-top 예제 (원형접촉 R = 12.7 mm)
 LEEDS = Case(
     name="Leeds flat-top (p_h = 0.508 GPa)",
