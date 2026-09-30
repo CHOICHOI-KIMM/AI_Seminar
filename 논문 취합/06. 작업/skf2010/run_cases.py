@@ -188,18 +188,18 @@ def v0_6_amplitude_reduction():
     rec("V0-6", "h_t/r_a 단조감소", "단조감소" if all(np.diff(ht) < 0) else "비단조",
         bool(all(np.diff(ht) < 0)))
 
-    # 식 (22) 논문 표기: 논문 그림 조건 S = 0 (Fig 1/2a/7/8), +1, -1 (Fig 2b,c) 에서
-    # 유한·비음수, 범위 밖 S < -1 은 오류. (Newtonian, Q = 0 -> K = 1, nabla = 10)
+    # 식 (22) 밑수 1 + S/2 (U1): 논문 그림 조건 S = 0 (Fig 1/2a/7/8), +1, -1 (Fig 2b,c) 에서
+    # 유한·비음수, 밑수가 음수인 S < -2 는 오류. (Newtonian, Q = 0 -> K = 1, nabla = 10)
     vals = {S: M2.ar_param_nn(10.0, 0.0, S)[0] for S in (0.0, 1.0, -1.0)}
     finite = all(np.isfinite(v) and v >= 0.0 for v in vals.values())
     try:
-        M2.ar_param_nn(10.0, 0.0, -2.0)
+        M2.ar_param_nn(10.0, 0.0, -3.0)
         guarded = False
     except ValueError:
         guarded = True
-    rec("V0-6", "식(22): S=0,+1,-1 에서 유한·비음수, S<-1 은 오류",
+    rec("V0-6", "식(22): S=0,+1,-1 에서 유한·비음수, S<-2 는 오류",
         f"S=0: {vals[0.0]:.3f}, +1: {vals[1.0]:.3f}, -1: {vals[-1.0]:.3f}, "
-        f"S=-2 {'오류' if guarded else '통과(잘못)'}", finite and guarded)
+        f"S=-3 {'오류' if guarded else '통과(잘못)'}", finite and guarded)
     return nab, ht
 
 
@@ -365,6 +365,7 @@ def run_v1():
                 pp_p=np.ptp(dp[k]), pp_p_s=np.ptp(dp_s[fp]))
 
     fig2 = [plot_fig2_style("paper")] + [plot_fig2_style(m, fits) for m in ("complex", "magnitude")]
+    fig2.append(plot_fig2_style("roughness", fits))
 
     print(f"{'ID':<7}{'항목':<42}{'관측':<48}판정")
     print("-" * 105)
@@ -390,27 +391,51 @@ def plot_fig2_style(source, fits=None):
 
     source = "paper": 디지타이징 곡선(급변 구간 NaN 은 앞뒤 유효점을 이어 수직 급변 재현)
              "complex" / "magnitude": 본 계산(U9 안별). 곡선은 접촉 내부(|x| <= a_x)만.
+             "roughness": 같은 위치의 y = 0 초기 거칠기 표면 높이 z (flat_top_patch 와 같은
+             형상을 해석적으로, 모서리 수직). 위상 s 는 fits 값, 무늬 이동 r(x - s) 와 같음.
+             z = 0.30 um (윗면) / 0 (홈), Delta h 와 부호 반대(Delta h > 0 = 홈).
     축은 논문과 같다: x 50~450 um (SKF 좌표 = 접촉중심 기준 x + 250 um, 위·아래),
-    좌 Delta h -0.4~0.4 um, 우 Delta p -5~2 GPa, 점선 격자.
+    좌 Delta h -0.4~0.4 um, 우 Delta p -5~2 GPa, 점선 격자. 네 그림의 패널 위치가 같도록
+    거칠기 그림도 같은 축 구성을 쓰고 오른쪽 축은 보이지 않게 둔다.
     """
-    path = f"figures/V1_fig2_{'paper' if source == 'paper' else 'ours_' + source}.png"
+    name = {"paper": "paper", "roughness": "initial_z"}.get(source, "ours_" + source)
+    path = f"figures/V1_fig2_{name}.png"
     os.makedirs(os.path.dirname(path), exist_ok=True)
     fig, axes = plt.subplots(3, 1, figsize=(6.8, 15.0))
     caps = ("(a) Middle-plane profile, S = 0", "(b) Middle-plane profile, S = 1",
             "(c) Middle-plane profile, S = -1")
+    P, half = 125e-6, 45e-6
     for ax, key, S, cap in zip(axes, ("a", "b", "c"), (0.0, 1.0, -1.0), caps):
-        if source == "paper":
-            xk, hk, pk = load_fig2(key)
-            mh, mp = np.isfinite(hk), np.isfinite(pk)
-            xh, dh, xp, dp = xk[mh], hk[mh], xk[mp], pk[mp]
-        else:
-            f = fits[(S, "complex" if S == 0 else source)]
-            xh = xp = f["xs"]
-            dh, dp = f["dh"], f["dp"]
-        xh_um, xp_um = xh * 1e6 + SKF_CENTRE_UM, xp * 1e6 + SKF_CENTRE_UM
         ax2 = ax.twinx()
-        ax.plot(xh_um, dh * 1e6, color=SKF_RED, lw=1.6)
-        ax2.plot(xp_um, dp / 1e9, color=SKF_BLUE, lw=1.6)
+        if source == "roughness":
+            x = np.linspace(-200e-6, 200e-6, 4001)
+            xu = x * 1e6 + SKF_CENTRE_UM
+            modes = ("complex",) if S == 0 else ("complex", "magnitude")
+            for mode, ls in zip(modes, ("-", ":")):
+                s = fits[(S, mode)]["s"]
+                uc = ((x - s) / np.sqrt(2.0) + P / 2) % P - P / 2      # y = 0: uc = vc
+                z = np.where(np.abs(uc) <= half, 0.30, 0.0)
+                if mode == "complex":
+                    ax.fill_between(xu, 0.0, z, where=z > 0, color="0.85")
+                ax.plot(xu, z, color="k", lw=1.4, ls=ls,
+                        label=f"s = {s * 1e6:.1f} um" + ("" if S == 0 else f" ({mode})"))
+            ax.legend(fontsize=8, loc="lower right")
+        else:
+            if source == "paper":
+                xk, hk, pk = load_fig2(key)
+                mh, mp = np.isfinite(hk), np.isfinite(pk)
+                xh, dh, xp, dp = xk[mh], hk[mh], xk[mp], pk[mp]
+            else:
+                f = fits[(S, "complex" if S == 0 else source)]
+                xh = xp = f["xs"]
+                dh, dp = f["dh"], f["dp"]
+            xh_um, xp_um = xh * 1e6 + SKF_CENTRE_UM, xp * 1e6 + SKF_CENTRE_UM
+            ax.plot(xh_um, dh * 1e6, color=SKF_RED, lw=1.6)
+            ax2.plot(xp_um, dp / 1e9, color=SKF_BLUE, lw=1.6)
+            i = int(np.argmin(dh))
+            ax.annotate(r"$\Delta$ h", (xh_um[i] + 12, dh[i] * 1e6 + 0.02), fontsize=10)
+            j = int(np.argmax(dp))
+            ax2.annotate(r"$\Delta$ p", (xp_um[j] + 12, dp[j] / 1e9 + 0.35), fontsize=10)
         ax.set_xlim(50, 450)
         ax.set_ylim(-0.4, 0.4)
         ax2.set_ylim(-5, 2)
@@ -421,30 +446,80 @@ def plot_fig2_style(source, fits=None):
         top = ax.twiny()
         top.set_xlim(ax.get_xlim())
         top.set_xticks(np.arange(50, 451, 50))
-        top.set_xlabel(r"x, [$\mu$ m]", color=SKF_BLUE)
-        top.tick_params(axis="x", colors=SKF_BLUE)
-        ax.set_xlabel(r"x, [$\mu$ m]" + f"\n{cap}", color=SKF_RED)
-        ax.tick_params(axis="x", colors=SKF_RED)
-        ax.tick_params(axis="y", colors=SKF_RED)
-        ax2.tick_params(axis="y", colors=SKF_BLUE)
-        ax.set_ylabel(r"$\Delta$ h, [$\mu$ m]", color=SKF_RED)
-        ax2.set_ylabel(r"$\Delta$ p, [GPa]", color=SKF_BLUE)
-        i = int(np.argmin(dh))
-        ax.annotate(r"$\Delta$ h", (xh_um[i] + 12, dh[i] * 1e6 + 0.02), fontsize=10)
-        j = int(np.argmax(dp))
-        ax2.annotate(r"$\Delta$ p", (xp_um[j] + 12, dp[j] / 1e9 + 0.35), fontsize=10)
+        if source == "roughness":
+            lc, cap = "k", cap.replace("Middle-plane profile", "Initial roughness")
+            ax.set_ylabel(r"z, [$\mu$ m]", color=lc)
+            ax2.tick_params(axis="y", colors=(0, 0, 0, 0))            # 자리만 차지(정렬용)
+            ax2.set_ylabel(r"$\Delta$ p, [GPa]", color=(0, 0, 0, 0))
+        else:
+            lc = SKF_RED
+            ax.set_ylabel(r"$\Delta$ h, [$\mu$ m]", color=lc)
+            ax2.tick_params(axis="y", colors=SKF_BLUE)
+            ax2.set_ylabel(r"$\Delta$ p, [GPa]", color=SKF_BLUE)
+        tc = "k" if source == "roughness" else SKF_BLUE
+        top.set_xlabel(r"x, [$\mu$ m]", color=tc)
+        top.tick_params(axis="x", colors=tc)
+        ax.set_xlabel(r"x, [$\mu$ m]" + f"\n{cap}", color=lc)
+        ax.tick_params(axis="x", colors=lc)
+        ax.tick_params(axis="y", colors=lc)
         if source != "paper":
             ax.axvline(SKF_CENTRE_UM - C.LEEDS.a_x * 1e6, color="0.6", lw=0.8, ls="--")
             ax.axvline(SKF_CENTRE_UM + C.LEEDS.a_x * 1e6, color="0.6", lw=0.8, ls="--")
-    title = ("SKF 2010 Fig 2 (digitized)" if source == "paper" else
-             f"This work (U9: {source}; S = 0 common), same format as SKF Fig 2; dashed = contact edges")
-    fig.suptitle(title, fontsize=9)
+    title = {"paper": "SKF 2010 Fig 2 (digitized)",
+             "roughness": "Initial roughness height z at y = 0 (shaded = flat top; sign opposite to Delta h)"
+             }.get(source, f"This work (U9: {source}; S = 0 common), same format as SKF Fig 2; "
+                           "dashed = contact edges")
+    # 거칠기 그림은 제목을 보이지 않게 두고 자리만 차지(다른 그림과 패널 위치 일치)
+    fig.suptitle(title, fontsize=9, color=(0, 0, 0, 0) if source == "roughness" else "k")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
     return path
 
 
+def report_psi(path="figures/V1_psi_map.png"):
+    """식 (21) 의 해 psi = omega_x' + i beta (Leeds V1 패치, S = 0, +1, -1).
+    omega_y = 0 선의 대표 파장 표 + 전 성분 (omega_x, omega_y) 분포 그림 (작업내역서 §3.6.4)."""
+    case, h = C.LEEDS, 0.302e-6
+    r, L = flat_top_patch()
+    n = r.shape[0]
+    w = 2.0 * np.pi * np.fft.fftfreq(n, d=L / n)
+    wy, wx = np.meshgrid(w, w, indexing="ij")
+    eta = case.eta0 * np.exp(case.alpha * case.p_h)
+    B = C.bulk_modulus(case.p_h)
+    picks = [(3, 0), (6, 0), (15, 0), (51, 0), (127, 0), (3, 3)]   # (kx, ky): 파장 L/k
+    fig, axes = plt.subplots(2, 3, figsize=(13.5, 8.0), constrained_layout=True)
+    ext = np.array([w.min(), w.max(), w.min(), w.max()]) * 1e-6
+    print(f"{'S':>3} {'kx,ky':>7} {'lam_x[um]':>9} {'wx*u2/u_bar[1/m]':>17} {'omega_x_[1/m]':>13} "
+          f"{'beta[1/m]':>11} {'omega_x_/(wx*u2/u_bar)':>22} {'beta/(wx*u2/u_bar)':>19}".replace("_[", "'[").replace("_/", "'/"))
+    for j, S in enumerate((0.0, 1.0, -1.0)):
+        tau = M2.tau_mean_eyring(eta, S * case.u_bar, h, case.tau0)
+        ex, ey = M2.eta_equivalent(eta, tau, case.tau0)
+        u2 = case.u_bar * (1 + S / 2)
+        psi, _, ok = M2.solve_psi(wx, wy, h, case.E_eff, B, case.u_bar, u2, ex, ey)
+        wx_u2 = wx * u2 / case.u_bar
+        for kx, ky in picks:
+            p, c = psi[ky, kx], wx_u2[ky, kx]
+            print(f"{S:+3.0f} {kx:>3},{ky:<3} {L / kx * 1e6:9.1f} {c:17.4e} {p.real:13.4e} "
+                  f"{p.imag:11.4e} {p.real / c:22.6f} {p.imag / c:19.4e}")
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ratio = np.where(wx_u2 != 0, psi.real / wx_u2, np.nan)
+            lb = np.log10(np.where(psi.imag > 0, psi.imag, np.nan))
+        for i, (v, lab) in enumerate(((ratio, r"$\omega_x'\,\bar u/(\omega_x u_2)$"),
+                                      (lb, r"$\log_{10}\beta$ [1/m]"))):
+            im = axes[i, j].imshow(np.fft.fftshift(v), origin="lower", extent=ext, cmap="viridis")
+            cb = fig.colorbar(im, ax=axes[i, j], label=lab)
+            cb.formatter.set_useOffset(False)
+            cb.update_ticks()
+            axes[i, j].set_title(f"S = {S:+.0f}  " + lab)
+            axes[i, j].set_xlabel(r"$\omega_x$ [1/$\mu$m]")
+            axes[i, j].set_ylabel(r"$\omega_y$ [1/$\mu$m]")
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+    print(f"그림: {path}")
+    return True
+
+
 if __name__ == "__main__":
-    ok = run_v1() if sys.argv[1:] == ["v1"] else run_v0()
+    ok = {"v1": run_v1, "psi": report_psi}.get(sys.argv[1] if sys.argv[1:] else "", run_v0)()
     raise SystemExit(0 if ok else 1)

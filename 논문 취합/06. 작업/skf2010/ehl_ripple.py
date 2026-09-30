@@ -51,8 +51,8 @@ def particular_integral(r_a, wx, wy, h, E_eff, B_bulk, u2, u_bar, eta_x, eta_y):
 # ----------------------------------------------------------- 보완함수 (21)
 
 
-_GRID_A = np.logspace(-4, 2, 90)       # omega_d / 척도 탐색 격자
-_GRID_B = np.logspace(-14, 2, 160)     # alpha / 척도 탐색 격자
+_GRID_WXP = np.logspace(-4, 2, 90)      # omega_x' / 척도 탐색 격자
+_GRID_BETA = np.logspace(-14, 2, 160)   # beta / 척도 탐색 격자
 
 
 def _smallest_positive_root(f, grid):
@@ -73,16 +73,16 @@ def _smallest_positive_root(f, grid):
 
 
 def solve_psi(wx, wy, h, E_eff, B_bulk, u_bar, u2, eta_x, eta_y, tol=1e-12, itmax=200):
-    """식 (21) 의 복소 파수 psi = omega_d + i alpha — 논문 풀이법(사용자 결정 U11, 2026-09-29).
+    """식 (21) 의 복소 파수 psi = omega_x' + i beta (식 20) — 논문 풀이법(사용자 결정 U11, 2026-09-29).
 
     SKF 의 "실수부로 실수부를, 허수부로 허수부를 차례로 추정"을 원저자 Hooke [20]
-    (식 19 아래) 기술대로 구현한다. 분모를 곱한 형태
-        P(psi) = (psi - wc)(1 + K Om) - i A Om (psi^2/eta_x + wy^2/eta_y) = 0,
-        Om = sqrt(psi^2 + wy^2),  A = E'h^3/(48 u_bar),  K = E'h/(4B),  wc = wx u2/u_bar
-    의 실수부를 omega_d 에 대해, 허수부를 alpha 에 대해 번갈아 풀며 매번 양의 근을 택한다.
+    (식 19 아래) 기술대로 구현한다. 식 (21) 의 분모를 곱한 형태
+        P(psi) = (psi - wx u2/u_bar)(1 + C_psi) - i E'h^3/(48 u_bar) kappa_psi (psi^2/eta_x + wy^2/eta_y) = 0,
+        kappa_psi = sqrt(psi^2 + wy^2),  C_psi = h E' kappa_psi / (4B)
+    의 실수부를 omega_x' 에 대해, 허수부를 beta 에 대해 번갈아 풀며 매번 양의 근을 택한다.
     wy = 0 이면 두 식이 Hooke 원문의 2차식과 같다. 2D 성분은 양의 반직선 구간탐색 +
     이분법으로 근을 구한다(Leeds 시험에서 전 성분 양의 근이 정확히 1개 — 작업내역서 §3.6).
-    psi(-wx, wy) = -conj psi(wx, wy) 대칭으로 |wx| 만 푼다. wx = 0 성분은 대칭상 omega_d = 0.
+    psi(-wx, wy) = -conj psi(wx, wy) 대칭으로 |wx| 만 푼다. wx = 0 성분은 대칭상 omega_x' = 0.
 
     주의: 논문(정리본) 식 (21) 대괄호 첫 항은 psi^2/eta_y 로 표기되어 있으나
     식 (16),(18) 및 Hooke [21] 식 (29) 와의 정합상 psi^2/eta_x 가 맞다.
@@ -93,33 +93,34 @@ def solve_psi(wx, wy, h, E_eff, B_bulk, u_bar, u2, eta_x, eta_y, tol=1e-12, itma
     shape = wx_a.shape
     wx_f, wy_f = wx_a.ravel(), wy_a.ravel()
     sgn = np.where(wx_f < 0, -1.0, 1.0)
-    wc_all = np.abs(wx_f) * u2 / u_bar
-    live = np.where((wc_all > 0) | (wy_f != 0))[0]
+    wx_u2_all = np.abs(wx_f) * u2 / u_bar                    # wx u2 / u_bar
+    live = np.where((wx_u2_all > 0) | (wy_f != 0))[0]
     psi = np.zeros(wx_f.shape, complex)
     if live.size == 0:
         return psi.reshape(shape)[()], 0, True
 
-    wc, wyl = wc_all[live][:, None], wy_f[live][:, None]
-    A, K = E_eff * h**3 / (48.0 * u_bar), E_eff * h / (4.0 * B_bulk)
+    wx_u2, wyl = wx_u2_all[live][:, None], wy_f[live][:, None]
+    c_num, c_den = E_eff * h**3 / (48.0 * u_bar), E_eff * h / (4.0 * B_bulk)
 
-    def P(a, b):
-        z = a + 1j * b
-        om = np.sqrt(z**2 + wyl**2)
-        return (z - wc) * (1.0 + K * om) - 1j * A * om * (z**2 / eta_x + wyl**2 / eta_y)
+    def P(wxp, beta):
+        z = wxp + 1j * beta
+        kappa_psi = np.sqrt(z**2 + wyl**2)
+        C_psi = c_den * kappa_psi
+        return (z - wx_u2) * (1.0 + C_psi) - 1j * c_num * kappa_psi * (z**2 / eta_x + wyl**2 / eta_y)
 
-    scale = np.maximum(wc, np.abs(wyl))
-    has_x = wc[:, 0] > 0
-    a, b = wc[:, 0].copy(), np.zeros(len(live))
+    scale = np.maximum(wx_u2, np.abs(wyl))
+    has_x = wx_u2[:, 0] > 0
+    wxp, beta = wx_u2[:, 0].copy(), np.zeros(len(live))
     ok = False
     for it in range(1, itmax + 1):
-        a0, b0 = a.copy(), b.copy()
-        ra, _ = _smallest_positive_root(lambda x: P(x, b[:, None]).real, scale * _GRID_A)
-        a = np.where(has_x, ra, 0.0)
-        b, _ = _smallest_positive_root(lambda x: P(a[:, None], x).imag, scale * _GRID_B)
-        if np.all(np.abs(a - a0) + np.abs(b - b0) <= tol * (np.abs(a) + np.abs(b))):
+        wxp0, beta0 = wxp.copy(), beta.copy()
+        r, _ = _smallest_positive_root(lambda x: P(x, beta[:, None]).real, scale * _GRID_WXP)
+        wxp = np.where(has_x, r, 0.0)
+        beta, _ = _smallest_positive_root(lambda x: P(wxp[:, None], x).imag, scale * _GRID_BETA)
+        if np.all(np.abs(wxp - wxp0) + np.abs(beta - beta0) <= tol * (np.abs(wxp) + np.abs(beta))):
             ok = True
             break
-    psi[live] = sgn[live] * a + 1j * b
+    psi[live] = sgn[live] * wxp + 1j * beta
     return psi.reshape(shape)[()], it, ok
 
 
@@ -127,15 +128,14 @@ def solve_psi_newton(wx, wy, h, E_eff, B_bulk, u_bar, u2, eta_x, eta_y,
                      n_steps=60, n_newton=8, tol=1e-10):
     """식 (21) 을 뉴턴법 + 연속법으로 푼다 (solve_psi 와 같은 방정식, 다른 풀이법).
 
-    전단박화로 eta_x 가 작아지면 짧은 파장에서 우변이 psi^3 로 커져 논문의 축차대입이
-    발산한다. g(psi; t) = psi - wx' - i t N(psi)/D(psi) 에서 t 를 0 -> 1 로 올리며
-    psi = wx' (t = 0) 에서 이어지는 근을 추적한다.
+    교차검증 전용. g(psi; t) = psi - wx u2/u_bar - i t N(psi)/D(psi) 에서 t 를 0 -> 1 로
+    올리며 psi = wx u2/u_bar (t = 0) 에서 이어지는 근을 추적한다.
     반환: (psi, 최대 상대잔차 |g|/max(|psi|,1), 수렴여부)
     """
-    wxp = np.asarray(wx * u2 / u_bar, dtype=complex)
+    wx_u2 = np.asarray(wx * u2 / u_bar, dtype=complex)
     wy = np.asarray(wy, dtype=float)
     c_n, c_d = E_eff * h**3, E_eff * h / (4.0 * B_bulk)
-    live = (np.abs(wxp) + np.abs(wy)) > 0.0              # DC 성분 제외
+    live = (np.abs(wx_u2) + np.abs(wy)) > 0.0            # DC 성분 제외
 
     def g_dg(psi, t):
         s = np.sqrt(psi**2 + wy**2)
@@ -143,11 +143,11 @@ def solve_psi_newton(wx, wy, h, E_eff, B_bulk, u_bar, u2, eta_x, eta_y,
         a = psi**2 / eta_x + wy**2 / eta_y
         N, dN = c_n * s * a, c_n * (ds * a + s * 2.0 * psi / eta_x)
         D, dD = 48.0 * u_bar * (1.0 + c_d * s), 48.0 * u_bar * c_d * ds
-        g = psi - wxp - 1j * t * N / D
+        g = psi - wx_u2 - 1j * t * N / D
         dg = 1.0 - 1j * t * (dN * D - N * dD) / D**2
         return g, dg
 
-    psi = wxp.copy()
+    psi = wx_u2.copy()
     for t in np.linspace(0.0, 1.0, n_steps + 1)[1:]:
         for _ in range(n_newton):
             g, dg = g_dg(psi, t)
@@ -160,18 +160,19 @@ def solve_psi_newton(wx, wy, h, E_eff, B_bulk, u_bar, u2, eta_x, eta_y,
 # ------------------------------------------ 진폭감쇠 (22),(23),(24)
 
 def ar_param_nn(ar_param, Q, S):
-    """식 (23) K, 식 (22) nabla_nn — 논문 표기 그대로.
+    """식 (23) K, 식 (22) nabla_nn (계획서 U1).
 
         K        = 1 - tanh(0.25 |Q| / nabla)
-        nabla_nn = 0.8 nabla ((1 + S) / 2)^(0.1 + 0.5 K)
+        nabla_nn = 0.8 nabla (1 + S/2)^(0.1 + 0.5 K)
 
-    밑수 (1+S)/2 는 S < -1 에서 음수가 되어 정의되지 않는다. 논문 그림의 조건은
-    S = 0, +-1 뿐이므로 그 범위 밖 사용은 오류로 막는다.
+    밑수 1 + S/2 (= u2/u_bar) 는 Morales-Espejel, Rolling Bearings: Tribology Damage
+    Modes and Life Modelling (SKF, 2025) 에서 확인(논문 인쇄 표기 (1+S)/2 대체).
+    밑수가 음수가 되는 S < -2 는 오류로 막는다.
     """
-    if S < -1.0:
-        raise ValueError(f"식 (22)는 S >= -1 에서만 정의된다 (S = {S})")
+    if S < -2.0:
+        raise ValueError(f"식 (22)는 S >= -2 에서만 정의된다 (S = {S})")
     K_nn = 1.0 - np.tanh(0.25 * abs(Q) / ar_param)
-    base = (1.0 + S) / 2.0
+    base = 1.0 + S / 2.0
     return 0.8 * ar_param * base ** (0.1 + 0.5 * K_nn), K_nn
 
 
