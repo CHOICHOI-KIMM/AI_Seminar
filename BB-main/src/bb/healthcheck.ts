@@ -578,6 +578,11 @@ async function run(): Promise<void> {
 
   // ── 탭 마운트 스윕 — 커맨드가 아니라 **화면**을 검사한다 ──────
   const tabBad = await sweepTabs();
+  // ── P4-4 레이아웃 실측 ──
+  const layoutBad = await measureLayout();
+  await logInfo(
+    `[healthcheck] 레이아웃 실측 ${layoutBad.length === 0 ? 'PASS' : `FAIL: ${layoutBad.join(' / ')}`}`
+  );
   await logInfo(
     `[healthcheck] 탭 마운트 스윕 ${
       tabBad.length === 0 ? 'PASS' : `FAIL: ${tabBad.join(' / ')}`
@@ -587,6 +592,7 @@ async function run(): Promise<void> {
   await logInfo(
     `[healthcheck] 종료 — ${
       tabBad.length === 0 &&
+      layoutBad.length === 0 &&
       inputBad.length === 0 &&
       geomBad.length === 0 &&
       resultBad.length === 0 &&
@@ -689,6 +695,147 @@ async function sweepTabs(): Promise<string[]> {
       bad.push(`'${label}' 에 자리표시자가 남아 있다 — prop 배선이 갱신되지 않았다`);
     }
     await logInfo(`[healthcheck] tab '${label}' 마운트 OK (${text.length} chars)`);
+  }
+
+  return bad;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  P4-4 레이아웃 실측 — 「글자 크기」와 「겹침」을 눈이 아니라 숫자로
+// ═══════════════════════════════════════════════════════════════════
+//
+//  글로벌 규칙 「검증은 테스트 코드로 실측값 기준」 (Plan Phase 4-4 합류 DoD).
+//  ① Section 전단면: 컨테이너 폭을 바꿔 가며 모든 SVG <text> 의 **렌더 px**
+//     (= font-size × getScreenCTM 축척) · 라벨 쌍 교차 · 라벨 ∩ 도면 영역을 잰다.
+//     표식은 BbAxialSectionView 가 단다: data-role = drawing | label | marker.
+//  ② Life: 화면(차트 제외) 글자 크기 집합이 허용 단계 {11,12,13,14} px 안인가.
+
+const SECTION_WIDTHS = [480, 900, 1600] as const;
+const SVG_ALLOWED_PX = [11, 12, 13];
+const HTML_ALLOWED_PX = [11, 12, 13, 14];
+const PX_TOL = 0.05;
+const OVERLAP_TOL_PX2 = 0.5;
+
+function renderedPx(t: SVGTextElement): number {
+  const ctm = t.getScreenCTM();
+  const scale = ctm ? Math.hypot(ctm.a, ctm.b) : 1;
+  return parseFloat(getComputedStyle(t).fontSize) * scale;
+}
+
+function overlapArea(a: DOMRect, b: DOMRect): number {
+  const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+  const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+  return w > 0 && h > 0 ? w * h : 0;
+}
+
+async function waitStable(read: () => string, maxMs = 6000): Promise<void> {
+  let prev = '';
+  let same = 0;
+  const t0 = Date.now();
+  while (same < 3 && Date.now() - t0 < maxMs) {
+    await sleep(150);
+    const cur = read();
+    same = cur === prev ? same + 1 : 0;
+    prev = cur;
+  }
+}
+
+async function measureLayout(): Promise<string[]> {
+  const bad: string[] = [];
+
+  // ── ① Section ────────────────────────────────────────────────────
+  buttonByText('Section')?.click();
+  const drawing0 = await waitUntil(() => document.querySelector('[data-role="drawing"]'), 8000);
+  if (!drawing0) {
+    bad.push('Section: data-role="drawing" 을 찾지 못했다');
+  } else {
+    const svg0 = drawing0.closest('svg') as SVGSVGElement;
+    const box = svg0.closest('.overflow-auto') as HTMLElement | null;
+    if (!box) bad.push('Section: 폭을 바꿀 스크롤 컨테이너(.overflow-auto)를 찾지 못했다');
+    const saved = box?.style.width ?? '';
+    for (const w of SECTION_WIDTHS) {
+      if (box) box.style.width = `${w}px`;
+      window.dispatchEvent(new Event('resize'));
+      await waitStable(() => {
+        const g = document.querySelector('[data-role="drawing"]');
+        const sv = g?.closest('svg');
+        return sv ? `${sv.getAttribute('width')}x${sv.getAttribute('height')}` : 'none';
+      });
+      const drawing = document.querySelector('[data-role="drawing"]') as SVGGElement | null;
+      if (!drawing) {
+        bad.push(`Section@${w}: 도면이 그려지지 않았다 (하한 폭 미만)`);
+        await logInfo(`[healthcheck] layout Section@${w}px 도면 없음`);
+        continue;
+      }
+      const svg = drawing.closest('svg') as SVGSVGElement;
+      const texts = Array.from(svg.querySelectorAll('text')).filter(t => (t.textContent ?? '').trim() !== '');
+      const sizes = texts.map(renderedPx);
+      const off = texts.filter((_, i) => !SVG_ALLOWED_PX.some(a => Math.abs(sizes[i] - a) <= PX_TOL));
+      const rects = texts.map(t => t.getBoundingClientRect());
+      let pairs = 0;
+      for (let i = 0; i < rects.length; i++)
+        for (let j = i + 1; j < rects.length; j++) if (overlapArea(rects[i], rects[j]) > OVERLAP_TOL_PX2) pairs++;
+      const dr = drawing.getBoundingClientRect();
+      const labels = texts.filter(t => t.closest('[data-role="label"]') || t.getAttribute('data-role') === 'label');
+      const intrude = labels.filter(t => overlapArea(t.getBoundingClientRect(), dr) > OVERLAP_TOL_PX2);
+      const hist = [...new Set(sizes.map(x => x.toFixed(2)))].sort().join('/');
+      await logInfo(
+        `[healthcheck] layout Section@${w}px svg=${svg.getAttribute('width')}x${svg.getAttribute('height')} ` +
+          `text=${texts.length} px={${hist}} 허용밖=${off.length} 라벨쌍교차=${pairs} ` +
+          `라벨수=${labels.length} 라벨∩도면=${intrude.length}`
+      );
+      if (off.length) bad.push(`Section@${w}: 허용 밖 글자 ${off.map(t => `「${t.textContent}」${renderedPx(t).toFixed(2)}px`).join(', ')}`);
+      if (pairs) bad.push(`Section@${w}: 글자 bbox 교차 ${pairs}쌍`);
+      if (labels.length === 0) bad.push(`Section@${w}: data-role="label" 글자가 0개 — 침범 검사가 공회전`);
+      if (intrude.length) bad.push(`Section@${w}: 라벨이 도면 영역 침범 ${intrude.map(t => `「${t.textContent}」`).join(', ')}`);
+
+      // 나침반 (결과가 있을 때만 존재) — 글자 11 px · 상자 안
+      const compass = Array.from(document.querySelectorAll('svg')).find(
+        sv => sv !== svg && sv.closest('.overflow-auto') === box && sv.querySelectorAll('text').length > 0 && !sv.querySelector('[data-role]')
+      );
+      if (compass) {
+        const ct = Array.from(compass.querySelectorAll('text'));
+        const cb = compass.getBoundingClientRect();
+        const cOff = ct.filter(t => Math.abs(renderedPx(t) - 11) > PX_TOL);
+        const cOut = ct.filter(t => {
+          const r = t.getBoundingClientRect();
+          return r.left < cb.left - 0.5 || r.right > cb.right + 0.5 || r.top < cb.top - 0.5 || r.bottom > cb.bottom + 0.5;
+        });
+        await logInfo(`[healthcheck] layout 나침반@${w}px text=${ct.length} 11px아님=${cOff.length} 상자밖=${cOut.length}`);
+        if (cOff.length) bad.push(`나침반@${w}: 11 px 아닌 글자 ${cOff.length}개`);
+        if (cOut.length) bad.push(`나침반@${w}: 상자 밖 글자 ${cOut.length}개`);
+      }
+    }
+    if (box) box.style.width = saved;
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  // ── ② Life ───────────────────────────────────────────────────────
+  buttonByText('Life')?.click();
+  const main = document.querySelector('main');
+  await waitStable(() => main?.textContent ?? '');
+  // ⚠ 범위는 **Life 본문만**. `main` 전체를 재면 탭 바의 「TRB 잔존」 배지(9 px, components/ 소관)까지
+  //    섞여 Life 와 무관한 FAIL 이 난다 (첫 실측에서 실제로 그랬다).
+  const lifeRoot = Array.from(main?.querySelectorAll<HTMLElement>('.overflow-auto') ?? []).find(el =>
+    (el.textContent ?? '').includes('수명 조건')
+  );
+  if (!lifeRoot) bad.push('Life: 본문 컨테이너(「수명 조건」 포함 .overflow-auto)를 찾지 못했다');
+  if (lifeRoot) {
+    const found = new Map<string, number>();
+    const outside: string[] = [];
+    for (const el of Array.from(lifeRoot.querySelectorAll<HTMLElement>('*'))) {
+      if (el.closest('.js-plotly-plot') || el instanceof SVGElement) continue; // 차트 라이브러리 내부 제외
+      const own = Array.from(el.childNodes).some(n => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim() !== '');
+      if (!own) continue;
+      const px = parseFloat(getComputedStyle(el).fontSize);
+      const k = px.toFixed(2);
+      found.set(k, (found.get(k) ?? 0) + 1);
+      if (!HTML_ALLOWED_PX.some(a => Math.abs(px - a) <= PX_TOL) && outside.length < 6)
+        outside.push(`「${(el.textContent ?? '').trim().slice(0, 24)}」${k}px`);
+    }
+    const hist = [...found.entries()].sort((a, b) => +a[0] - +b[0]).map(([k, n]) => `${k}×${n}`).join(' ');
+    await logInfo(`[healthcheck] layout Life 글자크기 {${hist}}`);
+    if (outside.length) bad.push(`Life: 허용 단계 밖 글자 ${outside.join(', ')}`);
   }
 
   return bad;
