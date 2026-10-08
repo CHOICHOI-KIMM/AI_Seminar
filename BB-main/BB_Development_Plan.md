@@ -1799,7 +1799,7 @@ halo·충돌검사·오프셋 테이블이 **하나도 없다**. 계수만 `fs` 
 | 단계 | 산출 | 범위 | 표시 변화 |
 |---|---|---|---|
 | **d-0** | 프로젝트 `CLAUDE.md` 개정 — 낡은 「Phase 0 · CRB · gen1/gen3」 서술을 현행 BB 구조로 교체 + **「글로벌 규칙의 BB 적용」 표**(공용 모듈 위치 · 색 상수 위치 · 허용 폰트 단계 · SVG px 고정) | 문서 | 없음 |
-| **d-1** | `src/bb/shared.ts` 신설 — `num` · `toDeg` · 색 팔레트 · `useGeometryDerived` 훅. 7개 뷰의 복사본을 **지금 일괄** 교체 | 로직·상수 | **없어야 한다** (값 그대로 이동) |
+| **d-1** | `src/bb/shared.ts` 신설 — `num` · `toDeg` · 색 팔레트 · `useGeometryResponse` 훅. 7개 뷰의 복사본을 **지금 일괄** 교체 | 로직·상수 | **없어야 한다** (값 그대로 이동) |
 | **d-2** | `src/bb/ui.tsx` — 알림 박스(안내·경고·오류) · 카드 · 알림 목록 · 로딩 + `DetailTable` 재노출. **첫 UI 수정 때 신설**하고 그 뷰부터 쓴다(쓰는 곳 없이 미리 만들면 죽은 코드) | UI | 손대는 뷰만 |
 | **d-3** | SVG 글자 px 고정 — `clientWidth` 로 viewBox 단위를 환산. `layoutGutter` 의 최소 간격도 px 기준 | UI | Section 다음 수정 때 |
 
