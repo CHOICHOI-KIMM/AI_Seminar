@@ -1,7 +1,7 @@
 export function DetailTable({ title, rows }: { title: string; rows: [string, string, string][] }) {
   return (
     <div>
-      <h4 className="text-sm font-semibold text-text-light mb-2 uppercase tracking-wider">
+      <h4 className="text-sm font-medium text-text-light mb-2">
         {title}
       </h4>
       <table className="text-[13px]">

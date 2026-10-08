@@ -80,18 +80,29 @@ function Card({
   value,
   unit,
   sub,
-  color = '#e2e8f0',
+  color,
+  strong = false,
+  danger = false,
 }: {
   label: string;
   value: string;
   unit: string;
   sub?: string;
+  /** 데이터 계열색 (`shared.ts`). 없으면 기본 글자색 토큰 `text-text-light` */
   color?: string;
+  /** 화면의 핵심 수치 — 굵게는 화면당 1~2곳만 (글로벌 타이포그래피 원칙) */
+  strong?: boolean;
+  /** 상태 경고 — 데이터색 대신 상태 토큰 `text-danger` */
+  danger?: boolean;
 }) {
+  const tone = danger ? 'text-danger' : color ? '' : 'text-text-light';
   return (
     <div className="rounded border border-white/10 bg-black/20 px-3 py-2 min-w-[10.5rem]">
       <p className="text-[11px] text-text-canvas/60">{label}</p>
-      <p className="font-mono tabular-nums text-sm leading-tight" style={{ color }}>
+      <p
+        className={`font-mono tabular-nums text-sm leading-tight${strong ? ' font-bold' : ''}${tone ? ` ${tone}` : ''}`}
+        style={danger || !color ? undefined : { color }}
+      >
         {value === '' ? <span className="text-text-canvas/30">—</span> : value}
         {value !== '' && unit && <span className="text-[11px] text-text-canvas/60 ml-1">{unit}</span>}
       </p>
@@ -290,6 +301,7 @@ export default function BbLifeView() {
             <div className="flex flex-wrap gap-2">
               <Card
                 label="L_10r"
+                strong
                 value={num(life.l_10r_mrev)}
                 unit="10⁶ rev"
                 sub={
@@ -452,7 +464,9 @@ export default function BbLifeView() {
                   value={num(st.s_0)}
                   unit="—"
                   sub="정적 안전계수 (76-14)"
-                  color={st.s_0 < 1 ? '#ef4444' : C_REF}
+                  color={C_REF}
+                  danger={st.s_0 < 1}
+                  strong
                 />
                 <Card label="C_0r" value={num(st.c_0r_n)} unit="N" sub="기본 정정격 (76-1)" color={C_INNER} />
                 <Card label="P_0r" value={num(st.p_0r_n)} unit="N" sub="정적 등가 반경하중" color={C_OUTER} />

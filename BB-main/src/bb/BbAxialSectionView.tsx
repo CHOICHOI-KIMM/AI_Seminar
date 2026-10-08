@@ -1042,33 +1042,33 @@ export default function BbAxialSectionView() {
     <div className="h-full overflow-auto custom-scrollbar p-4 space-y-5">
       {/* ── 검증 임무 명시 ─────────────────────────────────────────── */}
       <InfoBox>
-        <p className="font-semibold text-[13px] mb-1">
+        <p className="font-medium text-[13px] mb-1">
           축단면 (ISO 16281 Fig A.1 a) 스타일 전단면) — Theory §2 (A.1)(A.3)(A.4) · §4.4 확정형
         </p>
         <p>
-          가로축이 <span className="font-mono">X</span>(회전축), 세로축이 반경이며 <b>중심선을 축으로 상·하 전단면</b>을
-          그린다. 궤도는 <b>홈반경 원호</b>(<span className="font-mono">r_i</span>·
-          <span className="font-mono">r_e</span>)로 그리며 폴리곤이 아니다. 치수는 <b>아래쪽 반단면</b>에만 단다.
+          가로축이 <span className="font-mono">X</span>(회전축), 세로축이 반경이며 중심선을 축으로 상·하 전단면을
+          그린다. 궤도는 홈반경 원호(<span className="font-mono">r_i</span>·
+          <span className="font-mono">r_e</span>)로 그리며 폴리곤이 아니다. 치수는 아래쪽 반단면에만 단다.
         </p>
         <p className="mt-1">
-          <b>각도는 과장하지 않는다.</b> <span className="font-mono">α₀</span>(하늘)와{' '}
-          <span className="font-mono">α_j</span>(주황 파선)는 <b>참값 각도</b>로 겹쳐 그린다. 두 선이 포개져 보이면{' '}
-          <b>하중이 걸리지 않은 것</b>이다(§3.6.4.2 의 징후). 1° 남짓한 차이가 보이도록{' '}
-          <b>접촉선을 OD 근처까지 길게</b> 뽑았다 — 길이는 표시용이고 <b>각도만이 이 선의 정보</b>다.
+          각도는 과장하지 않는다. <span className="font-mono">α₀</span>(하늘)와{' '}
+          <span className="font-mono">α_j</span>(주황 파선)는 참값 각도로 겹쳐 그린다. 두 선이 포개져 보이면{' '}
+          하중이 걸리지 않은 것이다(§3.6.4.2 의 징후). 1° 남짓한 차이가 보이도록{' '}
+          접촉선을 OD 근처까지 길게 뽑았다 — 길이는 표시용이고 각도만이 이 선의 정보다.
         </p>
         <p className="mt-1 text-blue-200/80">
-          단면은 <b>선택한 볼의 방위 φ_j 에서 자른 것</b>이다. 볼마다{' '}
+          단면은 선택한 볼의 방위 φ_j 에서 자른 것이다. 볼마다{' '}
           <span className="font-mono">α_j</span> 가 다르므로 어느 볼인지가 항상 표시된다. 곡률중심{' '}
           <span className="font-mono">O_i</span>·<span className="font-mono">O_e</span> 는 볼 지름 대비 간격이 1 % 규모라
-          실척에서 점이 겹치므로 <b>그리지 않고</b>, <span className="font-mono">A = r_i + r_e − D_w</span> 를{' '}
-          <b>접촉선 위의 치수</b>로만 낸다(ISO 원도면과 같다). 수치 검산은 아래 <b>기하 항등</b> 표가 맡는다.
+          실척에서 점이 겹치므로 그리지 않고, <span className="font-mono">A = r_i + r_e − D_w</span> 를{' '}
+          접촉선 위의 치수로만 낸다(ISO 원도면과 같다). 수치 검산은 아래 기하 항등 표가 맡는다.
         </p>
       </InfoBox>
 
       {stale && (
         <WarnBox>
-          입력이 Solve 이후 변경되었다. <b>단면 형상은 현재 입력</b>(<span className="font-mono">bbInput</span>)
-          기준이고, <b>하중 후 오버레이(α_j·δ·틸트)는 Solve 시점 스냅샷</b>
+          입력이 Solve 이후 변경되었다. 단면 형상은 현재 입력(<span className="font-mono">bbInput</span>)
+          기준이고, 하중 후 오버레이(α_j·δ·틸트)는 Solve 시점 스냅샷
           (<span className="font-mono">resultInput</span>) 기준이다. 두 시점이 어긋난 상태이므로 다시 Solve 할 것.
         </WarnBox>
       )}
@@ -1111,7 +1111,7 @@ export default function BbAxialSectionView() {
         </span>
         {!result && (
           <span className="text-[12px] text-amber-300/80">
-            결과 없음 — <b>무하중 단면</b>만 그린다 (기하는 Solve 없이도 보인다).
+            결과 없음 — 무하중 단면만 그린다 (기하는 Solve 없이도 보인다).
           </span>
         )}
       </div>
@@ -1119,9 +1119,9 @@ export default function BbAxialSectionView() {
       {/* ── ISO 스타일 전단면 (단일 패널) ─────────────────────────── */}
       <div className="rounded border border-white/10 bg-black/20 p-2">
         <p className="text-[11px] text-text-canvas/60 mb-1">
-          <b>실척 전단면</b>. 링 외곽은 <span className="font-mono">d</span>·<span className="font-mono">D</span>·
+          실척 전단면. 링 외곽은 <span className="font-mono">d</span>·<span className="font-mono">D</span>·
           <span className="font-mono">B</span> 만으로 그린 포락선이다(숄더 치수는 입력에 없어 그리지 않는다).{' '}
-          <b>모든 문자는 도형 바깥 여백에만</b> 두고 지시선으로 연결한다 — 선·글자가 겹칠 수 있는 자리에 아예
+          모든 문자는 도형 바깥 여백에만 두고 지시선으로 연결한다 — 선·글자가 겹칠 수 있는 자리에 아예
           두지 않는 방식이다.
         </p>
         <IsoSectionPanel f={f} ov={ov} phiRad={phiRad} />
@@ -1129,7 +1129,7 @@ export default function BbAxialSectionView() {
 
       {/* ── D-2d ───────────────────────────────────────────────────── */}
       <Panel>
-        <p className="text-[13px] font-semibold text-text-light mb-1">
+        <p className="text-[13px] font-medium text-text-light mb-1">
           D-2d — 틸트축이 모멘트와 맞는가 (§3.6.4.2 의 유일한 미커버 항목)
         </p>
         {!result || !op ? (
@@ -1177,37 +1177,37 @@ export default function BbAxialSectionView() {
                 ) : pureMoment ? (
                   Math.abs(deltaDeg) < 1 ? (
                     <p className="text-emerald-300">
-                      ✅ <b>정합</b> — 순수 모멘트 하중에서 틸트 방위가 모멘트 방위와 같다 (|Δ| ={' '}
+                      ✅ 정합 — 순수 모멘트 하중에서 틸트 방위가 모멘트 방위와 같다 (|Δ| ={' '}
                       <span className="font-mono">{num(Math.abs(deltaDeg))}</span>° &lt; 1°). Theory §4.4 확정형에서{' '}
                       <span className="font-mono">M_y &gt; 0 ⟹ γ_y &gt; 0</span> ·{' '}
                       <span className="font-mono">M_z &gt; 0 ⟹ γ_z &gt; 0</span> 이 유도되며, 화면이 그것을 재확인한다.
                     </p>
                   ) : Math.abs(Math.abs(deltaDeg) - 180) < 15 ? (
                     <p className="text-red-300">
-                      ❌ <b>Δ ≈ 180°</b> (|Δ| = <span className="font-mono">{num(Math.abs(deltaDeg))}</span>°) — 틸트가
-                      모멘트와 <b>반대로 섰다</b>. §3.6.4.2 가 드는 징후「틸트 방향이 모멘트와 반대」에 해당한다. 부호
+                      ❌ Δ ≈ 180° (|Δ| = <span className="font-mono">{num(Math.abs(deltaDeg))}</span>°) — 틸트가
+                      모멘트와 반대로 섰다. §3.6.4.2 가 드는 징후「틸트 방향이 모멘트와 반대」에 해당한다. 부호
                       규약(Theory §4.4 의 <span className="font-mono">M_y = +R_i Σ Q sin α sin φ</span>) 을 먼저 확인할 것.
                     </p>
                   ) : Math.abs(deltaDeg) < 90 ? (
                     <p className="text-emerald-300/90">
-                      🟡 <b>부호는 정합</b> (|Δ| = <span className="font-mono">{num(Math.abs(deltaDeg))}</span>° &lt; 90°)
-                      이나 <b>정확히 0 은 아니다</b>. 볼이 <b>Z = {zCount} 개로 이산</b>이라 응답이 연속 등방이 아니고{' '}
-                      <b>Z-중 대칭</b>만 갖는다 — 모멘트 방위가 대칭축과 어긋나면 Δ 가 정확히 0 이 되지 <b>않는</b> 것이
-                      정상이다. <b>이 편차만으로 솔버를 의심하지 말 것.</b> 엄밀 대조가 필요하면 모멘트 방위를 볼 위치(φ_j
+                      🟡 부호는 정합 (|Δ| = <span className="font-mono">{num(Math.abs(deltaDeg))}</span>° &lt; 90°)
+                      이나 정확히 0 은 아니다. 볼이 Z = {zCount} 개로 이산이라 응답이 연속 등방이 아니고{' '}
+                      Z-중 대칭만 갖는다 — 모멘트 방위가 대칭축과 어긋나면 Δ 가 정확히 0 이 되지 않는 것이
+                      정상이다. 이 편차만으로 솔버를 의심하지 말 것. 엄밀 대조가 필요하면 모멘트 방위를 볼 위치(φ_j
                       = 360°·k/Z)에 맞추고 다시 볼 것.
                     </p>
                   ) : (
                     <p className="text-amber-300">
-                      ⚠ 순수 모멘트인데 |Δ| 가 <b>90° 이상 180° 미만</b>이다 (|Δ| ={' '}
+                      ⚠ 순수 모멘트인데 |Δ| 가 90° 이상 180° 미만이다 (|Δ| ={' '}
                       <span className="font-mono">{num(Math.abs(deltaDeg))}</span>°). 이산성(Z = {zCount})으로 설명되는
-                      규모가 아니다. <b>화면을 고쳐 맞추지 말고 솔버 쪽을 먼저 의심할 것.</b>
+                      규모가 아니다. 화면을 고쳐 맞추지 말고 솔버 쪽을 먼저 의심할 것.
                     </p>
                   )
                 ) : (
                   <p className="text-text-canvas/70">
-                    반경하중이 함께 걸려 있어 응답이 <b>등방이 아니다</b> — 이 조건에서는 Δ = 0 이{' '}
-                    <b>요구되지 않는다.</b> D-2d 판정은 <span className="font-mono">F_y = F_z = 0</span> 인{' '}
-                    <b>순수 모멘트 조건</b>에서 하라. (지금 Δ ={' '}
+                    반경하중이 함께 걸려 있어 응답이 등방이 아니다 — 이 조건에서는 Δ = 0 이{' '}
+                    요구되지 않는다. D-2d 판정은 <span className="font-mono">F_y = F_z = 0</span> 인{' '}
+                    순수 모멘트 조건에서 하라. (지금 Δ ={' '}
                     <span className="font-mono">{num(deltaDeg)}</span>°)
                   </p>
                 )}
@@ -1270,7 +1270,7 @@ export default function BbAxialSectionView() {
         <span className="font-mono">Txt</span>·<span className="font-mono">WidthDim</span>·
         <span className="font-mono">AngleArc</span>·<span className="font-mono">viewBox</span> 프레임)을 복사했다(원본
         미수정). <span className="font-mono">AngleArc</span> 는 시작각 인자를 받도록 일반화했다 — 접촉각이{' '}
-        <b>수직 기준</b>이라 그대로 쓰면 보각(90°−α)을 그려 <b>조용히 틀린 그림</b>이 되기 때문이다. P4-2c 에서{' '}
+        수직 기준이라 그대로 쓰면 보각(90°−α)을 그려 조용히 틀린 그림이 되기 때문이다. P4-2c 에서{' '}
         <span className="font-mono">layoutGutter</span>·<span className="font-mono">GutterLabel</span>·
         <span className="font-mono">VerticalDim</span>·<span className="font-mono">HatchDefs</span>·
         <span className="font-mono">AxisMarker</span> 를 신설했다. 형상 계산부(γ 경사축·사다리꼴 롤러·리브)는

@@ -740,6 +740,22 @@ async function waitStable(read: () => string, maxMs = 6000): Promise<void> {
   }
 }
 
+/** 본문(차트·SVG 제외)에서 자기 텍스트를 가진 요소의 굵게(≥600)·대문자 변환 수. */
+function typoCounts(root: HTMLElement): { bold: string[]; upper: string[] } {
+  const bold: string[] = [];
+  const upper: string[] = [];
+  for (const el of Array.from(root.querySelectorAll<HTMLElement>('*'))) {
+    if (el.closest('.js-plotly-plot') || el instanceof SVGElement) continue;
+    const own = Array.from(el.childNodes).some(n => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim() !== '');
+    if (!own) continue;
+    const cs = getComputedStyle(el);
+    const tag = `「${(el.textContent ?? '').trim().slice(0, 20)}」`;
+    if (parseInt(cs.fontWeight, 10) >= 600) bold.push(tag);
+    if (cs.textTransform === 'uppercase') upper.push(tag);
+  }
+  return { bold, upper };
+}
+
 async function measureLayout(): Promise<string[]> {
   const bad: string[] = [];
 
@@ -806,6 +822,12 @@ async function measureLayout(): Promise<string[]> {
         if (cOut.length) bad.push(`나침반@${w}: 상자 밖 글자 ${cOut.length}개`);
       }
     }
+    if (box) {
+      const t = typoCounts(box);
+      await logInfo(`[healthcheck] layout Section HTML 굵게=${t.bold.length} ${t.bold.join('')} 대문자=${t.upper.length}`);
+      if (t.bold.length > 2) bad.push(`Section: 굵게 ${t.bold.length}곳 (≤ 2)`);
+      if (t.upper.length) bad.push(`Section: 대문자 변환 ${t.upper.length}곳 ${t.upper.join('')}`);
+    }
     if (box) box.style.width = saved;
     window.dispatchEvent(new Event('resize'));
   }
@@ -836,6 +858,10 @@ async function measureLayout(): Promise<string[]> {
     const hist = [...found.entries()].sort((a, b) => +a[0] - +b[0]).map(([k, n]) => `${k}×${n}`).join(' ');
     await logInfo(`[healthcheck] layout Life 글자크기 {${hist}}`);
     if (outside.length) bad.push(`Life: 허용 단계 밖 글자 ${outside.join(', ')}`);
+    const t = typoCounts(lifeRoot);
+    await logInfo(`[healthcheck] layout Life 굵게=${t.bold.length} ${t.bold.join('')} 대문자=${t.upper.length}`);
+    if (t.bold.length > 2) bad.push(`Life: 굵게 ${t.bold.length}곳 (≤ 2)`);
+    if (t.upper.length) bad.push(`Life: 대문자 변환 ${t.upper.length}곳 ${t.upper.join('')}`);
   }
 
   return bad;
