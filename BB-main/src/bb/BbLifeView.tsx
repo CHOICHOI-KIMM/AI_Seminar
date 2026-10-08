@@ -103,8 +103,9 @@ function Card({
         className={`font-mono tabular-nums text-sm leading-tight${strong ? ' font-bold' : ''}${tone ? ` ${tone}` : ''}`}
         style={danger || !color ? undefined : { color }}
       >
-        {value === '' ? <span className="text-text-canvas/30">—</span> : value}
-        {value !== '' && unit && <span className="text-[11px] text-text-canvas/60 ml-1">{unit}</span>}
+        {value === '' ? <span className="font-normal text-text-canvas/30">—</span> : value}
+        {/* 단위는 보조 정보 — 수치의 굵게를 상속하지 않게 font-normal (실측에서 상속으로 굵게 4곳이 나왔다) */}
+        {value !== '' && unit && <span className="font-normal text-[11px] text-text-canvas/60 ml-1">{unit}</span>}
       </p>
       {sub && <p className="text-[11px] text-text-canvas/50 mt-0.5">{sub}</p>}
     </div>
