@@ -109,7 +109,7 @@
 //  `Annotations` 본문(γ 경사축·사다리꼴 롤러·리브 전량) — BB 에 대응 개념이 없다.
 //  색 팔레트·`num()`·`toDeg` 는 `BbLoadDistView` 와 **같은 값**을 쓴다.
 
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAppState } from '../store';
 import { DetailTable } from '../components/shared/DetailTable';
 import type { BallBearingGeometry } from './generated/BallBearingGeometry';
@@ -194,6 +194,45 @@ function arcPath(cx: number, cy: number, r: number, a0: number, a1: number, seg 
   return 'M ' + pts.join(' L ');
 }
 
+// ─── 글자·선 단위 (P4-4d — SVG 글자를 실제 px 로 고정) ───────────────
+//
+//  🔴 프로젝트 CLAUDE.md 「글로벌 규칙의 BB 적용」: **SVG 도면 글자도 실제 px 로 11/12/13 고정 —
+//     viewBox 비례 금지.** 이전 구현은 viewBox 를 mm 로 잡고 `meet` 로 늘려서 글자의 실제 px 가
+//     창 크기에 따라 변했다. 지금은 SVG 를 **px 좌표계**(viewBox = 실제 W×H)로 두고
+//     도면만 `translate · scale(k)` 그룹 안에서 mm 로 그린다. 글자·지시선·치수선은 전부 최상위 px 좌표다.
+//  · 글자 배정 (Plan Phase 4-4 「P4-4c · P4-4d 병렬 실행 계획」):
+//    일반 라벨 12 · 좌표 마커·나침반 11 · 접촉각(α₀·α_j) 13.
+
+const FONT = "'JetBrains Mono', monospace";
+/** 일반 라벨 — 치수(`D_pw/2`·`R_i`·`B`)·여백 라벨 */
+const FS_LABEL = 12;
+/** 보조 — 좌표 마커 `Z`·`X`·`Y`, 나침반 */
+const FS_SUB = 11;
+/** 접촉각 `α₀`·`α_j` 여백 라벨 */
+const FS_ANGLE = 13;
+/** 선 굵기 단위 [px] — 이전 `s = rOD·0.008` 의 통상 창(≈2.5 px/mm) 렌더값 수준. */
+const S_PX = 2;
+/** 여백 배치 상수 [px]: 바깥 패딩 · 글자–지시선 틈 · 지시선 수평 구간 · 도면–치수선 틈 · 도면–폭치수선 틈 */
+const PAD = 8;
+const TXT_GAP = 4;
+const LEAD = 20;
+const DIM_GAP = 8;
+const B_GAP = 10;
+/** 글자 bbox 반높이 ÷ 글자 px — 겹침 판정을 보수적으로 (JetBrains Mono 상승+하강 = 1.32 em). */
+const HALF_H = 0.7;
+
+let measureCtx: CanvasRenderingContext2D | null = null;
+/**
+ * 글자 폭 실측 [px] — 추정(글자 수 × 0.6 em) 금지. 실제 폰트로 canvas `measureText`.
+ * 한글(`볼`)처럼 폰트에 없는 글자도 렌더와 같은 대체 폰트로 잰다.
+ */
+function textWidth(text: string, fs: number, weight = 500): number {
+  if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d');
+  if (!measureCtx) throw new Error('canvas 2d context 를 얻을 수 없다 — 라벨 폭을 잴 수 없다');
+  measureCtx.font = `${weight} ${fs}px ${FONT}`;
+  return measureCtx.measureText(text).width;
+}
+
 // ─── SVG 프리미티브 (SectionView2D 복사 — 파일 헤더의 재사용 출처 참조) ───
 
 function Txt({
@@ -203,6 +242,7 @@ function Txt({
   fs,
   fill = '#e2e8f0',
   anchor = 'start',
+  role,
 }: {
   x: number;
   y: number;
@@ -210,6 +250,8 @@ function Txt({
   fs: number;
   fill?: string;
   anchor?: 'start' | 'middle' | 'end';
+  /** 실측용 표식 — `label`(여백·치수 라벨) · `marker`(도면 안 좌표 마커) */
+  role?: 'label' | 'marker';
 }) {
   // ⚠ 원본 `SectionView2D` 는 부모가 `scale(1,-1)` 이라 텍스트를 다시 뒤집었다.
   //    이 뷰는 **§3.6.4.10 각도 규약**에 따라 부모의 뒤집기를 없앴으므로
@@ -217,9 +259,10 @@ function Txt({
   return (
     <g transform={`translate(${x}, ${y})`}>
       <text
+        data-role={role}
         fill={fill}
         fontSize={fs}
-        fontFamily="'JetBrains Mono', monospace"
+        fontFamily={FONT}
         dominantBaseline="middle"
         textAnchor={anchor}
         fontWeight={500}
@@ -230,15 +273,15 @@ function Txt({
   );
 }
 
-/** 수평 양방향 치수선 (SectionView2D 342–358 복사). */
+/** 수평 양방향 치수선 (SectionView2D 342–358 복사). px 좌표. */
 function WidthDim({
   y,
   xLeft,
   xRight,
   yTick,
   label,
+  labelY,
   s,
-  fs,
   marker,
 }: {
   y: number;
@@ -246,9 +289,10 @@ function WidthDim({
   xRight: number;
   yTick: number;
   label: string;
+  /** 라벨 중심 y — 여백 라벨보다 아래로 내려야 할 때가 있어 따로 받는다 */
+  labelY: number;
   s: number;
-  fs: number;
-  /** 이 패널 전용 `<marker>` id (패널마다 축척이 달라 공유하면 안 된다). */
+  /** 이 패널 전용 `<marker>` id. */
   marker: string;
 }) {
   return (
@@ -265,16 +309,20 @@ function WidthDim({
         markerStart={`url(#${marker})`}
         markerEnd={`url(#${marker})`}
       />
-      <Txt x={(xLeft + xRight) / 2} y={y + fs * 0.7} text={label} fs={fs} anchor="middle" />
+      <Txt x={(xLeft + xRight) / 2} y={labelY} text={label} fs={FS_LABEL} anchor="middle" role="label" />
     </g>
   );
 }
 
+/** `AngleArc` 가이드선 길이 ÷ 호 반경 — 도면 범위 계산에서도 쓴다. */
+const ARC_GUIDE = 1.35;
+
 /**
- * 각도 호 + 가이드선 (SectionView2D 412–447 복사, **시작각 인자 추가**).
+ * 각도 호 + 가이드선 (SectionView2D 412–447 복사, **시작각 인자 추가**). 도면(mm) 그룹 안에서 그린다.
  *
  * ⚠ 원본은 수평(0°)에서만 출발한다. 접촉각 `α` 는 **반경방향(수직 = 90°)** 에서
  *   재므로 그대로 쓰면 보각을 그린다 — 그림이 조용히 틀린다. 그래서 `a0Deg` 를 뒀다.
+ *   (라벨 인자는 쓰는 곳이 없어 뺐다 — 각도 값은 여백 라벨 `α₀` 가 낸다.)
  */
 function AngleArc({
   cx,
@@ -282,9 +330,7 @@ function AngleArc({
   radius,
   a0Deg,
   a1Deg,
-  label,
   s,
-  fs,
   color,
 }: {
   cx: number;
@@ -292,15 +338,12 @@ function AngleArc({
   radius: number;
   a0Deg: number;
   a1Deg: number;
-  label: string;
   s: number;
-  fs: number;
   color: string;
 }) {
   const a0 = (a0Deg * Math.PI) / 180;
   const a1 = (a1Deg * Math.PI) / 180;
-  const guideLen = radius * 1.35;
-  const mid = (a0 + a1) / 2;
+  const guideLen = radius * ARC_GUIDE;
   return (
     <g>
       <line
@@ -324,14 +367,6 @@ function AngleArc({
         strokeDasharray={`${s * 1.5} ${s * 0.8}`}
       />
       <path d={arcPath(cx, cy, radius, a0, a1, 48)} fill="none" stroke={color} strokeWidth={s * 0.5} />
-      <Txt
-        x={cx + radius * 1.18 * Math.cos(mid)}
-        y={cy + radius * 1.18 * Math.sin(mid)}
-        text={label}
-        fs={fs * 0.85}
-        fill={color}
-        anchor="start"
-      />
     </g>
   );
 }
@@ -341,10 +376,8 @@ function AngleArc({
  *
  * ⚠ 인수 시점 코드는 두 패널이 **같은 `id="arr"`** 를 뿜었다. SVG 의 `url(#…)` 은
  *   문서에서 **처음 만난** 요소를 잡으므로 상세 패널의 화살표가 개요 패널의 마커를
- *   참조했다. 두 패널은 사용자좌표 축척이 서로 다르고(`markerUnits` 기본값이
- *   `strokeWidth`) `markerWidth` 가 각 패널의 `fs` 로 정해지므로 **화살촉 크기가
- *   조용히 틀린다.** 그래서 `idPrefix` 를 받아 유일 id 를 만든다.
- *   (미사용이던 `arrHi` 마커는 참조하는 곳이 없어 함께 제거했다.)
+ *   참조했다. 그래서 `idPrefix` 를 받아 유일 id 를 만든다.
+ *   (`markerUnits` 기본값 `strokeWidth` — 화살촉 = `size × 선굵기` px.)
  */
 function ArrowDefs({ id, size }: { id: string; size: number }) {
   return (
@@ -387,15 +420,18 @@ interface LoadedOverlay {
 //    ① 라벨은 **도형 영역 밖(좌·우 여백)** 에만 놓는다 → 선과 겹칠 수 없다.
 //    ② 같은 여백 안에서는 **최소 간격 `minGap` 을 강제**한다 → 라벨끼리 겹칠 수 없다.
 //  ①이 「선 ↔ 글자」를, ②가 「글자 ↔ 글자」를 막는다. 둘이 합쳐 겹침이 0이 된다.
+//  P4-4d: 좌표는 전부 **px** 이다. 여백 폭은 **실측한 라벨 폭**으로 먼저 잡고 남은 공간에 도면을 맞춘다.
 
 interface GutterItem {
-  /** 지시 대상의 y (여기에 최대한 가깝게 두려 한다) */
+  /** 지시 대상의 y (여기에 최대한 가깝게 두려 한다) [px] */
   yWant: number;
-  /** 지시선이 닿을 도형 위의 점 */
+  /** 지시선이 닿을 점 [px] */
   dotX: number;
   dotY: number;
   label: string;
-  color?: string;
+  color: string;
+  /** 글자 px */
+  fs: number;
 }
 
 /** `yWant` 순으로 정렬한 뒤 `minGap` 미만으로 붙은 것을 아래로 밀어낸다. */
@@ -414,23 +450,21 @@ function layoutGutter(items: GutterItem[], minGap: number): (GutterItem & { y: n
   return out;
 }
 
-/** 여백 라벨 하나 — 지시선(수평 엘보) + 글자. 글자는 여백 안에서만 산다. */
+/** 여백 라벨 하나 — 지시선(수평 엘보) + 글자. 글자는 여백 안에서만 산다. px 좌표. */
 function GutterLabel({
   item,
   gutterX,
   side,
   s,
-  fs,
 }: {
   item: GutterItem & { y: number };
-  /** 글자가 놓일 x (여백 안쪽 경계) */
+  /** 지시선이 시작하는 x (글자 쪽 끝) */
   gutterX: number;
   side: 'left' | 'right';
   s: number;
-  fs: number;
 }) {
-  const col = item.color ?? '#94a3b8';
-  // 엘보: 라벨 → 수평 → 대상. 꺾임점은 대상 쪽으로 60 %.
+  const col = item.color;
+  // 엘보: 라벨 → 수평 → 대상. 꺾임점은 대상 쪽으로 55 %.
   const elbowX = gutterX + (item.dotX - gutterX) * 0.55;
   return (
     <g>
@@ -444,26 +478,29 @@ function GutterLabel({
         opacity={0.85}
       />
       <Txt
-        x={gutterX + (side === 'left' ? -s * 1.5 : s * 1.5)}
+        x={gutterX + (side === 'left' ? -TXT_GAP : TXT_GAP)}
         y={item.y}
         text={item.label}
-        fs={fs}
+        fs={item.fs}
         fill={col}
         anchor={side === 'left' ? 'end' : 'start'}
+        role="label"
       />
     </g>
   );
 }
 
-/** 수직 치수선 — `WidthDim`(수평)의 축 대칭판. `D_pw/2` · `R_i` 용. */
+/**
+ * 수직 치수선 — `WidthDim`(수평)의 축 대칭판. `D_pw/2` · `R_i` 용. px 좌표.
+ * 라벨은 여백 배치기(`layoutGutter`)가 지시선으로 이 선의 중점에 붙인다 — 같은 여백의 다른
+ * 라벨과 최소간격을 함께 강제받아야 겹침 0 이 보장되기 때문이다.
+ */
 function VerticalDim({
   x,
   yTop,
   yBot,
   xTick,
-  label,
   s,
-  fs,
   marker,
 }: {
   x: number;
@@ -471,15 +508,15 @@ function VerticalDim({
   yBot: number;
   /** 연장선이 도형에 닿는 x */
   xTick: number;
-  label: string;
   s: number;
-  fs: number;
   marker: string;
 }) {
+  // 연장선은 치수선을 바깥쪽으로 3s 넘긴다 (도면 표기 관례).
+  const xExt = x + Math.sign(x - xTick) * s * 3;
   return (
     <g>
-      <line x1={xTick} y1={yTop} x2={x - s * 3} y2={yTop} stroke="#475569" strokeWidth={s * 0.4} />
-      <line x1={xTick} y1={yBot} x2={x - s * 3} y2={yBot} stroke="#475569" strokeWidth={s * 0.4} />
+      <line x1={xTick} y1={yTop} x2={xExt} y2={yTop} stroke="#475569" strokeWidth={s * 0.4} />
+      <line x1={xTick} y1={yBot} x2={xExt} y2={yBot} stroke="#475569" strokeWidth={s * 0.4} />
       <line
         x1={x}
         y1={yTop}
@@ -490,8 +527,6 @@ function VerticalDim({
         markerStart={`url(#${marker})`}
         markerEnd={`url(#${marker})`}
       />
-      {/* 라벨은 치수선 **옆**에 세로 중앙 — 치수선과 겹치지 않는다. */}
-      <Txt x={x - s * 1.6} y={(yTop + yBot) / 2} text={label} fs={fs} anchor="end" />
     </g>
   );
 }
@@ -507,8 +542,9 @@ function HatchDefs({ id, pitch, s }: { id: string; pitch: number; s: number }) {
   );
 }
 
-/** 좌표 마커 — `Z⊗ → X`, `Y↓`. ISO 16281 Fig A.1 a) 의 원점 표기. */
-function AxisMarker({ x, y, len, s, fs }: { x: number; y: number; len: number; s: number; fs: number }) {
+/** 좌표 마커 — `Z⊗ → X`, `Y↓`. ISO 16281 Fig A.1 a) 의 원점 표기. px 좌표, 글자 `FS_SUB`. */
+function AxisMarker({ x, y, len, s }: { x: number; y: number; len: number; s: number }) {
+  const fs = FS_SUB;
   const r = fs * 0.45;
   return (
     <g>
@@ -516,15 +552,15 @@ function AxisMarker({ x, y, len, s, fs }: { x: number; y: number; len: number; s
       <circle cx={x} cy={y} r={r} fill="none" stroke="#e2e8f0" strokeWidth={s * 0.45} />
       <line x1={x - r * 0.7} y1={y - r * 0.7} x2={x + r * 0.7} y2={y + r * 0.7} stroke="#e2e8f0" strokeWidth={s * 0.45} />
       <line x1={x - r * 0.7} y1={y + r * 0.7} x2={x + r * 0.7} y2={y - r * 0.7} stroke="#e2e8f0" strokeWidth={s * 0.45} />
-      <Txt x={x - r * 1.6} y={y - r * 1.3} text="Z" fs={fs * 0.9} anchor="end" />
+      <Txt x={x - r * 1.6} y={y - r * 1.3} text="Z" fs={fs} anchor="end" role="marker" />
       {/* X: 오른쪽 = 회전축 */}
       <line x1={x + r * 1.3} y1={y} x2={x + len} y2={y} stroke="#e2e8f0" strokeWidth={s * 0.5} />
       <path d={`M${x + len},${y} L${x + len - fs * 0.5},${y - fs * 0.22} L${x + len - fs * 0.5},${y + fs * 0.22} Z`} fill="#e2e8f0" />
-      <Txt x={x + len + fs * 0.35} y={y} text="X" fs={fs * 0.9} anchor="start" />
+      <Txt x={x + len + fs * 0.35} y={y} text="X" fs={fs} anchor="start" role="marker" />
       {/* Y: 아래 (ISO 16281 A.2.2 NOTE) */}
       <line x1={x} y1={y + r * 1.3} x2={x} y2={y + len} stroke="#e2e8f0" strokeWidth={s * 0.5} />
       <path d={`M${x},${y + len} L${x - fs * 0.22},${y + len - fs * 0.5} L${x + fs * 0.22},${y + len - fs * 0.5} Z`} fill="#e2e8f0" />
-      <Txt x={x + fs * 0.35} y={y + len + fs * 0.3} text="Y" fs={fs * 0.9} anchor="start" />
+      <Txt x={x + fs * 0.35} y={y + len + fs * 0.3} text="Y" fs={fs} anchor="start" role="marker" />
     </g>
   );
 }
@@ -539,10 +575,27 @@ function AxisMarker({ x, y, len, s, fs }: { x: number; y: number; len: number; s
 //  기하는 **한 번만** 그리고 `scale(1,-1)` 로 미러링해 전단면을 만든다.
 //  ⚠ 미러 그룹 안에는 `<text>` 를 **절대 넣지 않는다** — 뒤집혀 읽을 수 없게 된다.
 //     글자는 전부 최상위(여백)에 있고, 그래서 미러링이 라벨을 건드리지 않는다.
+//
+//  P4-4d 배치 순서 (글자 px 고정 때문에 **뒤집었다**):
+//    ① 컨테이너 폭 W·높이 상한(62vh)을 `ResizeObserver` 로 잰다.
+//    ② 좌·우 여백 폭 = **실측** 최대 라벨 폭 + 지시선·치수선 공간 (px).
+//    ③ 남은 공간에 도면(mm)을 맞추는 축척 `k` [px/mm] = min(가로 여유, 세로 여유).
+//    ④ 라벨 y 를 px 로 배치(`layoutGutter`, 최소간격 = 그 여백 최대 글자 px × 1.5),
+//       위로 넘친 만큼 도면을 내리고, 높이는 내용에 맞춘다.
+//  `data-role` 표식: 도면 그룹 `drawing` · 여백/치수 라벨 `label` · 좌표 마커 글자 `marker`.
 
 const MK_ISO = 'bbsec-arr-iso';
 const HATCH_I = 'bbsec-hatch-inner';
 const HATCH_E = 'bbsec-hatch-outer';
+
+/** 여백 라벨 명세 (mm). `dot = null` 이면 같은 쪽 수직 치수선의 `yMm` 점을 가리킨다. */
+interface LabelSpec {
+  label: string;
+  color: string;
+  fs: number;
+  yMm: number;
+  dot: [number, number] | null;
+}
 
 function IsoSectionPanel({
   f,
@@ -553,19 +606,34 @@ function IsoSectionPanel({
   ov: LoadedOverlay | null;
   phiRad: number;
 }) {
-  // ── 좌표계: x = 축(오른쪽 +X), y = 반경(아래 +Y). 축은 y = 0. ──
-  const gutter = f.rOD * 0.62; // 라벨 전용 여백 — 도형은 여기 들어오지 않는다
-  const xDraw = f.halfB * 1.05;
-  const xMin = -xDraw - gutter;
-  const xMax = xDraw + gutter;
-  const yPad = f.rOD * 0.18;
-  const yMin = -f.rOD - yPad;
-  const yMax = f.rOD + yPad;
+  // ── 컨테이너 실측 (px) ──
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState({ w: 0, hCap: 0 });
+  // 웹폰트가 늦게 도착하면 실측 폭이 바뀐다 — 도착 시 다시 그린다.
+  const [, setFontTick] = useState(0);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth;
+      const hCap = window.innerHeight * 0.62; // 이전 `maxHeight: 62vh` 와 같은 상한
+      setBox(b => (b.w === w && b.hCap === hCap ? b : { w, hCap }));
+    };
+    // `observe` 는 첫 크기를 콜백으로 한 번 보내 준다 — 첫 측정은 그것으로 한다.
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener('resize', update);
+    const bump = () => setFontTick(t => t + 1);
+    document.fonts.addEventListener('loadingdone', bump);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+      document.fonts.removeEventListener('loadingdone', bump);
+    };
+  }, []);
 
-  const span = xMax - xMin;
-  const fs = f.rOD * 0.052;
-  const s = f.rOD * 0.008;
-  const minGap = fs * 1.5;
+  // ── 좌표계: x = 축(오른쪽 +X), y = 반경(아래 +Y). 축은 y = 0. 단위 mm. ──
+  const xDraw = f.halfB * 1.05;
 
   // ── 궤도 홈 원호 — 접촉점 근방만. 폴리곤이 아니다 (§3.6.3.3). ──
   const spanRad = (52 * Math.PI) / 180;
@@ -609,8 +677,119 @@ function IsoSectionPanel({
   const e0 = rayEnd(f.alpha0);
   const s0 = rayStart(f.alpha0);
   const eJ = ov ? rayEnd(ov.alphaJ) : null;
+  const arcR = rayLen * 0.42;
 
-  // ── 기하 그룹: 한 번 그리고 미러링한다. 텍스트 없음. ──
+  // ── 도면 범위 [mm] — 링·볼·접촉선·각도호 가이드 전부. 라벨은 이 밖에만 둔다. ──
+  //  (이전에는 접촉선 끝이 viewBox 에 잘리거나 여백으로 나갔다. 지금은 범위에 넣는다.)
+  const xs = [-xDraw, xDraw, s0[0], e0[0], ...(eJ ? [eJ[0]] : [])];
+  const xLo = Math.min(...xs);
+  const xHi = Math.max(...xs);
+  const yExt = Math.max(
+    f.rOD,
+    Math.abs(s0[1]),
+    Math.abs(e0[1]),
+    eJ ? Math.abs(eJ[1]) : 0,
+    f.C[1] + f.ballR,
+    f.C[1] + arcR * ARC_GUIDE,
+  );
+
+  // ── 여백 라벨 명세 (문구·지시점은 이전과 같다) ──
+  const right: LabelSpec[] = [
+    { yMm: f.rBore, dot: [f.halfB * 0.55, f.rBore], label: `d = ${num(f.rBore * 2)}`, color: C_INNER, fs: FS_LABEL },
+    { yMm: landI, dot: [arcIx[0], f.Oi[1] + f.ri * Math.sin(bi - spanRad * 0.8)], label: `r_i = ${num(f.ri)}`, color: C_INNER, fs: FS_LABEL },
+    { yMm: f.rPitch, dot: [f.halfB * 0.75, f.rPitch], label: `D_pw = ${num(f.rPitch * 2)}`, color: C_REF, fs: FS_LABEL },
+    { yMm: f.C[1] + f.ballR * 0.7, dot: [f.C[0] + f.ballR * 0.7, f.C[1] + f.ballR * 0.7], label: `D_w = ${num(f.ballR * 2)}`, color: '#cbd5e1', fs: FS_LABEL },
+    { yMm: landE, dot: [arcEx[1], f.Oe[1] + f.re * Math.sin(be + spanRad * 0.8)], label: `r_e = ${num(f.re)}`, color: C_OUTER, fs: FS_LABEL },
+    { yMm: f.rOD, dot: [f.halfB * 0.35, f.rOD], label: `D = ${num(f.rOD * 2)}`, color: C_OUTER, fs: FS_LABEL },
+    // 수직 치수 R_i (축 → O_i 반경) 의 라벨 — 치수선 중점을 가리킨다
+    { yMm: f.riCenterCheck / 2, dot: null, label: `R_i = ${num(f.riCenterCheck)}`, color: '#e2e8f0', fs: FS_LABEL },
+  ];
+  const left: LabelSpec[] = [
+    { yMm: f.C[1] - f.ballR * 0.2, dot: [(s0[0] + f.C[0]) / 2, (s0[1] + f.C[1]) / 2], label: `α₀ = ${num(toDeg(f.alpha0))}°`, color: C_ALPHA, fs: FS_ANGLE },
+    { yMm: f.C[1] + f.ballR * 0.9, dot: [(f.Oi[0] + f.Oe[0]) / 2, (f.Oi[1] + f.Oe[1]) / 2], label: `A = r_i+r_e−D_w = ${num(f.aMm)}`, color: '#a78bfa', fs: FS_LABEL },
+    // 수직 치수 D_pw/2 (축 → 피치원) 의 라벨
+    { yMm: f.rPitch / 2, dot: null, label: `D_pw/2 = ${num(f.rPitch)}`, color: '#e2e8f0', fs: FS_LABEL },
+  ];
+  if (ov && eJ) {
+    left.push({
+      yMm: eJ[1],
+      dot: [(f.C[0] + eJ[0]) / 2, (f.C[1] + eJ[1]) / 2],
+      label: `α_j = ${num(toDeg(ov.alphaJ))}° (볼 φ=${num(toDeg(phiRad))}°)`,
+      color: ov.loaded ? C_LOADED : C_UNLOADED,
+      fs: FS_ANGLE,
+    });
+  }
+  const labelB = `B = ${num(f.halfB * 2)}`;
+
+  const wrap = (svg: ReactNode) => (
+    <div ref={wrapRef} style={{ width: '100%' }}>
+      {svg}
+    </div>
+  );
+  if (box.w <= 0) return wrap(null); // 첫 측정 전 — 자리만 잡는다
+
+  // ── ② 여백 폭 [px] = 실측 최대 라벨 폭 + 글자틈 + 지시선 + 치수선 틈 ──
+  const maxW = (specs: LabelSpec[]) => Math.max(...specs.map(t => textWidth(t.label, t.fs)));
+  const gutL = PAD + maxW(left) + TXT_GAP + LEAD + DIM_GAP;
+  const gutR = PAD + maxW(right) + TXT_GAP + LEAD + DIM_GAP;
+  const bottomPx = B_GAP + TXT_GAP + 2 * HALF_H * FS_LABEL + PAD; // 폭 치수선 + B 라벨
+
+  // ── ③ 축척 k [px/mm] ──
+  const kx = (box.w - gutL - gutR) / (xHi - xLo);
+  const ky = (box.hCap - PAD - bottomPx) / (2 * yExt);
+  const k = Math.min(kx, ky);
+  // 🔴 하한 폭: W ≤ 좌·우 여백 합이면 도면을 놓을 자리가 없다. 임의 축소·겹침 허용을 하지 않고
+  //    그리지 않는다 (P4-4d 보고 대상 — 처리 방식은 사용자 확인 필요).
+  if (!(k > 0)) return wrap(null);
+
+  const drawL = gutL + (box.w - gutL - gutR - (xHi - xLo) * k) / 2; // 남는 가로 공간은 양쪽 균등
+  const drawR = drawL + (xHi - xLo) * k;
+  const ox = drawL - xLo * k;
+  const X = (x: number) => ox + x * k;
+  const dimLx = drawL - DIM_GAP;
+  const dimRx = drawR + DIM_GAP;
+  const gxL = dimLx - LEAD;
+  const gxR = dimRx + LEAD;
+
+  // ── ④ 라벨 y 배치 — 축(y=0) 기준 상대 px 로 배치한 뒤 축의 화면 y(oy)를 정한다 ──
+  //  (`layoutGutter` 는 평행이동에 불변이라 나중에 oy 를 더해도 결과가 같다.)
+  const toItems = (specs: LabelSpec[], dimX: number): GutterItem[] =>
+    specs.map(t => ({
+      yWant: t.yMm * k,
+      dotX: t.dot ? X(t.dot[0]) : dimX,
+      dotY: (t.dot ? t.dot[1] : t.yMm) * k,
+      label: t.label,
+      color: t.color,
+      fs: t.fs,
+    }));
+  const minGap = (specs: LabelSpec[]) => 1.5 * Math.max(...specs.map(t => t.fs));
+  const rel = [
+    ...layoutGutter(toItems(right, dimRx), minGap(right)).map(it => ({ ...it, side: 'right' as const })),
+    ...layoutGutter(toItems(left, dimLx), minGap(left)).map(it => ({ ...it, side: 'left' as const })),
+  ];
+  // 도면 위끝과 가장 위 라벨 위끝이 모두 PAD 아래에 오도록.
+  const oy = Math.max(PAD + yExt * k, ...rel.map(it => PAD + HALF_H * it.fs - it.y));
+  const Y = (y: number) => oy + y * k;
+  const labels = rel.map(it => ({ ...it, y: oy + it.y, dotY: oy + it.dotY }));
+
+  const dimBy = Y(yExt) + B_GAP;
+  // B 라벨은 치수선 바로 아래 — 단, 여백 라벨이 그보다 아래로 밀려났으면 그 아래로 (겹침 0 보장).
+  const labelBy = Math.max(
+    dimBy + TXT_GAP + HALF_H * FS_LABEL,
+    ...labels.map(it => it.y + HALF_H * it.fs + TXT_GAP + HALF_H * FS_LABEL),
+  );
+  const H = labelBy + HALF_H * FS_LABEL + PAD;
+
+  // 도면 그룹 안 선 굵기 [mm] — 화면에서 S_PX 기준 px 로 보이게 환산.
+  const s = S_PX / k;
+
+  // 좌표 마커 길이 — 이전 `0.3·r_OD` 그대로, 단 `X` 글자가 도면 범위 밖(치수선·여백)으로 나가지 않게 자른다.
+  const markerLen = Math.max(
+    FS_SUB * 1.2,
+    Math.min(f.rOD * 0.3 * k, xHi * k - FS_SUB * 0.35 - textWidth('X', FS_SUB)),
+  );
+
+  // ── 기하 그룹: 한 번 그리고 미러링한다. 텍스트 없음. (mm) ──
   const geom = (
     <>
       <path d={ringI} fill={`url(#${HATCH_I})`} stroke={C_INNER} strokeWidth={s * 0.75} opacity={0.95} />
@@ -649,117 +828,57 @@ function IsoSectionPanel({
     </>
   );
 
-  // ── 여백 라벨 ──
-  const right: GutterItem[] = [
-    { yWant: f.rBore, dotX: f.halfB * 0.55, dotY: f.rBore, label: `d = ${num(f.rBore * 2)}`, color: C_INNER },
-    { yWant: landI, dotX: arcIx[0], dotY: f.Oi[1] + f.ri * Math.sin(bi - spanRad * 0.8), label: `r_i = ${num(f.ri)}`, color: C_INNER },
-    { yWant: f.rPitch, dotX: f.halfB * 0.75, dotY: f.rPitch, label: `D_pw = ${num(f.rPitch * 2)}`, color: C_REF },
-    { yWant: f.C[1] + f.ballR * 0.7, dotX: f.C[0] + f.ballR * 0.7, dotY: f.C[1] + f.ballR * 0.7, label: `D_w = ${num(f.ballR * 2)}`, color: '#cbd5e1' },
-    { yWant: landE, dotX: arcEx[1], dotY: f.Oe[1] + f.re * Math.sin(be + spanRad * 0.8), label: `r_e = ${num(f.re)}`, color: C_OUTER },
-    { yWant: f.rOD, dotX: f.halfB * 0.35, dotY: f.rOD, label: `D = ${num(f.rOD * 2)}`, color: C_OUTER },
-  ];
-  const left: GutterItem[] = [
-    { yWant: f.C[1] - f.ballR * 0.2, dotX: (s0[0] + f.C[0]) / 2, dotY: (s0[1] + f.C[1]) / 2, label: `α₀ = ${num(toDeg(f.alpha0))}°`, color: C_ALPHA },
-    { yWant: f.C[1] + f.ballR * 0.9, dotX: (f.Oi[0] + f.Oe[0]) / 2, dotY: (f.Oi[1] + f.Oe[1]) / 2, label: `A = r_i+r_e−D_w = ${num(f.aMm)}`, color: '#a78bfa' },
-  ];
-  if (ov && eJ) {
-    left.push({
-      yWant: eJ[1],
-      dotX: (f.C[0] + eJ[0]) / 2,
-      dotY: (f.C[1] + eJ[1]) / 2,
-      label: `α_j = ${num(toDeg(ov.alphaJ))}° (볼 φ=${num(toDeg(phiRad))}°)`,
-      color: ov.loaded ? C_LOADED : C_UNLOADED,
-    });
-  }
-  const rightL = layoutGutter(right, minGap);
-  const leftL = layoutGutter(left, minGap);
-  const gxR = xDraw + gutter * 0.42;
-  const gxL = -xDraw - gutter * 0.42;
-
-  return (
-    <svg
-      viewBox={`${xMin} ${yMin} ${span} ${yMax - yMin}`}
-      preserveAspectRatio="xMidYMid meet"
-      style={{ width: '100%', maxHeight: '62vh', display: 'block' }}
-    >
-      <ArrowDefs id={MK_ISO} size={fs * 0.5} />
+  return wrap(
+    <svg width={box.w} height={H} viewBox={`0 0 ${box.w} ${H}`} style={{ display: 'block' }}>
+      <ArrowDefs id={MK_ISO} size={FS_LABEL * 0.5} />
       <HatchDefs id={HATCH_I} pitch={f.rOD * 0.035} s={s} />
       <HatchDefs id={HATCH_E} pitch={f.rOD * 0.035} s={s} />
 
       {/* 회전축 X 중심선 (1점쇄선) — 전단면의 대칭축 */}
       <line
-        x1={xMin + gutter * 0.35}
-        y1={0}
-        x2={xMax - gutter * 0.35}
-        y2={0}
+        x1={dimLx - LEAD / 2}
+        y1={oy}
+        x2={dimRx + LEAD / 2}
+        y2={oy}
         stroke="#64748b"
-        strokeWidth={s * 0.45}
-        strokeDasharray={`${s * 8} ${s * 2.5} ${s * 1.2} ${s * 2.5}`}
+        strokeWidth={S_PX * 0.45}
+        strokeDasharray={`${S_PX * 8} ${S_PX * 2.5} ${S_PX * 1.2} ${S_PX * 2.5}`}
       />
 
-      {/* 아래쪽 반단면 (+Y) — 치수는 이쪽에 단다 */}
-      <g>{geom}</g>
-      {/* 위쪽 반단면 (−Y) — 같은 기하의 거울상. 텍스트 없음 */}
-      <g transform="scale(1,-1)">{geom}</g>
+      {/* 도면 (mm → px: translate · scale(k)). 텍스트 없음. */}
+      <g data-role="drawing" transform={`translate(${ox}, ${oy}) scale(${k})`}>
+        {/* 아래쪽 반단면 (+Y) — 치수는 이쪽에 단다 */}
+        <g>{geom}</g>
+        {/* 위쪽 반단면 (−Y) — 같은 기하의 거울상. 텍스트 없음 */}
+        <g transform="scale(1,-1)">{geom}</g>
+        {/* α₀ 각도호 — 반경 기준선(아래)에서 축(+X) 쪽으로 */}
+        <AngleArc cx={f.C[0]} cy={f.C[1]} radius={arcR} a0Deg={90} a1Deg={90 - toDeg(f.alpha0)} s={s} color={C_ALPHA} />
+      </g>
 
-      {/* 수직 치수선 — 축(y=0) 에서 잰다 */}
-      <VerticalDim
-        x={-xDraw - gutter * 0.08}
-        yTop={0}
-        yBot={f.rPitch}
-        xTick={-f.halfB}
-        label={`D_pw/2 = ${num(f.rPitch)}`}
-        s={s}
-        fs={fs * 0.85}
-        marker={MK_ISO}
-      />
-      <VerticalDim
-        x={xDraw + gutter * 0.08}
-        yTop={0}
-        yBot={f.riCenterCheck}
-        xTick={f.halfB}
-        label={`R_i = ${num(f.riCenterCheck)}`}
-        s={s}
-        fs={fs * 0.85}
-        marker={MK_ISO}
-      />
+      {/* 수직 치수선 — 축(y=0) 에서 잰다. 라벨은 여백 배치기가 단다. */}
+      <VerticalDim x={dimLx} yTop={Y(0)} yBot={Y(f.rPitch)} xTick={X(-f.halfB)} s={S_PX} marker={MK_ISO} />
+      <VerticalDim x={dimRx} yTop={Y(0)} yBot={Y(f.riCenterCheck)} xTick={X(f.halfB)} s={S_PX} marker={MK_ISO} />
 
       {/* 폭 B 치수선 (아래쪽 여백) */}
       <WidthDim
-        y={f.rOD + yPad * 0.55}
-        xLeft={-f.halfB}
-        xRight={f.halfB}
-        yTick={f.rOD}
-        label={`B = ${num(f.halfB * 2)}`}
-        s={s}
-        fs={fs * 0.85}
+        y={dimBy}
+        xLeft={X(-f.halfB)}
+        xRight={X(f.halfB)}
+        yTick={Y(f.rOD)}
+        label={labelB}
+        labelY={labelBy}
+        s={S_PX}
         marker={MK_ISO}
       />
 
-      {/* α₀ 각도호 — 반경 기준선(아래)에서 축(+X) 쪽으로 */}
-      <AngleArc
-        cx={f.C[0]}
-        cy={f.C[1]}
-        radius={rayLen * 0.42}
-        a0Deg={90}
-        a1Deg={90 - toDeg(f.alpha0)}
-        label=""
-        s={s}
-        fs={fs}
-        color={C_ALPHA}
-      />
-
       {/* 여백 라벨 — 도형 영역에 절대 진입하지 않는다 */}
-      {rightL.map((it, i) => (
-        <GutterLabel key={`r${i}`} item={it} gutterX={gxR} side="right" s={s} fs={fs * 0.82} />
-      ))}
-      {leftL.map((it, i) => (
-        <GutterLabel key={`l${i}`} item={it} gutterX={gxL} side="left" s={s} fs={fs * 0.82} />
+      {labels.map((it, i) => (
+        <GutterLabel key={i} item={it} gutterX={it.side === 'left' ? gxL : gxR} side={it.side} s={S_PX} />
       ))}
 
       {/* 좌표 마커 Z⊗ → X, Y↓ */}
-      <AxisMarker x={0} y={0} len={f.rOD * 0.3} s={s} fs={fs} />
-    </svg>
+      <AxisMarker x={X(0)} y={oy} len={markerLen} s={S_PX} />
+    </svg>,
   );
 }
 
@@ -785,16 +904,23 @@ function TiltCompass({
     return [cx + r * Math.sin(a), cy + r * Math.cos(a)];
   };
   const [phx, phy] = pt(phiDeg, R);
+  // P4-4d: 글자 11px. `+Z · 90°` 는 원 **오른쪽 바깥**(+Z 축 끝)에 둔다 — 원 안에 두면 11px 에서
+  //   수직축선과 겹친다. 상자 폭은 실측한 라벨 폭으로 잡는다 (φ 점 반경 2.5 + 틈).
+  const labZ = '+Z · 90°';
+  const zx = cx + R + 6;
+  const width = Math.ceil(zx + textWidth(labZ, FS_SUB, 400) + 2);
+  const yLabY = cy + R + TXT_GAP + HALF_H * FS_SUB;
+  const height = Math.ceil(yLabY + HALF_H * FS_SUB + 2);
   return (
-    <svg width={124} height={124} className="shrink-0">
+    <svg width={width} height={height} className="shrink-0">
       <circle cx={cx} cy={cy} r={R} fill="none" stroke="#334155" strokeWidth={1} />
       <line x1={cx - R} y1={cy} x2={cx + R} y2={cy} stroke="#334155" strokeWidth={0.8} />
       <line x1={cx} y1={cy - R} x2={cx} y2={cy + R} stroke="#334155" strokeWidth={0.8} />
-      <text x={cx} y={cy + R + 10} fill="#94a3b8" fontSize={9} fontFamily="monospace" textAnchor="middle">
+      <text x={cx} y={yLabY} fill="#94a3b8" fontSize={FS_SUB} fontFamily={FONT} dominantBaseline="middle" textAnchor="middle">
         +Y · 0°
       </text>
-      <text x={cx + R - 1} y={cy - 5} fill="#94a3b8" fontSize={9} fontFamily="monospace" textAnchor="end">
-        +Z · 90°
+      <text x={zx} y={cy} fill="#94a3b8" fontSize={FS_SUB} fontFamily={FONT} dominantBaseline="middle" textAnchor="start">
+        {labZ}
       </text>
       {/* 선택한 볼의 방위 φ_j */}
       <line x1={cx} y1={cy} x2={phx} y2={phy} stroke={C_LOADED} strokeWidth={1} strokeDasharray="3 2" />
