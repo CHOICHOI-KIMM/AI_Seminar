@@ -81,6 +81,7 @@ import { DetailTable } from '../components/shared/DetailTable';
 import type { BallResult } from './generated/BallResult';
 import type { BbContactDerived } from './generated/BbContactDerived';
 import type { Alert } from './generated/Alert';
+import { num, toDeg, C_INNER, C_OUTER, C_HU } from './shared';
 
 /**
  * ISO 281 Annex B.3.1 피로한계 접촉응력 [MPa].
@@ -91,20 +92,6 @@ import type { Alert } from './generated/Alert';
  */
 const SIGMA_HU_MPA = 1500;
 
-/** 유효숫자 9자리 (또는 지수표기) — 사유는 파일 헤더의 단위 정책 참조. */
-function num(v: number): string {
-  if (!Number.isFinite(v)) return String(v);
-  if (v === 0) return '0';
-  const a = Math.abs(v);
-  if (a < 1e-4 || a >= 1e9) return v.toExponential(8);
-  return v.toPrecision(9);
-}
-
-const toDeg = (rad: number) => (rad * 180) / Math.PI;
-
-const C_INNER = '#3b82f6';
-const C_OUTER = '#f97316';
-const C_HU = '#ef4444';
 
 type Race = 'inner' | 'outer';
 

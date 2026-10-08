@@ -59,35 +59,17 @@
 //    경로가 막힌다 (축단면이 무하중 단면을 그리는 것과 같은 이유).
 
 import { useEffect, useMemo, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppState } from '../store';
-import type { Alert } from './generated/Alert';
 import type { BallBearingGeometry } from './generated/BallBearingGeometry';
 import type { BallResult } from './generated/BallResult';
-import type { BbGeometryDerived } from './generated/BbGeometryDerived';
 import type { BbOperatingConditions } from './generated/BbOperatingConditions';
 import type { Displacement } from './generated/Displacement';
+import { num, toDeg, C_FORCE, C_MOMENT, C_TILT, C_RING_INNER, C_RING_OUTER, useGeometryResponse } from './shared';
 
 /** `commands::GeometryResponse` 대응 — `BbGeometryView`·`BbAxialSectionView` 와 같은 형태다. */
-interface GeometryResponse {
-  derived: BbGeometryDerived;
-  alerts: Alert[];
-}
-
-/** 유효숫자 9자리 (또는 지수표기) — 검증 대조가 목적이라 자릿수를 줄이지 않는다. */
-function num(v: number): string {
-  if (!Number.isFinite(v)) return String(v);
-  if (v === 0) return '0';
-  const a = Math.abs(v);
-  if (a < 1e-4 || a >= 1e9) return v.toExponential(8);
-  return v.toPrecision(9);
-}
-
-const toDeg = (rad: number) => (rad * 180) / Math.PI;
-
 /** (−180, 180] 로 접는다 — 방위차 Δ 표시용 (축단면과 같은 함수). */
 function wrapDeg(d: number): number {
   let x = ((((d + 180) % 360) + 360) % 360) - 180;
@@ -95,12 +77,6 @@ function wrapDeg(d: number): number {
   return x;
 }
 
-// ─── 색 팔레트 — `BbLoadDistView`·`BbAxialSectionView` 와 같은 값 ───────
-const C_FORCE = '#ef4444'; // 외부 하중
-const C_MOMENT = '#a3e635'; // 외부 모멘트
-const C_TILT = '#38bdf8'; // 틸트축 (γ_y, γ_z)
-const C_RING_INNER = '#94a3b8';
-const C_RING_OUTER = '#64748b';
 
 /** three 의 기본 원기둥·원뿔 축. `setFromUnitVectors` 의 시작 벡터다. */
 const CYL_AXIS = new THREE.Vector3(0, 1, 0);
@@ -478,34 +454,10 @@ export default function BbBearingView3D() {
   const { state } = useAppState();
   const { bbInput, result, resultInput } = state;
 
-  const [derived, setDerived] = useState<BbGeometryDerived | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { response: geomResponse, error } = useGeometryResponse(bbInput);
+  const derived = geomResponse?.derived ?? null;
   const [showLoads, setShowLoads] = useState(true);
   const [showRings, setShowRings] = useState(true);
-
-  // `BbAxialSectionView`·`BbGeometryView` 와 **같은 패턴** — 150 ms 디바운스 + `cancelled`.
-  // ⚠ 구독 대상은 `bbInput` **전체**다. `geometry` 만 구독하면 낡은 값이 남는다.
-  useEffect(() => {
-    if (!bbInput) return;
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      invoke<GeometryResponse>('bb_compute_geometry', { input: bbInput })
-        .then(r => {
-          if (cancelled) return;
-          setDerived(r.derived);
-          setError(null);
-        })
-        .catch((e: unknown) => {
-          if (cancelled) return;
-          setError(String(e)); // Rust 메시지를 **그대로** 낸다 (§3.6.5.3)
-          setDerived(null);
-        });
-    }, 150);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [bbInput]);
 
   const g = bbInput?.geometry ?? null;
   const alpha0 = result?.geometry.alpha_0_rad ?? derived?.alpha_0_rad ?? null;

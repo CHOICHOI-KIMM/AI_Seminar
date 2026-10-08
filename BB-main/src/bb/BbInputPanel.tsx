@@ -59,6 +59,7 @@ import type { BbOperatingConditions } from './generated/BbOperatingConditions';
 import type { BbPreloadModel } from './generated/BbPreloadModel';
 import type { BbSolverParams } from './generated/BbSolverParams';
 import type { Material } from './generated/Material';
+import { toDeg } from './shared';
 
 interface PresetInfo {
   name: string;
@@ -66,7 +67,6 @@ interface PresetInfo {
 }
 
 // 접촉각 계열 전용 환산. 이 두 개 말고 다른 환산은 이 파일에 없어야 한다.
-const toDeg = (rad: number) => (rad * 180) / Math.PI;
 const toRad = (deg: number) => (deg * Math.PI) / 180;
 
 // ── BbDofMask 빠른 선택 ────────────────────────────────────────────────

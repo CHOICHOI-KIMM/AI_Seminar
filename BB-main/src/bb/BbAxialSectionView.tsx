@@ -109,31 +109,14 @@
 //  `Annotations` 본문(γ 경사축·사다리꼴 롤러·리브 전량) — BB 에 대응 개념이 없다.
 //  색 팔레트·`num()`·`toDeg` 는 `BbLoadDistView` 와 **같은 값**을 쓴다.
 
-import { useEffect, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { useState } from 'react';
 import { useAppState } from '../store';
 import { DetailTable } from '../components/shared/DetailTable';
-import type { Alert } from './generated/Alert';
 import type { BallBearingGeometry } from './generated/BallBearingGeometry';
 import type { BbGeometryDerived } from './generated/BbGeometryDerived';
+import { num, toDeg, C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF, C_INNER, C_OUTER, useGeometryResponse } from './shared';
 
 /** `commands::GeometryResponse` 대응 — `BbGeometryView` 와 같은 형태다. */
-interface GeometryResponse {
-  derived: BbGeometryDerived;
-  alerts: Alert[];
-}
-
-/** 유효숫자 9자리 (또는 지수표기) — 사유는 파일 헤더의 단위 정책 참조. */
-function num(v: number): string {
-  if (!Number.isFinite(v)) return String(v);
-  if (v === 0) return '0';
-  const a = Math.abs(v);
-  if (a < 1e-4 || a >= 1e9) return v.toExponential(8);
-  return v.toPrecision(9);
-}
-
-const toDeg = (rad: number) => (rad * 180) / Math.PI;
-
 /** (−180, 180] 로 접는다 — 방위차 Δ 표시용. */
 function wrapDeg(d: number): number {
   let x = ((d + 180) % 360 + 360) % 360 - 180;
@@ -141,14 +124,6 @@ function wrapDeg(d: number): number {
   return x;
 }
 
-// ─── 색 팔레트 — `BbLoadDistView` 와 동일 (§3.6.1.4 통합 대비) ─────────
-const C_LOADED = '#f59e0b';
-const C_UNLOADED = '#64748b';
-const C_LOAD_DIR = '#ef4444';
-const C_ALPHA = '#38bdf8';
-const C_REF = '#a3e635';
-const C_INNER = '#3b82f6';
-const C_OUTER = '#f97316';
 
 
 // ─── 기하 재구성 (Plan §4 Phase 4-3: raceway 프로파일이 결과에 없다) ───
@@ -857,34 +832,9 @@ export default function BbAxialSectionView() {
   const { state } = useAppState();
   const { bbInput, result, resultInput } = state;
 
-  const [derived, setDerived] = useState<BbGeometryDerived | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { response: geomResponse, error } = useGeometryResponse(bbInput);
+  const derived = geomResponse?.derived ?? null;
   const [selected, setSelected] = useState<number | null>(null);
-
-  // `BbGeometryView`(85–110) 와 **같은 패턴** — 150 ms 디바운스 + `cancelled` 플래그.
-  // ⚠ 구독 대상은 `bbInput` **전체**다. `geometry` 만 구독하면 낡은 값이 남는다.
-  useEffect(() => {
-    if (!bbInput) return;
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      invoke<GeometryResponse>('bb_compute_geometry', { input: bbInput })
-        .then(r => {
-          if (cancelled) return;
-          setDerived(r.derived);
-          setError(null);
-        })
-        .catch((e: unknown) => {
-          if (cancelled) return;
-          // Rust 메시지를 **그대로** 낸다 (§3.6.5.3).
-          setError(String(e));
-          setDerived(null);
-        });
-    }, 150);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [bbInput]);
 
   if (!bbInput) {
     return (

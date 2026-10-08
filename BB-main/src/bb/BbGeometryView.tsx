@@ -33,38 +33,12 @@
 //  단 α₀ 는 **° 와 rad 를 나란히** 낸다 — °는 사람이 읽기 위한 것이고,
 //  rad 는 Level A 시험 출력과 같은 숫자라 대조에 그것이 필요하다.
 
-import { useEffect, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { useAppState } from '../store';
 import { DetailTable } from '../components/shared/DetailTable';
-import type { Alert } from './generated/Alert';
 import type { AlertLevel } from './generated/AlertLevel';
-import type { BbGeometryDerived } from './generated/BbGeometryDerived';
-import type { BbGeometrySummary } from './generated/BbGeometrySummary';
+import { num, toDeg, useGeometryResponse } from './shared';
 
 /** `commands::GeometryResponse` 대응 (Rust 쪽은 ts-rs 대상이 아니라 커맨드 전용 래퍼다). */
-interface GeometryResponse {
-  derived: BbGeometryDerived;
-  summary: BbGeometrySummary;
-  alerts: Alert[];
-}
-
-/**
- * 유효숫자 9자리 (또는 지수표기).
- *
- * §3.6.4.2 의 검증 매핑상 이 화면의 숫자는 **Level A 시험 결과와 직접 대조**된다.
- * 반올림해 보여주면 대조가 불가능하므로 자릿수를 줄이지 않는다.
- */
-function num(v: number): string {
-  if (!Number.isFinite(v)) return String(v);
-  if (v === 0) return '0';
-  const a = Math.abs(v);
-  if (a < 1e-4 || a >= 1e9) return v.toExponential(8);
-  return v.toPrecision(9);
-}
-
-const toDeg = (rad: number) => (rad * 180) / Math.PI;
-
 // `AlertPanel` 과 **같은 표현**을 쓴다 (§3.6.5.2 S3).
 // 그 컴포넌트는 `store.result.alerts` 만 읽으므로 기하 경고를 넘길 수 없어
 // 표현만 옮겨 온다. 색·아이콘은 어두운 캔버스 배경에 맞춰 대응시켰다.
@@ -79,36 +53,7 @@ export default function BbGeometryView() {
   const { state } = useAppState();
   const input = state.bbInput;
 
-  const [response, setResponse] = useState<GeometryResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // `input` 이 아직 없으면 아무 것도 하지 않는다 — effect 본문에서 동기 setState 를
-    // 하면 연쇄 렌더가 되고 `react-hooks/set-state-in-effect` 에도 걸린다.
-    // 렌더 쪽이 이미 `!input` 을 조기반환으로 처리한다.
-    if (!input) return;
-    // 타자 한 글자마다 커맨드를 때리지 않도록 짧게 모은다.
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      invoke<GeometryResponse>('bb_compute_geometry', { input })
-        .then(r => {
-          if (cancelled) return;
-          setResponse(r);
-          setError(null);
-        })
-        .catch((e: unknown) => {
-          if (cancelled) return;
-          // Rust `validate()` / 기하 오류 메시지를 **그대로** 보여준다.
-          // 프론트가 문구를 고쳐 쓰면 어느 쪽이 거부했는지 알 수 없게 된다 (§3.6.5.3).
-          setError(String(e));
-          setResponse(null);
-        });
-    }, 150);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [input]);
+  const { response, error } = useGeometryResponse(input);
 
   if (!input) {
     return (

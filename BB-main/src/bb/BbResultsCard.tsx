@@ -35,17 +35,7 @@
 
 import { useAppState } from '../store';
 import type { BbResult } from './generated/BbResult';
-
-/** 유효숫자 9자리 (또는 지수표기) — 사유는 파일 헤더 참조. */
-function num(v: number): string {
-  if (!Number.isFinite(v)) return String(v);
-  if (v === 0) return '0';
-  const a = Math.abs(v);
-  if (a < 1e-4 || a >= 1e9) return v.toExponential(8);
-  return v.toPrecision(9);
-}
-
-const toDeg = (rad: number) => (rad * 180) / Math.PI;
+import { num, toDeg } from './shared';
 
 export default function BbResultsCard() {
   const { state, dispatch } = useAppState();

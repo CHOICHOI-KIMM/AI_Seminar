@@ -57,27 +57,13 @@ import type { BbLifeResult } from './generated/BbLifeResult';
 import type { BbLifeConditions } from './generated/BbLifeConditions';
 import type { BbFatigueLimitMethod } from './generated/BbFatigueLimitMethod';
 import type { AlertLevel } from './generated/AlertLevel';
-
-/** 유효숫자 9자리 (또는 지수표기) — 검증 대조가 목적이라 자릿수를 줄이면 안 된다. */
-function num(v: number): string {
-  if (!Number.isFinite(v)) return String(v);
-  if (v === 0) return '0';
-  const a = Math.abs(v);
-  if (a < 1e-4 || a >= 1e9) return v.toExponential(8);
-  return v.toPrecision(9);
-}
+import { num, C_LOADED, C_UNLOADED, C_REF, C_INNER, C_OUTER } from './shared';
 
 /** `null` 은 **빈칸**으로 — 0 이나 대시로 채우지 않는다 (파일 헤더의 규율). */
 function opt(v: number | null | undefined): string {
   return v === null || v === undefined ? '' : num(v);
 }
 
-// ─── 색 팔레트 — `BbLoadDistView`·`BbAxialSectionView` 와 동일 ─────────
-const C_LOADED = '#f59e0b';
-const C_UNLOADED = '#64748b';
-const C_INNER = '#3b82f6';
-const C_OUTER = '#f97316';
-const C_REF = '#a3e635';
 
 const ALERT_COLORS: Record<AlertLevel, string> = {
   Info: 'bg-blue-500/10 border-blue-400/30 text-blue-200',

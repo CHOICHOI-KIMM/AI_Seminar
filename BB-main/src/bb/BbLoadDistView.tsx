@@ -70,25 +70,8 @@ import { darkLayout, plotConfig } from '../components/charts/plotlyDefaults';
 import { DetailTable } from '../components/shared/DetailTable';
 import type { BallResult } from './generated/BallResult';
 import type { BbPhaseSweepResult } from './generated/BbPhaseSweepResult';
+import { num, toDeg, C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF, C_INNER, C_OUTER } from './shared';
 
-/** 유효숫자 9자리 (또는 지수표기) — 사유는 파일 헤더의 단위 정책 참조. */
-function num(v: number): string {
-  if (!Number.isFinite(v)) return String(v);
-  if (v === 0) return '0';
-  const a = Math.abs(v);
-  if (a < 1e-4 || a >= 1e9) return v.toExponential(8);
-  return v.toPrecision(9);
-}
-
-const toDeg = (rad: number) => (rad * 180) / Math.PI;
-
-const C_LOADED = '#f59e0b';
-const C_UNLOADED = '#64748b';
-const C_LOAD_DIR = '#ef4444';
-const C_ALPHA = '#38bdf8';
-const C_REF = '#a3e635';
-const C_INNER = '#3b82f6';
-const C_OUTER = '#f97316';
 
 /**
  * 전동체별 하중 극좌표 — **전동체 3종 공통 컴포넌트**(§3.6.1.4 대비).
