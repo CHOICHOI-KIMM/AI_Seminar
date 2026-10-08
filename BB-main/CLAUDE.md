@@ -85,7 +85,7 @@ src/components/            — TRB 잔존 (legacy 탭). components/ → bb/ impo
 
 ---
 
-## 글로벌 규칙의 BB 적용 〔2026-10-08, Plan P4-2d〕
+## 글로벌 규칙의 BB 적용 〔2026-10-08, Plan Phase 4-4〕
 
 | 글로벌 규칙 | BB 에서의 구체 |
 |---|---|
