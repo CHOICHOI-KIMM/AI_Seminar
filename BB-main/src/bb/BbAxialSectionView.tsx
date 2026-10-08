@@ -111,7 +111,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAppState } from '../store';
-import { DetailTable } from '../components/shared/DetailTable';
+import { DetailTable, Loading, InfoBox, WarnBox, ErrorBox, Panel } from './ui';
 import type { BallBearingGeometry } from './generated/BallBearingGeometry';
 import type { BbGeometryDerived } from './generated/BbGeometryDerived';
 import { num, toDeg, C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF, C_INNER, C_OUTER, useGeometryResponse } from './shared';
@@ -963,11 +963,7 @@ export default function BbAxialSectionView() {
   const [selected, setSelected] = useState<number | null>(null);
 
   if (!bbInput) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-text-canvas text-sm">프리셋을 불러오는 중…</p>
-      </div>
-    );
+    return <Loading />;
   }
 
   const g = bbInput.geometry;
@@ -1012,10 +1008,7 @@ export default function BbAxialSectionView() {
   if (error) {
     return (
       <div className="h-full overflow-auto custom-scrollbar p-4">
-        <div className="p-2 rounded border bg-red-500/10 border-red-400/30 text-red-200">
-          <p className="text-[13px] font-medium">기하 계산 실패</p>
-          <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{error}</p>
-        </div>
+        <ErrorBox title="기하 계산 실패" message={error} />
       </div>
     );
   }
@@ -1048,7 +1041,7 @@ export default function BbAxialSectionView() {
   return (
     <div className="h-full overflow-auto custom-scrollbar p-4 space-y-5">
       {/* ── 검증 임무 명시 ─────────────────────────────────────────── */}
-      <div className="p-2.5 rounded border bg-blue-500/10 border-blue-400/30 text-blue-100 text-[12px] leading-relaxed">
+      <InfoBox>
         <p className="font-semibold text-[13px] mb-1">
           축단면 (ISO 16281 Fig A.1 a) 스타일 전단면) — Theory §2 (A.1)(A.3)(A.4) · §4.4 확정형
         </p>
@@ -1070,14 +1063,14 @@ export default function BbAxialSectionView() {
           실척에서 점이 겹치므로 <b>그리지 않고</b>, <span className="font-mono">A = r_i + r_e − D_w</span> 를{' '}
           <b>접촉선 위의 치수</b>로만 낸다(ISO 원도면과 같다). 수치 검산은 아래 <b>기하 항등</b> 표가 맡는다.
         </p>
-      </div>
+      </InfoBox>
 
       {stale && (
-        <div className="p-2 rounded border bg-amber-500/10 border-amber-400/30 text-amber-200 text-[12px]">
+        <WarnBox>
           입력이 Solve 이후 변경되었다. <b>단면 형상은 현재 입력</b>(<span className="font-mono">bbInput</span>)
           기준이고, <b>하중 후 오버레이(α_j·δ·틸트)는 Solve 시점 스냅샷</b>
           (<span className="font-mono">resultInput</span>) 기준이다. 두 시점이 어긋난 상태이므로 다시 Solve 할 것.
-        </div>
+        </WarnBox>
       )}
 
       {/* ── 볼 선택 ────────────────────────────────────────────────── */}
@@ -1135,7 +1128,7 @@ export default function BbAxialSectionView() {
       </div>
 
       {/* ── D-2d ───────────────────────────────────────────────────── */}
-      <div className="rounded border border-white/10 bg-black/20 p-3">
+      <Panel>
         <p className="text-[13px] font-semibold text-text-light mb-1">
           D-2d — 틸트축이 모멘트와 맞는가 (§3.6.4.2 의 유일한 미커버 항목)
         </p>
@@ -1145,7 +1138,7 @@ export default function BbAxialSectionView() {
           <div className="flex flex-wrap items-start gap-4">
             <div className="shrink-0">
               <TiltCompass tiltDeg={tiltDeg} momDeg={momDeg} phiDeg={toDeg(phiRad)} />
-              <div className="text-[10px] leading-snug space-y-0.5 mt-0.5 w-[124px]">
+              <div className="text-[11px] leading-snug space-y-0.5 mt-0.5">
                 <p style={{ color: C_LOAD_DIR }}>━ 모멘트 방위 (외부, resultInput)</p>
                 <p style={{ color: C_ALPHA }}>━ 틸트 방위 (평형해)</p>
                 <p style={{ color: C_LOADED }}>┄ 선택한 볼 φ_j</p>
@@ -1222,7 +1215,7 @@ export default function BbAxialSectionView() {
             </div>
           </div>
         )}
-      </div>
+      </Panel>
 
       {/* ── 검산표 ─────────────────────────────────────────────────── */}
       <DetailTable
