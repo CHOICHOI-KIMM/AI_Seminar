@@ -386,7 +386,7 @@ def run_v1():
 SKF_RED, SKF_BLUE = "#ef2b1d", "#3a68a4"     # SKF Fig 2 곡선 색 (이미지에서 추출)
 
 
-def plot_fig2_style(source, fits=None):
+def plot_fig2_style(source, fits=None, suffix="", z_edge=None):
     """SKF 2010 Fig 2 와 같은 형식의 3패널 그림 (사용자 결정 2026-09-29).
 
     source = "paper": 디지타이징 곡선(급변 구간 NaN 은 앞뒤 유효점을 이어 수직 급변 재현)
@@ -399,7 +399,7 @@ def plot_fig2_style(source, fits=None):
     거칠기 그림도 같은 축 구성을 쓰고 오른쪽 축은 보이지 않게 둔다.
     """
     name = {"paper": "paper", "roughness": "initial_z"}.get(source, "ours_" + source)
-    path = f"figures/V1_fig2_{name}.png"
+    path = f"figures/V1_fig2_{name}{suffix}.png"   # suffix: 형상 시험 등 별도 그림(§3.9)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     fig, axes = plt.subplots(3, 1, figsize=(6.8, 15.0))
     caps = ("(a) Middle-plane profile, S = 0", "(b) Middle-plane profile, S = 1",
@@ -414,7 +414,8 @@ def plot_fig2_style(source, fits=None):
             for mode, ls in zip(modes, ("-", ":")):
                 s = fits[(S, mode)]["s"]
                 uc = ((x - s) / np.sqrt(2.0) + P / 2) % P - P / 2      # y = 0: uc = vc
-                z = np.where(np.abs(uc) <= half, 0.30, 0.0)
+                # z_edge(q): 결함 중심에서 변까지 수직거리 q[m] → 높이[μm] (None 이면 수직 모서리)
+                z = z_edge(np.abs(uc)) if z_edge else np.where(np.abs(uc) <= half, 0.30, 0.0)
                 if mode == "complex":
                     ax.fill_between(xu, 0.0, z, where=z > 0, color="0.85")
                 ax.plot(xu, z, color="k", lw=1.4, ls=ls,
