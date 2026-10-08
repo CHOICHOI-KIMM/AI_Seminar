@@ -52,25 +52,16 @@ import { invoke } from '@tauri-apps/api/core';
 import { useAppState } from '../store';
 import Plot from '../components/charts/PlotWithCopy';
 import { darkLayout, plotConfig } from '../components/charts/plotlyDefaults';
-import { DetailTable } from '../components/shared/DetailTable';
 import type { BbLifeResult } from './generated/BbLifeResult';
 import type { BbLifeConditions } from './generated/BbLifeConditions';
 import type { BbFatigueLimitMethod } from './generated/BbFatigueLimitMethod';
-import type { AlertLevel } from './generated/AlertLevel';
 import { num, C_LOADED, C_UNLOADED, C_REF, C_INNER, C_OUTER } from './shared';
+import { AlertList, DetailTable, ErrorBox, InfoBox, Loading, Panel, WarnBox } from './ui';
 
 /** `null` 은 **빈칸**으로 — 0 이나 대시로 채우지 않는다 (파일 헤더의 규율). */
 function opt(v: number | null | undefined): string {
   return v === null || v === undefined ? '' : num(v);
 }
-
-
-const ALERT_COLORS: Record<AlertLevel, string> = {
-  Info: 'bg-blue-500/10 border-blue-400/30 text-blue-200',
-  Warning: 'bg-amber-500/10 border-amber-400/30 text-amber-200',
-  Critical: 'bg-red-500/10 border-red-400/30 text-red-200',
-};
-const ALERT_ICONS: Record<AlertLevel, string> = { Info: 'ℹ', Warning: '⚠', Critical: '⛔' };
 
 /** 솔버 기본값과 같다 — `BbLifeConditions` 의 주석 참조(아무 값도 지어내지 않는 쪽). */
 const DEFAULT_CONDITIONS: BbLifeConditions = {
@@ -99,8 +90,8 @@ function Card({
 }) {
   return (
     <div className="rounded border border-white/10 bg-black/20 px-3 py-2 min-w-[10.5rem]">
-      <p className="text-[11px] text-text-canvas/60 uppercase tracking-wider">{label}</p>
-      <p className="font-mono tabular-nums text-[15px] leading-tight" style={{ color }}>
+      <p className="text-[11px] text-text-canvas/60">{label}</p>
+      <p className="font-mono tabular-nums text-sm leading-tight" style={{ color }}>
         {value === '' ? <span className="text-text-canvas/30">—</span> : value}
         {value !== '' && unit && <span className="text-[11px] text-text-canvas/60 ml-1">{unit}</span>}
       </p>
@@ -171,13 +162,7 @@ export default function BbLifeView() {
     };
   }, [bbInput, cond]);
 
-  if (!bbInput) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-text-canvas text-sm">프리셋을 불러오는 중…</p>
-      </div>
-    );
-  }
+  if (!bbInput) return <Loading />;
 
   // ── 시간 환산 (D-10 경계) ──────────────────────────────────────
   //  ⚠ Solve 시점 스냅샷에서 읽는다. Solve 전이면 회전속도를 모르므로 **환산하지 않는다**.
@@ -202,10 +187,7 @@ export default function BbLifeView() {
   if (error) {
     return (
       <div className="h-full overflow-auto custom-scrollbar p-4">
-        <div className="p-2 rounded border bg-red-500/10 border-red-400/30 text-red-200">
-          <p className="text-[13px] font-medium">수명 계산 실패</p>
-          <p className="text-xs opacity-80 whitespace-pre-wrap break-words">{error}</p>
-        </div>
+        <ErrorBox title="수명 계산 실패" message={error} />
       </div>
     );
   }
@@ -213,34 +195,34 @@ export default function BbLifeView() {
   return (
     <div className="h-full overflow-auto custom-scrollbar p-4 space-y-5">
       {/* ── 검증 임무 명시 ─────────────────────────────────────────── */}
-      <div className="p-2.5 rounded border bg-blue-500/10 border-blue-400/30 text-blue-100 text-[12px] leading-relaxed">
-        <p className="font-semibold text-[13px] mb-1">
+      <InfoBox>
+        <p className="font-medium text-[13px] mb-1">
           수명 · 정정격 — ISO 281 / 16281 (동적) + ISO 76 (정적) · Theory §7
         </p>
         <p>
-          두 결과는 <b>커맨드 왕복 한 번</b>에 함께 온다(<span className="font-mono">static_rating</span> 이{' '}
+          두 결과는 커맨드 왕복 한 번에 함께 온다(<span className="font-mono">static_rating</span> 이{' '}
           <span className="font-mono">BbLifeResult</span> 안에 들어 있다). 그래서 한 탭에 2단으로 둔다.
         </p>
         <p className="mt-1 text-blue-200/80">
-          <b>값이 없으면 빈칸으로 둔다</b> — 0 이나 대시로 채우면 「계산됐는데 0」과 「계산 안 됨」이 구분되지
+          값이 없으면 빈칸으로 둔다 — 0 이나 대시로 채우면 「계산됐는데 0」과 「계산 안 됨」이 구분되지
           않는다. <span className="font-mono">κ</span>·<span className="font-mono">a_ISO</span>·
-          <span className="font-mono">L_nmr</span> 은 <b>실동점도 ν 를 입력해야</b> 나온다.{' '}
-          <span className="font-mono">ν₁</span> 은 <b>ν 와 무관</b>하게 항상 나온다 — 식 (28)(29) 가{' '}
+          <span className="font-mono">L_nmr</span> 은 실동점도 ν 를 입력해야 나온다.{' '}
+          <span className="font-mono">ν₁</span> 은 ν 와 무관하게 항상 나온다 — 식 (28)(29) 가{' '}
           <span className="font-mono">n</span>·<span className="font-mono">D_pw</span> 만의 함수이기 때문이다.
         </p>
-      </div>
+      </InfoBox>
 
       {stale && (
-        <div className="p-2 rounded border bg-amber-500/10 border-amber-400/30 text-amber-200 text-[12px]">
-          입력이 Solve 이후 변경되었다. <b>수명은 현재 입력</b>(<span className="font-mono">bbInput</span>) 기준으로
-          다시 계산되지만 <b>회전속도 n 은 Solve 시점 스냅샷</b>(<span className="font-mono">resultInput</span>)에서
+        <WarnBox>
+          입력이 Solve 이후 변경되었다. 수명은 현재 입력(<span className="font-mono">bbInput</span>) 기준으로
+          다시 계산되지만 회전속도 n 은 Solve 시점 스냅샷(<span className="font-mono">resultInput</span>)에서
           읽으므로 시간[h] 환산의 시점이 어긋나 있다. 다시 Solve 할 것.
-        </div>
+        </WarnBox>
       )}
 
       {/* ── 조건 바 ────────────────────────────────────────────────── */}
-      <div className="rounded border border-white/10 bg-black/20 p-3">
-        <p className="text-[13px] font-semibold text-text-light mb-2">
+      <Panel>
+        <p className="text-[13px] font-medium text-text-light mb-2">
           수명 조건 (ISO 281 §9 · Theory §7.8~7.10)
         </p>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -293,15 +275,15 @@ export default function BbLifeView() {
             n = {nRpm === null ? '— (Solve 전)' : `${num(nRpm)} r/min`}
           </span>
         </div>
-      </div>
+      </Panel>
 
       {!life ? (
         <p className="text-[13px] text-text-canvas/60">계산 중…</p>
       ) : (
         <>
           {/* ═══ 1단 — 동적 수명 (ISO 281 / 16281) ═══════════════════ */}
-          <div className="rounded border border-white/10 bg-black/20 p-3 space-y-3">
-            <p className="text-[13px] font-semibold text-text-light">
+          <Panel className="space-y-3">
+            <p className="text-[13px] font-medium text-text-light">
               ① 동적 수명 — ISO 281 / 16281
             </p>
 
@@ -429,7 +411,7 @@ export default function BbLifeView() {
                         y: life.q_ei_n,
                         text: `Q_ei = ${num(life.q_ei_n)} N`,
                         showarrow: false,
-                        font: { size: 10, color: C_INNER },
+                        font: { size: 11, color: C_INNER },
                         yanchor: 'bottom',
                       },
                       {
@@ -438,7 +420,7 @@ export default function BbLifeView() {
                         y: life.q_ee_n,
                         text: `Q_ee = ${num(life.q_ee_n)} N`,
                         showarrow: false,
-                        font: { size: 10, color: C_OUTER },
+                        font: { size: 11, color: C_OUTER },
                         yanchor: 'top',
                         xanchor: 'right',
                       },
@@ -452,15 +434,15 @@ export default function BbLifeView() {
             ) : (
               <p className="text-[12px] text-amber-300/80">
                 결과 없음 — 볼별 <span className="font-mono">Q_j</span> 막대는 Solve 후에 그린다. 위 정격·수명은{' '}
-                <b>기하와 하중만으로</b> 계산되므로 Solve 없이도 나온다.
+                기하와 하중만으로 계산되므로 Solve 없이도 나온다.
               </p>
             )}
-          </div>
+          </Panel>
 
           {/* ═══ 2단 — 정정격 (ISO 76) ═══════════════════════════════ */}
           {st && (
-            <div className="rounded border border-white/10 bg-black/20 p-3 space-y-3">
-              <p className="text-[13px] font-semibold text-text-light">
+            <Panel className="space-y-3">
+              <p className="text-[13px] font-medium text-text-light">
                 ② 정정격 — ISO 76 (Theory §7.11~7.13)
               </p>
 
@@ -492,46 +474,12 @@ export default function BbLifeView() {
                 ]}
               />
 
-              <div>
-                <h4 className="text-sm font-semibold text-text-light mb-2 uppercase tracking-wider">
-                  Static Rating Alerts
-                </h4>
-                {st.alerts.length === 0 ? (
-                  <p className="text-[13px] text-text-canvas/60">경고 없음</p>
-                ) : (
-                  st.alerts.map((a, i) => (
-                    <div key={i} className={`flex items-start gap-2 p-2 rounded border mb-1 ${ALERT_COLORS[a.level]}`}>
-                      <span className="text-[13px] font-bold mt-0.5">{ALERT_ICONS[a.level]}</span>
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-medium">{a.code}</p>
-                        <p className="text-xs opacity-80">{a.message}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+              <AlertList title="Static Rating Alerts" alerts={st.alerts} />
+            </Panel>
           )}
 
           {/* ── 수명 alerts ──────────────────────────────────────────── */}
-          <div>
-            <h4 className="text-sm font-semibold text-text-light mb-2 uppercase tracking-wider">
-              Life Alerts
-            </h4>
-            {life.alerts.length === 0 ? (
-              <p className="text-[13px] text-text-canvas/60">경고 없음</p>
-            ) : (
-              life.alerts.map((a, i) => (
-                <div key={i} className={`flex items-start gap-2 p-2 rounded border mb-1 ${ALERT_COLORS[a.level]}`}>
-                  <span className="text-[13px] font-bold mt-0.5">{ALERT_ICONS[a.level]}</span>
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-medium">{a.code}</p>
-                    <p className="text-xs opacity-80">{a.message}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <AlertList title="Life Alerts" alerts={life.alerts} />
 
           <p className="text-[11px] text-text-canvas/50 leading-relaxed">
             재사용: TRB <span className="font-mono">charts/LifeChart</span> 의 「요약 카드 → 사슬 표 → 차트」 3층
