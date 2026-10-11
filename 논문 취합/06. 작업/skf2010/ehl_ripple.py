@@ -181,11 +181,57 @@ def total_amplitude(r_a, ar_nn):
     return r_a / (1.0 + 0.15 * ar_nn + 0.015 * ar_nn**2)
 
 
+# ------------------------------- 순수구름 복소 전체 비 (Hooke & Li 2006, 계획서 §2.2 (c))
+
+
+def hooke_li_ratio(wx, wy, case):
+    """Hooke & Li 2006 Part 1 식 (19)(20)(21): 순수구름 저진폭 성분의 복소 전체 비 H/A.
+
+        Pλ/(E'A) = -(π/2)[(1+cos2θ) f1(Λ) + (1-cos2θ) f2(Λ)] + i cosθ f3(Λ)
+        H/A      = 1 + (2/π) Pλ/(E'A)
+        Λ = (λ/b) P^1.5 S^-2,  λ = 2π/κ,  tanθ = ξ/ω (sinθ, cosθ 는 ξ, ω 와 같은 부호)
+        P = α p_h,  S = G U^0.25,  G = α E',  U = η0 ū/(E' R_x),  b = a_x (타원비 ≥ 1 접촉 중심선)
+    허수부 양 = 거칠기보다 뒤짐(lag), 음 = 앞섬(lead) (Part 2 §1). 맞춤 범위 λ/b < 2. DC(κ = 0)는 H/A = 1.
+
+    허수항 부호: 정리본(OCR) 식 (19)는 "+ i cosθ f3" 이나 f3 < 0 (Λ > 0.1) 이라 Im(H/A) < 0 이 된다.
+    원문 Fig 4(횡방향, 케이스 E·F)는 H/A·Pλ/E'A 의 허수부가 모두 양이고, §3 은 "maximum clearance
+    lagging", Part 2 §1 은 "positive imaginary = lag" 이다 → 허수항은 −i cosθ f3 (Im(H/A) > 0).
+    Leeds Fig 3(a) 대조에서도 이 부호만 맞는다(작업내역서 §4.7.4).
+    반환: dict(HA, Lam, out_of_fit(λ/b ≥ 2 마스크))
+    """
+    wx, wy = np.broadcast_arrays(np.asarray(wx, float), np.asarray(wy, float))
+    kappa = np.hypot(wx, wy)
+    P = case.alpha * case.p_h
+    G = case.alpha * case.E_eff
+    U = case.eta0 * case.u_bar / (case.E_eff * case.Rx)
+    S_gw = G * U**0.25
+    b = case.a_x
+    with np.errstate(divide="ignore", invalid="ignore"):
+        lam = 2.0 * np.pi / kappa
+        Lam = lam / b * P**1.5 / S_gw**2
+        cos2t = (wx**2 - wy**2) / kappa**2
+        cost = wx / kappa
+        f1 = 0.5 / (1.0 + 0.285 / Lam + 1.012 / Lam**2)
+        f2 = 0.5 / (1.0 + 0.226 / Lam + 0.292 / Lam**2)
+        f3 = (-0.221 / Lam + 0.0221 / Lam**2) / (1.0 - 2.042 / Lam + 2.585 / Lam**2
+                                                  - 1.197 / Lam**3 + 0.228 / Lam**4)
+        PlEA = -(np.pi / 2.0) * ((1.0 + cos2t) * f1 + (1.0 - cos2t) * f2) - 1j * cost * f3
+        HA = 1.0 + (2.0 / np.pi) * PlEA
+    dc = kappa == 0.0
+    HA = np.where(dc, 1.0 + 0j, HA)
+    return dict(HA=HA[()], Lam=np.where(dc, np.inf, Lam)[()], out_of_fit=(~dc & (lam / b >= 2.0))[()])
+
+
 # ------------------------------------------------------------ 성분 조립
 
 
-def ripple_component(r_a, wx, wy, h, case, S, hc_mode="complex", psi_solver="paper"):
+def ripple_component(r_a, wx, wy, h, case, S, hc_mode="complex", psi_solver="paper", s0_mode="hooke_li"):
     """거칠기 성분(스칼라 또는 스펙트럼 배열)에 대한 전유막 해. 계획서 §2.2 (a)~(d).
+
+    s0_mode (계획서 §2.2 (c) 순수구름 블록, S = 0 에서만 작동):
+        "skf"      식 (24) 실수 h_t → h_c = h_t − h_a (위상 0)
+        "hooke_li" Hooke & Li 2006 복소 H/A → h_c = (H/A − 1) r_a, h_t = (H/A) r_a (hooke_li_ratio)
+      S ≠ 0 이면 무시된다. 기본값 "hooke_li" (사용자 결정 2026-10-11, 작업내역서 §4.7.4 ⑤).
 
     tau_m 은 Eyring 식으로 미끄럼 속도에서 구한다(tau_mean_eyring).
     2D 성분의 진폭감쇠 변수는 [14] 식 [23][24] 를 따른다(계획서 U10):
@@ -221,7 +267,14 @@ def ripple_component(r_a, wx, wy, h, case, S, hc_mode="complex", psi_solver="pap
         ar_nn, K_nn = ar_param_nn(ar_param, pi_["Q"], S)
         h_t = total_amplitude(r_a, ar_nn)
     h_t = np.where(pi_["kappa"] > 0.0, h_t, 0.0)[()]        # DC: 0*inf 방지 (진폭 0)
-    if hc_mode == "complex":
+    hl = None
+    if S == 0.0 and s0_mode == "hooke_li":
+        hl = hooke_li_ratio(wx, wy, case)
+        h_t = np.where(pi_["kappa"] > 0.0, hl["HA"] * r_a, 0.0)[()]
+        h_cf = h_t - r_a                                     # h_a = r_a (S = 0)
+    elif s0_mode not in ("skf", "hooke_li"):
+        raise ValueError(s0_mode)
+    elif hc_mode == "complex":
         h_cf = h_t - pi_["h_a"]
     elif hc_mode == "magnitude":
         h_cf = (np.abs(h_t) - np.abs(pi_["h_a"])) * np.exp(1j * np.angle(pi_["h_a"]))
@@ -232,11 +285,11 @@ def ripple_component(r_a, wx, wy, h, case, S, hc_mode="complex", psi_solver="pap
 
     return dict(p_a=pi_["p_a"], h_a=pi_["h_a"], Q=pi_["Q"], C=pi_["C"],
                 psi=psi, psi_iters=nit, psi_ok=ok, tau_m=tau_m,
-                ar_nn=ar_nn, K_nn=K_nn, h_t=h_t, h_cf=h_cf, p_cf=p_cf)
+                ar_nn=ar_nn, K_nn=K_nn, h_t=h_t, h_cf=h_cf, p_cf=p_cf, hooke_li=hl)
 
 
 def ripple_line(r, L, case, S, h, x, hc_mode="complex", y0=0.0, psi_solver="paper",
-                shifts=None):
+                shifts=None, s0_mode="hooke_li"):
     """정사각 주기 패치 r[iy, ix] (간극 섭동, 한 변 L) 의 y = y0 단면 Delta h(x), Delta p(x).
 
     x 는 접촉 중심 기준(입구 x = -a_x), 시각 t = 0 스냅숏.
@@ -257,7 +310,7 @@ def ripple_line(r, L, case, S, h, x, hc_mode="complex", y0=0.0, psi_solver="pape
     w = 2.0 * np.pi * np.fft.fftfreq(n, d=L / n)
     wy, wx = np.meshgrid(w, w, indexing="ij")
 
-    sol = ripple_component(R, wx, wy, h, case, S, hc_mode, psi_solver)
+    sol = ripple_component(R, wx, wy, h, case, S, hc_mode, psi_solver, s0_mode)
     a = case.a_x
     inlet = np.exp(-1j * wx * a)
     hc_in, pc_in = sol["h_cf"] * inlet, sol["p_cf"] * inlet
@@ -277,6 +330,33 @@ def ripple_line(r, L, case, S, h, x, hc_mode="complex", y0=0.0, psi_solver="pape
     if shifts is None:
         dh, dp = dh[0], dp[0]
     return dh.real, dp.real, resid, sol
+
+
+def ripple_field(r, L, case, S, h, hc_mode="complex", s0_mode="hooke_li"):
+    """정사각 주기 패치 r[iy, ix] (간극 섭동, 한 변 L, 인덱스 0 = 접촉 중심) 의 2D Delta h, Delta p.
+
+    ripple_line 과 같은 해(t = 0 스냅숏)를 패치 전 격자 x, y = (k - n/2)·L/n 에서 구한다.
+    반환 배열은 중심 좌표 순서(fftshift 배치)다.  반환: (dh, dp, x)
+    """
+    n = r.shape[0]
+    R = np.fft.fft2(r) / r.size
+    R[0, 0] = 0.0
+    w = 2.0 * np.pi * np.fft.fftfreq(n, d=L / n)
+    wy, wx = np.meshgrid(w, w, indexing="ij")
+    sol = ripple_component(R, wx, wy, h, case, S, hc_mode, s0_mode=s0_mode)
+    a = case.a_x
+    inlet = np.exp(-1j * wx * a)
+    hc_in, pc_in = sol["h_cf"] * inlet, sol["p_cf"] * inlet
+    x = (np.arange(n) - n // 2) * L / n
+    ey = np.exp(1j * np.outer(x, w))                         # (y, ky)
+    dh = np.empty((n, n))
+    dp = np.empty((n, n))
+    for i, xi in enumerate(x):
+        ea = np.exp(1j * wx * xi)
+        ec = np.exp(1j * sol["psi"] * (xi + a))
+        dh[:, i] = (ey @ (sol["h_a"] * ea + hc_in * ec).sum(axis=1)).real
+        dp[:, i] = (ey @ (sol["p_a"] * ea + pc_in * ec).sum(axis=1)).real
+    return dh, dp, x
 
 
 def _bulk(p):
