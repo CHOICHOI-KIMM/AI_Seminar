@@ -193,10 +193,14 @@ def hooke_li_ratio(wx, wy, case):
         P = α p_h,  S = G U^0.25,  G = α E',  U = η0 ū/(E' R_x),  b = a_x (타원비 ≥ 1 접촉 중심선)
     허수부 양 = 거칠기보다 뒤짐(lag), 음 = 앞섬(lead) (Part 2 §1). 맞춤 범위 λ/b < 2. DC(κ = 0)는 H/A = 1.
 
-    허수항 부호: 정리본(OCR) 식 (19)는 "+ i cosθ f3" 이나 f3 < 0 (Λ > 0.1) 이라 Im(H/A) < 0 이 된다.
-    원문 Fig 4(횡방향, 케이스 E·F)는 H/A·Pλ/E'A 의 허수부가 모두 양이고, §3 은 "maximum clearance
-    lagging", Part 2 §1 은 "positive imaginary = lag" 이다 → 허수항은 −i cosθ f3 (Im(H/A) > 0).
-    Leeds Fig 3(a) 대조에서도 이 부호만 맞는다(작업내역서 §4.7.4).
+    허수항 부호 — 원문 내부 모순(사용자 결정 2026-10-11: −i 채택):
+      원문 PDF 식 (19) 인쇄는 "+ i cosθ f3" 이고 f3 < 0 (Λ > 0.1) 이라 Im(H/A) < 0 (lead) 이 된다.
+      같은 논문 Fig 4(횡방향, 케이스 E·F)의 허수부는 양(lag)이고 크기는 식과 비슷하며, §3 본문도
+      "maximum clearance lagging". 독립 기준 Leeds Fig 3(a)·SKF Fig 2(a) 도 lag(+27°·+28°).
+      → 인쇄식과 Fig 4 중 하나가 부호 오류로 보고 Fig 4·독립 기준에 맞춰 −i cosθ f3 를 쓴다(인쇄식과 다름).
+    −π/2 괄호: 인쇄는 f1 항에만 걸린 형태이나, 큰 Λ 극한이 모든 방향에서 −π/2(완전 평탄화: 식 21 H/A = 0,
+    식 24·25 의 포화값)가 되도록 두 항 모두에 건다. 본문 "tends … to a value of π/2" 는 크기(Fig 6 절댓값).
+    θ = 0 횡방향에서는 f2 항이 0 이라 영향 없음.
     반환: dict(HA, Lam, out_of_fit(λ/b ≥ 2 마스크))
     """
     wx, wy = np.broadcast_arrays(np.asarray(wx, float), np.asarray(wy, float))

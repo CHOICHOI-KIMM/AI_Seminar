@@ -32,10 +32,10 @@ import ehl_ripple as ER
 import kernels as K
 
 
-def _state(phi, r, L, case, S, h_mean, hc_mode, p0):
+def _state(phi, r, L, case, S, h_mean, hc_mode, p0, s0_mode):
     """주어진 phi_bl 에서 step 3–5. 반환 dict(잔차 포함)."""
     c_rho = CO.density_ratio(phi * case.p_h)
-    dh, _, x = ER.ripple_field(r, L, case, S, c_rho * h_mean, hc_mode)
+    dh, _, x = ER.ripple_field(r, L, case, S, c_rho * h_mean, hc_mode, s0_mode)
     h_lub = c_rho * h_mean + dh
     dry = DC.solve(h_lub, L, L, case.E_eff, phi * case.p_h, p_lim=case.p_lim, p0=p0)
     Fl, Fd = np.fft.fft2(h_lub), np.fft.fft2(dry["h"])
@@ -47,7 +47,8 @@ def _state(phi, r, L, case, S, h_mean, hc_mode, p0):
                 resid=free - c_rho * h_mean, free=free)
 
 
-def solve(r_c, L, case, S=0.0, h_mean=None, hc_mode="complex", tol_phi=1e-3, phi0=1e-4, itmax=60):
+def solve(r_c, L, case, S=0.0, h_mean=None, hc_mode="complex", tol_phi=1e-3, phi0=1e-4, itmax=60,
+          s0_mode="hooke_li"):
     """중심 좌표 패치 r_c[iy, ix] (간극 섭동, 한 변 L) 의 하중분할 해.
 
     반환 dict: phi_bl, c_rho, h_lub, h_tran, p_tran(변동분), p_hertz, p_mean (전체압력 두 안),
@@ -59,7 +60,7 @@ def solve(r_c, L, case, S=0.0, h_mean=None, hc_mode="complex", tol_phi=1e-3, phi
 
     def ev(phi):
         nonlocal p0
-        s = _state(phi, r, L, case, S, h_mean, hc_mode, p0)
+        s = _state(phi, r, L, case, S, h_mean, hc_mode, p0, s0_mode)
         p0 = s["dry"]["p"]                                    # 다음 phi 의 M1 초기값
         hist.append((phi, s["resid"], s["dry"]["converged"]))
         return s
