@@ -2519,6 +2519,29 @@ webview error 0 · build 성공 · lint baseline 44 증감 0.
   - 정적 게이트 통과(tsc 0, eslint 0).
   - 헬스체크에 제목 중심 − 180° 눈금 중심 |Δx| ≤ 2px, 반경 숫자가 원 중심 오른쪽 수평선 위인지 검사를 더했다. 런타임 실측은 사용자 앱 세션이 끝난 뒤 한다.
 
+### 9.17 결과 탭 표 라벨을 English name (symbol) 로 통일했다
+
+**사용자 결정 (2026-10-14)**
+
+| # | 항목 | 결정 |
+|---|---|---|
+| 1 | 라벨 형식 | English name (symbol)만, 식·식번호·한글 설명은 툴팁 |
+| 2 | 범위 | 결과 탭 표 전부(Geometry·Section·Load Dist·Stress Contour·Life) |
+| 3 | 검산 행 | 영문화해 유지 |
+| 4 | Geometry Summary 중복 | Derived 와 같은 9행 삭제 |
+
+- **반영 (`b898698`)**
+  - DetailTable 행에 선택 4번째 원소(툴팁)를 더했다(TRB 호출부는 3원소 그대로 호환).
+  - 라벨 매핑 150건과 표 제목 11개를 영문화했다(커밋 메시지의 「142개」는 오기).
+    - 예: Bore d → Bore diameter (d), A = r_i + r_e − D_w (A.3) → Curvature center distance (A), L_10r — 기본 기준정격수명 (9) → Basic reference rating life (L_10r).
+  - Geometry 는 Summary 고유 4행(f_i·f_e·m_b·n·D_pw)을 Derived Geometry 에 합쳤다.
+    - Derived·Summary 필드 일치는 헬스체크가 이미 필드별로 검사한다.
+  - 표 값·단위의 한글(접촉/비접촉, 내륜/외륜, 정의 없음, 개, 건)도 영문 또는 빈 단위로 바꿨다.
+  - 범위 밖으로 둔 것: 입력 패널, Results 카드, 그래프·축 제목, BallTable 열 머리, Life 카드.
+- **검증**
+  - 매핑 미사용 0건(스크립트 실측), 정적 게이트 통과(tsc 0, eslint 신규 0 — DetailTable 의 기존 react-refresh 1건은 그대로).
+  - 헬스체크에 표 라벨·표 제목 한글 잔존 검사를 더했다. 런타임 실측은 사용자 앱 세션이 끝난 뒤 한다.
+
 ---
 
 # Phase 5 — 수명·정정격 (P4 병행 작업 포함)
