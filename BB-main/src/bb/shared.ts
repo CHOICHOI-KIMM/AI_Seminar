@@ -2,6 +2,7 @@
 //
 // 7개 뷰에 복사돼 있던 `num`·`toDeg`·색 상수와 3개 뷰에 복사돼 있던 기하 커맨드 호출을
 // 한 곳으로 모았다. **값은 그대로 옮겼다** — 이 파일로 옮기면서 화면이 바뀌면 안 된다.
+// P4-5 에서 유효숫자 9자리 `num` 은 아래 「단위별 표시」 함수로 대체되어 삭제됐다.
 //
 // ⚠ 색 상수는 **데이터 계열색**이다. `index.css` 의 상태 토큰(`--color-warning` 등)과
 //    값이 같은 것이 있어도(`C_LOADED` ≡ warning, `C_INNER` ≡ accent) **합치지 않는다**.
@@ -16,19 +17,6 @@ import type { BbGeometryDerived } from './generated/BbGeometryDerived';
 import type { BbGeometrySummary } from './generated/BbGeometrySummary';
 
 // ─── 숫자 표시 ─────────────────────────────────────────────────────────
-
-/**
- * 유효숫자 9자리 (또는 지수표기).
- *
- * 화면 값은 **검증 대조용**이다 — Theory·문헌 표와 자릿수까지 맞춰 보므로 줄이면 안 된다.
- */
-export function num(v: number): string {
-  if (!Number.isFinite(v)) return String(v);
-  if (v === 0) return '0';
-  const a = Math.abs(v);
-  if (a < 1e-4 || a >= 1e9) return v.toExponential(8);
-  return v.toPrecision(9);
-}
 
 /** rad → °. 솔버는 rad 로만 낸다(D-10) — 변환은 화면 경계에서만 한다. */
 export const toDeg = (rad: number) => (rad * 180) / Math.PI;

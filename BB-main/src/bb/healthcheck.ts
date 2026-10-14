@@ -578,6 +578,11 @@ async function run(): Promise<void> {
 
   // ── 탭 마운트 스윕 — 커맨드가 아니라 **화면**을 검사한다 ──────
   const tabBad = await sweepTabs();
+  // ── P4-5 자릿수·설명 문구 실측 ──
+  const formatBad = await measureFormat();
+  await logInfo(
+    `[healthcheck] 자릿수·설명 실측 ${formatBad.length === 0 ? 'PASS' : `FAIL: ${formatBad.slice(0, 12).join(' / ')}`}`
+  );
   // ── P4-4 레이아웃 실측 ──
   const layoutBad = await measureLayout();
   await logInfo(
@@ -593,6 +598,7 @@ async function run(): Promise<void> {
     `[healthcheck] 종료 — ${
       tabBad.length === 0 &&
       layoutBad.length === 0 &&
+      formatBad.length === 0 &&
       inputBad.length === 0 &&
       geomBad.length === 0 &&
       resultBad.length === 0 &&
@@ -754,6 +760,85 @@ function typoCounts(root: HTMLElement): { bold: string[]; upper: string[] } {
     if (cs.textTransform === 'uppercase') upper.push(tag);
   }
   return { bold, upper };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  P4-5 실측 — 단위별 자릿수 규칙 · 설명 문구 잔존 (Plan Phase 4-5 §4-5.6)
+// ═══════════════════════════════════════════════════════════════════
+//
+//  상세 표(DetailTable)의 각 행은 [이름 · 값 · 단위] 다. 단위 칸으로 허용 소수 자리수를 찾아
+//  값 칸과 대조한다. 지수 표기는 「고정 소수로 0 이 되는 0 아닌 값」일 때만 허용한다(결정 6).
+
+const DECIMALS_BY_UNIT: Record<string, number[]> = {
+  MPa: [0],
+  N: [1],
+  kN: [2],
+  'N·m': [2],
+  μm: [2],
+  μrad: [2],
+  '°': [2],
+  mm: [3, 4],
+  '10⁶ rev': [2],
+  Mrev: [2],
+  '1/mm': [4],
+  '—': [4, 0],
+  '': [4, 0],
+  'mm²/s': [2],
+  'mm/min': [0],
+  g: [1],
+  'mm²': [4],
+  rpm: [0],
+  'r/min': [0],
+};
+
+function checkDecimals(scope: ParentNode, where: string): string[] {
+  const bad: string[] = [];
+  scope.querySelectorAll('tr').forEach(tr => {
+    const td = tr.querySelectorAll('td');
+    if (td.length !== 3) return;
+    const label = (td[0].textContent ?? '').trim();
+    const val = (td[1].textContent ?? '').trim();
+    const unit = (td[2].textContent ?? '').trim();
+    const allowed = DECIMALS_BY_UNIT[unit];
+    if (!allowed || val === '' || !/^-?\d/.test(val)) return;
+    const exp = /^(-?\d+(?:\.\d+)?)e([+-]?\d+)$/.exec(val);
+    if (exp) {
+      const v = Math.abs(Number(val));
+      const dmax = Math.max(...allowed);
+      if (!(v > 0 && v < 0.5 * 10 ** -dmax)) bad.push(`${where}「${label}」${val} ${unit}: 지수 표기 조건 위반`);
+      return;
+    }
+    if (!/^-?\d+(\.\d+)?$/.test(val)) return;
+    const dec = val.includes('.') ? val.split('.')[1].length : 0;
+    if (!allowed.includes(dec)) bad.push(`${where}「${label}」${val} ${unit}: 소수 ${dec}자리 (허용 ${allowed.join('/')})`);
+  });
+  return bad;
+}
+
+async function measureFormat(): Promise<string[]> {
+  const bad: string[] = [];
+  const tabs = ['Geometry', 'Section', 'Load Distribution', 'Stress Contour', 'Life'];
+  let rows = 0;
+  for (const t of tabs) {
+    buttonByText(t)?.click();
+    const main = document.querySelector('main');
+    await waitStable(() => main?.textContent ?? '');
+    if (!main) continue;
+    rows += main.querySelectorAll('tr').length;
+    bad.push(...checkDecimals(main, `${t}: `));
+    // 설명 문구 잔존 — 상단 안내 배너(파란 박스) · 개발 메모
+    const banners = main.querySelectorAll('.bg-blue-500\\/10').length;
+    const memo = (main.textContent ?? '').includes('재사용:');
+    if (banners) bad.push(`${t}: 안내 배너 ${banners}개 잔존`);
+    if (memo) bad.push(`${t}: 「재사용:」 개발 메모 잔존`);
+  }
+  const card = document.body.textContent ?? '';
+  if (/D-2a/.test(card.replace(/\s/g, ''))) {
+    // 결과 카드의 검증 배지 — 화면 어디에도 「D-2a」 가 남지 않아야 한다
+    bad.push('결과 카드: 검증 단계 배지(D-2a) 잔존');
+  }
+  await logInfo(`[healthcheck] format 표 행 ${rows}개 검사 · 위반 ${bad.length}`);
+  return bad;
 }
 
 async function measureLayout(): Promise<string[]> {

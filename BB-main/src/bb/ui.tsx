@@ -22,15 +22,6 @@ export function Loading() {
   );
 }
 
-/** 안내 박스 (파랑). */
-export function InfoBox({ children }: { children: ReactNode }) {
-  return (
-    <div className="p-2.5 rounded border bg-blue-500/10 border-blue-400/30 text-blue-100 text-[12px] leading-relaxed">
-      {children}
-    </div>
-  );
-}
-
 /** 경고 박스 (호박색). */
 export function WarnBox({ children }: { children: ReactNode }) {
   return (
