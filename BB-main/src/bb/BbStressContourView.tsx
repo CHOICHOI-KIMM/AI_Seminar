@@ -86,6 +86,7 @@ import type { Alert } from './generated/Alert';
 import {
   toDeg,
   fmtMPa,
+  fmtGPa,
   fmtN,
   fmtDeg,
   fmtUm,
@@ -364,7 +365,7 @@ function DerivedTable({ derived }: { derived: BbContactDerived }) {
         ['a*_e', fmtDimless(derived.a_star_outer), ''],
         ['b*_e', fmtDimless(derived.b_star_outer), ''],
         ['δ*_e', fmtDimless(derived.delta_star_outer), ''],
-        ['E* 등가 탄성계수', fmtMPa(derived.e_star_mpa), 'MPa'],
+        ['E* 등가 탄성계수', fmtGPa(derived.e_star_mpa), 'GPa'],
         ['c_P 점접촉 스프링상수', fmtStiff(derived.c_p_n_per_mm15), 'N/mm^(3/2)'],
       ]}
     />

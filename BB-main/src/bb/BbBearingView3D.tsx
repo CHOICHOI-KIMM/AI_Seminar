@@ -315,13 +315,13 @@ function Ball({
               color: '#fff',
               padding: '4px 7px',
               borderRadius: 4,
-              fontSize: 10,
+              fontSize: 11,
               lineHeight: 1.35,
               whiteSpace: 'nowrap',
               fontFamily: 'ui-monospace, monospace',
             }}
           >
-            <div style={{ fontWeight: 700 }}>볼 #{index + 1}</div>
+            <div style={{ fontWeight: 500 }}>볼 #{index + 1}</div>
             <div>φ = {fmtDeg(toDeg(br.phi_rad))} °</div>
             <div>Q = {fmtN(br.q_n)} N</div>
             <div>α = {fmtDeg(toDeg(br.alpha_rad))} °</div>
@@ -409,7 +409,7 @@ function LoadVectors({
                   color: it.color,
                   padding: '2px 5px',
                   borderRadius: 4,
-                  fontSize: 10,
+                  fontSize: 11,
                   whiteSpace: 'nowrap',
                   fontFamily: 'ui-monospace, monospace',
                 }}

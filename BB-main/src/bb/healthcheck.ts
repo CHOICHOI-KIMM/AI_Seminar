@@ -771,6 +771,7 @@ function typoCounts(root: HTMLElement): { bold: string[]; upper: string[] } {
 
 const DECIMALS_BY_UNIT: Record<string, number[]> = {
   MPa: [0],
+  GPa: [2],
   N: [1],
   kN: [2],
   'N·m': [2],

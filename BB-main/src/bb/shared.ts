@@ -40,6 +40,8 @@ function fixed(v: number, digits: number): string {
 
 /** 응력·접촉압력 [MPa] → MPa 정수 */
 export const fmtMPa = (mpa: number) => fixed(mpa, 0);
+/** 탄성계수 [MPa] → GPa 소수 2 (보충, TRB E* 표시) — 응력이 아니므로 fmtMPa 를 쓰지 않는다 */
+export const fmtGPa = (mpa: number) => fixed(mpa / 1000, 2);
 /** 볼 하중·외부 하중 [N] → N 소수 1 */
 export const fmtN = (n: number) => fixed(n, 1);
 /** 정격하중 C_r·C_0r·C_u·P [N] → kN 소수 2 */
