@@ -120,6 +120,26 @@ export const C_RING_INNER = '#94a3b8';
 export const C_RING_OUTER = '#64748b';
 /** 응력 등고선 — 경도 한계 `σ_HU` 경계 */
 export const C_HU = '#ef4444';
+/** 3D 축 X (회전축) */
+export const C_AXIS_X = '#f87171';
+/** 3D 축 Y (φ=0) */
+export const C_AXIS_Y = '#4ade80';
+/** 3D 축 Z */
+export const C_AXIS_Z = '#60a5fa';
+/** 3D 중력 G (표시 전용 — 해석에 중력 입력은 없다) */
+export const C_GRAVITY = '#fbbf24';
+
+// ─── 3D 화살표 길이 (Plan §4-5.8) ─────────────────────────────────────
+
+/**
+ * 3D 화살표 길이 [mm] — **내륜 안지름 반경 r_bore 안쪽**에 들어가게 정해 볼·링과 닿지 않게 한다.
+ * 축(X·Y·Z)과 하중·틸트 화살표의 길이를 다르게 해 끝의 글자가 서로 다른 반경에 놓이게 한다.
+ * 같은 원점에서 같은 방향이면 선은 겹친다 — 글자만 분리된다.
+ */
+export function arrowLengths3d(boreMm: number): { axis: number; load: number; labelGap: number } {
+  const rBore = boreMm / 2;
+  return { axis: 0.45 * rBore, load: 0.85 * rBore, labelGap: 1.08 };
+}
 
 // ─── 기하 커맨드 ───────────────────────────────────────────────────────
 

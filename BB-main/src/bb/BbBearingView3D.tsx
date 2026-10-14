@@ -62,7 +62,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Text, Html } from '@react-three/drei';
+import { OrbitControls, Html, GizmoHelper } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppState } from '../store';
 import { StaleBadge } from './ui';
@@ -83,6 +83,11 @@ import {
   C_RING_INNER,
   C_RING_OUTER,
   useGeometryResponse,
+  C_AXIS_X,
+  C_AXIS_Y,
+  C_AXIS_Z,
+  C_GRAVITY,
+  arrowLengths3d,
 } from './shared';
 
 /** `commands::GeometryResponse` 대응 — `BbGeometryView`·`BbAxialSectionView` 와 같은 형태다. */
@@ -119,11 +124,14 @@ function DirArrow({
   origin,
   length,
   color,
+  thickness = 1,
 }: {
   dir: THREE.Vector3;
   origin: THREE.Vector3;
   length: number;
   color: string;
+  /** 굵기 배율 (Plan §4-5.8 — 화살표를 가늘게) */
+  thickness?: number;
 }) {
   const quat = useMemo(() => {
     const d = dir.clone();
@@ -133,8 +141,8 @@ function DirArrow({
 
   const shaftLen = length * 0.78;
   const headLen = length * 0.22;
-  const shaftR = length * 0.022;
-  const headR = length * 0.06;
+  const shaftR = length * 0.022 * thickness;
+  const headR = length * 0.06 * thickness;
 
   return (
     <group position={origin} quaternion={quat}>
@@ -150,27 +158,75 @@ function DirArrow({
   );
 }
 
+/** 3D 화면 라벨 공통 스타일 (DOM — 헬스체크가 겹침을 측정한다). */
+const LABEL_STYLE: React.CSSProperties = {
+  background: 'rgba(0,0,0,0.7)',
+  padding: '1px 5px',
+  borderRadius: 4,
+  fontSize: 11,
+  whiteSpace: 'nowrap',
+  fontFamily: 'ui-monospace, monospace',
+};
+
+const AXES: { dir: THREE.Vector3; label: string; color: string }[] = [
+  { dir: new THREE.Vector3(1, 0, 0), label: 'X', color: C_AXIS_X },
+  { dir: new THREE.Vector3(0, 1, 0), label: 'Y', color: C_AXIS_Y },
+  { dir: new THREE.Vector3(0, 0, 1), label: 'Z', color: C_AXIS_Z },
+];
+
 /**
- * 중심의 작은 축 마커 — `axesHelper` + `X/Y/Z` 라벨 (원본 `AxisLabels` 그대로).
- * ⚠ **X 가 회전축**(D-7)이고 **+Y 가 φ=0**(D-8)이라는 것을 눈으로 확인하는 장치다.
+ * 중심의 축 화살표 X·Y·Z (Plan §4-5.8).
+ * X 가 회전축(D-7), +Y 가 φ=0(D-8)이다. 길이는 `arrowLengths3d().axis` — 하중 화살표보다 짧아
+ * 끝의 글자가 하중 값 라벨과 다른 반경에 놓인다. 글자는 DOM(Html)이라 겹침을 측정할 수 있다.
  */
-function AxisMarker({ size }: { size: number }) {
-  const off = size * 1.18;
-  const fontSize = size * 0.22;
-  const p = { fontSize, anchorX: 'center' as const, anchorY: 'middle' as const };
+function AxisMarker({ length }: { length: number }) {
+  const origin = useMemo(() => new THREE.Vector3(0, 0, 0), []);
   return (
     <group>
-      <axesHelper args={[size]} />
-      <Text position={[off, 0, 0]} color="#f87171" {...p}>
-        X (회전축)
-      </Text>
-      <Text position={[0, off, 0]} color="#4ade80" {...p}>
-        Y (φ=0)
-      </Text>
-      <Text position={[0, 0, off]} color="#60a5fa" {...p}>
-        Z
-      </Text>
+      {AXES.map(a => (
+        <group key={a.label}>
+          <DirArrow dir={a.dir} origin={origin} length={length} color={a.color} thickness={0.6} />
+          <Html position={a.dir.clone().multiplyScalar(length * 1.18)} center style={{ pointerEvents: 'none' }}>
+            <div data-role="axis-label" style={{ ...LABEL_STYLE, color: a.color }}>
+              {a.label}
+            </div>
+          </Html>
+        </group>
+      ))}
     </group>
+  );
+}
+
+/**
+ * 우측 상단 좌표계 — 카메라를 따라 돈다 (drei GizmoHelper, 단위는 화면 px).
+ * 작은 X·Y·Z 와 함께 중력 G(+Y 고정, 표시 전용)를 강조해 그린다 (Plan §4-5.8 결정 3).
+ */
+function GravityGizmo() {
+  const origin = useMemo(() => new THREE.Vector3(0, 0, 0), []);
+  const g = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  return (
+    <GizmoHelper alignment="top-right" margin={[70, 70]}>
+      <group>
+        {AXES.map(a => (
+          <group key={a.label}>
+            <DirArrow dir={a.dir} origin={origin} length={34} color={a.color} thickness={0.8} />
+            <Html position={a.dir.clone().multiplyScalar(42)} center style={{ pointerEvents: 'none' }}>
+              <div data-role="gizmo-label" style={{ ...LABEL_STYLE, color: a.color, background: 'transparent' }}>
+                {a.label}
+              </div>
+            </Html>
+          </group>
+        ))}
+        <group position={[-14, 0, 0]}>
+          <DirArrow dir={g} origin={origin} length={44} color={C_GRAVITY} thickness={1.6} />
+          <Html position={[0, 54, 0]} center style={{ pointerEvents: 'none' }}>
+            <div data-role="gizmo-g" style={{ ...LABEL_STYLE, color: C_GRAVITY, background: 'transparent' }}>
+              G
+            </div>
+          </Html>
+        </group>
+      </group>
+    </GizmoHelper>
   );
 }
 
@@ -398,22 +454,12 @@ function LoadVectors({
   return (
     <group>
       {items.map((it, i) => {
-        const tip = it.dir.clone().normalize().multiplyScalar(scale * 1.08);
+        const tip = it.dir.clone().normalize().multiplyScalar(scale * arrowLengths3d(0).labelGap);
         return (
           <group key={i}>
-            <DirArrow dir={it.dir} origin={origin} length={scale} color={it.color} />
+            <DirArrow dir={it.dir} origin={origin} length={scale} color={it.color} thickness={0.7} />
             <Html position={tip} center style={{ pointerEvents: 'none' }}>
-              <div
-                style={{
-                  background: 'rgba(0,0,0,0.7)',
-                  color: it.color,
-                  padding: '2px 5px',
-                  borderRadius: 4,
-                  fontSize: 11,
-                  whiteSpace: 'nowrap',
-                  fontFamily: 'ui-monospace, monospace',
-                }}
-              >
+              <div data-role="load-label" style={{ ...LABEL_STYLE, color: it.color }}>
                 {it.label}
               </div>
             </Html>
@@ -459,9 +505,9 @@ function Scene({
         />
       ))}
       {showLoads && (
-        <LoadVectors op={op} disp={disp} scale={(g.outer_diameter_mm / 2) * 0.62} />
+        <LoadVectors op={op} disp={disp} scale={arrowLengths3d(g.bore_mm).load} />
       )}
-      <AxisMarker size={g.d_pw_mm * 0.28} />
+      <AxisMarker length={arrowLengths3d(g.bore_mm).axis} />
     </group>
   );
 }
@@ -525,7 +571,9 @@ export default function BbBearingView3D() {
   const stale = result !== null && resultInput !== null && resultInput !== bbInput;
 
   const rOD = g.outer_diameter_mm / 2;
-  const camPos: [number, number, number] = [rOD * 1.9, rOD * 1.25, rOD * 1.7];
+  // Plan §4-5.8 결정 4: +Y 를 화면 아래로 — 2D 뷰(ISO 16281 A.2.2)와 같은 볼이 같은 자리에 보인다.
+  // 카메라 up = −Y. 시점은 화면 위쪽(−Y) 에서 내려다보도록 y 를 음수로 둔다.
+  const camPos: [number, number, number] = [rOD * 1.9, -rOD * 1.25, rOD * 1.7];
 
   const tiltDeg =
     disp && (disp.ry_rad !== 0 || disp.rz_rad !== 0)
@@ -609,7 +657,7 @@ export default function BbBearingView3D() {
       )}
 
       <Canvas
-        camera={{ position: camPos, fov: 45, near: rOD * 0.02, far: rOD * 60 }}
+        camera={{ position: camPos, up: [0, -1, 0], fov: 45, near: rOD * 0.02, far: rOD * 60 }}
         style={{ background: '#0b1120' }}
       >
         <ambientLight intensity={0.5} />
@@ -625,6 +673,7 @@ export default function BbBearingView3D() {
           showRings={showRings}
         />
         <OrbitControls enableDamping dampingFactor={0.12} />
+        <GravityGizmo />
       </Canvas>
     </div>
   );
