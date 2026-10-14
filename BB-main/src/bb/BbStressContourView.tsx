@@ -37,20 +37,6 @@
 //  · ⚠ 임의의 다른 압력식(포물선 근사 등)을 쓰지 않는다. 쓰는 순간 `p_max` 와 어긋난다.
 //
 // ─────────────────────────────────────────────────────────────────────
-//  σ_Hu = 1 500 MPa 등고선
-// ─────────────────────────────────────────────────────────────────────
-//  `hertz.rs` 의 `pub const SIGMA_HU_MPA: f64 = 1500.0` (라인 337) 를 **소스에서 확인**해 옮겼다.
-//  근거는 ISO 281 Annex B.3.1 의 피로한계 접촉응력 권장값이며(Theory §6.3),
-//  `bearing.rs`·`commands.rs` 가 이 상수로 `CONTACT_STRESS_OVER_FATIGUE_LIMIT` 경고를 낸다.
-//  → 화면의 등고선과 `AlertPanel` 의 경고가 **같은 기준**임이 이 뷰에서 눈으로 이어진다
-//    (§3.6.4.2 의 `AlertPanel` 항목).
-//
-//  등고선은 격자에서 찾지 않고 **해석적으로** 그린다. `p = σ_Hu` 인 자취는
-//      (x/a)² + (y/b)² = 1 − (σ_Hu/p_max)²
-//  이므로 반경 `a·√(1−(σ_Hu/p_max)²)` · `b·√(…)` 인 **동심 타원**이다. 격자 해상도에
-//  좌우되지 않으므로 초과 면적비도 정확히 `1 − (σ_Hu/p_max)²` 로 낼 수 있다.
-//
-// ─────────────────────────────────────────────────────────────────────
 //  🔴 데이터 출처 — §3.6.4.7 의 경고
 // ─────────────────────────────────────────────────────────────────────
 //  「`bb_compute_contact` 를 접촉타원 뷰의 **주 데이터원으로 쓰면 안 된다.**
@@ -79,7 +65,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useAppState } from '../store';
 import Plot from '../components/charts/PlotWithCopy';
 import { darkLayout, plotConfig, viridisScale } from '../components/charts/plotlyDefaults';
-import { DetailTable, ErrorBox, WarnBox } from './ui';
+import { DetailTable, ErrorBox } from './ui';
 import type { BallResult } from './generated/BallResult';
 import type { BbContactDerived } from './generated/BbContactDerived';
 import type { Alert } from './generated/Alert';
@@ -97,17 +83,8 @@ import {
   fmtExp,
   C_INNER,
   C_OUTER,
-  C_HU,
 } from './shared';
 
-/**
- * ISO 281 Annex B.3.1 피로한계 접촉응력 [MPa].
- *
- * ⚠ **`src-tauri/src/solver/bb/hertz.rs` 의 `SIGMA_HU_MPA` (라인 337) 와 같은 값이어야 한다.**
- * 여기서 다른 값을 쓰면 화면의 등고선과 `AlertPanel` 의
- * `CONTACT_STRESS_OVER_FATIGUE_LIMIT` 경고가 **다른 기준**을 말하게 된다.
- */
-const SIGMA_HU_MPA = 1500;
 
 
 type Race = 'inner' | 'outer';
@@ -212,9 +189,6 @@ function PressureHeatmap({
   const edge = ringAt(0, '#ffffff', 'dot', `접촉 경계 (a = ${fmtMmFine(a)}, b = ${fmtMmFine(b)} mm)`);
   if (edge) data.push(edge);
 
-  // 🔴 σ_Hu 등고선 — `AlertPanel` 의 CONTACT_STRESS_OVER_FATIGUE_LIMIT 과 같은 기준
-  const hu = ringAt(SIGMA_HU_MPA, C_HU, 'dash', `σ_Hu = ${SIGMA_HU_MPA} MPa`);
-  if (hu) data.push(hu);
 
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
@@ -293,29 +267,6 @@ function PressureProfiles({ a, b, pMax }: { a: number; b: number; pMax: number }
     title: { text: '접촉면 단면 압력', font: { size: 14, color: '#e2e8f0' } },
     xaxis: { ...darkLayout.xaxis, title: { text: '접촉면 좌표 [mm]' } },
     yaxis: { ...darkLayout.yaxis, title: { text: 'p [MPa]' }, rangemode: 'tozero' },
-    shapes: [
-      {
-        type: 'line',
-        xref: 'paper',
-        x0: 0,
-        x1: 1,
-        y0: SIGMA_HU_MPA,
-        y1: SIGMA_HU_MPA,
-        line: { color: C_HU, width: 2, dash: 'dash' },
-      },
-    ],
-    annotations: [
-      {
-        xref: 'paper',
-        x: 0.99,
-        y: SIGMA_HU_MPA,
-        text: `σ_Hu = ${SIGMA_HU_MPA} MPa`,
-        showarrow: false,
-        xanchor: 'right',
-        yanchor: 'bottom',
-        font: { size: 11, color: C_HU },
-      },
-    ],
     showlegend: true,
     legend: { font: { size: 11, color: '#94a3b8' }, bgcolor: 'transparent' },
   };
@@ -439,7 +390,7 @@ export default function BbStressContourView() {
 
   const balls = result.equilibrium.ball_results;
 
-  // 기본 선택 = **최대하중 볼**. 그 볼이 σ_Hu 를 넘는지가 이 화면의 첫 질문이다.
+  // 기본 선택 = **최대하중 볼** — 접촉응력이 가장 큰 볼이다.
   let top = -1;
   for (let i = 0; i < balls.length; i++) {
     if (top < 0 || balls[i].q_n > balls[top].q_n) top = i;
@@ -456,9 +407,6 @@ export default function BbStressContourView() {
   const pMaxRelDiff =
     pMaxRecomputed !== null && el && el.pMax > 0 ? (pMaxRecomputed - el.pMax) / el.pMax : null;
 
-  const overHu = el !== null && el.pMax > SIGMA_HU_MPA;
-  // p = σ_Hu 등고선 안쪽의 면적비 (해석적) = 1 − (σ_Hu/p_max)²
-  const overHuAreaFrac = overHu && el ? 1 - (SIGMA_HU_MPA / el.pMax) ** 2 : 0;
 
   return (
     <div className="h-full overflow-auto custom-scrollbar p-4 space-y-5">
@@ -527,18 +475,6 @@ export default function BbStressContourView() {
             phiDeg={toDeg(ball.phi_rad)}
           />
 
-          {/* σ_Hu 초과 여부. 같은 상수로 AlertPanel 의 CONTACT_STRESS_OVER_FATIGUE_LIMIT 이 난다 (파일 헤더). */}
-          {overHu ? (
-            <WarnBox>
-              σ_Hu 초과 — {race === 'inner' ? '내륜' : '외륜'} p_max ={' '}
-              <span className="font-mono">{fmtMPa(el.pMax)}</span> MPa &gt; {SIGMA_HU_MPA} MPa
-            </WarnBox>
-          ) : (
-            <p className="text-[12px] text-text-canvas">
-              p_max = <span className="font-mono">{fmtMPa(el.pMax)}</span> MPa ≤ σ_Hu = {SIGMA_HU_MPA} MPa —
-              초과 영역 없음
-            </p>
-          )}
 
           <PressureProfiles a={el.a} b={el.b} pMax={el.pMax} />
 
@@ -564,9 +500,6 @@ export default function BbStressContourView() {
               ['평균압력 Q/(π a b)', fmtMPa(ball.q_n / (Math.PI * el.a * el.b)), 'MPa'],
               ['p_max 재계산 3Q/(2π a b)', pMaxRecomputed === null ? '—' : fmtMPa(pMaxRecomputed), 'MPa'],
               ['재계산 상대차 (솔버 대비)', pMaxRelDiff === null ? '—' : fmtExp(pMaxRelDiff), ''],
-              ['σ_Hu (ISO 281 Annex B.3.1)', fmtMPa(SIGMA_HU_MPA), 'MPa'],
-              ['p_max / σ_Hu', fmtDimless(el.pMax / SIGMA_HU_MPA), ''],
-              ['σ_Hu 초과 면적비', overHu ? fmtDimless(overHuAreaFrac) : '0', ''],
             ]}
           />
         </>

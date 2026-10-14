@@ -116,8 +116,6 @@ export const C_MOMENT = '#a3e635';
 export const C_RING_INNER = '#94a3b8';
 /** 3D — 외륜 실루엣 */
 export const C_RING_OUTER = '#64748b';
-/** 응력 등고선 — 경도 한계 `σ_HU` 경계 */
-export const C_HU = '#ef4444';
 /** 3D 축 X (회전축) */
 export const C_AXIS_X = '#f87171';
 /** 3D 축 Y (φ=0) */

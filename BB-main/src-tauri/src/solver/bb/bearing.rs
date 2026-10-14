@@ -587,24 +587,8 @@ pub fn solve_bearing(input: &BbInput) -> Result<BbResult, SolverError> {
         });
     }
 
-    let p_worst = base
-        .ball_results
-        .iter()
-        .map(|b| b.p_max_inner_mpa.max(b.p_max_outer_mpa))
-        .fold(0.0_f64, f64::max);
-    if p_worst > hertz::SIGMA_HU_MPA {
-        alerts.push(Alert {
-            level: if p_worst > 4_000.0 {
-                AlertLevel::Critical
-            } else {
-                AlertLevel::Warning
-            },
-            code: "CONTACT_STRESS_OVER_FATIGUE_LIMIT".into(),
-            message: format!(
-                "최대 접촉응력 {p_worst:.0} MPa 가 ISO 281 Annex B.3.1 권장 피로한계 1500 MPa 를 초과합니다"
-            ),
-        });
-    }
+    // 피로한계 접촉응력(σ_Hu) 초과 경고(CONTACT_STRESS_OVER_FATIGUE_LIMIT)는 2026-10-14 사용자 결정으로 내지 않는다.
+    // σ_Hu 상수는 수명의 C_u 계산(ISO 281 Annex B)에 계속 쓰인다.
 
     Ok(BbResult {
         // 판별자 — 입력의 변종을 그대로 반영한다 (§3.6.1.7)

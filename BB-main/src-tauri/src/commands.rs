@@ -109,22 +109,8 @@ pub fn bb_compute_contact(input: BbInput, q_n: f64) -> Result<ContactResponse, S
         q_n,
     );
 
-    let mut alerts = Vec::new();
-    let p_worst = p_i.max(p_e);
-    if p_worst > hertz::SIGMA_HU_MPA {
-        alerts.push(Alert {
-            level: if p_worst > 4_000.0 {
-                AlertLevel::Critical
-            } else {
-                AlertLevel::Warning
-            },
-            code: "CONTACT_STRESS_OVER_FATIGUE_LIMIT".into(),
-            message: format!(
-                "최대 접촉응력 {p_worst:.0} MPa 가 ISO 281 Annex B.3.1 권장 피로한계                  {:.0} MPa 를 초과합니다",
-                hertz::SIGMA_HU_MPA
-            ),
-        });
-    }
+    // 피로한계 접촉응력(σ_Hu) 초과 경고는 2026-10-14 사용자 결정으로 내지 않는다.
+    let alerts = Vec::new();
 
     Ok(ContactResponse {
         derived,

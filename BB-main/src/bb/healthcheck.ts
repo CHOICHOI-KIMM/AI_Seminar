@@ -494,7 +494,6 @@ async function run(): Promise<void> {
       ` delta_mm=${cq.delta_mm}` +
       ` a_i=${cq.a_inner_mm} b_i=${cq.b_inner_mm} p_i=${cq.p_max_inner_mpa}` +
       ` a_e=${cq.a_outer_mm} b_e=${cq.b_outer_mm} p_e=${cq.p_max_outer_mpa}` +
-      ` sigma_hu_mpa=1500` +
       ` alerts=${Array.isArray(cq.alerts) ? cq.alerts.length : 'n/a'}`
   );
   await logInfo(
@@ -903,6 +902,14 @@ async function measureFormat(): Promise<string[]> {
     pl => ((pl as Element & { data?: { type?: string }[] }).data ?? [])
   ).filter(t => t.type === 'bar').length;
   if (lifeBars) bad.push(`Life: 막대 차트 ${lifeBars}개 잔존`);
+
+  // σ_Hu (2026-10-14 삭제) — Stress Contour 에 「σ_Hu」 0 · 화면 어디에도 피로한계 경고 코드 0
+  buttonByText('Stress Contour')?.click();
+  const mS = document.querySelector('main');
+  await waitStable(() => mS?.textContent ?? '');
+  if ((mS?.textContent ?? '').includes('σ_Hu')) bad.push('Stress Contour: σ_Hu 표기 잔존');
+  if ((document.body.textContent ?? '').includes('CONTACT_STRESS_OVER_FATIGUE_LIMIT'))
+    bad.push('경고: CONTACT_STRESS_OVER_FATIGUE_LIMIT 잔존');
 
   // 3D 뷰 (Plan §4-5.8) — 라벨 겹침 0 · 축 글자 X·Y(G)·Z · +Y 가 화면 아래 · 틸트 정보 없음
   buttonByText('3D View')?.click();

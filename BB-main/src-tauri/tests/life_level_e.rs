@@ -982,3 +982,34 @@ fn e10i_p_r_is_now_available_below_twenty_degrees() {
     let r40 = bb_core::commands::solve_life(&life_input(), &BbLifeConditions::default()).unwrap();
     assert!(r40.p_r_n.is_some());
 }
+
+// ═══════════════════════════════════════════════════════════════════
+//  σ_Hu 초과 경고 미발생 (2026-10-14 사용자 결정)
+// ═══════════════════════════════════════════════════════════════════
+
+/// 피로한계 접촉응력 초과 경고(`CONTACT_STRESS_OVER_FATIGUE_LIMIT`)는 더 이상 내지 않는다.
+/// 전제(p_max > σ_Hu)가 실제로 성립하는 입력에서, 평형 해석·접촉 커맨드 둘 다 경고가 없음을 확인한다.
+/// σ_Hu 상수는 C_u(ISO 281 Annex B) 계산에 계속 쓰이므로 값은 그대로다.
+#[test]
+fn no_fatigue_limit_alert_even_when_p_max_exceeds_sigma_hu() {
+    let input = life_input();
+    let r = bb_core::solver::bb::bearing::solve_bearing(&input).unwrap();
+    let p_worst = r
+        .equilibrium
+        .ball_results
+        .iter()
+        .map(|b| b.p_max_inner_mpa.max(b.p_max_outer_mpa))
+        .fold(0.0_f64, f64::max);
+    assert!(p_worst > hertz::SIGMA_HU_MPA, "전제: p_max {p_worst} > σ_Hu");
+    assert!(
+        !r.alerts.iter().any(|a| a.code == "CONTACT_STRESS_OVER_FATIGUE_LIMIT"),
+        "평형 해석 결과에 σ_Hu 경고가 남아 있다"
+    );
+
+    let c = bb_core::commands::bb_compute_contact(input, r.equilibrium.q_max_n).unwrap();
+    assert!(c.p_max_inner_mpa.max(c.p_max_outer_mpa) > hertz::SIGMA_HU_MPA);
+    assert!(
+        !c.alerts.iter().any(|a| a.code == "CONTACT_STRESS_OVER_FATIGUE_LIMIT"),
+        "접촉 커맨드 결과에 σ_Hu 경고가 남아 있다"
+    );
+}
