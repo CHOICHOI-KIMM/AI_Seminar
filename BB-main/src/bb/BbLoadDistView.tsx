@@ -481,16 +481,16 @@ function PhaseSweepChart({
       <DetailTable
         title="Phase Sweep"
         rows={[
-          ['주기 2π/Z', fmtDeg(periodDeg), '°'],
-          ['스윕 점수 (curve 길이)', String(sweep.curve.length), ''],
-          ['worst Q_max', fmtN(sweep.worst_q_max_n), 'N'],
-          ['worst Q_max 발생 φ₀', fmtDeg(toDeg(sweep.worst_q_max_phase_rad)), '°'],
-          ['worst p_max', fmtMPa(sweep.worst_p_max_mpa), 'MPa'],
-          ['worst p_max 발생 φ₀', fmtDeg(toDeg(sweep.worst_p_max_phase_rad)), '°'],
+          ['Sweep period (2π/Z)', fmtDeg(periodDeg), '°'],
+          ['Sweep points', String(sweep.curve.length), ''],
+          ['Worst max ball load (Q_max)', fmtN(sweep.worst_q_max_n), 'N'],
+          ['Phase at worst Q_max (φ₀)', fmtDeg(toDeg(sweep.worst_q_max_phase_rad)), '°'],
+          ['Worst max contact pressure (p_max)', fmtMPa(sweep.worst_p_max_mpa), 'MPa'],
+          ['Phase at worst p_max (φ₀)', fmtDeg(toDeg(sweep.worst_p_max_phase_rad)), '°'],
           // φ₀ = 0 은 기본해(`equilibrium`)와 **같은 배치**다. 두 값을 나란히 내면
           // 스윕 경로와 기본 경로가 갈라졌는지 화면에서 바로 보인다.
-          ['curve[0] Q_max (φ₀ = 0)', sweep.curve.length > 0 ? fmtN(sweep.curve[0][1]) : '—', 'N'],
-          ['equilibrium.q_max_n (φ₀ = 0)', fmtN(baseQMaxN), 'N'],
+          ['Sweep max ball load at φ₀ = 0 (Q_max)', sweep.curve.length > 0 ? fmtN(sweep.curve[0][1]) : '—', 'N', '스윕 curve[0]'],
+          ['Equilibrium max ball load (Q_max)', fmtN(baseQMaxN), 'N', '기본해 φ₀ = 0 — 위 값과 같아야 한다'],
         ]}
       />
     </div>
@@ -512,11 +512,11 @@ function BallTable({ balls }: { balls: BallResult[] }) {
     'α_j [°]',
     'a_i [mm]',
     'b_i [mm]',
-    'a/b_i',
+    'Inner ellipse ratio (a/b_i)',
     'p_max,i [MPa]',
     'a_e [mm]',
     'b_e [mm]',
-    'a/b_e',
+    'Outer ellipse ratio (a/b_e)',
     'p_max,e [MPa]',
   ];
   return (
@@ -603,12 +603,12 @@ export default function BbLoadDistView() {
       <DetailTable
         title="Load Zone"
         rows={[
-          ['접촉 볼 수 / Z', `${eq.loaded_count} / ${balls.length}`, ''],
-          ['Q_max', fmtN(eq.q_max_n), 'N'],
-          ['볼 간격 2π/Z', fmtDeg(balls.length > 0 ? 360 / balls.length : 0), '°'],
-          ['φ_F 외부 반경하중 방위', loadPhiDeg === null ? '—' : fmtDeg(loadPhiDeg), '°'],
-          ['|F_r| = √(F_y² + F_z²)', fmtN(loadMagN), 'N'],
-          ['converged / iterations', `${String(eq.converged)} / ${eq.iterations}`, ''],
+          ['Loaded balls (Z_l / Z)', `${eq.loaded_count} / ${balls.length}`, ''],
+          ['Max ball load (Q_max)', fmtN(eq.q_max_n), 'N'],
+          ['Ball spacing (Δφ)', fmtDeg(balls.length > 0 ? 360 / balls.length : 0), '°', 'Δφ = 2π/Z'],
+          ['Radial load direction (φ_F)', loadPhiDeg === null ? '—' : fmtDeg(loadPhiDeg), '°'],
+          ['Radial load (|F_r|)', fmtN(loadMagN), 'N', '|F_r| = √(F_y² + F_z²)'],
+          ['Converged / iterations', `${String(eq.converged)} / ${eq.iterations}`, ''],
         ]}
       />
 

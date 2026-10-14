@@ -302,22 +302,22 @@ function PressureProfiles({ a, b, pMax }: { a: number; b: number; pMax: number }
 function DerivedTable({ derived }: { derived: BbContactDerived }) {
   return (
     <DetailTable
-      title="하중 무관 전처리"
+      title="Load-Independent Contact Constants"
       rows={[
-        ['χ_i = a/b (내륜)', fmtDimless(derived.chi_inner), ''],
-        ['χ_e = a/b (외륜)', fmtDimless(derived.chi_outer), ''],
-        ['K(χ_i)', fmtDimless(derived.k_ellip_inner), ''],
-        ['E(χ_i)', fmtDimless(derived.e_ellip_inner), ''],
-        ['K(χ_e)', fmtDimless(derived.k_ellip_outer), ''],
-        ['E(χ_e)', fmtDimless(derived.e_ellip_outer), ''],
-        ['a*_i (Harris 6.44)', fmtDimless(derived.a_star_inner), ''],
-        ['b*_i (Harris 6.45)', fmtDimless(derived.b_star_inner), ''],
-        ['δ*_i (Harris 6.46)', fmtDimless(derived.delta_star_inner), ''],
-        ['a*_e', fmtDimless(derived.a_star_outer), ''],
-        ['b*_e', fmtDimless(derived.b_star_outer), ''],
-        ['δ*_e', fmtDimless(derived.delta_star_outer), ''],
-        ['E* 등가 탄성계수', fmtGPa(derived.e_star_mpa), 'GPa'],
-        ['c_P 점접촉 스프링상수', fmtStiff(derived.c_p_n_per_mm15), 'N/mm^(3/2)'],
+        ['Inner ellipticity ratio (χ_i)', fmtDimless(derived.chi_inner), '', 'χ = a/b'],
+        ['Outer ellipticity ratio (χ_e)', fmtDimless(derived.chi_outer), '', 'χ = a/b'],
+        ['Inner elliptic integral, 1st kind (K(χ_i))', fmtDimless(derived.k_ellip_inner), ''],
+        ['Inner elliptic integral, 2nd kind (E(χ_i))', fmtDimless(derived.e_ellip_inner), ''],
+        ['Outer elliptic integral, 1st kind (K(χ_e))', fmtDimless(derived.k_ellip_outer), ''],
+        ['Outer elliptic integral, 2nd kind (E(χ_e))', fmtDimless(derived.e_ellip_outer), ''],
+        ['Inner semi-major axis factor (a*_i)', fmtDimless(derived.a_star_inner), '', 'Harris (6.44)'],
+        ['Inner semi-minor axis factor (b*_i)', fmtDimless(derived.b_star_inner), '', 'Harris (6.45)'],
+        ['Inner deformation factor (δ*_i)', fmtDimless(derived.delta_star_inner), '', 'Harris (6.46)'],
+        ['Outer semi-major axis factor (a*_e)', fmtDimless(derived.a_star_outer), '', 'Harris (6.44)'],
+        ['Outer semi-minor axis factor (b*_e)', fmtDimless(derived.b_star_outer), '', 'Harris (6.45)'],
+        ['Outer deformation factor (δ*_e)', fmtDimless(derived.delta_star_outer), '', 'Harris (6.46)'],
+        ['Equivalent elastic modulus (E*)', fmtGPa(derived.e_star_mpa), 'GPa'],
+        ['Point contact stiffness (c_P)', fmtStiff(derived.c_p_n_per_mm15), 'N/mm^(3/2)'],
       ]}
     />
   );
@@ -479,27 +479,27 @@ export default function BbStressContourView() {
           <PressureProfiles a={el.a} b={el.b} pMax={el.pMax} />
 
           <DetailTable
-            title={`선택 볼 #${sel + 1}`}
+            title={`Selected Ball #${sel + 1}`}
             rows={[
-              ['φ_j 각위치', fmtDeg(toDeg(ball.phi_rad)), '°'],
-              ['δ_j 총 탄성변형', fmtUm(ball.delta_mm), 'μm'],
-              ['α_j 운전 접촉각', fmtDeg(toDeg(ball.alpha_rad)), '°'],
-              ['Q_j 볼 하중', fmtN(ball.q_n), 'N'],
-              ['— 내륜 —', '', ''],
-              ['a_i 장반경', fmtMmFine(ball.a_inner_mm), 'mm'],
-              ['b_i 단반경', fmtMmFine(ball.b_inner_mm), 'mm'],
-              ['a/b_i 타원비', ball.b_inner_mm > 0 ? fmtDimless(ball.a_inner_mm / ball.b_inner_mm) : '—', ''],
-              ['p_max,i', fmtMPa(ball.p_max_inner_mpa), 'MPa'],
-              ['— 외륜 —', '', ''],
-              ['a_e 장반경', fmtMmFine(ball.a_outer_mm), 'mm'],
-              ['b_e 단반경', fmtMmFine(ball.b_outer_mm), 'mm'],
-              ['a/b_e 타원비', ball.b_outer_mm > 0 ? fmtDimless(ball.a_outer_mm / ball.b_outer_mm) : '—', ''],
-              ['p_max,e', fmtMPa(ball.p_max_outer_mpa), 'MPa'],
-              ['— 표시 중인 궤도 대조 —', race === 'inner' ? '내륜' : '외륜', ''],
-              ['접촉면적 π·a·b', fmtMm2(Math.PI * el.a * el.b), 'mm²'],
-              ['평균압력 Q/(π a b)', fmtMPa(ball.q_n / (Math.PI * el.a * el.b)), 'MPa'],
-              ['p_max 재계산 3Q/(2π a b)', pMaxRecomputed === null ? '—' : fmtMPa(pMaxRecomputed), 'MPa'],
-              ['재계산 상대차 (솔버 대비)', pMaxRelDiff === null ? '—' : fmtExp(pMaxRelDiff), ''],
+              ['Azimuth angle (φ_j)', fmtDeg(toDeg(ball.phi_rad)), '°'],
+              ['Total elastic deformation (δ_j)', fmtUm(ball.delta_mm), 'μm'],
+              ['Operating contact angle (α_j)', fmtDeg(toDeg(ball.alpha_rad)), '°'],
+              ['Ball load (Q_j)', fmtN(ball.q_n), 'N'],
+              ['— Inner race —', '', ''],
+              ['Inner semi-major axis (a_i)', fmtMmFine(ball.a_inner_mm), 'mm'],
+              ['Inner semi-minor axis (b_i)', fmtMmFine(ball.b_inner_mm), 'mm'],
+              ['Inner ellipse ratio (a/b_i)', ball.b_inner_mm > 0 ? fmtDimless(ball.a_inner_mm / ball.b_inner_mm) : '—', ''],
+              ['Inner max contact pressure (p_max,i)', fmtMPa(ball.p_max_inner_mpa), 'MPa'],
+              ['— Outer race —', '', ''],
+              ['Outer semi-major axis (a_e)', fmtMmFine(ball.a_outer_mm), 'mm'],
+              ['Outer semi-minor axis (b_e)', fmtMmFine(ball.b_outer_mm), 'mm'],
+              ['Outer ellipse ratio (a/b_e)', ball.b_outer_mm > 0 ? fmtDimless(ball.a_outer_mm / ball.b_outer_mm) : '—', ''],
+              ['Outer max contact pressure (p_max,e)', fmtMPa(ball.p_max_outer_mpa), 'MPa'],
+              ['— Displayed race check —', race === 'inner' ? 'Inner' : 'Outer', ''],
+              ['Contact area (A_c)', fmtMm2(Math.PI * el.a * el.b), 'mm²', 'A_c = π·a·b'],
+              ['Mean contact pressure (p_mean)', fmtMPa(ball.q_n / (Math.PI * el.a * el.b)), 'MPa', 'p_mean = Q / (π a b)'],
+              ['Recomputed max contact pressure (p_max)', pMaxRecomputed === null ? '—' : fmtMPa(pMaxRecomputed), 'MPa', 'p_max = 3Q / (2π a b)'],
+              ['Relative difference (p_max)', pMaxRelDiff === null ? '—' : fmtExp(pMaxRelDiff), '', '(재계산 − 솔버) / 솔버'],
             ]}
           />
         </>
@@ -542,26 +542,26 @@ export default function BbStressContourView() {
         {whatIfErr && <ErrorBox title="bb_compute_contact 실패" message={whatIfErr} />}
         {whatIf && (
           <DetailTable
-            title={`what-if — q_n = ${fmtN(whatIf.q_n)} N`}
+            title={`What-if (Q = ${fmtN(whatIf.q_n)} N)`}
             rows={[
-              ['δ 총 탄성변형', fmtUm(whatIf.delta_mm), 'μm'],
-              ['a_i', fmtMmFine(whatIf.a_inner_mm), 'mm'],
-              ['b_i', fmtMmFine(whatIf.b_inner_mm), 'mm'],
+              ['Total elastic deformation (δ)', fmtUm(whatIf.delta_mm), 'μm'],
+              ['Inner semi-major axis (a_i)', fmtMmFine(whatIf.a_inner_mm), 'mm'],
+              ['Inner semi-minor axis (b_i)', fmtMmFine(whatIf.b_inner_mm), 'mm'],
               [
-                'a/b_i',
+                'Inner ellipse ratio (a/b_i)',
                 whatIf.b_inner_mm > 0 ? fmtDimless(whatIf.a_inner_mm / whatIf.b_inner_mm) : '—',
                 '',
               ],
-              ['p_max,i', fmtMPa(whatIf.p_max_inner_mpa), 'MPa'],
-              ['a_e', fmtMmFine(whatIf.a_outer_mm), 'mm'],
-              ['b_e', fmtMmFine(whatIf.b_outer_mm), 'mm'],
+              ['Inner max contact pressure (p_max,i)', fmtMPa(whatIf.p_max_inner_mpa), 'MPa'],
+              ['Outer semi-major axis (a_e)', fmtMmFine(whatIf.a_outer_mm), 'mm'],
+              ['Outer semi-minor axis (b_e)', fmtMmFine(whatIf.b_outer_mm), 'mm'],
               [
-                'a/b_e',
+                'Outer ellipse ratio (a/b_e)',
                 whatIf.b_outer_mm > 0 ? fmtDimless(whatIf.a_outer_mm / whatIf.b_outer_mm) : '—',
                 '',
               ],
-              ['p_max,e', fmtMPa(whatIf.p_max_outer_mpa), 'MPa'],
-              ['alerts', String(whatIf.alerts.length), '건'],
+              ['Outer max contact pressure (p_max,e)', fmtMPa(whatIf.p_max_outer_mpa), 'MPa'],
+              ['Alerts', String(whatIf.alerts.length), ''],
             ]}
           />
         )}

@@ -827,6 +827,16 @@ async function measureFormat(): Promise<string[]> {
     if (!main) continue;
     rows += main.querySelectorAll('tr').length;
     bad.push(...checkDecimals(main, `${t}: `));
+    // 표 라벨 = 「English name (symbol)」 (2026-10-14) — 라벨 칸·표 제목에 한글이 남으면 위반
+    main.querySelectorAll('tr').forEach(tr => {
+      const td = tr.querySelectorAll('td');
+      const label = td.length === 3 ? (td[0].textContent ?? '').trim() : '';
+      if (/[가-힣]/.test(label)) bad.push(`${t}: 표 라벨 한글 잔존「${label}」`);
+    });
+    main.querySelectorAll('table').forEach(tb => {
+      const h = (tb.previousElementSibling?.tagName === 'H4' ? tb.previousElementSibling.textContent : '') ?? '';
+      if (/[가-힣]/.test(h)) bad.push(`${t}: 표 제목 한글 잔존「${h.trim()}」`);
+    });
     // 설명 문구 잔존 — 상단 안내 배너 · 개발 메모.
     // ⚠ 배너는 `p-2.5` + 파란 배경으로 식별한다. 파란 배경만 보면 AlertList 의 Info 알림(`p-2`)까지
     //    걸린다 (첫 실측에서 Life 의 Info 알림을 배너로 오판했다).

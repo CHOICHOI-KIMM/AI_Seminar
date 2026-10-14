@@ -1138,26 +1138,28 @@ export default function BbAxialSectionView() {
             </div>
             <div className="min-w-[22rem] flex-1">
               <DetailTable
-                title="방위 대조"
+                title="Tilt vs Moment Direction"
                 rows={[
-                  ['틸트 γ_y', fmtUrad(disp?.ry_rad ?? 0), 'μrad'],
-                  ['틸트 γ_z', fmtUrad(disp?.rz_rad ?? 0), 'μrad'],
-                  ['틸트 크기 |γ|', fmtUrad(tiltMag), 'μrad'],
+                  ['Tilt about Y (γ_y)', fmtUrad(disp?.ry_rad ?? 0), 'μrad'],
+                  ['Tilt about Z (γ_z)', fmtUrad(disp?.rz_rad ?? 0), 'μrad'],
+                  ['Tilt magnitude (|γ|)', fmtUrad(tiltMag), 'μrad'],
                   [
-                    '틸트 방위 atan2(γ_z, γ_y)  〔0°=+Y=아래〕',
-                    tiltDeg === null ? '정의 없음 (|γ| = 0)' : fmtDeg(tiltDeg),
+                    'Tilt direction (φ_γ)',
+                    tiltDeg === null ? 'n/a (|γ| = 0)' : fmtDeg(tiltDeg),
                     '°',
+                    'atan2(γ_z, γ_y) · 0° = +Y = 아래',
                   ],
-                  ['모멘트 M_y (resultInput)', fmtNm(op.m_y_nmm), 'N·m'],
-                  ['모멘트 M_z (resultInput)', fmtNm(op.m_z_nmm), 'N·m'],
+                  ['Moment about Y (M_y)', fmtNm(op.m_y_nmm), 'N·m'],
+                  ['Moment about Z (M_z)', fmtNm(op.m_z_nmm), 'N·m'],
                   [
-                    '모멘트 방위 atan2(M_z, M_y)  〔0°=+Y=아래〕',
-                    momDeg === null ? '정의 없음 (|M| = 0)' : fmtDeg(momDeg),
+                    'Moment direction (φ_M)',
+                    momDeg === null ? 'n/a (|M| = 0)' : fmtDeg(momDeg),
                     '°',
+                    'atan2(M_z, M_y) · 0° = +Y = 아래',
                   ],
-                  ['Δ = 틸트 − 모멘트 (규약 무관 — 차이값)', deltaDeg === null ? '—' : fmtDeg(deltaDeg), '°'],
-                  ['반경하중 |F_r| (등방성 판정용)', fmtN(radMag), 'N'],
-                  ['볼 수 Z (이산성 — Δ 허용폭 근거)', String(zCount), '개'],
+                  ['Direction difference (Δ)', deltaDeg === null ? '—' : fmtDeg(deltaDeg), '°', 'Δ = φ_γ − φ_M (규약 무관 — 차이값)'],
+                  ['Radial load (|F_r|)', fmtN(radMag), 'N', '등방성 판정용'],
+                  ['Number of balls (Z)', String(zCount), '', '이산성 — Δ 허용폭 근거'],
                 ]}
               />
               {/* 판정 4단의 근거는 파일 머리 주석 「D-2d 를 어떻게 보이는가」 */}
@@ -1196,47 +1198,48 @@ export default function BbAxialSectionView() {
 
       {/* ── 검산표 ─────────────────────────────────────────────────── */}
       <DetailTable
-        title="기하 항등"
+        title="Geometry Identity Check"
         rows={[
-          ['A (솔버, a_mm)', fmtMm(f.aMm), 'mm'],
-          ['A 재계산 = r_i + r_e − D_w  (A.3)', fmtMm(aIdentity), 'mm'],
-          ['A 상대차', fmtExp(f.aMm !== 0 ? (aIdentity - f.aMm) / f.aMm : 0), '—'],
-          ['α₀ (솔버, alpha_0_rad)', fmtDeg(toDeg(f.alpha0)), '°'],
-          ['R_i (솔버, r_i_center_mm)', fmtMm(derived.r_i_center_mm), 'mm'],
-          ['R_i = 그림의 O_i 반경  (A.4)', fmtMm(f.riCenterCheck), 'mm'],
-          ['R_i 재계산 = D_pw/2 + (r_i − D_w/2) cos α₀', fmtMm(riIdentity), 'mm'],
+          ['Curvature center distance (A)', fmtMm(f.aMm), 'mm', '솔버 값'],
+          ['Recomputed curvature center distance (A)', fmtMm(aIdentity), 'mm', 'A = r_i + r_e − D_w — ISO 16281 (A.3)'],
+          ['Relative difference (A)', fmtExp(f.aMm !== 0 ? (aIdentity - f.aMm) / f.aMm : 0), '—', '(재계산 − 솔버) / 솔버'],
+          ['Initial contact angle (α₀)', fmtDeg(toDeg(f.alpha0)), '°', '솔버 값'],
+          ['Inner curvature center radius (R_i)', fmtMm(derived.r_i_center_mm), 'mm', '솔버 값'],
+          ['Drawn inner curvature center radius (R_i)', fmtMm(f.riCenterCheck), 'mm', '그림의 O_i 반경 — ISO 16281 (A.4)'],
+          ['Recomputed inner curvature center radius (R_i)', fmtMm(riIdentity), 'mm', 'R_i = D_pw/2 + (r_i − D_w/2) cos α₀'],
           [
-            'R_i 상대차 (그림 ↔ 솔버)',
+            'Relative difference (R_i)',
             fmtExp(derived.r_i_center_mm !== 0 ? (f.riCenterCheck - derived.r_i_center_mm) / derived.r_i_center_mm : 0),
             '—',
+            '(그림 − 솔버) / 솔버',
           ],
-          ['O_i 축위치', fmtMm(f.Oi[0]), 'mm'],
-          ['O_e 축위치', fmtMm(f.Oe[0]), 'mm'],
-          ['O_e 반경 = D_pw/2 − (r_e − D_w/2) cos α₀', fmtMm(f.Oe[1]), 'mm'],
-          ['내륜 접촉점 P_i (x, r)', `${fmtMm(f.Pi[0])}, ${fmtMm(f.Pi[1])}`, 'mm'],
-          ['외륜 접촉점 P_e (x, r)', `${fmtMm(f.Pe[0])}, ${fmtMm(f.Pe[1])}`, 'mm'],
+          ['Inner curvature center axial position (O_i,x)', fmtMm(f.Oi[0]), 'mm'],
+          ['Outer curvature center axial position (O_e,x)', fmtMm(f.Oe[0]), 'mm'],
+          ['Outer curvature center radius (O_e,r)', fmtMm(f.Oe[1]), 'mm', 'O_e,r = D_pw/2 − (r_e − D_w/2) cos α₀'],
+          ['Inner contact point (P_i)', `${fmtMm(f.Pi[0])}, ${fmtMm(f.Pi[1])}`, 'mm', '(x, r)'],
+          ['Outer contact point (P_e)', `${fmtMm(f.Pe[0])}, ${fmtMm(f.Pe[1])}`, 'mm', '(x, r)'],
         ]}
       />
 
       {ov && ball && (
         <DetailTable
-          title={`하중 후 — 볼 #${sel + 1} (φ_j = ${fmtDeg(toDeg(phiRad))}°)`}
+          title={`Loaded Ball #${sel + 1} (φ_j = ${fmtDeg(toDeg(phiRad))}°)`}
           rows={[
-            ['접촉 여부', ball.loaded ? '접촉' : '비접촉', '—'],
-            ['Q_j 볼 하중', fmtN(ball.q_n), 'N'],
-            ['δ_x (Displacement.dx_mm)', fmtUm(ov.dxOnly), 'μm'],
-            ['틸트항 −R_i(γ_z cos φ_j − γ_y sin φ_j)', fmtUm(ov.tiltTerm), 'μm'],
-            ['ΔX = δ_x + 틸트항', fmtUm(ov.dX), 'μm'],
-            ['ΔR = δ_y cos φ_j + δ_z sin φ_j', fmtUm(ov.dR), 'μm'],
-            ['X_j = A sin α₀ + ΔX', fmtMm(xJ), 'mm'],
-            ['R_j = A cos α₀ + ΔR', fmtMm(rJ), 'mm'],
-            ['α_j (솔버, alpha_rad)', fmtDeg(toDeg(ball.alpha_rad)), '°'],
-            ['α_j 재계산 = atan2(X_j, R_j)', fmtDeg(toDeg(alphaRecomputed)), '°'],
-            ['α_j 상대차', alphaRelDiff === null ? '—' : fmtExp(alphaRelDiff), '—'],
-            ['α_j − α₀ (벌어진 양)', fmtDeg(toDeg(ball.alpha_rad - f.alpha0)), '°'],
-            ['δ_j (솔버, delta_mm)', fmtUm(ball.delta_mm), 'μm'],
-            ['δ_j 재계산 = max(0, √(X_j²+R_j²) − A)', fmtUm(deltaRecomputed), 'μm'],
-            ['δ_j 상대차', deltaRelDiff === null ? '—' : fmtExp(deltaRelDiff), '—'],
+            ['Contact state', ball.loaded ? 'Loaded' : 'Unloaded', '—'],
+            ['Ball load (Q_j)', fmtN(ball.q_n), 'N'],
+            ['Axial displacement (δ_x)', fmtUm(ov.dxOnly), 'μm'],
+            ['Tilt term (ΔX_γ)', fmtUm(ov.tiltTerm), 'μm', 'ΔX_γ = −R_i (γ_z cos φ_j − γ_y sin φ_j)'],
+            ['Axial approach (ΔX)', fmtUm(ov.dX), 'μm', 'ΔX = δ_x + ΔX_γ'],
+            ['Radial approach (ΔR)', fmtUm(ov.dR), 'μm', 'ΔR = δ_y cos φ_j + δ_z sin φ_j'],
+            ['Axial center distance (X_j)', fmtMm(xJ), 'mm', 'X_j = A sin α₀ + ΔX'],
+            ['Radial center distance (R_j)', fmtMm(rJ), 'mm', 'R_j = A cos α₀ + ΔR'],
+            ['Operating contact angle (α_j)', fmtDeg(toDeg(ball.alpha_rad)), '°', '솔버 값'],
+            ['Recomputed contact angle (α_j)', fmtDeg(toDeg(alphaRecomputed)), '°', 'α_j = atan2(X_j, R_j)'],
+            ['Relative difference (α_j)', alphaRelDiff === null ? '—' : fmtExp(alphaRelDiff), '—', '(재계산 − 솔버) / 솔버'],
+            ['Contact angle change (α_j − α₀)', fmtDeg(toDeg(ball.alpha_rad - f.alpha0)), '°'],
+            ['Total elastic deformation (δ_j)', fmtUm(ball.delta_mm), 'μm', '솔버 값'],
+            ['Recomputed elastic deformation (δ_j)', fmtUm(deltaRecomputed), 'μm', 'δ_j = max(0, √(X_j² + R_j²) − A)'],
+            ['Relative difference (δ_j)', deltaRelDiff === null ? '—' : fmtExp(deltaRelDiff), '—', '(재계산 − 솔버) / 솔버'],
           ]}
         />
       )}

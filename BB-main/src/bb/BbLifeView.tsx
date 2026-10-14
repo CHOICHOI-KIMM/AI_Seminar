@@ -308,46 +308,46 @@ export default function BbLifeView() {
             </div>
 
             <DetailTable
-              title="사슬"
+              title="Dynamic Rating Chain"
               rows={[
-                ['f_c (ISO 281 Table 2)', fmtDimless(life.f_c), '—'],
-                ['b_m (ISO 281 Table 1)', fmtDimless(life.b_m), '—'],
-                ['C_r (채택)', fmtKN(life.c_r_n), 'kN'],
-                ['C_r (식 (1)/(2) 자체산출)', fmtKN(life.c_r_computed_n), 'kN'],
-                ['Q_ci — 내륜 등가 공칭 (1)', fmtN(life.q_ci_n), 'N'],
-                ['Q_ce — 외륜 등가 공칭 (2)', fmtN(life.q_ce_n), 'N'],
-                ['Q_ei — 내륜 동등가 (5)/(6)', fmtN(life.q_ei_n), 'N'],
-                ['Q_ee — 외륜 동등가 (7)/(8)', fmtN(life.q_ee_n), 'N'],
-                ['L_10r — 기본 기준정격수명 (9)', fmtMrev(life.l_10r_mrev), '10⁶ rev'],
-                ['P_ref r — 동등가 기준하중 (11)', fmtKN(life.p_ref_r_n), 'kN'],
-                ['P_r — ISO 281 카탈로그 동등가하중', opt(life.p_r_n, fmtKN), 'kN'],
-                ['Q_u = min(Q_ui, Q_ue) (B.1)(B.9)', fmtN(life.q_u_n), 'N'],
-                ['C_u (채택)', fmtKN(life.c_u_n), 'kN'],
-                ['C_u — 정밀법 (B.10)/(B.11)', fmtKN(life.c_u_precise_n), 'kN'],
-                ['C_u — 간이법 (B.18)/(B.19)', fmtKN(life.c_u_simplified_n), 'kN'],
+                ['Geometry factor (f_c)', fmtDimless(life.f_c), '—', 'ISO 281 Table 2'],
+                ['Rating factor (b_m)', fmtDimless(life.b_m), '—', 'ISO 281 Table 1'],
+                ['Basic dynamic load rating (C_r)', fmtKN(life.c_r_n), 'kN', '채택값'],
+                ['Computed dynamic load rating (C_r)', fmtKN(life.c_r_computed_n), 'kN', 'ISO 281 식 (1)/(2) 자체 산출'],
+                ['Inner contact dynamic load rating (Q_ci)', fmtN(life.q_ci_n), 'N', 'ISO 16281 (1)'],
+                ['Outer contact dynamic load rating (Q_ce)', fmtN(life.q_ce_n), 'N', 'ISO 16281 (2)'],
+                ['Inner dynamic equivalent ball load (Q_ei)', fmtN(life.q_ei_n), 'N', 'ISO 16281 (5)/(6)'],
+                ['Outer dynamic equivalent ball load (Q_ee)', fmtN(life.q_ee_n), 'N', 'ISO 16281 (7)/(8)'],
+                ['Basic reference rating life (L_10r)', fmtMrev(life.l_10r_mrev), '10⁶ rev', 'ISO 16281 (9)'],
+                ['Dynamic equivalent reference load (P_ref,r)', fmtKN(life.p_ref_r_n), 'kN', 'ISO 16281 (11)'],
+                ['Dynamic equivalent radial load (P_r)', opt(life.p_r_n, fmtKN), 'kN', 'ISO 281 카탈로그 방식'],
+                ['Fatigue limit ball load (Q_u)', fmtN(life.q_u_n), 'N', 'Q_u = min(Q_ui, Q_ue) — ISO 16281 (B.1)(B.9)'],
+                ['Fatigue load limit (C_u)', fmtKN(life.c_u_n), 'kN', '채택값'],
+                ['Fatigue load limit, precise (C_u)', fmtKN(life.c_u_precise_n), 'kN', 'ISO 16281 (B.10)/(B.11)'],
+                ['Fatigue load limit, simplified (C_u)', fmtKN(life.c_u_simplified_n), 'kN', 'ISO 16281 (B.18)/(B.19)'],
               ]}
             />
 
             {/* ⚠ ν₁ 은 위 사슬과 **다른 단**이다 — ν 없이도 항상 나온다 (파일 헤더). */}
             <DetailTable
-              title="윤활 보정"
+              title="Life Modification (a_ISO)"
               rows={[
-                ['ν₁ — 기준 동점도 (28)/(29)', opt(life.nu_1_mm2_s, fmtVisc), 'mm²/s'],
-                ['ν — 입력 실동점도', cond.nu_mm2_s === 0 ? '' : fmtVisc(cond.nu_mm2_s), 'mm²/s'],
-                ['κ = ν/ν₁ (27)', opt(life.kappa, fmtDimless), '—'],
-                ['e_C — 오염계수', fmtDimless(cond.e_c), '—'],
-                ['a_ISO (31)~(33)', opt(life.a_iso, fmtDimless), '—'],
-                ['a_1 — 신뢰도 계수', fmtDimless(life.a_1), '—'],
-                ['L_nmr — 수정 기준정격수명 (13)', opt(life.l_nmr_mrev, fmtMrev), '10⁶ rev'],
+                ['Reference viscosity (ν₁)', opt(life.nu_1_mm2_s, fmtVisc), 'mm²/s', 'ISO 281 (28)/(29)'],
+                ['Actual viscosity (ν)', cond.nu_mm2_s === 0 ? '' : fmtVisc(cond.nu_mm2_s), 'mm²/s', '입력값'],
+                ['Viscosity ratio (κ)', opt(life.kappa, fmtDimless), '—', 'κ = ν/ν₁ — ISO 281 (27)'],
+                ['Contamination factor (e_C)', fmtDimless(cond.e_c), '—'],
+                ['Life modification factor (a_ISO)', opt(life.a_iso, fmtDimless), '—', 'ISO 281 (31)–(33)'],
+                ['Reliability factor (a_1)', fmtDimless(life.a_1), '—'],
+                ['Modified reference rating life (L_nmr)', opt(life.l_nmr_mrev, fmtMrev), '10⁶ rev', 'ISO 16281 (13)'],
               ]}
             />
 
             <DetailTable
-              title="내부 항등"
+              title="Internal Identity Check"
               rows={[
-                ['(C_r / P_ref r)³', identity === null ? '' : fmtMrev(identity), '10⁶ rev'],
-                ['L_10r (솔버)', fmtMrev(life.l_10r_mrev), '10⁶ rev'],
-                ['상대차', identityRel === null ? '' : fmtExp(identityRel), '—'],
+                ['Identity life ((C_r / P_ref,r)³)', identity === null ? '' : fmtMrev(identity), '10⁶ rev', 'ISO 16281 (9)(11)'],
+                ['Basic reference rating life (L_10r)', fmtMrev(life.l_10r_mrev), '10⁶ rev', '솔버 값'],
+                ['Relative difference', identityRel === null ? '' : fmtExp(identityRel), '—', '(항등식 − 솔버) / 솔버'],
               ]}
             />
 
@@ -373,18 +373,18 @@ export default function BbLifeView() {
               </div>
 
               <DetailTable
-                title="사슬"
+                title="Static Rating Chain"
                 rows={[
-                  ['γ = D_w cos α / D_pw (표 진입값)', fmtDimless(st.gamma), '—'],
-                  ['f_0 (ISO 76 Table 1)', fmtDimless(st.f_0), '—'],
-                  ['C_0r (채택)', fmtKN(st.c_0r_n), 'kN'],
-                  ['C_0r (식 (76-1) 자체산출)', fmtKN(st.c_0r_computed_n), 'kN'],
-                  ['X_0 (ISO 76 Table 2)', fmtDimless(st.x_0), '—'],
-                  ['Y_0 (ISO 76 Table 2)', fmtDimless(st.y_0), '—'],
-                  ['F_r = √(F_y² + F_z²)', fmtN(st.f_r_n), 'N'],
-                  ['F_a = |F_x|', fmtN(st.f_a_n), 'N'],
-                  ['P_0r = max{X_0 F_r + Y_0 F_a, F_r}', fmtKN(st.p_0r_n), 'kN'],
-                  ['S_0 = C_0r / P_0r (76-14)', fmtDimless(st.s_0), '—'],
+                  ['Ball diameter ratio (γ)', fmtDimless(st.gamma), '—', 'γ = D_w cos α / D_pw — ISO 76 표 진입값'],
+                  ['Static factor (f_0)', fmtDimless(st.f_0), '—', 'ISO 76 Table 1'],
+                  ['Basic static load rating (C_0r)', fmtKN(st.c_0r_n), 'kN', '채택값'],
+                  ['Computed static load rating (C_0r)', fmtKN(st.c_0r_computed_n), 'kN', 'ISO 76 식 (1) 자체 산출'],
+                  ['Static radial load factor (X_0)', fmtDimless(st.x_0), '—', 'ISO 76 Table 2'],
+                  ['Static axial load factor (Y_0)', fmtDimless(st.y_0), '—', 'ISO 76 Table 2'],
+                  ['Radial load (F_r)', fmtN(st.f_r_n), 'N', 'F_r = √(F_y² + F_z²)'],
+                  ['Axial load (F_a)', fmtN(st.f_a_n), 'N', 'F_a = |F_x|'],
+                  ['Static equivalent radial load (P_0r)', fmtKN(st.p_0r_n), 'kN', 'P_0r = max{X_0 F_r + Y_0 F_a, F_r}'],
+                  ['Static safety factor (S_0)', fmtDimless(st.s_0), '—', 'S_0 = C_0r / P_0r — ISO 76 (14)'],
                 ]}
               />
 

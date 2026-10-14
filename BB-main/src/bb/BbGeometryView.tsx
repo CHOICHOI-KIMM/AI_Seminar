@@ -61,59 +61,43 @@ export default function BbGeometryView() {
 
       {/* 입력 원본 — 화면의 파생값이 어느 입력에서 나온 것인지 대조하기 위한 것이다. */}
       <DetailTable
-        title="Input Geometry (BallBearingGeometry)"
+        title="Input Geometry"
         rows={[
-          ['Bore d', fmtMm(g.bore_mm), 'mm'],
-          ['Outer diameter D', fmtMm(g.outer_diameter_mm), 'mm'],
-          ['Width B', fmtMm(g.width_mm), 'mm'],
-          ['Ball count Z', String(g.z), ''],
-          ['Ball diameter D_w', fmtMm(g.d_w_mm), 'mm'],
-          ['Pitch diameter D_pw', fmtMm(g.d_pw_mm), 'mm'],
-          ['Inner groove radius r_i', fmtMm(g.r_i_mm), 'mm'],
-          ['Outer groove radius r_e', fmtMm(g.r_e_mm), 'mm'],
-          ['Nominal contact angle α', fmtDeg(toDeg(g.alpha_nom_rad)), '°'],
-          ['Clearance spec', Object.keys(g.clearance)[0], ''],
+          ['Bore diameter (d)', fmtMm(g.bore_mm), 'mm'],
+          ['Outer diameter (D)', fmtMm(g.outer_diameter_mm), 'mm'],
+          ['Width (B)', fmtMm(g.width_mm), 'mm'],
+          ['Number of balls (Z)', String(g.z), ''],
+          ['Ball diameter (D_w)', fmtMm(g.d_w_mm), 'mm'],
+          ['Pitch diameter (D_pw)', fmtMm(g.d_pw_mm), 'mm'],
+          ['Inner groove radius (r_i)', fmtMm(g.r_i_mm), 'mm'],
+          ['Outer groove radius (r_e)', fmtMm(g.r_e_mm), 'mm'],
+          ['Nominal contact angle (α)', fmtDeg(toDeg(g.alpha_nom_rad)), '°'],
+          ['Clearance type', Object.keys(g.clearance)[0], ''],
           ['Clearance value', clearanceValue, clearanceUnit],
         ]}
       />
 
       {response && (
         <>
-          {/* BbGeometryDerived — 전 9필드. 순서는 Rust struct 선언 순서와 동일. */}
+          {/* BbGeometryDerived 9필드(Rust struct 순서) + BbGeometrySummary 고유 4필드.
+              Summary 의 앞 9필드는 Derived 와 같은 값이라 화면에서 뺐다(2026-10-14 사용자 결정) —
+              두 구조체의 일치는 healthcheck 가 필드별로 검사한다. */}
           <DetailTable
-            title="BbGeometryDerived"
+            title="Derived Geometry"
             rows={[
-              ['A = r_i + r_e − D_w  (A.3)', fmtMm(response.derived.a_mm), 'mm'],
-              ['α₀ initial contact angle  (A.1)', fmtDeg(toDeg(response.derived.alpha_0_rad)), '°'],
-              ['R_i tilt moment arm  (A.4)', fmtMm(response.derived.r_i_center_mm), 'mm'],
-              ['γ = D_w cos α / D_pw', fmtDimless(response.derived.gamma), ''],
-              ['Σρ_i inner curvature sum  (E.4)', fmtDimless(response.derived.sum_rho_i_per_mm), '1/mm'],
-              ['Σρ_e outer curvature sum  (E.5)', fmtDimless(response.derived.sum_rho_e_per_mm), '1/mm'],
-              ['F_i(ρ) inner curvature difference  (E.6)', fmtDimless(response.derived.f_rho_i), ''],
-              ['F_e(ρ) outer curvature difference  (E.7)', fmtDimless(response.derived.f_rho_e), ''],
-              ['G_r op equivalent radial clearance', fmtMm(response.derived.g_r_op_mm), 'mm'],
-            ]}
-          />
-
-          {/* BbGeometrySummary — 전 13필드.
-              앞 9개는 Derived 와 같은 값이어야 한다. 일부러 중복해 낸다 —
-              두 구조체가 갈라지면 이 화면에서 바로 보인다. */}
-          <DetailTable
-            title="BbGeometrySummary"
-            rows={[
-              ['A', fmtMm(response.summary.a_mm), 'mm'],
-              ['α₀', fmtDeg(toDeg(response.summary.alpha_0_rad)), '°'],
-              ['R_i', fmtMm(response.summary.r_i_center_mm), 'mm'],
-              ['γ', fmtDimless(response.summary.gamma), ''],
-              ['Σρ_i', fmtDimless(response.summary.sum_rho_i_per_mm), '1/mm'],
-              ['Σρ_e', fmtDimless(response.summary.sum_rho_e_per_mm), '1/mm'],
-              ['F_i(ρ)', fmtDimless(response.summary.f_rho_i), ''],
-              ['F_e(ρ)', fmtDimless(response.summary.f_rho_e), ''],
-              ['G_r op', fmtMm(response.summary.g_r_op_mm), 'mm'],
-              ['f_i osculation = r_i / D_w', fmtDimless(response.summary.osculation_inner), ''],
-              ['f_e osculation = r_e / D_w', fmtDimless(response.summary.osculation_outer), ''],
-              ['Ball mass (single)', fmtMass(response.summary.ball_mass_g), 'g'],
-              ['n·D_pw (ISO 16281 A.4, D-3)', fmtInt(response.summary.n_dpw_mm_per_min), 'mm/min'],
+              ['Curvature center distance (A)', fmtMm(response.derived.a_mm), 'mm', 'A = r_i + r_e − D_w — ISO 16281 (A.3)'],
+              ['Initial contact angle (α₀)', fmtDeg(toDeg(response.derived.alpha_0_rad)), '°', 'ISO 16281 (A.1)'],
+              ['Inner curvature center radius (R_i)', fmtMm(response.derived.r_i_center_mm), 'mm', '틸트 모멘트 팔 — ISO 16281 (A.4)'],
+              ['Ball diameter ratio (γ)', fmtDimless(response.derived.gamma), '', 'γ = D_w cos α / D_pw'],
+              ['Inner curvature sum (Σρ_i)', fmtDimless(response.derived.sum_rho_i_per_mm), '1/mm', 'ISO 16281 (E.4)'],
+              ['Outer curvature sum (Σρ_e)', fmtDimless(response.derived.sum_rho_e_per_mm), '1/mm', 'ISO 16281 (E.5)'],
+              ['Inner curvature difference (F_i(ρ))', fmtDimless(response.derived.f_rho_i), '', 'ISO 16281 (E.6)'],
+              ['Outer curvature difference (F_e(ρ))', fmtDimless(response.derived.f_rho_e), '', 'ISO 16281 (E.7)'],
+              ['Operating radial clearance (G_r,op)', fmtMm(response.derived.g_r_op_mm), 'mm', '등가 반경 틈새'],
+              ['Inner osculation (f_i)', fmtDimless(response.summary.osculation_inner), '', 'f_i = r_i / D_w'],
+              ['Outer osculation (f_e)', fmtDimless(response.summary.osculation_outer), '', 'f_e = r_e / D_w'],
+              ['Ball mass (m_b)', fmtMass(response.summary.ball_mass_g), 'g', '볼 1개'],
+              ['Speed factor (n·D_pw)', fmtInt(response.summary.n_dpw_mm_per_min), 'mm/min', 'ISO 16281 A.4, D-3'],
             ]}
           />
 
