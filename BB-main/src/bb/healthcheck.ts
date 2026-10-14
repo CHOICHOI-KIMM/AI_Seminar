@@ -933,6 +933,22 @@ async function measureLayout(): Promise<string[]> {
       if (off.length) bad.push(`Section@${w}: 허용 밖 글자 ${off.map(t => `「${t.textContent}」${renderedPx(t).toFixed(2)}px`).join(', ')}`);
       if (pairs) bad.push(`Section@${w}: 글자 bbox 교차 ${pairs}쌍`);
       if (labels.length === 0) bad.push(`Section@${w}: data-role="label" 글자가 0개 — 침범 검사가 공회전`);
+      // 기하 정보는 위쪽 반단면에 (2026-10-14 지시, ISO 16281 Fig A.1 a)) — 축(좌표 마커 X 글자)보다 위.
+      //  α_j 는 선택 볼(아래 반단면)의 하중 결과라 예외.
+      const axisText = Array.from(svg.querySelectorAll('text')).find(
+        t => t.getAttribute('data-role') === 'marker' && (t.textContent ?? '').trim() === 'X'
+      );
+      if (axisText) {
+        const axisY = axisText.getBoundingClientRect().top + axisText.getBoundingClientRect().height / 2;
+        const geoBelow = labels.filter(t => {
+          const tx = (t.textContent ?? '').trim();
+          if (tx.startsWith('α_j')) return false;
+          const r = t.getBoundingClientRect();
+          return r.top + r.height / 2 > axisY;
+        });
+        if (geoBelow.length) bad.push(`Section@${w}: 축 아래에 남은 기하 라벨 ${geoBelow.map(t => `「${t.textContent}」`).join(', ')}`);
+        await logInfo(`[healthcheck] layout Section@${w}px 기하 라벨 축 아래 ${geoBelow.length}개`);
+      } else bad.push(`Section@${w}: 좌표 마커 X 를 찾지 못했다`);
       if (intrude.length) bad.push(`Section@${w}: 라벨이 도면 영역 침범 ${intrude.map(t => `「${t.textContent}」`).join(', ')}`);
 
       // 나침반 (결과가 있을 때만 존재) — 글자 11 px · 상자 안

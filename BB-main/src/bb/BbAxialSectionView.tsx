@@ -317,10 +317,12 @@ function WidthDim({
   /** 이 패널 전용 `<marker>` id. */
   marker: string;
 }) {
+  // 연장선은 치수선을 조금 넘어간다 — 치수선이 도형 위·아래 어느 쪽이든 그 바깥쪽으로 (VerticalDim 과 같다).
+  const yExt = y + Math.sign(y - yTick) * s * 3;
   return (
     <g>
-      <line x1={xLeft} y1={yTick} x2={xLeft} y2={y + s * 3} stroke="#475569" strokeWidth={s * 0.4} />
-      <line x1={xRight} y1={yTick} x2={xRight} y2={y + s * 3} stroke="#475569" strokeWidth={s * 0.4} />
+      <line x1={xLeft} y1={yTick} x2={xLeft} y2={yExt} stroke="#475569" strokeWidth={s * 0.4} />
+      <line x1={xRight} y1={yTick} x2={xRight} y2={yExt} stroke="#475569" strokeWidth={s * 0.4} />
       <line
         x1={xLeft}
         y1={y}
@@ -732,6 +734,13 @@ function IsoSectionPanel({
     // 수직 치수 D_pw/2 (축 → 피치원) 의 라벨
     { yMm: f.rPitch / 2, dot: null, label: `D_pw/2 = ${fmtMm(f.rPitch)}`, color: '#e2e8f0', fs: FS_LABEL },
   ];
+  // ── 기하 정보는 위쪽 반단면(−Y)에 단다 (2026-10-14 사용자 지시 — ISO 16281 Fig A.1 a) 처럼).
+  //  명세는 아래 반단면 좌표로 쓰고 y 만 뒤집는다 → 지금까지의 배치 알고리즘·겹침 0 성질을 그대로 쓴다.
+  //  ⚠ α_j 는 기하가 아니라 **선택한 볼(φ_j)** 의 하중 결과다. 그 볼은 Y↓ 규약상 아래 반단면에 있으므로
+  //     α_j 라벨은 아래에 남긴다(위쪽은 같은 볼의 거울상일 뿐 반대편 볼의 실제 α_j 가 아니다).
+  const up = (t: LabelSpec): LabelSpec => ({ ...t, yMm: -t.yMm, dot: t.dot ? [t.dot[0], -t.dot[1]] : null });
+  right.splice(0, right.length, ...right.map(up));
+  left.splice(0, left.length, ...left.map(up));
   if (ov && eJ) {
     left.push({
       yMm: eJ[1],
@@ -754,11 +763,11 @@ function IsoSectionPanel({
   const maxW = (specs: LabelSpec[]) => Math.max(...specs.map(t => textWidth(t.label, t.fs)));
   const gutL = PAD + maxW(left) + TXT_GAP + LEAD + DIM_GAP;
   const gutR = PAD + maxW(right) + TXT_GAP + LEAD + DIM_GAP;
-  const bottomPx = B_GAP + TXT_GAP + 2 * HALF_H * FS_LABEL + PAD; // 폭 치수선 + B 라벨
+  const topPx = B_GAP + TXT_GAP + 2 * HALF_H * FS_LABEL + PAD; // 폭 치수선 + B 라벨 (위쪽 여백)
 
   // ── ③ 축척 k [px/mm] ──
   const kx = (box.w - gutL - gutR) / (xHi - xLo);
-  const ky = (box.hCap - PAD - bottomPx) / (2 * yExt);
+  const ky = (box.hCap - PAD - topPx) / (2 * yExt);
   const k = Math.min(kx, ky);
   // 🔴 하한 폭: W ≤ 좌·우 여백 합이면 도면을 놓을 자리가 없다. 임의 축소·겹침 허용을 하지 않고
   //    그리지 않는다 (P4-4d 보고 대상 — 처리 방식은 사용자 확인 필요).
@@ -789,18 +798,21 @@ function IsoSectionPanel({
     ...layoutGutter(toItems(right, dimRx), minGap(right)).map(it => ({ ...it, side: 'right' as const })),
     ...layoutGutter(toItems(left, dimLx), minGap(left)).map(it => ({ ...it, side: 'left' as const })),
   ];
-  // 도면 위끝과 가장 위 라벨 위끝이 모두 PAD 아래에 오도록.
-  const oy = Math.max(PAD + yExt * k, ...rel.map(it => PAD + HALF_H * it.fs - it.y));
+  // 폭 치수 B 는 도면 위쪽. 축(y=0) 기준 상대 px 로 먼저 정한다.
+  //  B 라벨은 치수선 바로 위 — 단, 여백 라벨이 그보다 위로 밀려났으면 그 위로 (겹침 0 보장).
+  const dimByRel = -yExt * k - B_GAP;
+  const labelByRel = Math.min(
+    dimByRel - TXT_GAP - HALF_H * FS_LABEL,
+    ...rel.map(it => it.y - HALF_H * it.fs - TXT_GAP - HALF_H * FS_LABEL),
+  );
+  // B 라벨 위끝이 PAD 에 오도록 축의 화면 y(oy)를 정한다 — 여백 라벨·도면은 모두 그 아래다.
+  const oy = PAD + HALF_H * FS_LABEL - labelByRel;
   const Y = (y: number) => oy + y * k;
   const labels = rel.map(it => ({ ...it, y: oy + it.y, dotY: oy + it.dotY }));
-
-  const dimBy = Y(yExt) + B_GAP;
-  // B 라벨은 치수선 바로 아래 — 단, 여백 라벨이 그보다 아래로 밀려났으면 그 아래로 (겹침 0 보장).
-  const labelBy = Math.max(
-    dimBy + TXT_GAP + HALF_H * FS_LABEL,
-    ...labels.map(it => it.y + HALF_H * it.fs + TXT_GAP + HALF_H * FS_LABEL),
-  );
-  const H = labelBy + HALF_H * FS_LABEL + PAD;
+  const dimBy = oy + dimByRel;
+  const labelBy = oy + labelByRel;
+  // 아래 끝 = 도면 아래끝 또는 아래쪽에 남은 라벨(α_j) 아래끝 중 큰 쪽
+  const H = Math.max(Y(yExt), ...labels.map(it => it.y + HALF_H * it.fs)) + PAD;
 
   // 도면 그룹 안 선 굵기 [mm] — 화면에서 S_PX 기준 px 로 보이게 환산.
   const s = S_PX / k;
@@ -869,24 +881,26 @@ function IsoSectionPanel({
 
       {/* 도면 (mm → px: translate · scale(k)). 텍스트 없음. */}
       <g data-role="drawing" transform={`translate(${ox}, ${oy}) scale(${k})`}>
-        {/* 아래쪽 반단면 (+Y) — 치수는 이쪽에 단다 */}
+        {/* 아래쪽 반단면 (+Y) — 선택한 볼(φ_j). α_j 라벨은 이쪽 */}
         <g>{geom}</g>
-        {/* 위쪽 반단면 (−Y) — 같은 기하의 거울상. 텍스트 없음 */}
-        <g transform="scale(1,-1)">{geom}</g>
-        {/* α₀ 각도호 — 반경 기준선(아래)에서 축(+X) 쪽으로 */}
-        <AngleArc cx={f.C[0]} cy={f.C[1]} radius={arcR} a0Deg={90} a1Deg={90 - toDeg(f.alpha0)} s={s} color={C_ALPHA} />
+        {/* 위쪽 반단면 (−Y) — 같은 기하의 거울상. 기하 치수는 이쪽에 단다(ISO 16281 Fig A.1 a)). 텍스트 없음 */}
+        <g transform="scale(1,-1)">
+          {geom}
+          {/* α₀ 각도호 — 거울 그룹 안에 두어 위쪽 볼에 그린다 */}
+          <AngleArc cx={f.C[0]} cy={f.C[1]} radius={arcR} a0Deg={90} a1Deg={90 - toDeg(f.alpha0)} s={s} color={C_ALPHA} />
+        </g>
       </g>
 
       {/* 수직 치수선 — 축(y=0) 에서 잰다. 라벨은 여백 배치기가 단다. */}
-      <VerticalDim x={dimLx} yTop={Y(0)} yBot={Y(f.rPitch)} xTick={X(-f.halfB)} s={S_PX} marker={MK_ISO} />
-      <VerticalDim x={dimRx} yTop={Y(0)} yBot={Y(f.riCenterCheck)} xTick={X(f.halfB)} s={S_PX} marker={MK_ISO} />
+      <VerticalDim x={dimLx} yTop={Y(-f.rPitch)} yBot={Y(0)} xTick={X(-f.halfB)} s={S_PX} marker={MK_ISO} />
+      <VerticalDim x={dimRx} yTop={Y(-f.riCenterCheck)} yBot={Y(0)} xTick={X(f.halfB)} s={S_PX} marker={MK_ISO} />
 
-      {/* 폭 B 치수선 (아래쪽 여백) */}
+      {/* 폭 B 치수선 (위쪽 여백) */}
       <WidthDim
         y={dimBy}
         xLeft={X(-f.halfB)}
         xRight={X(f.halfB)}
-        yTick={Y(f.rOD)}
+        yTick={Y(-f.rOD)}
         label={labelB}
         labelY={labelBy}
         s={S_PX}
