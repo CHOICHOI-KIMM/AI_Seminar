@@ -198,7 +198,15 @@ function LoadDistPolar({
   const step = ([1, 2, 2.5, 5, 10].find(m => m * mag >= rawStep) ?? 10) * mag;
   const tickvals: number[] = [];
   for (let v = 0; v <= rRef * 1.2 + 1e-9 * step; v += step) tickvals.push(Number(v.toPrecision(12)));
-  const ticktext = tickvals.map(v => (v <= qMax ? String(v) : ''));
+  // 90° 선을 지나는 envelope 근처 숫자는 생략한다(2026-10-14 사용자 결정) — 선·꼭짓점과 겹치지 않게.
+  //   90° 에서 한 피치 안의 볼 Q_j 범위(현의 처짐 2% 포함) ± 눈금 한 칸이 envelope 이 지나는 띠다.
+  //   여유를 한 칸으로 둔 것은 숫자 글자폭 때문이다 — 반 칸이면 작은 창(원 반지름 ≈80px)에서 「1000」이
+  //   envelope 에 걸렸다(런타임 실측).
+  const pitch = env.length > 0 ? 360 / env.length : 360;
+  const near = env.filter(e => Math.abs((((e.phi - 90) % 360) + 540) % 360 - 180) <= pitch).map(e => e.q);
+  const bandLo = near.length ? Math.min(...near) * 0.98 - step : Infinity;
+  const bandHi = near.length ? Math.max(...near) + step : -Infinity;
+  const ticktext = tickvals.map(v => (v <= qMax && (v < bandLo || v > bandHi) ? String(v) : ''));
 
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
