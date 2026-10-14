@@ -2285,6 +2285,34 @@ webview error 0 · build 성공 · lint baseline 44 증감 0.
   - 3D 툴팁 글자를 11 px 로, 볼 번호 굵기를 500 으로 바꿨다.
   - 헬스체크 ALL PASS — 표 165행 자릿수 위반 0, webview error 0.
 
+
+### 9.6 잔존 탭 — 「TRB 잔존」 배지를 지우고 Lubrication 을 「Phase 6 예정」 안내로 바꿨다
+
+- **먼저 잔존 탭 5개의 실제 동작을 측정했다** (헬스체크 임시 패치로 각 탭 클릭, 측정 코드는 매번 되돌림)
+
+**잔존 탭 실측 결과 (BB 결과를 낸 뒤 클릭)**
+
+| 탭 | 실제 동작 |
+|---|---|
+| Profile | TRB 롤러 크라운 프로파일이 보인다 |
+| Lubrication | 앱 전체가 빈 화면(탭 바까지 사라짐), 오류 로그 없음 |
+| Thermal Speed | 같은 현상 |
+| Comparison | 「Run in Dual mode to compare Gen1 vs Gen3」 |
+| Transient | 내용이 거의 없음 |
+
+- **사용자 결정 (Plan §4-5.7)**
+  - 배지만 지우고 탭은 유지한다.
+  - Lubrication 은 「P6 예정」 빈 탭으로 바꾼다.
+- **반영 (`c38a6a5`)**
+  - `CanvasArea` 의 「TRB 잔존」 배지·회색 처리·툴팁과 `legacy` 필드를 지웠다.
+  - Lubrication 탭은 결과와 무관하게 「윤활 해석은 Phase 6 예정」 한 줄만 보인다.
+  - 헬스체크에 탭 바 「TRB 잔존」 0, Lubrication 안내문 표시, 클릭 후 탭 바 생존 검사를 넣었다.
+- **실측**
+  - 헬스체크 ALL PASS, webview error 0, build 성공, lint baseline 44.
+- **남는 위험**
+  - Thermal Speed 는 누르면 앱 전체가 빈 화면이 되는 상태로 남는다(사용자가 탭 유지를 선택).
+  - 헬스체크는 이 탭을 누르지 않는다.
+
 ---
 
 # Phase 5 — 수명·정정격 (P4 병행 작업 포함)
