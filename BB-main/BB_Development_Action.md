@@ -2421,6 +2421,26 @@ webview error 0 · build 성공 · lint baseline 44 증감 0.
 - 색 함수는 실제 `shared.ts` 번들로도 4건(무하중·Q_max·중간·Q_max=0)을 확인했다(불일치 0).
 - build 성공, lint baseline 44.
 
+
+### 9.12 σ_Hu(피로한계 접촉응력) 경고와 화면 표시를 지웠다 — C_u 계산용 상수는 남겼다
+
+**사용자 결정 (2026-10-14)**
+
+| # | 항목 | 결정 |
+|---|---|---|
+| 1 | 경고 `CONTACT_STRESS_OVER_FATIGUE_LIMIT` | 솔버에서 내지 않는다 |
+| 2 | Stress Contour 의 σ_Hu | 전부 지운다(등고선·범례 · 단면 기준선 · 초과 문구 · 표 3행) |
+| 3 | Life 의 C_u · Q_u | 그대로 둔다 |
+
+- **반영 (`cee4db3`)**
+  - `bearing.rs`·`commands.rs` 의 경고 생성 코드를 지웠다.
+  - Stress Contour 의 σ_Hu 표시를 모두 지웠다. 쓰이지 않게 된 `WarnBox`·`C_HU` 도 지웠다.
+  - `hertz::SIGMA_HU_MPA` 상수는 남겼다. 수명의 C_u(ISO 281 Annex B) 계산에 쓰이기 때문이다.
+- **검증**
+  - Rust 테스트를 새로 넣었다. p_max > σ_Hu 가 실제로 성립하는 입력에서 평형 해석과 접촉 커맨드 모두 이 경고가 0 건이다.
+  - `cargo test` 185 → 186 전량 통과, clippy 0, tsc -b 0, eslint 0, lint 44.
+  - 헬스체크에 Stress Contour 「σ_Hu」 0 · 화면 경고 코드 0 검사를 넣었다. 런타임 실측은 사용자 앱 세션이 끝난 뒤 한다.
+
 ---
 
 # Phase 5 — 수명·정정격 (P4 병행 작업 포함)
