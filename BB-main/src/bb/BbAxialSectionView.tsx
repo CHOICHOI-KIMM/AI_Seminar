@@ -88,8 +88,10 @@
 // ─────────────────────────────────────────────────────────────────────
 //  단위 정책 (S2 확정 — 바꾸지 말 것)
 // ─────────────────────────────────────────────────────────────────────
-//  길이 **mm** · 하중 **N** · 응력 **MPa** · **접촉각만 °**(내부 rad) · **틸트 γ 는 rad 유지**.
-//  표·hover 는 **유효숫자 9자리** — 검증 대조가 목적이라 자릿수를 줄이면 안 된다.
+//  솔버 단위(mm · N · rad · N·mm)를 받아 화면 경계에서만 환산한다 (Plan Phase 4-5 §4-5.3).
+//  표시는 `shared.ts` 의 단위별 함수만 쓴다 — 기하 치수 mm 소수 3 · 변위 δ μm · 틸트 μrad ·
+//  모멘트 N·m · 각도 ° 소수 2(rad 병기 없음) · 볼 하중 N 소수 1 · 상대차 지수.
+//  · 곡률중심 `X_j`·`R_j` 는 `A` 의 성분이라 기하 치수(mm 소수 3)로 보인다.
 //
 // ─────────────────────────────────────────────────────────────────────
 //  ♻ 재사용 출처 (Plan §4 Phase 4-3 조사 결과)
@@ -107,14 +109,34 @@
 //    곡률중심 `O_i`·`O_e` 마커·변위 과장 오버레이(δ_x·틸트·O_i′).
 //  복사하지 **않은** 것: `computeSectionGeometry`·`SectionHalf`·`RibHeightDim`·`LweDim`·
 //  `Annotations` 본문(γ 경사축·사다리꼴 롤러·리브 전량) — BB 에 대응 개념이 없다.
-//  색 팔레트·`num()`·`toDeg` 는 `BbLoadDistView` 와 **같은 값**을 쓴다.
+//  색 팔레트·`toDeg`·단위별 포맷 함수는 `shared.ts` 한 곳의 것을 쓴다.
+//
+// ─────────────────────────────────────────────────────────────────────
+//  화면에서 지운 설명의 근거 (Plan Phase 4-5 §4-5.2 — 주석으로 옮김)
+// ─────────────────────────────────────────────────────────────────────
+//  · 링 외곽은 `d`·`D`·`B` 만으로 그린 **포락선**이다 — 숄더 치수는 입력에 없어 그리지 않는다.
+//  · 단면은 **선택한 볼의 방위 `φ_j`** 에서 자른 것이다. 볼마다 `α_j` 가 다르므로
+//    어느 볼인지를 선택 상자와 하중 후 표 제목에 항상 표시한다.
+//  · 접촉선의 **길이는 표시용**이고 각도만이 정보다. 결과가 없으면 무하중 단면만 그린다.
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAppState } from '../store';
-import { DetailTable, Loading, InfoBox, WarnBox, ErrorBox, Panel } from './ui';
+import { DetailTable, Loading, StaleBadge, ErrorBox, Panel } from './ui';
 import type { BallBearingGeometry } from './generated/BallBearingGeometry';
 import type { BbGeometryDerived } from './generated/BbGeometryDerived';
-import { num, toDeg, C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF, C_INNER, C_OUTER, useGeometryResponse } from './shared';
+import {
+  toDeg,
+  fmtMm,
+  fmtDeg,
+  fmtN,
+  fmtNm,
+  fmtUm,
+  fmtUrad,
+  fmtExp,
+  C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF, C_INNER,
+  C_OUTER,
+  useGeometryResponse,
+} from './shared';
 
 /** `commands::GeometryResponse` 대응 — `BbGeometryView` 와 같은 형태다. */
 /** (−180, 180] 로 접는다 — 방위차 Δ 표시용. */
@@ -695,31 +717,31 @@ function IsoSectionPanel({
 
   // ── 여백 라벨 명세 (문구·지시점은 이전과 같다) ──
   const right: LabelSpec[] = [
-    { yMm: f.rBore, dot: [f.halfB * 0.55, f.rBore], label: `d = ${num(f.rBore * 2)}`, color: C_INNER, fs: FS_LABEL },
-    { yMm: landI, dot: [arcIx[0], f.Oi[1] + f.ri * Math.sin(bi - spanRad * 0.8)], label: `r_i = ${num(f.ri)}`, color: C_INNER, fs: FS_LABEL },
-    { yMm: f.rPitch, dot: [f.halfB * 0.75, f.rPitch], label: `D_pw = ${num(f.rPitch * 2)}`, color: C_REF, fs: FS_LABEL },
-    { yMm: f.C[1] + f.ballR * 0.7, dot: [f.C[0] + f.ballR * 0.7, f.C[1] + f.ballR * 0.7], label: `D_w = ${num(f.ballR * 2)}`, color: '#cbd5e1', fs: FS_LABEL },
-    { yMm: landE, dot: [arcEx[1], f.Oe[1] + f.re * Math.sin(be + spanRad * 0.8)], label: `r_e = ${num(f.re)}`, color: C_OUTER, fs: FS_LABEL },
-    { yMm: f.rOD, dot: [f.halfB * 0.35, f.rOD], label: `D = ${num(f.rOD * 2)}`, color: C_OUTER, fs: FS_LABEL },
+    { yMm: f.rBore, dot: [f.halfB * 0.55, f.rBore], label: `d = ${fmtMm(f.rBore * 2)}`, color: C_INNER, fs: FS_LABEL },
+    { yMm: landI, dot: [arcIx[0], f.Oi[1] + f.ri * Math.sin(bi - spanRad * 0.8)], label: `r_i = ${fmtMm(f.ri)}`, color: C_INNER, fs: FS_LABEL },
+    { yMm: f.rPitch, dot: [f.halfB * 0.75, f.rPitch], label: `D_pw = ${fmtMm(f.rPitch * 2)}`, color: C_REF, fs: FS_LABEL },
+    { yMm: f.C[1] + f.ballR * 0.7, dot: [f.C[0] + f.ballR * 0.7, f.C[1] + f.ballR * 0.7], label: `D_w = ${fmtMm(f.ballR * 2)}`, color: '#cbd5e1', fs: FS_LABEL },
+    { yMm: landE, dot: [arcEx[1], f.Oe[1] + f.re * Math.sin(be + spanRad * 0.8)], label: `r_e = ${fmtMm(f.re)}`, color: C_OUTER, fs: FS_LABEL },
+    { yMm: f.rOD, dot: [f.halfB * 0.35, f.rOD], label: `D = ${fmtMm(f.rOD * 2)}`, color: C_OUTER, fs: FS_LABEL },
     // 수직 치수 R_i (축 → O_i 반경) 의 라벨 — 치수선 중점을 가리킨다
-    { yMm: f.riCenterCheck / 2, dot: null, label: `R_i = ${num(f.riCenterCheck)}`, color: '#e2e8f0', fs: FS_LABEL },
+    { yMm: f.riCenterCheck / 2, dot: null, label: `R_i = ${fmtMm(f.riCenterCheck)}`, color: '#e2e8f0', fs: FS_LABEL },
   ];
   const left: LabelSpec[] = [
-    { yMm: f.C[1] - f.ballR * 0.2, dot: [(s0[0] + f.C[0]) / 2, (s0[1] + f.C[1]) / 2], label: `α₀ = ${num(toDeg(f.alpha0))}°`, color: C_ALPHA, fs: FS_ANGLE },
-    { yMm: f.C[1] + f.ballR * 0.9, dot: [(f.Oi[0] + f.Oe[0]) / 2, (f.Oi[1] + f.Oe[1]) / 2], label: `A = r_i+r_e−D_w = ${num(f.aMm)}`, color: '#a78bfa', fs: FS_LABEL },
+    { yMm: f.C[1] - f.ballR * 0.2, dot: [(s0[0] + f.C[0]) / 2, (s0[1] + f.C[1]) / 2], label: `α₀ = ${fmtDeg(toDeg(f.alpha0))}°`, color: C_ALPHA, fs: FS_ANGLE },
+    { yMm: f.C[1] + f.ballR * 0.9, dot: [(f.Oi[0] + f.Oe[0]) / 2, (f.Oi[1] + f.Oe[1]) / 2], label: `A = r_i+r_e−D_w = ${fmtMm(f.aMm)}`, color: '#a78bfa', fs: FS_LABEL },
     // 수직 치수 D_pw/2 (축 → 피치원) 의 라벨
-    { yMm: f.rPitch / 2, dot: null, label: `D_pw/2 = ${num(f.rPitch)}`, color: '#e2e8f0', fs: FS_LABEL },
+    { yMm: f.rPitch / 2, dot: null, label: `D_pw/2 = ${fmtMm(f.rPitch)}`, color: '#e2e8f0', fs: FS_LABEL },
   ];
   if (ov && eJ) {
     left.push({
       yMm: eJ[1],
       dot: [(f.C[0] + eJ[0]) / 2, (f.C[1] + eJ[1]) / 2],
-      label: `α_j = ${num(toDeg(ov.alphaJ))}° (볼 φ=${num(toDeg(phiRad))}°)`,
+      label: `α_j = ${fmtDeg(toDeg(ov.alphaJ))}° (볼 φ=${fmtDeg(toDeg(phiRad))}°)`,
       color: ov.loaded ? C_LOADED : C_UNLOADED,
       fs: FS_ANGLE,
     });
   }
-  const labelB = `B = ${num(f.halfB * 2)}`;
+  const labelB = `B = ${fmtMm(f.halfB * 2)}`;
 
   const wrap = (svg: ReactNode) => (
     <div ref={wrapRef} style={{ width: '100%' }}>
@@ -1036,42 +1058,12 @@ export default function BbAxialSectionView() {
   const aIdentity = f.ri + f.re - f.ballR * 2;
   const riIdentity = f.rPitch + (f.ri - f.ballR) * Math.cos(f.alpha0);
 
+  // 단면 형상은 현재 입력(bbInput), 하중 후 오버레이(α_j·δ·틸트)는 Solve 시점(resultInput) 기준이다.
   const stale = result !== null && resultInput !== null && resultInput !== bbInput;
 
   return (
     <div className="h-full overflow-auto custom-scrollbar p-4 space-y-5">
-      {/* ── 검증 임무 명시 ─────────────────────────────────────────── */}
-      <InfoBox>
-        <p className="font-medium text-[13px] mb-1">
-          축단면 (ISO 16281 Fig A.1 a) 스타일 전단면) — Theory §2 (A.1)(A.3)(A.4) · §4.4 확정형
-        </p>
-        <p>
-          가로축이 <span className="font-mono">X</span>(회전축), 세로축이 반경이며 중심선을 축으로 상·하 전단면을
-          그린다. 궤도는 홈반경 원호(<span className="font-mono">r_i</span>·
-          <span className="font-mono">r_e</span>)로 그리며 폴리곤이 아니다. 치수는 아래쪽 반단면에만 단다.
-        </p>
-        <p className="mt-1">
-          각도는 과장하지 않는다. <span className="font-mono">α₀</span>(하늘)와{' '}
-          <span className="font-mono">α_j</span>(주황 파선)는 참값 각도로 겹쳐 그린다. 두 선이 포개져 보이면{' '}
-          하중이 걸리지 않은 것이다(§3.6.4.2 의 징후). 1° 남짓한 차이가 보이도록{' '}
-          접촉선을 OD 근처까지 길게 뽑았다 — 길이는 표시용이고 각도만이 이 선의 정보다.
-        </p>
-        <p className="mt-1 text-blue-200/80">
-          단면은 선택한 볼의 방위 φ_j 에서 자른 것이다. 볼마다{' '}
-          <span className="font-mono">α_j</span> 가 다르므로 어느 볼인지가 항상 표시된다. 곡률중심{' '}
-          <span className="font-mono">O_i</span>·<span className="font-mono">O_e</span> 는 볼 지름 대비 간격이 1 % 규모라
-          실척에서 점이 겹치므로 그리지 않고, <span className="font-mono">A = r_i + r_e − D_w</span> 를{' '}
-          접촉선 위의 치수로만 낸다(ISO 원도면과 같다). 수치 검산은 아래 기하 항등 표가 맡는다.
-        </p>
-      </InfoBox>
-
-      {stale && (
-        <WarnBox>
-          입력이 Solve 이후 변경되었다. 단면 형상은 현재 입력(<span className="font-mono">bbInput</span>)
-          기준이고, 하중 후 오버레이(α_j·δ·틸트)는 Solve 시점 스냅샷
-          (<span className="font-mono">resultInput</span>) 기준이다. 두 시점이 어긋난 상태이므로 다시 Solve 할 것.
-        </WarnBox>
-      )}
+      {stale && <StaleBadge />}
 
       {/* ── 볼 선택 ────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3">
@@ -1085,14 +1077,14 @@ export default function BbAxialSectionView() {
             {balls.length > 0
               ? balls.map((b, i) => (
                   <option key={i} value={i}>
-                    #{i + 1} · φ = {toDeg(b.phi_rad).toFixed(2)}° · Q = {b.q_n.toPrecision(6)} N
+                    #{i + 1} · φ = {fmtDeg(toDeg(b.phi_rad))}° · Q = {fmtN(b.q_n)} N
                     {b.loaded ? '' : ' · 비접촉'}
                     {i === top ? '  ← 최대하중' : ''}
                   </option>
                 ))
               : Array.from({ length: zCount }, (_, i) => (
                   <option key={i} value={i}>
-                    #{i + 1} · φ = {((360 * i) / zCount).toFixed(2)}° (결과 없음)
+                    #{i + 1} · φ = {fmtDeg((360 * i) / zCount)}° (결과 없음)
                   </option>
                 ))}
           </select>
@@ -1106,109 +1098,80 @@ export default function BbAxialSectionView() {
             최대하중 볼로
           </button>
         )}
-        <span className="text-[12px] text-text-canvas/70 font-mono">
-          φ_j = {num(toDeg(phiRad))}° ({num(phiRad)} rad) · φ = 0 은 +Y 축 (D-8) = 화면 아래 (§3.6.4.10)
-        </span>
-        {!result && (
-          <span className="text-[12px] text-amber-300/80">
-            결과 없음 — 무하중 단면만 그린다 (기하는 Solve 없이도 보인다).
-          </span>
-        )}
+        <span className="text-[12px] text-text-canvas/70 font-mono">φ_j = {fmtDeg(toDeg(phiRad))}°</span>
+        {!result && <span className="text-[12px] text-amber-300/80">결과 없음 — 무하중 단면만 그린다</span>}
       </div>
 
       {/* ── ISO 스타일 전단면 (단일 패널) ─────────────────────────── */}
       <div className="rounded border border-white/10 bg-black/20 p-2">
-        <p className="text-[11px] text-text-canvas/60 mb-1">
-          실척 전단면. 링 외곽은 <span className="font-mono">d</span>·<span className="font-mono">D</span>·
-          <span className="font-mono">B</span> 만으로 그린 포락선이다(숄더 치수는 입력에 없어 그리지 않는다).{' '}
-          모든 문자는 도형 바깥 여백에만 두고 지시선으로 연결한다 — 선·글자가 겹칠 수 있는 자리에 아예
-          두지 않는 방식이다.
-        </p>
         <IsoSectionPanel f={f} ov={ov} phiRad={phiRad} />
       </div>
 
       {/* ── D-2d ───────────────────────────────────────────────────── */}
       <Panel>
-        <p className="text-[13px] font-medium text-text-light mb-1">
-          D-2d — 틸트축이 모멘트와 맞는가 (§3.6.4.2 의 유일한 미커버 항목)
-        </p>
+        <p className="text-[13px] font-medium text-text-light mb-1">틸트 방위 ↔ 모멘트 방위</p>
         {!result || !op ? (
-          <p className="text-[12px] text-text-canvas/70">Solve 를 눌러야 판정할 수 있다.</p>
+          <p className="text-[12px] text-text-canvas/70">Solve 후 표시</p>
         ) : (
           <div className="flex flex-wrap items-start gap-4">
             <div className="shrink-0">
               <TiltCompass tiltDeg={tiltDeg} momDeg={momDeg} phiDeg={toDeg(phiRad)} />
               <div className="text-[11px] leading-snug space-y-0.5 mt-0.5">
-                <p style={{ color: C_LOAD_DIR }}>━ 모멘트 방위 (외부, resultInput)</p>
-                <p style={{ color: C_ALPHA }}>━ 틸트 방위 (평형해)</p>
+                <p style={{ color: C_LOAD_DIR }}>━ 모멘트 방위</p>
+                <p style={{ color: C_ALPHA }}>━ 틸트 방위</p>
                 <p style={{ color: C_LOADED }}>┄ 선택한 볼 φ_j</p>
-                <p className="text-text-canvas/60">0° = +Y = 아래, 우측(+Z) 증가</p>
               </div>
             </div>
             <div className="min-w-[22rem] flex-1">
               <DetailTable
-                title="방위 대조 — (Y, Z) 평면 · 방위 0° = +Y = 화면 아래, 우측(+Z) 증가 (§3.6.4.10)"
+                title="방위 대조"
                 rows={[
-                  ['틸트 γ_y', num(disp?.ry_rad ?? 0), 'rad'],
-                  ['틸트 γ_z', num(disp?.rz_rad ?? 0), 'rad'],
-                  ['틸트 크기 |γ|', num(tiltMag), 'rad'],
+                  ['틸트 γ_y', fmtUrad(disp?.ry_rad ?? 0), 'μrad'],
+                  ['틸트 γ_z', fmtUrad(disp?.rz_rad ?? 0), 'μrad'],
+                  ['틸트 크기 |γ|', fmtUrad(tiltMag), 'μrad'],
                   [
                     '틸트 방위 atan2(γ_z, γ_y)  〔0°=+Y=아래〕',
-                    tiltDeg === null ? '정의 없음 (|γ| = 0)' : num(tiltDeg),
+                    tiltDeg === null ? '정의 없음 (|γ| = 0)' : fmtDeg(tiltDeg),
                     '°',
                   ],
-                  ['모멘트 M_y (resultInput)', num(op.m_y_nmm), 'N·mm'],
-                  ['모멘트 M_z (resultInput)', num(op.m_z_nmm), 'N·mm'],
+                  ['모멘트 M_y (resultInput)', fmtNm(op.m_y_nmm), 'N·m'],
+                  ['모멘트 M_z (resultInput)', fmtNm(op.m_z_nmm), 'N·m'],
                   [
                     '모멘트 방위 atan2(M_z, M_y)  〔0°=+Y=아래〕',
-                    momDeg === null ? '정의 없음 (|M| = 0)' : num(momDeg),
+                    momDeg === null ? '정의 없음 (|M| = 0)' : fmtDeg(momDeg),
                     '°',
                   ],
-                  ['Δ = 틸트 − 모멘트 (규약 무관 — 차이값)', deltaDeg === null ? '—' : num(deltaDeg), '°'],
-                  ['반경하중 |F_r| (등방성 판정용)', num(radMag), 'N'],
+                  ['Δ = 틸트 − 모멘트 (규약 무관 — 차이값)', deltaDeg === null ? '—' : fmtDeg(deltaDeg), '°'],
+                  ['반경하중 |F_r| (등방성 판정용)', fmtN(radMag), 'N'],
                   ['볼 수 Z (이산성 — Δ 허용폭 근거)', String(zCount), '개'],
                 ]}
               />
+              {/* 판정 4단의 근거는 파일 머리 주석 「D-2d 를 어떻게 보이는가」 */}
               <div className="mt-2 text-[12px] leading-relaxed">
                 {deltaDeg === null ? (
-                  <p className="text-text-canvas/70">
-                    모멘트 또는 틸트가 0 이라 방위가 정의되지 않는다 — 이 조건에서는 D-2d 를 판정할 수 없다.
-                  </p>
+                  <p className="text-text-canvas/70">방위 정의 없음 — 모멘트 또는 틸트가 0</p>
                 ) : pureMoment ? (
                   Math.abs(deltaDeg) < 1 ? (
                     <p className="text-emerald-300">
-                      ✅ 정합 — 순수 모멘트 하중에서 틸트 방위가 모멘트 방위와 같다 (|Δ| ={' '}
-                      <span className="font-mono">{num(Math.abs(deltaDeg))}</span>° &lt; 1°). Theory §4.4 확정형에서{' '}
-                      <span className="font-mono">M_y &gt; 0 ⟹ γ_y &gt; 0</span> ·{' '}
-                      <span className="font-mono">M_z &gt; 0 ⟹ γ_z &gt; 0</span> 이 유도되며, 화면이 그것을 재확인한다.
+                      ✅ 정합 (|Δ| = <span className="font-mono">{fmtDeg(Math.abs(deltaDeg))}</span>° &lt; 1°)
                     </p>
                   ) : Math.abs(Math.abs(deltaDeg) - 180) < 15 ? (
                     <p className="text-red-300">
-                      ❌ Δ ≈ 180° (|Δ| = <span className="font-mono">{num(Math.abs(deltaDeg))}</span>°) — 틸트가
-                      모멘트와 반대로 섰다. §3.6.4.2 가 드는 징후「틸트 방향이 모멘트와 반대」에 해당한다. 부호
-                      규약(Theory §4.4 의 <span className="font-mono">M_y = +R_i Σ Q sin α sin φ</span>) 을 먼저 확인할 것.
+                      ❌ 틸트가 모멘트와 반대 (|Δ| = <span className="font-mono">{fmtDeg(Math.abs(deltaDeg))}</span>° ≈ 180°)
                     </p>
                   ) : Math.abs(deltaDeg) < 90 ? (
                     <p className="text-emerald-300/90">
-                      🟡 부호는 정합 (|Δ| = <span className="font-mono">{num(Math.abs(deltaDeg))}</span>° &lt; 90°)
-                      이나 정확히 0 은 아니다. 볼이 Z = {zCount} 개로 이산이라 응답이 연속 등방이 아니고{' '}
-                      Z-중 대칭만 갖는다 — 모멘트 방위가 대칭축과 어긋나면 Δ 가 정확히 0 이 되지 않는 것이
-                      정상이다. 이 편차만으로 솔버를 의심하지 말 것. 엄밀 대조가 필요하면 모멘트 방위를 볼 위치(φ_j
-                      = 360°·k/Z)에 맞추고 다시 볼 것.
+                      🟡 부호 정합 · 이산성 Z = {zCount} (|Δ| ={' '}
+                      <span className="font-mono">{fmtDeg(Math.abs(deltaDeg))}</span>° &lt; 90°)
                     </p>
                   ) : (
                     <p className="text-amber-300">
-                      ⚠ 순수 모멘트인데 |Δ| 가 90° 이상 180° 미만이다 (|Δ| ={' '}
-                      <span className="font-mono">{num(Math.abs(deltaDeg))}</span>°). 이산성(Z = {zCount})으로 설명되는
-                      규모가 아니다. 화면을 고쳐 맞추지 말고 솔버 쪽을 먼저 의심할 것.
+                      ⚠ 솔버 의심 (|Δ| = <span className="font-mono">{fmtDeg(Math.abs(deltaDeg))}</span>°, 90°–180°)
                     </p>
                   )
                 ) : (
                   <p className="text-text-canvas/70">
-                    반경하중이 함께 걸려 있어 응답이 등방이 아니다 — 이 조건에서는 Δ = 0 이{' '}
-                    요구되지 않는다. D-2d 판정은 <span className="font-mono">F_y = F_z = 0</span> 인{' '}
-                    순수 모멘트 조건에서 하라. (지금 Δ ={' '}
-                    <span className="font-mono">{num(deltaDeg)}</span>°)
+                    반경하중 동반 — 판정 대상 아님 (Δ = <span className="font-mono">{fmtDeg(deltaDeg)}</span>°)
                   </p>
                 )}
               </div>
@@ -1219,63 +1182,50 @@ export default function BbAxialSectionView() {
 
       {/* ── 검산표 ─────────────────────────────────────────────────── */}
       <DetailTable
-        title="기하 항등 — 그림이 쓰는 값 ↔ 솔버 값 (Theory §2)"
+        title="기하 항등"
         rows={[
-          ['A (솔버, a_mm)', num(f.aMm), 'mm'],
-          ['A 재계산 = r_i + r_e − D_w  (A.3)', num(aIdentity), 'mm'],
-          ['A 상대차', num(f.aMm !== 0 ? (aIdentity - f.aMm) / f.aMm : 0), '—'],
-          ['α₀ (솔버, alpha_0_rad)', num(toDeg(f.alpha0)), '°'],
-          ['α₀ (rad)', num(f.alpha0), 'rad'],
-          ['R_i (솔버, r_i_center_mm)', num(derived.r_i_center_mm), 'mm'],
-          ['R_i = 그림의 O_i 반경  (A.4)', num(f.riCenterCheck), 'mm'],
-          ['R_i 재계산 = D_pw/2 + (r_i − D_w/2) cos α₀', num(riIdentity), 'mm'],
+          ['A (솔버, a_mm)', fmtMm(f.aMm), 'mm'],
+          ['A 재계산 = r_i + r_e − D_w  (A.3)', fmtMm(aIdentity), 'mm'],
+          ['A 상대차', fmtExp(f.aMm !== 0 ? (aIdentity - f.aMm) / f.aMm : 0), '—'],
+          ['α₀ (솔버, alpha_0_rad)', fmtDeg(toDeg(f.alpha0)), '°'],
+          ['R_i (솔버, r_i_center_mm)', fmtMm(derived.r_i_center_mm), 'mm'],
+          ['R_i = 그림의 O_i 반경  (A.4)', fmtMm(f.riCenterCheck), 'mm'],
+          ['R_i 재계산 = D_pw/2 + (r_i − D_w/2) cos α₀', fmtMm(riIdentity), 'mm'],
           [
             'R_i 상대차 (그림 ↔ 솔버)',
-            num(derived.r_i_center_mm !== 0 ? (f.riCenterCheck - derived.r_i_center_mm) / derived.r_i_center_mm : 0),
+            fmtExp(derived.r_i_center_mm !== 0 ? (f.riCenterCheck - derived.r_i_center_mm) / derived.r_i_center_mm : 0),
             '—',
           ],
-          ['O_i 축위치', num(f.Oi[0]), 'mm'],
-          ['O_e 축위치', num(f.Oe[0]), 'mm'],
-          ['O_e 반경 = D_pw/2 − (r_e − D_w/2) cos α₀', num(f.Oe[1]), 'mm'],
-          ['내륜 접촉점 P_i (x, r)', `${num(f.Pi[0])}, ${num(f.Pi[1])}`, 'mm'],
-          ['외륜 접촉점 P_e (x, r)', `${num(f.Pe[0])}, ${num(f.Pe[1])}`, 'mm'],
+          ['O_i 축위치', fmtMm(f.Oi[0]), 'mm'],
+          ['O_e 축위치', fmtMm(f.Oe[0]), 'mm'],
+          ['O_e 반경 = D_pw/2 − (r_e − D_w/2) cos α₀', fmtMm(f.Oe[1]), 'mm'],
+          ['내륜 접촉점 P_i (x, r)', `${fmtMm(f.Pi[0])}, ${fmtMm(f.Pi[1])}`, 'mm'],
+          ['외륜 접촉점 P_e (x, r)', `${fmtMm(f.Pe[0])}, ${fmtMm(f.Pe[1])}`, 'mm'],
         ]}
       />
 
       {ov && ball && (
         <DetailTable
-          title={`하중 후 — 볼 #${sel + 1} (φ_j = ${num(toDeg(phiRad))}°) · Theory §4.4 확정형 재계산`}
+          title={`하중 후 — 볼 #${sel + 1} (φ_j = ${fmtDeg(toDeg(phiRad))}°)`}
           rows={[
             ['접촉 여부', ball.loaded ? '접촉' : '비접촉', '—'],
-            ['Q_j 볼 하중', num(ball.q_n), 'N'],
-            ['δ_x (Displacement.dx_mm)', num(ov.dxOnly), 'mm'],
-            ['틸트항 −R_i(γ_z cos φ_j − γ_y sin φ_j)', num(ov.tiltTerm), 'mm'],
-            ['ΔX = δ_x + 틸트항', num(ov.dX), 'mm'],
-            ['ΔR = δ_y cos φ_j + δ_z sin φ_j', num(ov.dR), 'mm'],
-            ['X_j = A sin α₀ + ΔX', num(xJ), 'mm'],
-            ['R_j = A cos α₀ + ΔR', num(rJ), 'mm'],
-            ['α_j (솔버, alpha_rad)', num(toDeg(ball.alpha_rad)), '°'],
-            ['α_j 재계산 = atan2(X_j, R_j)', num(toDeg(alphaRecomputed)), '°'],
-            ['α_j 상대차', alphaRelDiff === null ? '—' : num(alphaRelDiff), '—'],
-            ['α_j − α₀ (벌어진 양)', num(toDeg(ball.alpha_rad - f.alpha0)), '°'],
-            ['δ_j (솔버, delta_mm)', num(ball.delta_mm), 'mm'],
-            ['δ_j 재계산 = max(0, √(X_j²+R_j²) − A)', num(deltaRecomputed), 'mm'],
-            ['δ_j 상대차', deltaRelDiff === null ? '—' : num(deltaRelDiff), '—'],
+            ['Q_j 볼 하중', fmtN(ball.q_n), 'N'],
+            ['δ_x (Displacement.dx_mm)', fmtUm(ov.dxOnly), 'μm'],
+            ['틸트항 −R_i(γ_z cos φ_j − γ_y sin φ_j)', fmtUm(ov.tiltTerm), 'μm'],
+            ['ΔX = δ_x + 틸트항', fmtUm(ov.dX), 'μm'],
+            ['ΔR = δ_y cos φ_j + δ_z sin φ_j', fmtUm(ov.dR), 'μm'],
+            ['X_j = A sin α₀ + ΔX', fmtMm(xJ), 'mm'],
+            ['R_j = A cos α₀ + ΔR', fmtMm(rJ), 'mm'],
+            ['α_j (솔버, alpha_rad)', fmtDeg(toDeg(ball.alpha_rad)), '°'],
+            ['α_j 재계산 = atan2(X_j, R_j)', fmtDeg(toDeg(alphaRecomputed)), '°'],
+            ['α_j 상대차', alphaRelDiff === null ? '—' : fmtExp(alphaRelDiff), '—'],
+            ['α_j − α₀ (벌어진 양)', fmtDeg(toDeg(ball.alpha_rad - f.alpha0)), '°'],
+            ['δ_j (솔버, delta_mm)', fmtUm(ball.delta_mm), 'μm'],
+            ['δ_j 재계산 = max(0, √(X_j²+R_j²) − A)', fmtUm(deltaRecomputed), 'μm'],
+            ['δ_j 상대차', deltaRelDiff === null ? '—' : fmtExp(deltaRelDiff), '—'],
           ]}
         />
       )}
-
-      <p className="text-[11px] text-text-canvas/50 leading-relaxed">
-        재사용: <span className="font-mono">components/SectionView2D</span> 의 순수 유틸(
-        <span className="font-mono">Txt</span>·<span className="font-mono">WidthDim</span>·
-        <span className="font-mono">AngleArc</span>·<span className="font-mono">viewBox</span> 프레임)을 복사했다(원본
-        미수정). <span className="font-mono">AngleArc</span> 는 시작각 인자를 받도록 일반화했다 — 접촉각이{' '}
-        수직 기준이라 그대로 쓰면 보각(90°−α)을 그려 조용히 틀린 그림이 되기 때문이다. P4-2c 에서{' '}
-        <span className="font-mono">layoutGutter</span>·<span className="font-mono">GutterLabel</span>·
-        <span className="font-mono">VerticalDim</span>·<span className="font-mono">HatchDefs</span>·
-        <span className="font-mono">AxisMarker</span> 를 신설했다. 형상 계산부(γ 경사축·사다리꼴 롤러·리브)는
-        복사하지 않았다.
-      </p>
     </div>
   );
 }

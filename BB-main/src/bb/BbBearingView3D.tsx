@@ -45,8 +45,9 @@
 // ─────────────────────────────────────────────────────────────────────
 //  단위 정책 (S2 확정 — 바꾸지 말 것)
 // ─────────────────────────────────────────────────────────────────────
-//  길이 **mm** · 하중 **N** · 모멘트 **N·mm** · **접촉각만 °**(내부 rad) · **틸트 γ 는 rad**.
-//  ⚠ 기존 3D 의 `q/1000` **kN** 표기는 **D-10 위반**이다 — 따라하지 않는다.
+//  씬 좌표는 솔버 단위(mm)다. 글자 표시만 화면 경계에서 환산한다 (Plan Phase 4-5 §4-5.3) —
+//  `shared.ts` 의 단위별 함수만 쓴다: 하중 N 소수 1 · 모멘트 N·m · 틸트 μrad · 변위 δ μm · 각도 °.
+//  ⚠ 기존 3D 처럼 뷰 안에서 `q/1000` 을 직접 쓰지 않는다 — 환산 계수는 `shared.ts` 한 곳이다.
 //
 // ─────────────────────────────────────────────────────────────────────
 //  ⚠ 지어내지 않는 것
@@ -57,17 +58,32 @@
 //    하중은 전부 0(무하중 색)이다. 이것은 솔버 출력이 아니라 **기하의 정의**이며
 //    화면에 「무하중 기하」라고 명시한다. 결과를 기다리면 Level A 기하를 눈으로 보는
 //    경로가 막힌다 (축단면이 무하중 단면을 그리는 것과 같은 이유).
+//    무하중 기하는 `φ_j = 2πj/Z` · `α = α₀` · `Q = 0` 이다 (Plan Phase 4-5 에서 범례 설명을 주석으로 옮김).
 
 import { useEffect, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppState } from '../store';
+import { StaleBadge } from './ui';
 import type { BallBearingGeometry } from './generated/BallBearingGeometry';
 import type { BallResult } from './generated/BallResult';
 import type { BbOperatingConditions } from './generated/BbOperatingConditions';
 import type { Displacement } from './generated/Displacement';
-import { num, toDeg, C_FORCE, C_MOMENT, C_TILT, C_RING_INNER, C_RING_OUTER, useGeometryResponse } from './shared';
+import {
+  toDeg,
+  fmtDeg,
+  fmtN,
+  fmtNm,
+  fmtUm,
+  fmtUrad,
+  C_FORCE,
+  C_MOMENT,
+  C_TILT,
+  C_RING_INNER,
+  C_RING_OUTER,
+  useGeometryResponse,
+} from './shared';
 
 /** `commands::GeometryResponse` 대응 — `BbGeometryView`·`BbAxialSectionView` 와 같은 형태다. */
 /** (−180, 180] 로 접는다 — 방위차 Δ 표시용 (축단면과 같은 함수). */
@@ -306,10 +322,10 @@ function Ball({
             }}
           >
             <div style={{ fontWeight: 700 }}>볼 #{index + 1}</div>
-            <div>φ = {num(toDeg(br.phi_rad))} °</div>
-            <div>Q = {num(br.q_n)} N</div>
-            <div>α = {num(toDeg(br.alpha_rad))} °</div>
-            <div>δ = {num(br.delta_mm)} mm</div>
+            <div>φ = {fmtDeg(toDeg(br.phi_rad))} °</div>
+            <div>Q = {fmtN(br.q_n)} N</div>
+            <div>α = {fmtDeg(toDeg(br.alpha_rad))} °</div>
+            <div>δ = {fmtUm(br.delta_mm)} μm</div>
             <div style={{ color: br.loaded ? '#f59e0b' : '#94a3b8' }}>
               {br.loaded ? '접촉' : '비접촉'}
             </div>
@@ -351,21 +367,21 @@ function LoadVectors({
         out.push({
           dir: new THREE.Vector3(0, op.f_y_n, op.f_z_n),
           color: C_FORCE,
-          label: `F_r = ${num(Math.hypot(op.f_y_n, op.f_z_n))} N`,
+          label: `F_r = ${fmtN(Math.hypot(op.f_y_n, op.f_z_n))} N`,
         });
       }
       if (op.f_x_n !== 0) {
         out.push({
           dir: new THREE.Vector3(Math.sign(op.f_x_n), 0, 0),
           color: C_FORCE,
-          label: `F_x = ${num(op.f_x_n)} N`,
+          label: `F_x = ${fmtN(op.f_x_n)} N`,
         });
       }
       if (op.m_y_nmm !== 0 || op.m_z_nmm !== 0) {
         out.push({
           dir: new THREE.Vector3(0, op.m_y_nmm, op.m_z_nmm),
           color: C_MOMENT,
-          label: `M = (${num(op.m_y_nmm)}, ${num(op.m_z_nmm)}) N·mm`,
+          label: `M = (${fmtNm(op.m_y_nmm)}, ${fmtNm(op.m_z_nmm)}) N·m`,
         });
       }
     }
@@ -373,7 +389,7 @@ function LoadVectors({
       out.push({
         dir: new THREE.Vector3(0, disp.ry_rad, disp.rz_rad),
         color: C_TILT,
-        label: `틸트축 (γ_y, γ_z) = (${num(disp.ry_rad)}, ${num(disp.rz_rad)}) rad`,
+        label: `틸트축 (γ_y, γ_z) = (${fmtUrad(disp.ry_rad)}, ${fmtUrad(disp.rz_rad)}) μrad`,
       });
     }
     return out;
@@ -505,6 +521,7 @@ export default function BbBearingView3D() {
   const op = resultInput?.operating ?? null;
   const disp = result?.equilibrium.displacement ?? null;
   // 입력이 Solve 이후 변경되었는가 — 축단면(P4-3a)과 같은 판정.
+  // 형상은 현재 입력(bbInput), 하중·변위는 Solve 시점(resultInput) 기준이라 어긋난다.
   const stale = result !== null && resultInput !== null && resultInput !== bbInput;
 
   const rOD = g.outer_diameter_mm / 2;
@@ -553,42 +570,32 @@ export default function BbBearingView3D() {
                 'linear-gradient(to right, hsl(240,100%,50%), hsl(180,100%,50%), hsl(120,100%,50%), hsl(60,100%,50%), hsl(0,100%,50%))',
             }}
           />
-          <span>0 … {num(qMax)} N</span>
-        </div>
-        <div className="mt-1 text-white/70">
-          축: <span style={{ color: '#f87171' }}>X = 회전축</span> · φ = 0 은 +Y (D-7 · D-8)
-        </div>
-        <div className="text-white/70">
-          접촉선 = 볼별 α_j 방향(내·외륜 접촉점 관통), 굵기 ∝ Q_j
+          <span>0 … {fmtN(qMax)} N</span>
         </div>
         {result ? (
-          <div className="text-white/70">
+          <div className="mt-1 text-white/70">
             <span style={{ color: C_FORCE }}>━ 하중</span>{' '}
             <span style={{ color: C_MOMENT }}>━ 모멘트</span>{' '}
-            <span style={{ color: C_TILT }}>━ 틸트축</span> (길이는 물리량이 아니다)
+            <span style={{ color: C_TILT }}>━ 틸트축</span>
           </div>
         ) : (
-          <div style={{ color: '#fbbf24' }}>
-            무하중 기하 (Solve 전) — φ_j = 2πj/Z, α = α₀ = {num(toDeg(alpha0 ?? 0))} °, Q = 0
+          <div className="mt-1" style={{ color: '#fbbf24' }}>
+            무하중 기하 (Solve 전) — α₀ = {fmtDeg(toDeg(alpha0 ?? 0))} °
           </div>
         )}
         {tiltDeg !== null && (
           <div className="text-white/70">
-            틸트 방위 {num(tiltDeg)} °
+            틸트 방위 {fmtDeg(tiltDeg)} °
             {momDeg !== null && (
-              <> · 모멘트 방위 {num(momDeg)} ° · Δ = {num(wrapDeg(tiltDeg - momDeg))} ° (D-2d)</>
+              <> · 모멘트 방위 {fmtDeg(momDeg)} ° · Δ = {fmtDeg(wrapDeg(tiltDeg - momDeg))} °</>
             )}
           </div>
         )}
       </div>
 
       {stale && (
-        <div
-          className="absolute top-2 left-2 z-10 rounded-md px-3 py-1.5 text-[11px] text-amber-200 backdrop-blur-sm"
-          style={{ background: 'rgba(120,53,15,0.75)' }}
-        >
-          입력이 Solve 이후 변경되었다. <b>형상은 현재 입력</b>, <b>하중·변위는 resultInput</b>{' '}
-          기준이다.
+        <div className="absolute top-2 left-2 z-10">
+          <StaleBadge />
         </div>
       )}
 
