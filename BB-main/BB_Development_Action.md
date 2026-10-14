@@ -2280,6 +2280,11 @@ webview error 0 · build 성공 · lint baseline 44 증감 0.
 | 3 | 「Clearance value」 행의 새 단위 유지 | 없음 |
 | 4 | 3D 툴팁은 규칙대로 11 px · 보통 굵기 | 툴팁 글자 10 → 11 px, 굵게 700 → 제목만 500 |
 
+- **2·4번 반영 완료 (`65e94db`)**
+  - `fmtGPa` 를 추가해 E* 를 113736 MPa → **113.74 GPa** 로 바꿨다(실제 `shared.ts` 번들 실행으로 확인).
+  - 3D 툴팁 글자를 11 px 로, 볼 번호 굵기를 500 으로 바꿨다.
+  - 헬스체크 ALL PASS — 표 165행 자릿수 위반 0, webview error 0.
+
 ---
 
 # Phase 5 — 수명·정정격 (P4 병행 작업 포함)
