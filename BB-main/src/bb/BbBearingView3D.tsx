@@ -85,6 +85,7 @@ import {
   C_AXIS_Y,
   C_AXIS_Z,
   arrowLengths3d,
+  loadHue,
 } from './shared';
 
 
@@ -97,8 +98,7 @@ const CYL_AXIS = new THREE.Vector3(0, 1, 0);
  * 기존 `components/BearingView3D` 의 `colorScale` 을 그대로 가져왔다.
  */
 function loadColor(q: number, qMax: number): THREE.Color {
-  const t = qMax > 0 ? Math.min(Math.max(q / qMax, 0), 1) : 0;
-  return new THREE.Color().setHSL((1 - t) * 0.667, 1, 0.5);
+  return new THREE.Color().setHSL(loadHue(q, qMax), 1, 0.5);
 }
 
 /**

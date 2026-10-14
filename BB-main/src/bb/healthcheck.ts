@@ -27,6 +27,7 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { info as logInfo, error as logError } from '@tauri-apps/plugin-log';
+import { loadColorCss, fmtN } from './shared';
 import type { BbInput } from './generated/BbInput';
 import type { BbResult } from './generated/BbResult';
 import type { BallBearingKind } from './generated/BallBearingKind';
@@ -873,6 +874,35 @@ async function measureFormat(): Promise<string[]> {
       await logInfo(`[healthcheck] Load Dist α_j 스플라인 점 ${x.length}개 · 닫힘 ${closed}`);
     }
   }
+
+  // 볼별 하중 막대 (Plan §4-5.9) — Load Dist 에 Z 개 · 값 = 극좌표 Q · 색 = 3D 와 같은 함수 · Life 에는 막대 0
+  if (mL) {
+    type BTrace = { type?: string; y?: number[]; r?: number[]; mode?: string; marker?: { color?: string[] | string } };
+    const traces = Array.from(mL.querySelectorAll('.js-plotly-plot')).flatMap(
+      pl => ((pl as Element & { data?: BTrace[] }).data ?? [])
+    );
+    const bar = traces.find(t => t.type === 'bar');
+    const polarQ = traces.find(t => Array.isArray(t.r) && t.mode === 'markers' && (t.r?.length ?? 0) > 0);
+    if (!bar || !bar.y) bad.push('Load Dist: 볼별 하중 막대가 없다');
+    else {
+      const y = bar.y;
+      const qMax = Math.max(0, ...y);
+      const colors = Array.isArray(bar.marker?.color) ? bar.marker!.color as string[] : [];
+      const colorBad = y.filter((q, i) => colors[i] !== loadColorCss(q, qMax)).length;
+      const nPolar = polarQ?.r?.length ?? -1;
+      await logInfo(`[healthcheck] Load Dist 막대 ${y.length}개 · 극좌표 점 ${nPolar}개 · 색 불일치 ${colorBad} · Q_max ${fmtN(qMax)} N`);
+      if (polarQ && polarQ.r && (polarQ.r.length !== y.length || polarQ.r.some((v, i) => Math.abs(v - y[i]) > 1e-9)))
+        bad.push('Load Dist: 막대 값이 극좌표 Q_j 와 다르다');
+      if (colorBad) bad.push(`Load Dist: 막대 색이 3D 컬러맵과 다른 막대 ${colorBad}개`);
+    }
+  }
+  buttonByText('Life')?.click();
+  const mLife = document.querySelector('main');
+  await waitStable(() => mLife?.textContent ?? '');
+  const lifeBars = Array.from(mLife?.querySelectorAll('.js-plotly-plot') ?? []).flatMap(
+    pl => ((pl as Element & { data?: { type?: string }[] }).data ?? [])
+  ).filter(t => t.type === 'bar').length;
+  if (lifeBars) bad.push(`Life: 막대 차트 ${lifeBars}개 잔존`);
 
   // 3D 뷰 (Plan §4-5.8) — 라벨 겹침 0 · 축 글자 X·Y(G)·Z · +Y 가 화면 아래 · 틸트 정보 없음
   buttonByText('3D View')?.click();

@@ -50,20 +50,18 @@
 // ─────────────────────────────────────────────────────────────────────
 //  ♻ 재사용
 // ─────────────────────────────────────────────────────────────────────
-//  TRB `charts/LifeChart` 의 **「요약 카드 → 중간값 사슬 표 → 차트」 3층 배치**를 옮겼다.
-//  원본 파일은 손대지 않는다(최소 변경 방침). 라미나(슬라이스)별 수명은 **볼에 대응물이
-//  없으므로 폐기**하고 그 자리에 **볼별 `Q_j` 막대**를 둔다.
+//  TRB `charts/LifeChart` 의 「요약 카드 → 중간값 사슬 표」 배치를 옮겼다(원본 미수정).
+//  라미나(슬라이스)별 수명은 볼에 대응물이 없어 폐기했다. 그 자리에 두었던 볼별 `Q_j` 막대는
+//  2026-10-14 사용자 결정으로 Load Distribution 탭으로 옮겼다(Plan §4-5.9) — Q_ei·Q_ee 는 표 값으로 본다.
 //  커맨드 호출은 `BbGeometryView`(150 ms 디바운스 + `cancelled` 플래그) 와 같은 패턴이다.
 
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAppState } from '../store';
-import Plot from '../components/charts/PlotWithCopy';
-import { darkLayout, plotConfig } from '../components/charts/plotlyDefaults';
 import type { BbLifeResult } from './generated/BbLifeResult';
 import type { BbLifeConditions } from './generated/BbLifeConditions';
 import type { BbFatigueLimitMethod } from './generated/BbFatigueLimitMethod';
-import { fmtDimless, fmtExp, fmtHours, fmtInt, fmtKN, fmtMrev, fmtN, fmtVisc, C_LOADED, C_UNLOADED, C_REF, C_INNER, C_OUTER } from './shared';
+import { fmtDimless, fmtExp, fmtHours, fmtInt, fmtKN, fmtMrev, fmtN, fmtVisc, C_LOADED, C_REF, C_INNER, C_OUTER } from './shared';
 import { AlertList, DetailTable, ErrorBox, Loading, Panel, StaleBadge } from './ui';
 
 /** `null` 은 **빈칸**으로 — 0 이나 대시로 채우지 않는다 (파일 헤더의 규율). */
@@ -190,7 +188,6 @@ export default function BbLifeView() {
   const toHours = (mrev: number | null): number | null =>
     mrev === null || nRpm === null || nRpm <= 0 ? null : (mrev * 1e6) / (60 * nRpm);
 
-  const balls = result?.equilibrium.ball_results ?? [];
 
   const stale = result !== null && resultInput !== null && resultInput !== bbInput;
   const st = life?.static_rating ?? null;
@@ -354,82 +351,6 @@ export default function BbLifeView() {
               ]}
             />
 
-            {/* 볼별 Q_j 막대 — 라미나별 수명(TRB)의 자리를 대신한다 */}
-            {balls.length > 0 ? (
-              <div className="h-[300px]">
-                <Plot
-                  data={[
-                    {
-                      type: 'bar',
-                      x: balls.map((_, i) => i + 1),
-                      y: balls.map(b => b.q_n),
-                      marker: { color: balls.map(b => (b.loaded ? C_LOADED : C_UNLOADED)) },
-                      name: 'Q_j',
-                      customdata: balls.map(b => fmtN(b.q_n)),
-                      hovertemplate: '볼 #%{x}<br>Q = %{customdata} N<extra></extra>',
-                    },
-                  ]}
-                  layout={{
-                    ...darkLayout,
-                    height: 300,
-                    margin: { l: 60, r: 20, t: 30, b: 40 },
-                    title: { text: '볼별 Q_j 와 등가 공칭하중 기준선', font: { size: 12 } },
-                    xaxis: { title: { text: '볼 번호' }, dtick: 1 },
-                    yaxis: { title: { text: 'Q [N]' } },
-                    shapes: [
-                      // Q_ci·Q_ce 는 볼 하나가 견디는 **공칭** 하중이다. 실하중이
-                      // 여기 얼마나 못 미치는지가 수명 여유의 직관적 척도다.
-                      {
-                        type: 'line',
-                        xref: 'paper',
-                        x0: 0,
-                        x1: 1,
-                        y0: life.q_ei_n,
-                        y1: life.q_ei_n,
-                        line: { color: C_INNER, width: 1.5, dash: 'dash' },
-                      },
-                      {
-                        type: 'line',
-                        xref: 'paper',
-                        x0: 0,
-                        x1: 1,
-                        y0: life.q_ee_n,
-                        y1: life.q_ee_n,
-                        line: { color: C_OUTER, width: 1.5, dash: 'dot' },
-                      },
-                    ],
-                    annotations: [
-                      {
-                        xref: 'paper',
-                        x: 0.01,
-                        y: life.q_ei_n,
-                        text: `Q_ei = ${fmtN(life.q_ei_n)} N`,
-                        showarrow: false,
-                        font: { size: 11, color: C_INNER },
-                        yanchor: 'bottom',
-                      },
-                      {
-                        xref: 'paper',
-                        x: 0.99,
-                        y: life.q_ee_n,
-                        text: `Q_ee = ${fmtN(life.q_ee_n)} N`,
-                        showarrow: false,
-                        font: { size: 11, color: C_OUTER },
-                        yanchor: 'top',
-                        xanchor: 'right',
-                      },
-                    ],
-                  }}
-                  config={plotConfig}
-                  style={{ width: '100%', height: '100%' }}
-                  useResizeHandler
-                />
-              </div>
-            ) : (
-              <p className="text-[12px] text-amber-300/80">
-                결과 없음 — 볼별 <span className="font-mono">Q_j</span> 막대는 Solve 후에 그린다.
-              </p>
-            )}
           </Panel>
 
           {/* ═══ 2단 — 정정격 (ISO 76) ═══════════════════════════════ */}

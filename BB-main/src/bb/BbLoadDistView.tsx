@@ -69,7 +69,7 @@ import { darkLayout, plotConfig } from '../components/charts/plotlyDefaults';
 import { DetailTable } from './ui';
 import type { BallResult } from './generated/BallResult';
 import type { BbPhaseSweepResult } from './generated/BbPhaseSweepResult';
-import { toDeg, fmtN, fmtDeg, fmtUm, fmtMPa, fmtMmFine, fmtDimless, C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF } from './shared';
+import { toDeg, fmtN, fmtDeg, fmtUm, fmtMPa, fmtMmFine, fmtDimless, C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF, loadColorCss, LOAD_COLORSCALE } from './shared';
 
 
 /**
@@ -258,6 +258,57 @@ function LoadDistPolar({
  *     (같은 볼의 값이지 새로 지어낸 값이 아니다).
  *   - 스플라인은 점 사이를 부드럽게 보이게 할 뿐이다. 계산된 값은 점(마커)이다.
  */
+/**
+ * 볼별 작용 하중 막대 (Plan §4-5.9) — TRB 의 「극좌표 + 롤러별 하중 막대」 배치를 옮겼다.
+ * 색은 3D 뷰와 **같은 함수**(`shared.loadColorCss`)로 칠하고, 같은 범위(0 … Q_max)의 컬러바를 단다.
+ * 비접촉 볼은 높이 0 이다(Q_j = 0).
+ */
+function BallLoadBars({ balls }: { balls: BallResult[] }) {
+  const qMax = Math.max(0, ...balls.map(b => b.q_n));
+  const data: Plotly.Data[] = [
+    {
+      type: 'bar',
+      x: balls.map((_, i) => i + 1),
+      y: balls.map(b => b.q_n),
+      marker: { color: balls.map(b => loadColorCss(b.q_n, qMax)) },
+      customdata: balls.map(b => [fmtN(b.q_n), fmtDeg(toDeg(b.phi_rad))]),
+      hovertemplate: '볼 #%{x}<br>φ = %{customdata[1]}°<br>Q = %{customdata[0]} N<extra></extra>',
+      showlegend: false,
+    } as Plotly.Data,
+    // 컬러바 전용(보이지 않는 점) — 막대 색과 같은 hue 표본을 같은 범위로.
+    {
+      type: 'scatter',
+      x: [1],
+      y: [0],
+      mode: 'markers',
+      marker: {
+        size: 0,
+        opacity: 0,
+        color: [0, qMax],
+        cmin: 0,
+        cmax: qMax,
+        colorscale: LOAD_COLORSCALE,
+        showscale: true,
+        colorbar: { title: { text: 'N' }, thickness: 12, len: 0.8, tickfont: { size: 11, color: '#94a3b8' } },
+      },
+      hoverinfo: 'skip',
+      showlegend: false,
+    } as Plotly.Data,
+  ];
+  const layout: Partial<Plotly.Layout> = {
+    ...darkLayout,
+    title: { text: '볼별 하중 Q_j', font: { size: 14, color: '#e2e8f0' } },
+    xaxis: { ...darkLayout.xaxis, title: { text: '볼 번호' }, dtick: 1 },
+    yaxis: { ...darkLayout.yaxis, title: { text: 'Q [N]' }, rangemode: 'tozero' },
+    bargap: 0.15,
+  };
+  return (
+    <div className="h-[420px]">
+      <Plot data={data} layout={layout} config={plotConfig} style={{ width: '100%', height: '100%' }} useResizeHandler />
+    </div>
+  );
+}
+
 function AlphaCurve({ balls, alpha0Rad }: { balls: BallResult[]; alpha0Rad: number }) {
   const loaded = balls.map((b, i) => ({ b, i })).filter(({ b }) => b.loaded);
   const alpha0Deg = toDeg(alpha0Rad);
@@ -524,8 +575,11 @@ export default function BbLoadDistView() {
 
   return (
     <div className="h-full overflow-auto custom-scrollbar p-4 space-y-5">
-      {/* ① Q_j(φ) 극좌표 — C-4 · C-7 · D-2b/2c */}
-      <LoadDistPolar points={balls} loadPhiDeg={loadPhiDeg} loadMagN={loadMagN} />
+      {/* ① Q_j(φ) 극좌표 — C-4 · C-7 · D-2b/2c — 오른쪽에 볼별 하중 막대 (Plan §4-5.9) */}
+      <div className="grid grid-cols-2 gap-4">
+        <LoadDistPolar points={balls} loadPhiDeg={loadPhiDeg} loadMagN={loadMagN} />
+        <BallLoadBars balls={balls} />
+      </div>
 
       <DetailTable
         title="Load Zone"

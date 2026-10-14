@@ -125,6 +125,21 @@ export const C_AXIS_Y = '#4ade80';
 /** 3D 축 Z */
 export const C_AXIS_Z = '#60a5fa';
 
+// ─── 하중 컬러맵 (3D 볼 · Load Dist 막대 공통, Plan §4-5.9) ─────────────
+
+/** 하중 컬러맵의 색상(hue, 0–1) — 무하중 청색(0.667) → `Q_max` 적색(0). HSL 채도 100 %, 명도 50 %. */
+export function loadHue(q: number, qMax: number): number {
+  const t = qMax > 0 ? Math.min(Math.max(q / qMax, 0), 1) : 0;
+  return (1 - t) * 0.667;
+}
+/** 하중 컬러맵 CSS 색 — Plotly 막대처럼 CSS 색이 필요한 곳용. 3D 는 `loadHue` 를 THREE.Color 에 넣는다. */
+export const loadColorCss = (q: number, qMax: number) => `hsl(${(loadHue(q, qMax) * 360).toFixed(2)}, 100%, 50%)`;
+/** 컬러바용 컬러스케일 — 같은 hue 를 13 점으로 표본화한다 (Plotly 는 점 사이를 RGB 로 잇는다). */
+export const LOAD_COLORSCALE: [number, string][] = Array.from({ length: 13 }, (_, i) => [
+  i / 12,
+  `hsl(${((1 - i / 12) * 0.667 * 360).toFixed(2)}, 100%, 50%)`,
+]);
+
 // ─── 3D 화살표 길이 (Plan §4-5.8) ─────────────────────────────────────
 
 /**
