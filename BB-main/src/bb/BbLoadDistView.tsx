@@ -51,10 +51,11 @@
 //    오히려 ISO 그림과 방향이 같아져 대조가 쉬워진다.
 //
 // ─────────────────────────────────────────────────────────────────────
-//  단위 정책 (S2 확정 — 바꾸지 말 것)
+//  단위·자릿수 (Plan Phase 4-5 §4-5.3)
 // ─────────────────────────────────────────────────────────────────────
-//  하중 **N**(kN 로 나누지 않는다) · 각도 **°** · 타원 `a`·`b` **mm** · 응력 **MPa** ·
-//  **틸트 γ 만 rad**. hover·표는 **유효숫자 9자리** — 줄이면 검증 대조가 불가능하다.
+//  표시는 `shared.ts` 의 단위별 함수만 쓴다 — 하중 N 소수 1 · 각도 ° 소수 2(rad 병기 없음) ·
+//  반축 a·b mm 소수 4 · 변위 δ μm 소수 2 · 응력 MPa 정수 · 무차원 소수 4.
+//  Plotly hover 도 같은 자릿수다. 정밀 대조는 Rust 테스트와 헬스체크 몫이다 (§4-5.1 결정 4).
 //
 // ─────────────────────────────────────────────────────────────────────
 //  ⚠ §3.6.1.4 통합 대비 — 컴포넌트를 미리 갈라 둔다
@@ -67,10 +68,10 @@
 import { useAppState } from '../store';
 import Plot from '../components/charts/PlotWithCopy';
 import { darkLayout, plotConfig } from '../components/charts/plotlyDefaults';
-import { DetailTable } from '../components/shared/DetailTable';
+import { DetailTable } from './ui';
 import type { BallResult } from './generated/BallResult';
 import type { BbPhaseSweepResult } from './generated/BbPhaseSweepResult';
-import { num, toDeg, C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF, C_INNER, C_OUTER } from './shared';
+import { toDeg, fmtN, fmtDeg, fmtUm, fmtMPa, fmtMmFine, fmtDimless, C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF, C_INNER, C_OUTER } from './shared';
 
 
 /**
@@ -132,7 +133,7 @@ function LoadDistPolar({
       fillcolor: 'rgba(245,158,11,0.15)',
       line: { color: C_LOADED, width: 2 },
       name: 'Q_j envelope',
-      hovertemplate: '볼 #%{customdata}<br>φ = %{theta:.9g}°<br>Q = %{r:.9g} N<extra></extra>',
+      hovertemplate: '볼 #%{customdata}<br>φ = %{theta:.2f}°<br>Q = %{r:.1f} N<extra></extra>',
     } as Plotly.Data);
 
     // envelope 의 **꼭짓점**(= 실제 계산된 볼 하중). 이것을 찍어 두어야
@@ -146,7 +147,7 @@ function LoadDistPolar({
       mode: 'markers',
       marker: { size: 6, color: C_LOADED, line: { color: '#1e293b', width: 1 } },
       name: `Q_j (볼 ${env.length}점)`,
-      hovertemplate: '볼 #%{customdata}<br>φ = %{theta:.9g}°<br>Q = %{r:.9g} N<extra></extra>',
+      hovertemplate: '볼 #%{customdata}<br>φ = %{theta:.2f}°<br>Q = %{r:.1f} N<extra></extra>',
     } as Plotly.Data);
   }
 
@@ -170,7 +171,7 @@ function LoadDistPolar({
       name: loaded ? `접촉 (${sel.length})` : `비접촉 (${sel.length})`,
       hovertemplate:
         `볼 #%{customdata[0]} — ${loaded ? '접촉' : '비접촉'}` +
-        '<br>φ = %{theta:.9g}°<br>Q = %{customdata[1]:.9g} N<extra></extra>',
+        '<br>φ = %{theta:.2f}°<br>Q = %{customdata[1]:.1f} N<extra></extra>',
     } as Plotly.Data);
   };
   pushRing(true);
@@ -185,16 +186,15 @@ function LoadDistPolar({
       mode: 'lines+markers',
       line: { color: C_LOAD_DIR, width: 3, dash: 'dash' },
       marker: { size: [0, 12], symbol: 'diamond', color: C_LOAD_DIR },
-      name: `F_r 방위 ${loadPhiDeg.toFixed(3)}°`,
-      hovertemplate: `F_r = ${num(loadMagN)} N<br>φ_F = ${num(loadPhiDeg)}°<extra></extra>`,
+      name: `F_r 방위 ${fmtDeg(loadPhiDeg)}°`,
+      hovertemplate: `F_r = ${fmtN(loadMagN)} N<br>φ_F = ${fmtDeg(loadPhiDeg)}°<extra></extra>`,
     } as Plotly.Data);
   }
 
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
-    // 제목은 **`Load Distribution`** 으로 단순화한다 (§3.6.4.11).
-    // ⚠ 축 규약을 화면에서 지우면 방위 검증이 불가능해진다 — 제목에서 뺀 대신
-    //   차트 바로 위 **부제**와 상단 **방위 규약 배너**에 남긴다 (아래 JSX 참조).
+    // 제목은 **`Load Distribution`** 으로 단순화한다 (§3.6.4.11). 축 규약은 위 주석과
+    // `angularaxis` 설정이 지킨다 (화면 배너·부제는 2026-08-24 사용자 지시로 제거).
     title: { text: 'Load Distribution', font: { size: 14, color: '#e2e8f0' } },
     polar: {
       bgcolor: 'transparent',
@@ -267,29 +267,30 @@ function AlphaCurve({ balls, alpha0Rad }: { balls: BallResult[]; alpha0Rad: numb
       y: [alpha0Deg, alpha0Deg],
       mode: 'lines',
       line: { color: C_REF, width: 2, dash: 'dot' },
-      name: `α₀ = ${alpha0Deg.toFixed(4)}°`,
-      hovertemplate: `α₀ = ${num(alpha0Deg)}° (${num(alpha0Rad)} rad)<extra></extra>`,
+      name: `α₀ = ${fmtDeg(alpha0Deg)}°`,
+      hovertemplate: `α₀ = ${fmtDeg(alpha0Deg)}°<extra></extra>`,
     } as Plotly.Data,
     {
       type: 'scatter',
       x: loaded.map(({ b }) => toDeg(b.phi_rad)),
       y: loaded.map(({ b }) => toDeg(b.alpha_rad)),
-      customdata: loaded.map(({ b, i }) => [i + 1, b.q_n, b.delta_mm]),
+      // δ 는 화면 단위(μm) 문자열로 넘긴다 — 환산을 shared.ts 한 곳에 둔다.
+      customdata: loaded.map(({ b, i }) => [i + 1, b.q_n, fmtUm(b.delta_mm)]),
       mode: 'markers',
       marker: { size: 10, color: C_ALPHA, line: { color: '#1e293b', width: 1 } },
       name: `α_j (접촉 ${loaded.length})`,
       hovertemplate:
-        '볼 #%{customdata[0]}<br>φ = %{x:.9g}°<br>α_j = %{y:.9g}°' +
-        '<br>Q = %{customdata[1]:.9g} N<br>δ = %{customdata[2]:.9g} mm<extra></extra>',
+        '볼 #%{customdata[0]}<br>φ = %{x:.2f}°<br>α_j = %{y:.2f}°' +
+        '<br>Q = %{customdata[1]:.1f} N<br>δ = %{customdata[2]} μm<extra></extra>',
     } as Plotly.Data,
   ];
 
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
-    title: { text: 'α_j(φ) — 운전 접촉각 (접촉 볼만)', font: { size: 14, color: '#e2e8f0' } },
+    title: { text: 'α_j(φ) 운전 접촉각', font: { size: 14, color: '#e2e8f0' } },
     xaxis: {
       ...darkLayout.xaxis,
-      title: { text: 'φ [°]   (φ = 0 은 +Y 축)' },
+      title: { text: 'φ [°]' },
       range: [0, 360],
       dtick: 30,
     },
@@ -341,19 +342,16 @@ function PhaseSweepChart({
       line: { color: C_LOADED, width: 2 },
       marker: { size: 5, color: C_LOADED },
       name: 'Q_max(φ₀)',
-      hovertemplate: 'φ₀ = %{x:.9g}°<br>Q_max = %{y:.9g} N<extra></extra>',
+      hovertemplate: 'φ₀ = %{x:.2f}°<br>Q_max = %{y:.1f} N<extra></extra>',
     } as Plotly.Data,
   ];
 
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
-    title: {
-      text: `위상 스윕 Q_max(φ₀) — 주기 2π/Z = ${periodDeg.toFixed(6)}°`,
-      font: { size: 14, color: '#e2e8f0' },
-    },
+    title: { text: '위상 스윕 Q_max(φ₀)', font: { size: 14, color: '#e2e8f0' } },
     xaxis: {
       ...darkLayout.xaxis,
-      title: { text: 'φ₀ [°]   (케이지 위상)' },
+      title: { text: 'φ₀ [°]' },
       range: [0, periodDeg * 1.05],
     },
     yaxis: { ...darkLayout.yaxis, title: { text: 'Q_max [N]' } },
@@ -394,21 +392,18 @@ function PhaseSweepChart({
         />
       </div>
       <DetailTable
-        title="Phase Sweep (BbPhaseSweepResult · 전 5필드)"
+        title="Phase Sweep"
         rows={[
-          ['주기 2π/Z', num(periodDeg), '°'],
-          ['주기 2π/Z', num((2 * Math.PI) / (z > 0 ? z : 1)), 'rad'],
+          ['주기 2π/Z', fmtDeg(periodDeg), '°'],
           ['스윕 점수 (curve 길이)', String(sweep.curve.length), ''],
-          ['worst Q_max', num(sweep.worst_q_max_n), 'N'],
-          ['worst Q_max 발생 φ₀', num(toDeg(sweep.worst_q_max_phase_rad)), '°'],
-          ['worst Q_max 발생 φ₀', num(sweep.worst_q_max_phase_rad), 'rad'],
-          ['worst p_max', num(sweep.worst_p_max_mpa), 'MPa'],
-          ['worst p_max 발생 φ₀', num(toDeg(sweep.worst_p_max_phase_rad)), '°'],
-          ['worst p_max 발생 φ₀', num(sweep.worst_p_max_phase_rad), 'rad'],
+          ['worst Q_max', fmtN(sweep.worst_q_max_n), 'N'],
+          ['worst Q_max 발생 φ₀', fmtDeg(toDeg(sweep.worst_q_max_phase_rad)), '°'],
+          ['worst p_max', fmtMPa(sweep.worst_p_max_mpa), 'MPa'],
+          ['worst p_max 발생 φ₀', fmtDeg(toDeg(sweep.worst_p_max_phase_rad)), '°'],
           // φ₀ = 0 은 기본해(`equilibrium`)와 **같은 배치**다. 두 값을 나란히 내면
           // 스윕 경로와 기본 경로가 갈라졌는지 화면에서 바로 보인다.
-          ['curve[0] Q_max (φ₀ = 0)', sweep.curve.length > 0 ? num(sweep.curve[0][1]) : '—', 'N'],
-          ['equilibrium.q_max_n (φ₀ = 0)', num(baseQMaxN), 'N'],
+          ['curve[0] Q_max (φ₀ = 0)', sweep.curve.length > 0 ? fmtN(sweep.curve[0][1]) : '—', 'N'],
+          ['equilibrium.q_max_n (φ₀ = 0)', fmtN(baseQMaxN), 'N'],
         ]}
       />
     </div>
@@ -430,12 +425,12 @@ function ContactEllipse({ balls }: { balls: BallResult[] }) {
       y: vals,
       name,
       marker: { color },
-      hovertemplate: `볼 #%{x} — ${name} = %{y:.9g} mm<extra></extra>`,
+      hovertemplate: `볼 #%{x} — ${name} = %{y:.4f} mm<extra></extra>`,
     }) as Plotly.Data;
 
   const barLayout: Partial<Plotly.Layout> = {
     ...darkLayout,
-    title: { text: '접촉타원 반경 a · b (볼별 비교)', font: { size: 14, color: '#e2e8f0' } },
+    title: { text: '접촉타원 반경 a · b', font: { size: 14, color: '#e2e8f0' } },
     xaxis: { ...darkLayout.xaxis, title: { text: '볼 번호 j' }, dtick: 1 },
     yaxis: { ...darkLayout.yaxis, title: { text: '[mm]' } },
     barmode: 'group',
@@ -461,14 +456,14 @@ function ContactEllipse({ balls }: { balls: BallResult[] }) {
       fillcolor: 'rgba(255,255,255,0.04)',
       line: { color, width: 2 },
       name,
-      hovertemplate: `${name}<br>x = %{x:.9g} mm<br>y = %{y:.9g} mm<extra></extra>`,
+      hovertemplate: `${name}<br>x = %{x:.4f} mm<br>y = %{y:.4f} mm<extra></extra>`,
     } as Plotly.Data;
   };
 
   const shapeLayout: Partial<Plotly.Layout> = {
     ...darkLayout,
     title: {
-      text: b0 ? `최대하중 볼 #${top + 1} 의 접촉타원 윤곽 (실제 축척, 내·외륜 겹쳐그리기)` : '접촉타원 윤곽',
+      text: b0 ? `접촉타원 윤곽 — 볼 #${top + 1}` : '접촉타원 윤곽',
       font: { size: 14, color: '#e2e8f0' },
     },
     xaxis: { ...darkLayout.xaxis, title: { text: 'a 방향 [mm]' } },
@@ -501,13 +496,13 @@ function ContactEllipse({ balls }: { balls: BallResult[] }) {
               ring(
                 b0.a_inner_mm,
                 b0.b_inner_mm,
-                `inner (a/b = ${(b0.a_inner_mm / b0.b_inner_mm).toFixed(6)})`,
+                `inner (a/b = ${fmtDimless(b0.a_inner_mm / b0.b_inner_mm)})`,
                 C_INNER
               ),
               ring(
                 b0.a_outer_mm,
                 b0.b_outer_mm,
-                `outer (a/b = ${(b0.a_outer_mm / b0.b_outer_mm).toFixed(6)})`,
+                `outer (a/b = ${fmtDimless(b0.a_outer_mm / b0.b_outer_mm)})`,
                 C_OUTER
               ),
             ]}
@@ -522,16 +517,19 @@ function ContactEllipse({ balls }: { balls: BallResult[] }) {
   );
 }
 
-/** 볼별 전 항목 표 — `BallResult` 11필드를 **빠짐없이** 낸다 (유효숫자 9자리). */
+/**
+ * 볼별 전 항목 표 — `BallResult` 11필드를 **빠짐없이** 낸다.
+ *
+ * 비접촉 볼은 흐리게 하고 α_j 를 「—」로 둔다 — 하중을 받지 않는 볼의 접촉각은 물리적 의미가 없다.
+ */
 function BallTable({ balls }: { balls: BallResult[] }) {
   const head = [
     'j',
     'φ [°]',
     'loaded',
-    'δ_j [mm]',
+    'δ_j [μm]',
     'Q_j [N]',
     'α_j [°]',
-    'α_j [rad]',
     'a_i [mm]',
     'b_i [mm]',
     'a/b_i',
@@ -543,9 +541,7 @@ function BallTable({ balls }: { balls: BallResult[] }) {
   ];
   return (
     <div>
-      <h4 className="text-sm font-semibold text-text-light mb-2 uppercase tracking-wider">
-        Ball Results (BallResult · 전 11필드)
-      </h4>
+      <h4 className="text-sm font-medium text-text-light mb-2">Ball Results</h4>
       <div className="overflow-x-auto custom-scrollbar">
         <table className="text-[12px] whitespace-nowrap">
           <thead>
@@ -561,34 +557,30 @@ function BallTable({ balls }: { balls: BallResult[] }) {
             {balls.map((b, i) => (
               <tr key={i} className={`border-b border-white/[0.03] ${b.loaded ? '' : 'opacity-45'}`}>
                 <td className="py-0.5 px-2 text-right">{i + 1}</td>
-                <td className="py-0.5 px-2 text-right">{num(toDeg(b.phi_rad))}</td>
+                <td className="py-0.5 px-2 text-right">{fmtDeg(toDeg(b.phi_rad))}</td>
                 <td className={`py-0.5 px-2 text-right ${b.loaded ? 'text-amber-300' : 'text-slate-400'}`}>
                   {b.loaded ? '접촉' : '비접촉'}
                 </td>
-                <td className="py-0.5 px-2 text-right">{num(b.delta_mm)}</td>
-                <td className="py-0.5 px-2 text-right">{num(b.q_n)}</td>
-                <td className="py-0.5 px-2 text-right">{b.loaded ? num(toDeg(b.alpha_rad)) : '—'}</td>
-                <td className="py-0.5 px-2 text-right">{b.loaded ? num(b.alpha_rad) : '—'}</td>
-                <td className="py-0.5 px-2 text-right">{num(b.a_inner_mm)}</td>
-                <td className="py-0.5 px-2 text-right">{num(b.b_inner_mm)}</td>
+                <td className="py-0.5 px-2 text-right">{fmtUm(b.delta_mm)}</td>
+                <td className="py-0.5 px-2 text-right">{fmtN(b.q_n)}</td>
+                <td className="py-0.5 px-2 text-right">{b.loaded ? fmtDeg(toDeg(b.alpha_rad)) : '—'}</td>
+                <td className="py-0.5 px-2 text-right">{fmtMmFine(b.a_inner_mm)}</td>
+                <td className="py-0.5 px-2 text-right">{fmtMmFine(b.b_inner_mm)}</td>
                 <td className="py-0.5 px-2 text-right">
-                  {b.b_inner_mm > 0 ? num(b.a_inner_mm / b.b_inner_mm) : '—'}
+                  {b.b_inner_mm > 0 ? fmtDimless(b.a_inner_mm / b.b_inner_mm) : '—'}
                 </td>
-                <td className="py-0.5 px-2 text-right">{num(b.p_max_inner_mpa)}</td>
-                <td className="py-0.5 px-2 text-right">{num(b.a_outer_mm)}</td>
-                <td className="py-0.5 px-2 text-right">{num(b.b_outer_mm)}</td>
+                <td className="py-0.5 px-2 text-right">{fmtMPa(b.p_max_inner_mpa)}</td>
+                <td className="py-0.5 px-2 text-right">{fmtMmFine(b.a_outer_mm)}</td>
+                <td className="py-0.5 px-2 text-right">{fmtMmFine(b.b_outer_mm)}</td>
                 <td className="py-0.5 px-2 text-right">
-                  {b.b_outer_mm > 0 ? num(b.a_outer_mm / b.b_outer_mm) : '—'}
+                  {b.b_outer_mm > 0 ? fmtDimless(b.a_outer_mm / b.b_outer_mm) : '—'}
                 </td>
-                <td className="py-0.5 px-2 text-right">{num(b.p_max_outer_mpa)}</td>
+                <td className="py-0.5 px-2 text-right">{fmtMPa(b.p_max_outer_mpa)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="text-[11px] text-text-canvas/60 mt-1">
-        비접촉 볼은 흐리게 표시하고 α_j 를 「—」로 둔다 — 하중을 받지 않는 볼의 접촉각은 물리적 의미가 없다.
-      </p>
     </div>
   );
 }
@@ -626,13 +618,13 @@ export default function BbLoadDistView() {
       <LoadDistPolar points={balls} loadPhiDeg={loadPhiDeg} loadMagN={loadMagN} />
 
       <DetailTable
-        title="Load Zone (C-7) · Equilibrium"
+        title="Load Zone"
         rows={[
           ['접촉 볼 수 / Z', `${eq.loaded_count} / ${balls.length}`, ''],
-          ['Q_max', num(eq.q_max_n), 'N'],
-          ['볼 간격 2π/Z', num(balls.length > 0 ? 360 / balls.length : 0), '°'],
-          ['φ_F 외부 반경하중 방위', loadPhiDeg === null ? '—' : num(loadPhiDeg), '°'],
-          ['|F_r| = √(F_y² + F_z²)', num(loadMagN), 'N'],
+          ['Q_max', fmtN(eq.q_max_n), 'N'],
+          ['볼 간격 2π/Z', fmtDeg(balls.length > 0 ? 360 / balls.length : 0), '°'],
+          ['φ_F 외부 반경하중 방위', loadPhiDeg === null ? '—' : fmtDeg(loadPhiDeg), '°'],
+          ['|F_r| = √(F_y² + F_z²)', fmtN(loadMagN), 'N'],
           ['converged / iterations', `${String(eq.converged)} / ${eq.iterations}`, ''],
         ]}
       />
@@ -645,8 +637,7 @@ export default function BbLoadDistView() {
         <PhaseSweepChart sweep={result.phase_sweep} z={balls.length} baseQMaxN={eq.q_max_n} />
       ) : (
         <p className="text-[12px] text-text-canvas/60">
-          위상 스윕이 꺼져 있다 (<span className="font-mono">solver.phase_sweep.enabled = false</span>). C-5
-          (주기 <span className="font-mono">2π/Z</span>)를 화면에서 보려면 입력 패널에서 켜고 다시 Solve 한다.
+          위상 스윕 꺼짐 (<span className="font-mono">solver.phase_sweep.enabled = false</span>)
         </p>
       )}
 

@@ -62,26 +62,42 @@
 //     ⓐ `q_n = 0` 호출 — 하중을 넣지 않으므로 타원이 나오지 않는다. **하중 무관 전처리**
 //        (`χ`·`K`·`E`·`a*`·`b*`·`δ*`·`E*`·`c_P`)만 받아 **Level B 대조표**로 쓴다.
 //        이 값들은 `BbResult` 어디에도 없어 다른 경로가 없다.
-//     ⓑ 사용자가 임의 `Q` 를 넣는 **what-if** 패널 — 호박색 테두리 + 경고 문구로 분리.
+//     ⓑ 사용자가 임의 `Q` 를 넣는 **what-if** 패널 — 호박색 점선 테두리 + 「평형 해 아님」 표기로 분리.
+//        Harris Table 6.1 처럼 특정 Q 가 지정된 문헌값을 그대로 넣어 대조할 때 쓴다 (B · B-3).
 //  → 하중 입력이 필요하면 `state.bbInput`(편집 중)이 아니라
 //    **`state.resultInput`**(Solve 시점 스냅샷)을 읽는다 (S4-3 에서 신설).
 //
 // ─────────────────────────────────────────────────────────────────────
-//  단위 정책 (S2 확정 — 바꾸지 말 것)
+//  단위·자릿수 (Plan Phase 4-5 §4-5.3)
 // ─────────────────────────────────────────────────────────────────────
-//  길이 **mm** · 하중 **N** · 응력 **MPa** · 각도 **°** · **틸트 γ 만 rad**.
-//  표·hover 는 **유효숫자 9자리** — B·B-3 대조가 목적이므로 자릿수를 줄이면 대조가 불가능하다.
+//  표시는 `shared.ts` 의 단위별 함수만 쓴다 — 응력 MPa 정수 · 하중 N 소수 1 · 각도 ° 소수 2 ·
+//  반축 a·b mm 소수 4 · 변위 δ μm 소수 2 · 무차원 소수 4 · 재계산 상대차는 지수.
+//  Plotly hover·축도 같은 자릿수다. 정밀 대조(B·B-3)는 Rust 테스트와 헬스체크 몫이다 (§4-5.1 결정 4).
 
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAppState } from '../store';
 import Plot from '../components/charts/PlotWithCopy';
 import { darkLayout, plotConfig, viridisScale } from '../components/charts/plotlyDefaults';
-import { DetailTable } from '../components/shared/DetailTable';
+import { DetailTable, ErrorBox, WarnBox } from './ui';
 import type { BallResult } from './generated/BallResult';
 import type { BbContactDerived } from './generated/BbContactDerived';
 import type { Alert } from './generated/Alert';
-import { num, toDeg, C_INNER, C_OUTER, C_HU } from './shared';
+import {
+  toDeg,
+  fmtMPa,
+  fmtN,
+  fmtDeg,
+  fmtUm,
+  fmtMmFine,
+  fmtMm2,
+  fmtDimless,
+  fmtStiff,
+  fmtExp,
+  C_INNER,
+  C_OUTER,
+  C_HU,
+} from './shared';
 
 /**
  * ISO 281 Annex B.3.1 피로한계 접촉응력 [MPa].
@@ -167,7 +183,7 @@ function PressureHeatmap({
       mode: 'lines',
       line: { color, width: 2, dash },
       name,
-      hovertemplate: `${name}<br>x = %{x:.9g} mm<br>y = %{y:.9g} mm<extra></extra>`,
+      hovertemplate: `${name}<br>x = %{x:.4f} mm<br>y = %{y:.4f} mm<extra></extra>`,
     } as Plotly.Data;
   };
 
@@ -187,12 +203,12 @@ function PressureHeatmap({
         len: 0.85,
         thickness: 12,
       },
-      hovertemplate: 'x = %{x:.9g} mm<br>y = %{y:.9g} mm<br>p = %{z:.9g} MPa<extra></extra>',
+      hovertemplate: 'x = %{x:.4f} mm<br>y = %{y:.4f} mm<br>p = %{z:.0f} MPa<extra></extra>',
     } as Plotly.Data,
   ];
 
   // 접촉 경계 (p = 0) — 타원 그 자체
-  const edge = ringAt(0, '#ffffff', 'dot', `접촉 경계 (a = ${num(a)}, b = ${num(b)} mm)`);
+  const edge = ringAt(0, '#ffffff', 'dot', `접촉 경계 (a = ${fmtMmFine(a)}, b = ${fmtMmFine(b)} mm)`);
   if (edge) data.push(edge);
 
   // 🔴 σ_Hu 등고선 — `AlertPanel` 의 CONTACT_STRESS_OVER_FATIGUE_LIMIT 과 같은 기준
@@ -202,9 +218,7 @@ function PressureHeatmap({
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
     title: {
-      text:
-        `볼 #${ballNo} (φ = ${phiDeg.toFixed(3)}°) — ${race === 'inner' ? '내륜' : '외륜'} 접촉면 압력분포` +
-        `  ·  축척 1:1`,
+      text: `볼 #${ballNo} (φ = ${fmtDeg(phiDeg)}°) — ${race === 'inner' ? '내륜' : '외륜'} 압력분포`,
       font: { size: 14, color: '#e2e8f0' },
     },
     xaxis: {
@@ -260,7 +274,7 @@ function PressureProfiles({ a, b, pMax }: { a: number; b: number; pMax: number }
       mode: 'lines',
       line: { color: C_INNER, width: 2 },
       name: 'p(x, 0) — 장축 단면',
-      hovertemplate: 'x = %{x:.9g} mm<br>p = %{y:.9g} MPa<extra></extra>',
+      hovertemplate: 'x = %{x:.4f} mm<br>p = %{y:.0f} MPa<extra></extra>',
     } as Plotly.Data,
     {
       type: 'scatter',
@@ -269,13 +283,13 @@ function PressureProfiles({ a, b, pMax }: { a: number; b: number; pMax: number }
       mode: 'lines',
       line: { color: C_OUTER, width: 2 },
       name: 'p(0, y) — 단축 단면',
-      hovertemplate: 'y = %{x:.9g} mm<br>p = %{y:.9g} MPa<extra></extra>',
+      hovertemplate: 'y = %{x:.4f} mm<br>p = %{y:.0f} MPa<extra></extra>',
     } as Plotly.Data,
   ];
 
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
-    title: { text: '접촉면 단면 압력 — p = p_max·√(1 − t²)', font: { size: 14, color: '#e2e8f0' } },
+    title: { text: '접촉면 단면 압력', font: { size: 14, color: '#e2e8f0' } },
     xaxis: { ...darkLayout.xaxis, title: { text: '접촉면 좌표 [mm]' } },
     yaxis: { ...darkLayout.yaxis, title: { text: 'p [MPa]' }, rangemode: 'tozero' },
     shapes: [
@@ -327,26 +341,31 @@ function PressureProfiles({ a, b, pMax }: { a: number; b: number; pMax: number }
  *
  * ⚠ `q_n = 0` 이므로 **타원·응력이 나오지 않는다** — 하중 의존 값은 여기서 쓰지 않는다.
  *   히트맵과 수치표의 주 데이터는 어디까지나 평형 해다 (§3.6.4.7).
+ *
+ * 대조 방법 (Phase 4-5 에서 화면 설명문을 지우며 옮김): Harris Table 6.1 은 `F(ρ) → a*, b*, δ*`
+ * 표이므로, Geometry 탭의 `f_rho_i · f_rho_e` 로 표를 찾아 이 표의 `a* · b* · δ*` 와 대조하면
+ * Level B 가 화면에서 확인된다. `χ` 는 평형 해의 `a/b` 와 같은 값이어야 하며, 1 에 가까우면
+ * χ 해 오류다 (§3.6.4.2 징후).
  */
 function DerivedTable({ derived }: { derived: BbContactDerived }) {
   return (
     <DetailTable
-      title="하중 무관 전처리 (BbContactDerived · 전 14필드) — Level B 대조표"
+      title="하중 무관 전처리"
       rows={[
-        ['χ_i = a/b (내륜)', num(derived.chi_inner), ''],
-        ['χ_e = a/b (외륜)', num(derived.chi_outer), ''],
-        ['K(χ_i)', num(derived.k_ellip_inner), ''],
-        ['E(χ_i)', num(derived.e_ellip_inner), ''],
-        ['K(χ_e)', num(derived.k_ellip_outer), ''],
-        ['E(χ_e)', num(derived.e_ellip_outer), ''],
-        ['a*_i (Harris 6.44)', num(derived.a_star_inner), ''],
-        ['b*_i (Harris 6.45)', num(derived.b_star_inner), ''],
-        ['δ*_i (Harris 6.46)', num(derived.delta_star_inner), ''],
-        ['a*_e', num(derived.a_star_outer), ''],
-        ['b*_e', num(derived.b_star_outer), ''],
-        ['δ*_e', num(derived.delta_star_outer), ''],
-        ['E* 등가 탄성계수', num(derived.e_star_mpa), 'MPa'],
-        ['c_P 점접촉 스프링상수', num(derived.c_p_n_per_mm15), 'N/mm^(3/2)'],
+        ['χ_i = a/b (내륜)', fmtDimless(derived.chi_inner), ''],
+        ['χ_e = a/b (외륜)', fmtDimless(derived.chi_outer), ''],
+        ['K(χ_i)', fmtDimless(derived.k_ellip_inner), ''],
+        ['E(χ_i)', fmtDimless(derived.e_ellip_inner), ''],
+        ['K(χ_e)', fmtDimless(derived.k_ellip_outer), ''],
+        ['E(χ_e)', fmtDimless(derived.e_ellip_outer), ''],
+        ['a*_i (Harris 6.44)', fmtDimless(derived.a_star_inner), ''],
+        ['b*_i (Harris 6.45)', fmtDimless(derived.b_star_inner), ''],
+        ['δ*_i (Harris 6.46)', fmtDimless(derived.delta_star_inner), ''],
+        ['a*_e', fmtDimless(derived.a_star_outer), ''],
+        ['b*_e', fmtDimless(derived.b_star_outer), ''],
+        ['δ*_e', fmtDimless(derived.delta_star_outer), ''],
+        ['E* 등가 탄성계수', fmtMPa(derived.e_star_mpa), 'MPa'],
+        ['c_P 점접촉 스프링상수', fmtStiff(derived.c_p_n_per_mm15), 'N/mm^(3/2)'],
       ]}
     />
   );
@@ -442,30 +461,6 @@ export default function BbStressContourView() {
 
   return (
     <div className="h-full overflow-auto custom-scrollbar p-4 space-y-5">
-      {/* ── 검증 임무·식·기준 명시 ─────────────────────────────────── */}
-      <div className="p-2.5 rounded border bg-blue-500/10 border-blue-400/30 text-blue-100 text-[12px] leading-relaxed">
-        <p className="font-semibold text-[13px] mb-1">
-          Hertz 반타원체 압력분포 (Theory §3 · §6 · Harris 6.25/6.38/6.40)
-        </p>
-        <p>
-          <span className="font-mono">p(x, y) = p_max·√(1 − (x/a)² − (y/b)²)</span> — 타원 밖은 접촉이
-          없다(빈칸). <span className="font-mono">p_max = 3Q / (2π a b)</span> 이며, 이 둘은{' '}
-          <span className="font-mono">∫p dA = Q</span> 로 서로를 함축한다. 아래 표의「p_max 재계산」이 그
-          항등을 화면에서 다시 밟은 값이다.
-        </p>
-        <p className="mt-1">
-          붉은 파선은 <span className="font-mono font-semibold">σ_Hu = {SIGMA_HU_MPA} MPa</span> 등고선 —{' '}
-          <b>ISO 281 Annex B.3.1</b> 권장 피로한계 접촉응력이다 (
-          <span className="font-mono">solver/bb/hertz.rs :: SIGMA_HU_MPA</span>). 같은 상수로{' '}
-          <span className="font-mono">CONTACT_STRESS_OVER_FATIGUE_LIMIT</span> 경고가 나므로, 이 선이 보이면{' '}
-          <b>AlertPanel 에도 경고가 떠 있어야 한다.</b>
-        </p>
-        <p className="mt-1 text-blue-200/80">
-          축척은 <b>1:1</b> 이다 — 타원이 실제 형상으로 보인다. 「타원비가 1 에 가까움(χ 해 오류)」·「내·외륜
-          타원이 뒤바뀜」이 §3.6.4.2 가 드는 징후이므로, 내/외륜 탭을 번갈아 보며 형상이 바뀌는지 확인한다.
-        </p>
-      </div>
-
       {/* ── 볼 선택 + 내/외륜 탭 ───────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3">
         <label className="text-[12px] text-text-canvas">
@@ -477,7 +472,7 @@ export default function BbStressContourView() {
           >
             {balls.map((b, i) => (
               <option key={i} value={i}>
-                #{i + 1} · φ = {toDeg(b.phi_rad).toFixed(2)}° · Q = {b.q_n.toPrecision(6)} N
+                #{i + 1} · φ = {fmtDeg(toDeg(b.phi_rad))}° · Q = {fmtN(b.q_n)} N
                 {b.loaded ? '' : ' · 비접촉'}
                 {i === top ? '  ← 최대하중' : ''}
               </option>
@@ -516,16 +511,10 @@ export default function BbStressContourView() {
       ) : !ball.loaded || el.a <= 0 || el.b <= 0 || el.pMax <= 0 ? (
         // 「비접촉」 — 하중을 받지 않는 볼에는 접촉타원도 압력분포도 없다.
         // 0 을 그려 「압력 0 인 접촉면」처럼 보이게 하지 않는다.
-        <div className="p-3 rounded border bg-slate-500/10 border-slate-400/30 text-slate-200 text-[13px]">
-          <p className="font-semibold mb-1">비접촉 — 볼 #{sel + 1}</p>
-          <p className="text-[12px] leading-relaxed">
-            이 볼은 하중을 받지 않는다 (<span className="font-mono">loaded = {String(ball.loaded)}</span>,{' '}
-            <span className="font-mono">Q_j = {num(ball.q_n)} N</span>,{' '}
-            <span className="font-mono">δ_j = {num(ball.delta_mm)} mm</span>). 접촉타원이 없으므로 압력분포도
-            없다 — 하중구간 밖이라는 뜻이며, 몇 번 볼이 하중구간에 드는지는{' '}
-            <b>Load Distribution 탭</b>의 극좌표에서 본다 (C-7).
-          </p>
-        </div>
+        // 하중구간 밖이라는 뜻이며, 몇 번 볼이 하중구간에 드는지는 Load Distribution 극좌표가 보인다 (C-7).
+        <p className="text-[13px] text-text-canvas">
+          볼 #{sel + 1} 비접촉 — 압력분포 없음 (Q_j = {fmtN(ball.q_n)} N)
+        </p>
       ) : (
         <>
           <PressureHeatmap
@@ -537,86 +526,58 @@ export default function BbStressContourView() {
             phiDeg={toDeg(ball.phi_rad)}
           />
 
+          {/* σ_Hu 초과 여부. 같은 상수로 AlertPanel 의 CONTACT_STRESS_OVER_FATIGUE_LIMIT 이 난다 (파일 헤더). */}
           {overHu ? (
-            <div className="p-2.5 rounded border bg-amber-500/10 border-amber-400/30 text-amber-100 text-[12px]">
-              <b>σ_Hu 초과</b> — {race === 'inner' ? '내륜' : '외륜'} p_max ={' '}
-              <span className="font-mono">{num(el.pMax)}</span> MPa &gt; {SIGMA_HU_MPA} MPa. 접촉면적의{' '}
-              <span className="font-mono">{num(overHuAreaFrac * 100)}</span> % 가 등고선 안쪽이다 (해석값{' '}
-              <span className="font-mono">1 − (σ_Hu/p_max)²</span>).{' '}
-              <b>AlertPanel 에 CONTACT_STRESS_OVER_FATIGUE_LIMIT 이 떠 있는지 확인한다.</b>
-            </div>
+            <WarnBox>
+              σ_Hu 초과 — {race === 'inner' ? '내륜' : '외륜'} p_max ={' '}
+              <span className="font-mono">{fmtMPa(el.pMax)}</span> MPa &gt; {SIGMA_HU_MPA} MPa
+            </WarnBox>
           ) : (
-            <div className="p-2.5 rounded border bg-slate-500/10 border-slate-400/30 text-slate-300 text-[12px]">
-              p_max = <span className="font-mono">{num(el.pMax)}</span> MPa ≤ σ_Hu = {SIGMA_HU_MPA} MPa —
-              등고선이 그려지지 않는다 (초과 영역 없음). 이때 AlertPanel 에도 경고가 <b>없어야</b> 한다.
-            </div>
+            <p className="text-[12px] text-text-canvas">
+              p_max = <span className="font-mono">{fmtMPa(el.pMax)}</span> MPa ≤ σ_Hu = {SIGMA_HU_MPA} MPa —
+              초과 영역 없음
+            </p>
           )}
 
           <PressureProfiles a={el.a} b={el.b} pMax={el.pMax} />
 
           <DetailTable
-            title={`선택 볼 #${sel + 1} — 평형 해 (BbResult.equilibrium.ball_results[${sel}])`}
+            title={`선택 볼 #${sel + 1}`}
             rows={[
-              ['φ_j 각위치', num(toDeg(ball.phi_rad)), '°'],
-              ['δ_j 총 탄성변형', num(ball.delta_mm), 'mm'],
-              ['α_j 운전 접촉각', num(toDeg(ball.alpha_rad)), '°'],
-              ['α_j 운전 접촉각', num(ball.alpha_rad), 'rad'],
-              ['Q_j 볼 하중', num(ball.q_n), 'N'],
+              ['φ_j 각위치', fmtDeg(toDeg(ball.phi_rad)), '°'],
+              ['δ_j 총 탄성변형', fmtUm(ball.delta_mm), 'μm'],
+              ['α_j 운전 접촉각', fmtDeg(toDeg(ball.alpha_rad)), '°'],
+              ['Q_j 볼 하중', fmtN(ball.q_n), 'N'],
               ['— 내륜 —', '', ''],
-              ['a_i 장반경', num(ball.a_inner_mm), 'mm'],
-              ['b_i 단반경', num(ball.b_inner_mm), 'mm'],
-              ['a/b_i 타원비', ball.b_inner_mm > 0 ? num(ball.a_inner_mm / ball.b_inner_mm) : '—', ''],
-              ['p_max,i', num(ball.p_max_inner_mpa), 'MPa'],
+              ['a_i 장반경', fmtMmFine(ball.a_inner_mm), 'mm'],
+              ['b_i 단반경', fmtMmFine(ball.b_inner_mm), 'mm'],
+              ['a/b_i 타원비', ball.b_inner_mm > 0 ? fmtDimless(ball.a_inner_mm / ball.b_inner_mm) : '—', ''],
+              ['p_max,i', fmtMPa(ball.p_max_inner_mpa), 'MPa'],
               ['— 외륜 —', '', ''],
-              ['a_e 장반경', num(ball.a_outer_mm), 'mm'],
-              ['b_e 단반경', num(ball.b_outer_mm), 'mm'],
-              ['a/b_e 타원비', ball.b_outer_mm > 0 ? num(ball.a_outer_mm / ball.b_outer_mm) : '—', ''],
-              ['p_max,e', num(ball.p_max_outer_mpa), 'MPa'],
+              ['a_e 장반경', fmtMmFine(ball.a_outer_mm), 'mm'],
+              ['b_e 단반경', fmtMmFine(ball.b_outer_mm), 'mm'],
+              ['a/b_e 타원비', ball.b_outer_mm > 0 ? fmtDimless(ball.a_outer_mm / ball.b_outer_mm) : '—', ''],
+              ['p_max,e', fmtMPa(ball.p_max_outer_mpa), 'MPa'],
               ['— 표시 중인 궤도 대조 —', race === 'inner' ? '내륜' : '외륜', ''],
-              ['접촉면적 π·a·b', num(Math.PI * el.a * el.b), 'mm²'],
-              ['평균압력 Q/(π a b)', num(ball.q_n / (Math.PI * el.a * el.b)), 'MPa'],
-              ['p_max 재계산 3Q/(2π a b)', pMaxRecomputed === null ? '—' : num(pMaxRecomputed), 'MPa'],
-              ['재계산 상대차 (솔버 대비)', pMaxRelDiff === null ? '—' : num(pMaxRelDiff), ''],
-              ['σ_Hu (ISO 281 Annex B.3.1)', String(SIGMA_HU_MPA), 'MPa'],
-              ['p_max / σ_Hu', num(el.pMax / SIGMA_HU_MPA), ''],
-              ['σ_Hu 초과 면적비', overHu ? num(overHuAreaFrac) : '0', ''],
+              ['접촉면적 π·a·b', fmtMm2(Math.PI * el.a * el.b), 'mm²'],
+              ['평균압력 Q/(π a b)', fmtMPa(ball.q_n / (Math.PI * el.a * el.b)), 'MPa'],
+              ['p_max 재계산 3Q/(2π a b)', pMaxRecomputed === null ? '—' : fmtMPa(pMaxRecomputed), 'MPa'],
+              ['재계산 상대차 (솔버 대비)', pMaxRelDiff === null ? '—' : fmtExp(pMaxRelDiff), ''],
+              ['σ_Hu (ISO 281 Annex B.3.1)', fmtMPa(SIGMA_HU_MPA), 'MPa'],
+              ['p_max / σ_Hu', fmtDimless(el.pMax / SIGMA_HU_MPA), ''],
+              ['σ_Hu 초과 면적비', overHu ? fmtDimless(overHuAreaFrac) : '0', ''],
             ]}
           />
         </>
       )}
 
       {/* ── Level B 대조표 (하중 무관 전처리) ──────────────────────── */}
-      {derivedErr && (
-        <div className="p-2.5 rounded border bg-red-500/10 border-red-400/30 text-red-200 text-[12px] font-mono">
-          bb_compute_contact 실패: {derivedErr}
-        </div>
-      )}
-      {derived && (
-        <div className="space-y-2">
-          <DerivedTable derived={derived} />
-          <p className="text-[11px] text-text-canvas/60 leading-relaxed">
-            이 표는 <span className="font-mono">bb_compute_contact(input, q_n = 0)</span> 로 받은{' '}
-            <b>하중 무관</b> 전처리다 (Solve 시점 입력 스냅샷 기준). Harris <b>Table 6.1</b> 은{' '}
-            <span className="font-mono">F(ρ) → a*, b*, δ*</span> 표이므로,{' '}
-            <b>Geometry 탭</b>의 <span className="font-mono">f_rho_i · f_rho_e</span> 를 가지고 이 표의{' '}
-            <span className="font-mono">a* · b* · δ*</span> 와 대조하면 <b>Level B</b> 가 화면에서 확인된다.{' '}
-            <span className="font-mono">χ</span> 가 <b>1 에 가까우면 χ 해 오류</b>다 (§3.6.4.2 징후) — 위
-            평형 해의 <span className="font-mono">a/b</span> 와 같은 값이어야 한다.
-          </p>
-        </div>
-      )}
+      {derivedErr && <ErrorBox title="bb_compute_contact 실패" message={derivedErr} />}
+      {derived && <DerivedTable derived={derived} />}
 
-      {/* ── what-if — 🔶 평형 해가 아니다 ──────────────────────────── */}
+      {/* ── what-if — 🔶 평형 해가 아니다 (파일 헤더 「데이터 출처」 ⓑ) ── */}
       <div className="p-3 rounded border-2 border-dashed border-amber-400/50 bg-amber-500/[0.06] space-y-2">
-        <p className="text-[12px] text-amber-200 leading-relaxed">
-          <b>🔶 what-if — 이 값은 평형 해가 아니다.</b> 아래는{' '}
-          <span className="font-mono">bb_compute_contact(input, q_n = Q)</span> 로{' '}
-          <b>임의의 볼 하중 Q</b> 하나를 넣어 본 단일 접촉점 계산이며,{' '}
-          <b>위의 히트맵·표와 무관하다</b> (§3.6.4.7). 평형 해의{' '}
-          <span className="font-mono">Q_j</span> 는 이미 <span className="font-mono">ball_results[]</span> 에
-          있고 화면은 그것만 그린다. 이 칸은 <b>Harris Table 6.1 처럼 특정 Q 가 지정된 문헌값</b>을 그대로
-          넣어 대조할 때 쓴다 (B · B-3).
-        </p>
+        <p className="text-[12px] text-amber-200">what-if — 평형 해 아님</p>
         <div className="flex flex-wrap items-center gap-2">
           <label className="text-[12px] text-amber-100">
             Q =
@@ -644,30 +605,28 @@ export default function BbStressContourView() {
             </button>
           )}
         </div>
-        {whatIfErr && (
-          <p className="text-[12px] font-mono text-red-300">bb_compute_contact 실패: {whatIfErr}</p>
-        )}
+        {whatIfErr && <ErrorBox title="bb_compute_contact 실패" message={whatIfErr} />}
         {whatIf && (
           <DetailTable
-            title={`what-if (평형 해 아님) — q_n = ${num(whatIf.q_n)} N`}
+            title={`what-if — q_n = ${fmtN(whatIf.q_n)} N`}
             rows={[
-              ['δ 총 탄성변형', num(whatIf.delta_mm), 'mm'],
-              ['a_i', num(whatIf.a_inner_mm), 'mm'],
-              ['b_i', num(whatIf.b_inner_mm), 'mm'],
+              ['δ 총 탄성변형', fmtUm(whatIf.delta_mm), 'μm'],
+              ['a_i', fmtMmFine(whatIf.a_inner_mm), 'mm'],
+              ['b_i', fmtMmFine(whatIf.b_inner_mm), 'mm'],
               [
                 'a/b_i',
-                whatIf.b_inner_mm > 0 ? num(whatIf.a_inner_mm / whatIf.b_inner_mm) : '—',
+                whatIf.b_inner_mm > 0 ? fmtDimless(whatIf.a_inner_mm / whatIf.b_inner_mm) : '—',
                 '',
               ],
-              ['p_max,i', num(whatIf.p_max_inner_mpa), 'MPa'],
-              ['a_e', num(whatIf.a_outer_mm), 'mm'],
-              ['b_e', num(whatIf.b_outer_mm), 'mm'],
+              ['p_max,i', fmtMPa(whatIf.p_max_inner_mpa), 'MPa'],
+              ['a_e', fmtMmFine(whatIf.a_outer_mm), 'mm'],
+              ['b_e', fmtMmFine(whatIf.b_outer_mm), 'mm'],
               [
                 'a/b_e',
-                whatIf.b_outer_mm > 0 ? num(whatIf.a_outer_mm / whatIf.b_outer_mm) : '—',
+                whatIf.b_outer_mm > 0 ? fmtDimless(whatIf.a_outer_mm / whatIf.b_outer_mm) : '—',
                 '',
               ],
-              ['p_max,e', num(whatIf.p_max_outer_mpa), 'MPa'],
+              ['p_max,e', fmtMPa(whatIf.p_max_outer_mpa), 'MPa'],
               ['alerts', String(whatIf.alerts.length), '건'],
             ]}
           />
