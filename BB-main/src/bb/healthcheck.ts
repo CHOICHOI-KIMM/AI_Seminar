@@ -854,6 +854,7 @@ async function measureFormat(): Promise<string[]> {
   await sleep(400);
   if (!buttonByText('Geometry')) bad.push('잔존 탭 클릭 후 탭 바가 사라졌다 (앱 멈춤)');
   if ((document.querySelector('main')?.textContent ?? '') !== before) bad.push('잔존 탭 클릭으로 화면이 바뀌었다 (disabled 무효)');
+  let nBalls = 0;
   // Load Distribution (2026-10-14) — α_j 스플라인 · 0°↔360° 닫힘 · 접촉타원/「위상 스윕 꺼짐」 없음
   buttonByText('Load Distribution')?.click();
   const mL = document.querySelector('main');
@@ -882,6 +883,7 @@ async function measureFormat(): Promise<string[]> {
     );
     const bar = traces.find(t => t.type === 'bar');
     const polarQ = traces.find(t => Array.isArray(t.r) && t.mode === 'markers' && (t.r?.length ?? 0) > 0);
+    nBalls = bar?.y?.length ?? 0;
     if (!bar || !bar.y) bad.push('Load Dist: 볼별 하중 막대가 없다');
     else {
       const y = bar.y;
@@ -938,6 +940,25 @@ async function measureFormat(): Promise<string[]> {
     if (axisTexts.join('|') !== 'X|Y(G)|Z') bad.push(`3D: 축 라벨이 X·Y(G)·Z 가 아니다 (${axisTexts.join(',')})`);
     if (!(yy > cy)) bad.push('3D: Y 라벨이 화면 중심보다 아래에 있지 않다 (+Y 화면 아래 규약)');
     if (tiltLeft) bad.push('3D: 틸트 정보가 남아 있다');
+    // F_x·F_r 글자는 노란색(C_FORCE #facc15 = rgb(250, 204, 21))
+    const forceLabels = labels.filter(l => l.dataset.role === 'load-label' && /^F_/.test((l.textContent ?? '').trim()));
+    const notYellow = forceLabels.filter(l => getComputedStyle(l).color !== 'rgb(250, 204, 21)');
+    if (notYellow.length) bad.push(`3D: 노란색이 아닌 하중 글자 ${notYellow.map(l => l.textContent).join(', ')}`);
+    // 전동체 하중 토글 — 기본 OFF, 켜면 볼마다 글자 1개
+    const before0 = m3.querySelectorAll('[data-role="ball-label"]').length;
+    const tBtn = buttonByText('전동체 하중 OFF');
+    if (!tBtn) bad.push('3D: 「전동체 하중 OFF」 토글이 없다 (기본 OFF 여야 한다)');
+    if (before0) bad.push(`3D: 토글 OFF 인데 볼 글자 ${before0}개`);
+    tBtn?.click();
+    await sleep(600);
+    const ballLabels = Array.from(m3.querySelectorAll<HTMLElement>('[data-role="ball-label"]'));
+    const br = ballLabels.map(l => l.getBoundingClientRect());
+    let bPairs = 0;
+    for (let a = 0; a < br.length; a++) for (let b = a + 1; b < br.length; b++) if (overlapArea(br[a], br[b]) > OVERLAP_TOL_PX2) bPairs++;
+    await logInfo(`[healthcheck] 3D 전동체 하중 ON: 볼 글자 ${ballLabels.length}개 (볼 ${nBalls}) · 글자끼리 교차 ${bPairs}쌍(참고) · F 글자 ${forceLabels.length}개 노란색 아님 ${notYellow.length}`);
+    if (ballLabels.length !== nBalls) bad.push(`3D: 볼 글자 ${ballLabels.length}개 ≠ 볼 ${nBalls}개`);
+    buttonByText('전동체 하중 ON')?.click();
+    await sleep(300);
   }
   await logInfo(`[healthcheck] format 표 행 ${rows}개 검사 · 위반 ${bad.length}`);
   return bad;

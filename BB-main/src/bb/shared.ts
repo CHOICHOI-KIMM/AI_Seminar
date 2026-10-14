@@ -108,8 +108,8 @@ export const C_REF = '#a3e635';
 export const C_INNER = '#3b82f6';
 /** 외륜 */
 export const C_OUTER = '#f97316';
-/** 3D — 외부 하중 화살표 */
-export const C_FORCE = '#ef4444';
+/** 3D — 외부 하중(F_x·F_r) 글자와 F_r 화살표 (노란색, 2026-10-14 사용자 지시) */
+export const C_FORCE = '#facc15';
 /** 3D — 외부 모멘트 화살표 */
 export const C_MOMENT = '#a3e635';
 /** 3D — 내륜 실루엣 */
@@ -147,10 +147,25 @@ export const LOAD_COLORSCALE: [number, string][] = Array.from({ length: 13 }, (_
  * - `loadLabel`: 하중·모멘트 값 글자 위치 — 하중 화살표는 그리지 않는다(사용자 결정).
  *   0.70·r_bore 로 당겼다가 기본 시점에서 F_x 글자가 X 축 글자와 겹쳐(실측) 0.85·r_bore 로 정했다 (2026-10-14 사용자 결정).
  */
-export function arrowLengths3d(boreMm: number): { axis: number; axisLabel: number; loadLabel: number } {
+export function arrowLengths3d(boreMm: number): {
+  axis: number;
+  axisLabel: number;
+  loadArrow: number;
+  loadLabel: number;
+} {
   const rBore = boreMm / 2;
   const axis = 0.45 * rBore;
-  return { axis, axisLabel: axis * 1.18, loadLabel: 0.85 * rBore };
+  // F_r 화살표(2026-10-14) — 끝이 값 글자(loadLabel)보다 안쪽에 오도록.
+  return { axis, axisLabel: axis * 1.18, loadArrow: 0.72 * rBore, loadLabel: 0.85 * rBore };
+}
+
+/**
+ * 볼 하중 화살표 길이 [mm] (2026-10-14) — 볼 표면에서 접촉각 α_j 방향으로 뻗는다.
+ * 길이는 Q_j 에 비례하고, 비접촉 볼도 방향이 보이도록 최소 0.4·D_w 를 둔다. 최대 2.0·D_w.
+ */
+export function ballArrowLen(q: number, qMax: number, dW: number): number {
+  const t = qMax > 0 ? Math.min(Math.max(q / qMax, 0), 1) : 0;
+  return dW * (0.4 + 1.6 * t);
 }
 
 // ─── 기하 커맨드 ───────────────────────────────────────────────────────

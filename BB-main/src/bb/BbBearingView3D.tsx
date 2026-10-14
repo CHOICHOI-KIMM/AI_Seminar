@@ -86,6 +86,7 @@ import {
   C_AXIS_Z,
   arrowLengths3d,
   loadHue,
+  ballArrowLen,
 } from './shared';
 
 
@@ -355,15 +356,18 @@ function Ball({
  * Y 축이 중력(G)·φ=0 방향을 이미 보이므로 화살표를 겹쳐 그리지 않는다.
  * ⚠ 하중은 **`resultInput.operating`**(Solve 시점 스냅샷)에서 읽는다 — `bbInput` 은 편집 중이라 시점이 어긋난다.
  */
-function LoadLabels({ op, at }: { op: BbOperatingConditions | null; at: number }) {
+function LoadLabels({ op, at, arrowLen }: { op: BbOperatingConditions | null; at: number; arrowLen: number }) {
+  const origin = useMemo(() => new THREE.Vector3(0, 0, 0), []);
   const items = useMemo(() => {
-    const out: { dir: THREE.Vector3; color: string; label: string }[] = [];
+    const out: { dir: THREE.Vector3; color: string; label: string; arrow?: boolean }[] = [];
     if (!op) return out;
     if (op.f_y_n !== 0 || op.f_z_n !== 0) {
       out.push({
         dir: new THREE.Vector3(0, op.f_y_n, op.f_z_n),
         color: C_FORCE,
         label: `F_r = ${fmtN(Math.hypot(op.f_y_n, op.f_z_n))} N`,
+        // F_r 은 Y 축과 어긋날 수 있어(F_z ≠ 0) 방향을 보이는 화살표를 항상 그린다 (2026-10-14).
+        arrow: true,
       });
     }
     if (op.f_x_n !== 0) {
@@ -386,17 +390,46 @@ function LoadLabels({ op, at }: { op: BbOperatingConditions | null; at: number }
   return (
     <group>
       {items.map((it, i) => (
-        <Html
-          key={i}
-          position={it.dir.clone().normalize().multiplyScalar(at)}
-          center
-          style={{ pointerEvents: 'none' }}
-        >
-          <div data-role="load-label" style={{ ...LABEL_STYLE, color: it.color }}>
-            {it.label}
-          </div>
-        </Html>
+        <group key={i}>
+          {it.arrow && <DirArrow dir={it.dir} origin={origin} length={arrowLen} color={it.color} thickness={0.7} />}
+          <Html position={it.dir.clone().normalize().multiplyScalar(at)} center style={{ pointerEvents: 'none' }}>
+            <div data-role="load-label" style={{ ...LABEL_STYLE, color: it.color }}>
+              {it.label}
+            </div>
+          </Html>
+        </group>
       ))}
+    </group>
+  );
+}
+
+/**
+ * 전동체(볼) 하중 화살표·글자 (2026-10-14, 「전동체 하중」 토글).
+ * 볼 표면에서 **접촉각 α_j 방향**(외륜 쪽, n₃ = (sin α, cos α cos φ, cos α sin φ))으로 뻗는다 —
+ * 볼 하중 Q_j 가 접촉선 방향으로 작용하기 때문이다. 길이는 `ballArrowLen`(Q_j 비례), 색은 하중 컬러맵.
+ */
+function BallLoadArrows({ balls, rPitch, dW, qMax }: { balls: BallResult[]; rPitch: number; dW: number; qMax: number }) {
+  return (
+    <group>
+      {balls.map((br, i) => {
+        const cosP = Math.cos(br.phi_rad);
+        const sinP = Math.sin(br.phi_rad);
+        const n = new THREE.Vector3(Math.sin(br.alpha_rad), Math.cos(br.alpha_rad) * cosP, Math.cos(br.alpha_rad) * sinP);
+        const start = new THREE.Vector3(0, rPitch * cosP, rPitch * sinP).addScaledVector(n, dW / 2);
+        const len = ballArrowLen(br.q_n, qMax, dW);
+        const color = `#${loadColor(br.q_n, qMax).getHexString()}`;
+        return (
+          <group key={i}>
+            <DirArrow dir={n} origin={start} length={len} color={color} thickness={0.9} />
+            <Html position={start.clone().addScaledVector(n, len + dW * 0.6)} center style={{ pointerEvents: 'none' }}>
+              <div data-role="ball-label" style={{ ...LABEL_STYLE, color: '#e2e8f0', lineHeight: 1.3, textAlign: 'center' }}>
+                <div>#{i + 1}</div>
+                <div>Q = {fmtN(br.q_n)} N</div>
+              </div>
+            </Html>
+          </group>
+        );
+      })}
     </group>
   );
 }
@@ -408,6 +441,7 @@ function Scene({
   op,
   showLoads,
   showRings,
+  showBallLoads,
 }: {
   g: BallBearingGeometry;
   balls: BallResult[];
@@ -415,6 +449,7 @@ function Scene({
   op: BbOperatingConditions | null;
   showLoads: boolean;
   showRings: boolean;
+  showBallLoads: boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
 
@@ -434,8 +469,9 @@ function Scene({
         />
       ))}
       {showLoads && (
-        <LoadLabels op={op} at={arrowLengths3d(g.bore_mm).loadLabel} />
+        <LoadLabels op={op} at={arrowLengths3d(g.bore_mm).loadLabel} arrowLen={arrowLengths3d(g.bore_mm).loadArrow} />
       )}
+      {showBallLoads && <BallLoadArrows balls={balls} rPitch={g.d_pw_mm / 2} dW={g.d_w_mm} qMax={qMax} />}
       <AxisMarker length={arrowLengths3d(g.bore_mm).axis} labelAt={arrowLengths3d(g.bore_mm).axisLabel} />
     </group>
   );
@@ -449,6 +485,8 @@ export default function BbBearingView3D() {
   const derived = geomResponse?.derived ?? null;
   const [showLoads, setShowLoads] = useState(true);
   const [showRings, setShowRings] = useState(true);
+  // 전동체 하중 화살표·글자 — 볼이 많으면 글자가 다른 표시를 가리므로 기본 OFF (2026-10-14 사용자 결정)
+  const [showBallLoads, setShowBallLoads] = useState(false);
 
   const g = bbInput?.geometry ?? null;
   const alpha0 = result?.geometry.alpha_0_rad ?? derived?.alpha_0_rad ?? null;
@@ -522,6 +560,13 @@ export default function BbBearingView3D() {
         >
           링 {showRings ? 'ON' : 'OFF'}
         </button>
+        <button
+          onClick={() => setShowBallLoads(v => !v)}
+          className="px-2.5 py-1 rounded-md text-xs text-white border-0 cursor-pointer backdrop-blur-sm"
+          style={{ background: showBallLoads ? 'rgba(59,130,246,0.8)' : 'rgba(30,30,30,0.7)' }}
+        >
+          전동체 하중 {showBallLoads ? 'ON' : 'OFF'}
+        </button>
       </div>
 
       {/* ── 범례 ─────────────────────────────────────────── */}
@@ -581,6 +626,7 @@ export default function BbBearingView3D() {
           op={op}
           showLoads={showLoads}
           showRings={showRings}
+          showBallLoads={showBallLoads}
         />
         <OrbitControls enableDamping dampingFactor={0.12} />
       </Canvas>
