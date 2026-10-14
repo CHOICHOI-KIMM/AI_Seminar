@@ -17,25 +17,21 @@
 //  대응 Level: **D-2a**(축퇴 항등성) · **C-8**(수렴 보고).
 //  「대칭 하중에서 `δ_z`·`γ_y` 가 0 인가」를 육안으로 확인하는 **유일한 곳**이다.
 //
-//  ⭐ 그래서 5-DOF 5성분을 **한 줄로 뭉뚱그리지 않고 성분마다 한 줄**로 내며,
-//     `δ_z`·`γ_y` 는 **눈에 띄게 표시**한다. 뭉뚱그리면 검증 임무를 못 한다.
+//  ⭐ 그래서 5-DOF 5성분을 **한 줄로 뭉뚱그리지 않고 성분마다 한 줄**로 낸다.
+//     `δ_z`·`γ_y` 의 강조 표시·`D-2a` 배지는 Plan §4-5.2 에 따라 지웠다(설명 문구 제거).
+//     「정확히 0」과 「아주 작은 값」은 포맷 함수의 지수 전환(§4-5.1 결정 6)으로 계속 구별된다.
 //
 // ─────────────────────────────────────────────────────────────────────
-//  단위 정책 (S2 확정 — 바꾸지 말 것)
+//  단위 · 자릿수 (Plan §4-5.3 — `shared.ts` 단위별 포맷 함수)
 // ─────────────────────────────────────────────────────────────────────
-//  변위 **mm** · 하중 **N** · 응력 **MPa** · **접촉각만 °**(내부 rad) ·
-//  **틸트 γ 는 rad 유지**.
-//
-//  ⚠ **틸트만 rad 인 이유** — Level **D-2a·D-2d 판정이 rad 로 출력**된다.
-//    °로 바꿔 보여주면 화면 숫자와 검증 숫자가 달라져 대조가 한 단계 꼬인다.
-//    접촉각은 반대다 — 0,698 rad 는 사람이 못 읽으므로 °로 낸다 (rad 도 병기).
-//
-//  ⚠ **유효숫자 9자리.** 0 이어야 할 성분이 1e−12 인지 1e−3 인지는 자릿수를
-//    줄이면 구분되지 않는다. D-2a 판정은 `rel. err < 1e-8` 이다.
+//  솔버 단위(mm · N · rad, D-10)를 화면 경계에서만 환산한다:
+//  변위 **μm** · 틸트 **μrad** · 하중 **N** · 응력 **MPa** · 접촉각 **°** (rad 병기 없음) ·
+//  소요시간 μs/ms/s · 수렴 잔차 지수 표기.
+//  정밀값 대조는 Rust 테스트와 헬스체크 몫이다 (§4-5.1 결정 4).
 
 import { useAppState } from '../store';
 import type { BbResult } from './generated/BbResult';
-import { num, toDeg } from './shared';
+import { fmtDeg, fmtExp, fmtMPa, fmtN, fmtTime, fmtUm, fmtUrad, toDeg } from './shared';
 
 export default function BbResultsCard() {
   const { state, dispatch } = useAppState();
@@ -119,20 +115,16 @@ function Body({ result }: { result: BbResult }) {
     <div className="p-4 space-y-3">
       {/* ── 5-DOF 변위 — D-2a 육안 확인 지점 ───────────────────────── */}
       <Section title="Displacement (5-DOF)">
-        <p className="text-[11px] text-text-canvas/60 mb-1.5 leading-snug">
-          D-2a 축퇴 항등성 — 대칭 하중에서 <span className="font-mono">δ_z</span> ·{' '}
-          <span className="font-mono">γ_y</span> 가 0 이어야 한다 (강조 표시).
-        </p>
-        <DofRow label="δ_x (axial)" value={d.dx_mm} unit="mm" />
-        <DofRow label="δ_y" value={d.dy_mm} unit="mm" />
-        <DofRow label="δ_z" value={d.dz_mm} unit="mm" watch />
-        <DofRow label="γ_y" value={d.ry_rad} unit="rad" watch />
-        <DofRow label="γ_z" value={d.rz_rad} unit="rad" />
+        <Row label="δ_x (axial)" value={fmtUm(d.dx_mm)} unit="μm" />
+        <Row label="δ_y" value={fmtUm(d.dy_mm)} unit="μm" />
+        <Row label="δ_z" value={fmtUm(d.dz_mm)} unit="μm" />
+        <Row label="γ_y" value={fmtUrad(d.ry_rad)} unit="μrad" />
+        <Row label="γ_z" value={fmtUrad(d.rz_rad)} unit="μrad" />
       </Section>
 
       {/* ── 볼 하중 ──────────────────────────────────────────────── */}
       <Section title="Ball Load">
-        <Row label="Q_max" value={num(eq.q_max_n)} unit="N" />
+        <Row label="Q_max" value={fmtN(eq.q_max_n)} unit="N" />
         <Row label="Loaded balls" value={`${eq.loaded_count} / ${balls.length}`} unit="" />
       </Section>
 
@@ -142,18 +134,16 @@ function Body({ result }: { result: BbResult }) {
           <p className="text-[13px] text-amber-300">접촉 중인 볼이 없습니다</p>
         ) : (
           <>
-            <Row label="α_j min" value={num(toDeg(alphaMin))} unit="°" />
-            <Row label="α_j max" value={num(toDeg(alphaMax))} unit="°" />
-            <Row label="α_j min" value={num(alphaMin)} unit="rad" />
-            <Row label="α_j max" value={num(alphaMax)} unit="rad" />
+            <Row label="α_j min" value={fmtDeg(toDeg(alphaMin))} unit="°" />
+            <Row label="α_j max" value={fmtDeg(toDeg(alphaMax))} unit="°" />
           </>
         )}
       </Section>
 
       {/* ── 접촉응력 ─────────────────────────────────────────────── */}
       <Section title="Max Contact Stress">
-        <Row label="p_max (inner)" value={num(pInner)} unit="MPa" />
-        <Row label="p_max (outer)" value={num(pOuter)} unit="MPa" />
+        <Row label="p_max (inner)" value={fmtMPa(pInner)} unit="MPa" />
+        <Row label="p_max (outer)" value={fmtMPa(pOuter)} unit="MPa" />
       </Section>
 
       {/* ── 수렴 — C-8 ──────────────────────────────────────────── */}
@@ -169,13 +159,13 @@ function Body({ result }: { result: BbResult }) {
           </span>
         </div>
         <Row label="iterations" value={String(eq.iterations)} unit="" />
-        <Row label="residual_norm" value={num(eq.residual_norm)} unit="" />
+        <Row label="residual_norm" value={fmtExp(eq.residual_norm)} unit="" />
       </Section>
 
       {/* ── 기타 ─────────────────────────────────────────────────── */}
       <Section title="Run">
         <Row label="kind" value={result.kind} unit="" />
-        <Row label="elapsed" value={num(result.elapsed_ms)} unit="ms" />
+        <Row label="elapsed" value={fmtTime(result.elapsed_ms)} unit="" />
         <Row
           label="phase sweep"
           value={result.phase_sweep ? 'present' : 'none'}
@@ -204,49 +194,6 @@ function Row({ label, value, unit }: { label: string; value: string; unit: strin
       <span className="text-[13px] font-mono tabular-nums text-text-light text-right break-all">
         {value}
         {unit && <span className="text-text-canvas ml-1">{unit}</span>}
-      </span>
-    </div>
-  );
-}
-
-/**
- * 5-DOF 성분 한 줄.
- *
- * `watch` = **D-2a 판정 대상**(`δ_z`·`γ_y`). 대칭 하중에서 0 이어야 하는 성분이므로
- * 다른 성분과 시각적으로 구분한다 — 5성분을 뭉뚱그리면 검증 임무를 못 한다.
- */
-function DofRow({
-  label,
-  value,
-  unit,
-  watch = false,
-}: {
-  label: string;
-  value: number;
-  unit: string;
-  watch?: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-baseline justify-between gap-2 py-0.5 px-1 rounded ${
-        watch ? 'bg-amber-500/10 border border-amber-400/25' : ''
-      }`}
-    >
-      <span
-        className={`text-[13px] whitespace-nowrap ${
-          watch ? 'text-amber-200 font-semibold' : 'text-text-canvas'
-        }`}
-      >
-        {label}
-        {watch && <span className="ml-1 text-[10px] opacity-70">D-2a</span>}
-      </span>
-      <span
-        className={`text-[13px] font-mono tabular-nums text-right break-all ${
-          watch ? 'text-amber-100' : 'text-text-light'
-        }`}
-      >
-        {num(value)}
-        <span className={watch ? 'text-amber-200/70 ml-1' : 'text-text-canvas ml-1'}>{unit}</span>
       </span>
     </div>
   );
