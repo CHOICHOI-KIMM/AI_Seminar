@@ -38,6 +38,14 @@
 //    `L_h = L_mrev × 10⁶ / (60 n)`.
 //  `n` 은 **`resultInput.operating`**(Solve 시점 스냅샷)에서 읽는다. `bbInput` 은
 //  편집 중이라 시점이 어긋난다. `n = 0` 이면 시간 환산을 **하지 않는다**(∞ 로 쓰지 않는다).
+//  그래서 Solve 이후 입력이 바뀌면(`StaleBadge`) 수명은 현재 입력 기준이지만 시간[h] 환산의
+//  n 은 Solve 시점 값이다 — 다시 Solve 해야 시점이 맞는다.
+//  정격·수명은 기하와 하중만으로 계산되므로 Solve 없이도 나온다 — Solve 가 필요한 것은
+//  시간 환산과 볼별 `Q_j` 막대뿐이다.
+//
+//  표시는 `shared.ts` 단위별 포맷 함수만 쓴다 (Plan §4-5.3): 정격하중 kN 소수 2 ·
+//  볼 하중 N 소수 1 · 수명 10⁶ rev 소수 2 · 시간 h 정수(10 000 h 초과 k) · 무차원 소수 4 ·
+//  동점도 소수 2 · 회전속도 정수 · 항등 상대차 지수.
 //
 // ─────────────────────────────────────────────────────────────────────
 //  ♻ 재사용
@@ -55,12 +63,12 @@ import { darkLayout, plotConfig } from '../components/charts/plotlyDefaults';
 import type { BbLifeResult } from './generated/BbLifeResult';
 import type { BbLifeConditions } from './generated/BbLifeConditions';
 import type { BbFatigueLimitMethod } from './generated/BbFatigueLimitMethod';
-import { num, C_LOADED, C_UNLOADED, C_REF, C_INNER, C_OUTER } from './shared';
-import { AlertList, DetailTable, ErrorBox, InfoBox, Loading, Panel, WarnBox } from './ui';
+import { fmtDimless, fmtExp, fmtHours, fmtInt, fmtKN, fmtMrev, fmtN, fmtVisc, C_LOADED, C_UNLOADED, C_REF, C_INNER, C_OUTER } from './shared';
+import { AlertList, DetailTable, ErrorBox, Loading, Panel, StaleBadge } from './ui';
 
 /** `null` 은 **빈칸**으로 — 0 이나 대시로 채우지 않는다 (파일 헤더의 규율). */
-function opt(v: number | null | undefined): string {
-  return v === null || v === undefined ? '' : num(v);
+function opt(v: number | null | undefined, fmt: (v: number) => string): string {
+  return v === null || v === undefined ? '' : fmt(v);
 }
 
 /** 솔버 기본값과 같다 — `BbLifeConditions` 의 주석 참조(아무 값도 지어내지 않는 쪽). */
@@ -206,37 +214,11 @@ export default function BbLifeView() {
 
   return (
     <div className="h-full overflow-auto custom-scrollbar p-4 space-y-5">
-      {/* ── 검증 임무 명시 ─────────────────────────────────────────── */}
-      <InfoBox>
-        <p className="font-medium text-[13px] mb-1">
-          수명 · 정정격 — ISO 281 / 16281 (동적) + ISO 76 (정적) · Theory §7
-        </p>
-        <p>
-          두 결과는 커맨드 왕복 한 번에 함께 온다(<span className="font-mono">static_rating</span> 이{' '}
-          <span className="font-mono">BbLifeResult</span> 안에 들어 있다). 그래서 한 탭에 2단으로 둔다.
-        </p>
-        <p className="mt-1 text-blue-200/80">
-          값이 없으면 빈칸으로 둔다 — 0 이나 대시로 채우면 「계산됐는데 0」과 「계산 안 됨」이 구분되지
-          않는다. <span className="font-mono">κ</span>·<span className="font-mono">a_ISO</span>·
-          <span className="font-mono">L_nmr</span> 은 실동점도 ν 를 입력해야 나온다.{' '}
-          <span className="font-mono">ν₁</span> 은 ν 와 무관하게 항상 나온다 — 식 (28)(29) 가{' '}
-          <span className="font-mono">n</span>·<span className="font-mono">D_pw</span> 만의 함수이기 때문이다.
-        </p>
-      </InfoBox>
-
-      {stale && (
-        <WarnBox>
-          입력이 Solve 이후 변경되었다. 수명은 현재 입력(<span className="font-mono">bbInput</span>) 기준으로
-          다시 계산되지만 회전속도 n 은 Solve 시점 스냅샷(<span className="font-mono">resultInput</span>)에서
-          읽으므로 시간[h] 환산의 시점이 어긋나 있다. 다시 Solve 할 것.
-        </WarnBox>
-      )}
+      {stale && <StaleBadge />}
 
       {/* ── 조건 바 ────────────────────────────────────────────────── */}
       <Panel>
-        <p className="text-[13px] font-medium text-text-light mb-2">
-          수명 조건 (ISO 281 §9 · Theory §7.8~7.10)
-        </p>
+        <p className="text-[13px] font-medium text-text-light mb-2">수명 조건</p>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           <NumField
             label="ν [mm²/s]"
@@ -284,7 +266,7 @@ export default function BbLifeView() {
             </select>
           </label>
           <span className="text-[12px] text-text-canvas/60 font-mono">
-            n = {nRpm === null ? '— (Solve 전)' : `${num(nRpm)} r/min`}
+            n = {nRpm === null ? '— (Solve 전)' : `${fmtInt(nRpm)} r/min`}
           </span>
         </div>
       </Panel>
@@ -295,82 +277,80 @@ export default function BbLifeView() {
         <>
           {/* ═══ 1단 — 동적 수명 (ISO 281 / 16281) ═══════════════════ */}
           <Panel className="space-y-3">
-            <p className="text-[13px] font-medium text-text-light">
-              ① 동적 수명 — ISO 281 / 16281
-            </p>
+            <p className="text-[13px] font-medium text-text-light">① 동적 수명</p>
 
             <div className="flex flex-wrap gap-2">
               <Card
                 label="L_10r"
                 strong
-                value={num(life.l_10r_mrev)}
+                value={fmtMrev(life.l_10r_mrev)}
                 unit="10⁶ rev"
                 sub={
                   toHours(life.l_10r_mrev) === null
                     ? 'Solve 전 — 시간 환산 불가'
-                    : `${num(toHours(life.l_10r_mrev)!)} h`
+                    : `${fmtHours(toHours(life.l_10r_mrev)!)} h`
                 }
                 color={C_REF}
               />
               <Card
                 label="L_nmr"
-                value={opt(life.l_nmr_mrev)}
+                value={opt(life.l_nmr_mrev, fmtMrev)}
                 unit="10⁶ rev"
                 sub={
                   life.l_nmr_mrev === null
                     ? 'ν 를 입력하면 산출된다'
                     : toHours(life.l_nmr_mrev) === null
                       ? 'Solve 전 — 시간 환산 불가'
-                      : `${num(toHours(life.l_nmr_mrev)!)} h`
+                      : `${fmtHours(toHours(life.l_nmr_mrev)!)} h`
                 }
                 color={C_LOADED}
               />
-              <Card label="C_r" value={num(life.c_r_n)} unit="N" sub="기본 동정격" color={C_INNER} />
-              <Card label="P_ref r" value={num(life.p_ref_r_n)} unit="N" sub="동등가 기준하중 (11)" />
-              <Card label="C_u" value={num(life.c_u_n)} unit="N" sub={`피로한계 · ${cond.c_u_method}`} />
+              <Card label="C_r" value={fmtKN(life.c_r_n)} unit="kN" sub="기본 동정격" color={C_INNER} />
+              <Card label="P_ref r" value={fmtKN(life.p_ref_r_n)} unit="kN" sub="동등가 기준하중 (11)" />
+              <Card label="C_u" value={fmtKN(life.c_u_n)} unit="kN" sub={`피로한계 · ${cond.c_u_method}`} />
             </div>
 
             <DetailTable
-              title="사슬 — 계수 → 정격 → 전동체하중 → 수명 (Theory §7.1~7.9)"
+              title="사슬"
               rows={[
-                ['f_c (ISO 281 Table 2)', num(life.f_c), '—'],
-                ['b_m (ISO 281 Table 1)', num(life.b_m), '—'],
-                ['C_r (채택)', num(life.c_r_n), 'N'],
-                ['C_r (식 (1)/(2) 자체산출)', num(life.c_r_computed_n), 'N'],
-                ['Q_ci — 내륜 등가 공칭 (1)', num(life.q_ci_n), 'N'],
-                ['Q_ce — 외륜 등가 공칭 (2)', num(life.q_ce_n), 'N'],
-                ['Q_ei — 내륜 동등가 (5)/(6)', num(life.q_ei_n), 'N'],
-                ['Q_ee — 외륜 동등가 (7)/(8)', num(life.q_ee_n), 'N'],
-                ['L_10r — 기본 기준정격수명 (9)', num(life.l_10r_mrev), '10⁶ rev'],
-                ['P_ref r — 동등가 기준하중 (11)', num(life.p_ref_r_n), 'N'],
-                ['P_r — ISO 281 카탈로그 동등가하중', opt(life.p_r_n), 'N'],
-                ['Q_u = min(Q_ui, Q_ue) (B.1)(B.9)', num(life.q_u_n), 'N'],
-                ['C_u (채택)', num(life.c_u_n), 'N'],
-                ['C_u — 정밀법 (B.10)/(B.11)', num(life.c_u_precise_n), 'N'],
-                ['C_u — 간이법 (B.18)/(B.19)', num(life.c_u_simplified_n), 'N'],
+                ['f_c (ISO 281 Table 2)', fmtDimless(life.f_c), '—'],
+                ['b_m (ISO 281 Table 1)', fmtDimless(life.b_m), '—'],
+                ['C_r (채택)', fmtKN(life.c_r_n), 'kN'],
+                ['C_r (식 (1)/(2) 자체산출)', fmtKN(life.c_r_computed_n), 'kN'],
+                ['Q_ci — 내륜 등가 공칭 (1)', fmtN(life.q_ci_n), 'N'],
+                ['Q_ce — 외륜 등가 공칭 (2)', fmtN(life.q_ce_n), 'N'],
+                ['Q_ei — 내륜 동등가 (5)/(6)', fmtN(life.q_ei_n), 'N'],
+                ['Q_ee — 외륜 동등가 (7)/(8)', fmtN(life.q_ee_n), 'N'],
+                ['L_10r — 기본 기준정격수명 (9)', fmtMrev(life.l_10r_mrev), '10⁶ rev'],
+                ['P_ref r — 동등가 기준하중 (11)', fmtKN(life.p_ref_r_n), 'kN'],
+                ['P_r — ISO 281 카탈로그 동등가하중', opt(life.p_r_n, fmtKN), 'kN'],
+                ['Q_u = min(Q_ui, Q_ue) (B.1)(B.9)', fmtN(life.q_u_n), 'N'],
+                ['C_u (채택)', fmtKN(life.c_u_n), 'kN'],
+                ['C_u — 정밀법 (B.10)/(B.11)', fmtKN(life.c_u_precise_n), 'kN'],
+                ['C_u — 간이법 (B.18)/(B.19)', fmtKN(life.c_u_simplified_n), 'kN'],
               ]}
             />
 
             {/* ⚠ ν₁ 은 위 사슬과 **다른 단**이다 — ν 없이도 항상 나온다 (파일 헤더). */}
             <DetailTable
-              title="윤활 보정 — ν₁ 은 ν 와 무관, κ 부터가 ν 를 요구한다 (§7.8~7.10)"
+              title="윤활 보정"
               rows={[
-                ['ν₁ — 기준 동점도 (28)/(29)', opt(life.nu_1_mm2_s), 'mm²/s'],
-                ['ν — 입력 실동점도', cond.nu_mm2_s === 0 ? '' : num(cond.nu_mm2_s), 'mm²/s'],
-                ['κ = ν/ν₁ (27)', opt(life.kappa), '—'],
-                ['e_C — 오염계수', num(cond.e_c), '—'],
-                ['a_ISO (31)~(33)', opt(life.a_iso), '—'],
-                ['a_1 — 신뢰도 계수', num(life.a_1), '—'],
-                ['L_nmr — 수정 기준정격수명 (13)', opt(life.l_nmr_mrev), '10⁶ rev'],
+                ['ν₁ — 기준 동점도 (28)/(29)', opt(life.nu_1_mm2_s, fmtVisc), 'mm²/s'],
+                ['ν — 입력 실동점도', cond.nu_mm2_s === 0 ? '' : fmtVisc(cond.nu_mm2_s), 'mm²/s'],
+                ['κ = ν/ν₁ (27)', opt(life.kappa, fmtDimless), '—'],
+                ['e_C — 오염계수', fmtDimless(cond.e_c), '—'],
+                ['a_ISO (31)~(33)', opt(life.a_iso, fmtDimless), '—'],
+                ['a_1 — 신뢰도 계수', fmtDimless(life.a_1), '—'],
+                ['L_nmr — 수정 기준정격수명 (13)', opt(life.l_nmr_mrev, fmtMrev), '10⁶ rev'],
               ]}
             />
 
             <DetailTable
-              title="내부 항등 — L_10r = (C_r / P_ref r)³ 가 화면에서도 성립하는가"
+              title="내부 항등"
               rows={[
-                ['(C_r / P_ref r)³', identity === null ? '' : num(identity), '10⁶ rev'],
-                ['L_10r (솔버)', num(life.l_10r_mrev), '10⁶ rev'],
-                ['상대차', identityRel === null ? '' : num(identityRel), '—'],
+                ['(C_r / P_ref r)³', identity === null ? '' : fmtMrev(identity), '10⁶ rev'],
+                ['L_10r (솔버)', fmtMrev(life.l_10r_mrev), '10⁶ rev'],
+                ['상대차', identityRel === null ? '' : fmtExp(identityRel), '—'],
               ]}
             />
 
@@ -385,7 +365,8 @@ export default function BbLifeView() {
                       y: balls.map(b => b.q_n),
                       marker: { color: balls.map(b => (b.loaded ? C_LOADED : C_UNLOADED)) },
                       name: 'Q_j',
-                      hovertemplate: '볼 #%{x}<br>Q = %{y:.6g} N<extra></extra>',
+                      customdata: balls.map(b => fmtN(b.q_n)),
+                      hovertemplate: '볼 #%{x}<br>Q = %{customdata} N<extra></extra>',
                     },
                   ]}
                   layout={{
@@ -422,7 +403,7 @@ export default function BbLifeView() {
                         xref: 'paper',
                         x: 0.01,
                         y: life.q_ei_n,
-                        text: `Q_ei = ${num(life.q_ei_n)} N`,
+                        text: `Q_ei = ${fmtN(life.q_ei_n)} N`,
                         showarrow: false,
                         font: { size: 11, color: C_INNER },
                         yanchor: 'bottom',
@@ -431,7 +412,7 @@ export default function BbLifeView() {
                         xref: 'paper',
                         x: 0.99,
                         y: life.q_ee_n,
-                        text: `Q_ee = ${num(life.q_ee_n)} N`,
+                        text: `Q_ee = ${fmtN(life.q_ee_n)} N`,
                         showarrow: false,
                         font: { size: 11, color: C_OUTER },
                         yanchor: 'top',
@@ -446,8 +427,7 @@ export default function BbLifeView() {
               </div>
             ) : (
               <p className="text-[12px] text-amber-300/80">
-                결과 없음 — 볼별 <span className="font-mono">Q_j</span> 막대는 Solve 후에 그린다. 위 정격·수명은{' '}
-                기하와 하중만으로 계산되므로 Solve 없이도 나온다.
+                결과 없음 — 볼별 <span className="font-mono">Q_j</span> 막대는 Solve 후에 그린다.
               </p>
             )}
           </Panel>
@@ -455,37 +435,35 @@ export default function BbLifeView() {
           {/* ═══ 2단 — 정정격 (ISO 76) ═══════════════════════════════ */}
           {st && (
             <Panel className="space-y-3">
-              <p className="text-[13px] font-medium text-text-light">
-                ② 정정격 — ISO 76 (Theory §7.11~7.13)
-              </p>
+              <p className="text-[13px] font-medium text-text-light">② 정정격</p>
 
               <div className="flex flex-wrap gap-2">
                 <Card
                   label="S_0"
-                  value={num(st.s_0)}
+                  value={fmtDimless(st.s_0)}
                   unit="—"
                   sub="정적 안전계수 (76-14)"
                   color={C_REF}
                   danger={st.s_0 < 1}
                   strong
                 />
-                <Card label="C_0r" value={num(st.c_0r_n)} unit="N" sub="기본 정정격 (76-1)" color={C_INNER} />
-                <Card label="P_0r" value={num(st.p_0r_n)} unit="N" sub="정적 등가 반경하중" color={C_OUTER} />
+                <Card label="C_0r" value={fmtKN(st.c_0r_n)} unit="kN" sub="기본 정정격 (76-1)" color={C_INNER} />
+                <Card label="P_0r" value={fmtKN(st.p_0r_n)} unit="kN" sub="정적 등가 반경하중" color={C_OUTER} />
               </div>
 
               <DetailTable
-                title="사슬 — γ → f_0 → C_0r · X_0 Y_0 → P_0r → S_0"
+                title="사슬"
                 rows={[
-                  ['γ = D_w cos α / D_pw (표 진입값)', num(st.gamma), '—'],
-                  ['f_0 (ISO 76 Table 1)', num(st.f_0), '—'],
-                  ['C_0r (채택)', num(st.c_0r_n), 'N'],
-                  ['C_0r (식 (76-1) 자체산출)', num(st.c_0r_computed_n), 'N'],
-                  ['X_0 (ISO 76 Table 2)', num(st.x_0), '—'],
-                  ['Y_0 (ISO 76 Table 2)', num(st.y_0), '—'],
-                  ['F_r = √(F_y² + F_z²)', num(st.f_r_n), 'N'],
-                  ['F_a = |F_x|', num(st.f_a_n), 'N'],
-                  ['P_0r = max{X_0 F_r + Y_0 F_a, F_r}', num(st.p_0r_n), 'N'],
-                  ['S_0 = C_0r / P_0r (76-14)', num(st.s_0), '—'],
+                  ['γ = D_w cos α / D_pw (표 진입값)', fmtDimless(st.gamma), '—'],
+                  ['f_0 (ISO 76 Table 1)', fmtDimless(st.f_0), '—'],
+                  ['C_0r (채택)', fmtKN(st.c_0r_n), 'kN'],
+                  ['C_0r (식 (76-1) 자체산출)', fmtKN(st.c_0r_computed_n), 'kN'],
+                  ['X_0 (ISO 76 Table 2)', fmtDimless(st.x_0), '—'],
+                  ['Y_0 (ISO 76 Table 2)', fmtDimless(st.y_0), '—'],
+                  ['F_r = √(F_y² + F_z²)', fmtN(st.f_r_n), 'N'],
+                  ['F_a = |F_x|', fmtN(st.f_a_n), 'N'],
+                  ['P_0r = max{X_0 F_r + Y_0 F_a, F_r}', fmtKN(st.p_0r_n), 'kN'],
+                  ['S_0 = C_0r / P_0r (76-14)', fmtDimless(st.s_0), '—'],
                 ]}
               />
 
@@ -495,14 +473,6 @@ export default function BbLifeView() {
 
           {/* ── 수명 alerts ──────────────────────────────────────────── */}
           <AlertList title="Life Alerts" alerts={life.alerts} />
-
-          <p className="text-[11px] text-text-canvas/50 leading-relaxed">
-            재사용: TRB <span className="font-mono">charts/LifeChart</span> 의 「요약 카드 → 사슬 표 → 차트」 3층
-            배치를 옮겼다(원본 미수정). 라미나별 수명은 볼에 대응물이 없어 폐기하고 볼별{' '}
-            <span className="font-mono">Q_j</span> 막대로 바꿨다. 커맨드 호출은{' '}
-            <span className="font-mono">BbGeometryView</span> 의 150 ms 디바운스 + <span className="font-mono">cancelled</span>{' '}
-            패턴과 같다.
-          </p>
         </>
       )}
     </div>
