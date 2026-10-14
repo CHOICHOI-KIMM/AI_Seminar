@@ -854,6 +854,26 @@ async function measureFormat(): Promise<string[]> {
   await sleep(400);
   if (!buttonByText('Geometry')) bad.push('잔존 탭 클릭 후 탭 바가 사라졌다 (앱 멈춤)');
   if ((document.querySelector('main')?.textContent ?? '') !== before) bad.push('잔존 탭 클릭으로 화면이 바뀌었다 (disabled 무효)');
+  // Load Distribution (2026-10-14) — α_j 스플라인 · 0°↔360° 닫힘 · 접촉타원/「위상 스윕 꺼짐」 없음
+  buttonByText('Load Distribution')?.click();
+  const mL = document.querySelector('main');
+  await waitStable(() => mL?.textContent ?? '');
+  if (mL) {
+    const txt = mL.textContent ?? '';
+    if (txt.includes('위상 스윕 꺼짐')) bad.push('Load Dist: 「위상 스윕 꺼짐」 문구 잔존');
+    if (txt.includes('접촉타원')) bad.push('Load Dist: 접촉타원 차트 잔존');
+    type PTrace = { x?: number[]; y?: (number | null)[]; mode?: string; line?: { shape?: string } };
+    const plots = Array.from(mL.querySelectorAll('.js-plotly-plot')) as (Element & { data?: PTrace[] })[];
+    const spline = plots.flatMap(pl => pl.data ?? []).find(t => t.mode === 'lines' && t.line?.shape === 'spline');
+    if (!spline || !spline.x || spline.x.length < 2) bad.push('Load Dist: α_j 스플라인 선이 없다');
+    else {
+      const x = spline.x;
+      const closed = Math.abs(x[x.length - 1] - (x[0] + 360)) < 1e-9;
+      if (!closed) bad.push(`Load Dist: α_j 선이 0°↔360° 로 닫히지 않았다 (${x[0]} … ${x[x.length - 1]})`);
+      await logInfo(`[healthcheck] Load Dist α_j 스플라인 점 ${x.length}개 · 닫힘 ${closed}`);
+    }
+  }
+
   // 3D 뷰 (Plan §4-5.8) — 라벨 겹침 0 · 축 글자 X·Y(G)·Z · +Y 가 화면 아래 · 틸트 정보 없음
   buttonByText('3D View')?.click();
   const m3 = document.querySelector('main');

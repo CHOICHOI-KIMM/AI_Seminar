@@ -10,10 +10,8 @@
 //  | `Q_j(φ)` 극좌표 | 하중구간의 **방위**와 폭 · 대칭성 | C-4(회전 불변) · C-7(하중구간) · D-2b/2c |
 //  | `α_j(φ)` 곡선   | 접촉각이 **볼마다 다르고 하중에 따라 변한다**는 사실 | D-1 · C-2 |
 //  | 위상 스윕 곡선  | `Q_max` 가 주기 **2π/Z** 로 진동하는가 | C-5 |
-//  | 접촉타원 형상   | 볼별 `a`·`b`·비율 `a/b` | (형상만) |
 //
-//  ⚠ **접촉타원 내부의 압력분포 `p(x,y)` 는 이 뷰의 소관이 아니다** — `BbStressContourView`(S5).
-//    역할 분담은 §3.6.4.4 가 정한다: 여기는 「전 볼을 한눈에」(분포), 저기는 「볼 하나를 자세히」(상세).
+//  ⚠ 접촉타원(반경 a·b · 윤곽 · 압력분포)은 이 뷰에서 뺐다(2026-10-14 사용자 지시) — `BbStressContourView` 가 맡는다.
 //
 // ─────────────────────────────────────────────────────────────────────
 //  🔴 방위 규약 — 이것을 틀리면 검증 자체가 무의미해진다
@@ -60,10 +58,10 @@
 // ─────────────────────────────────────────────────────────────────────
 //  ⚠ §3.6.1.4 통합 대비 — 컴포넌트를 미리 갈라 둔다
 // ─────────────────────────────────────────────────────────────────────
-//  나중 통합 시 이 뷰는 **`LoadDistPolar`(전동체 3종 공통) + `ContactEllipse`(BB 전용)** 로 갈라진다.
+//  나중 통합 시 이 뷰는 **`LoadDistPolar`(전동체 3종 공통)** 와 BB 전용 부분으로 갈라진다.
 //  전동체별 `Q(φ)` 극좌표는 롤러(CRB·TRB)에도 그대로 쓰이므로, `LoadDistPolar` 는
 //  **`BallResult` 를 모르는 중립 입력**(`{ phi_rad, q_n, loaded }`)만 받도록 지금부터 분리해 둔다.
-//  `AlphaCurve`·`PhaseSweepChart`·`ContactEllipse` 는 BB 전용 쪽이다.
+//  `AlphaCurve`·`PhaseSweepChart` 는 BB 전용 쪽이다.
 
 import { useAppState } from '../store';
 import Plot from '../components/charts/PlotWithCopy';
@@ -71,7 +69,7 @@ import { darkLayout, plotConfig } from '../components/charts/plotlyDefaults';
 import { DetailTable } from './ui';
 import type { BallResult } from './generated/BallResult';
 import type { BbPhaseSweepResult } from './generated/BbPhaseSweepResult';
-import { toDeg, fmtN, fmtDeg, fmtUm, fmtMPa, fmtMmFine, fmtDimless, C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF, C_INNER, C_OUTER } from './shared';
+import { toDeg, fmtN, fmtDeg, fmtUm, fmtMPa, fmtMmFine, fmtDimless, C_LOADED, C_UNLOADED, C_LOAD_DIR, C_ALPHA, C_REF } from './shared';
 
 
 /**
@@ -253,12 +251,21 @@ function LoadDistPolar({
  * (D-1 · C-2). 전부 같은 값이면 틸트가 반영되지 않은 것이다 (§3.6.4.2 의 징후).
  *
  * ⚠ **접촉 볼만** 그린다 — 비접촉 볼의 `α_j` 는 물리적 의미가 없다.
- * ⚠ 점을 선으로 잇지 않는다. 비접촉 볼이 중간에 빠지면 선이 그 구간을 가로질러
- *   **있지도 않은 볼을 있는 것처럼** 보이게 한다.
+ * 점은 **스플라인으로 잇는다** (2026-10-14 사용자 지시). 단:
+ *   - 비접촉 볼 자리는 `null` 로 **선을 끊는다** — 선이 그 구간을 가로질러 있지도 않은 볼을 있는 것처럼
+ *     보이게 하지 않기 위해서다(이전에 선을 쓰지 않은 이유).
+ *   - φ 는 한 바퀴 주기이므로 첫 볼 값을 φ + 360° 에 한 번 더 둬 0°↔360° 가 이어지게 한다
+ *     (같은 볼의 값이지 새로 지어낸 값이 아니다).
+ *   - 스플라인은 점 사이를 부드럽게 보이게 할 뿐이다. 계산된 값은 점(마커)이다.
  */
 function AlphaCurve({ balls, alpha0Rad }: { balls: BallResult[]; alpha0Rad: number }) {
   const loaded = balls.map((b, i) => ({ b, i })).filter(({ b }) => b.loaded);
   const alpha0Deg = toDeg(alpha0Rad);
+  // 선: 전 볼을 φ 순으로, 비접촉은 null(끊김). 첫 볼을 +360° 에 반복해 한 바퀴를 닫는다.
+  const ring = balls
+    .map(b => ({ phi: ((toDeg(b.phi_rad) % 360) + 360) % 360, a: b.loaded ? toDeg(b.alpha_rad) : null }))
+    .sort((p, q) => p.phi - q.phi);
+  if (ring.length > 0) ring.push({ phi: ring[0].phi + 360, a: ring[0].a });
 
   const data: Plotly.Data[] = [
     {
@@ -269,6 +276,16 @@ function AlphaCurve({ balls, alpha0Rad }: { balls: BallResult[]; alpha0Rad: numb
       line: { color: C_REF, width: 2, dash: 'dot' },
       name: `α₀ = ${fmtDeg(alpha0Deg)}°`,
       hovertemplate: `α₀ = ${fmtDeg(alpha0Deg)}°<extra></extra>`,
+    } as Plotly.Data,
+    {
+      type: 'scatter',
+      x: ring.map(r => r.phi),
+      y: ring.map(r => r.a),
+      mode: 'lines',
+      line: { color: C_ALPHA, width: 2, shape: 'spline' },
+      connectgaps: false,
+      showlegend: false,
+      hoverinfo: 'skip',
     } as Plotly.Data,
     {
       type: 'scatter',
@@ -411,113 +428,6 @@ function PhaseSweepChart({
 }
 
 /**
- * 접촉타원 **형상** — **BB 전용**(§3.6.1.4 통합 시 분리 대상).
- *
- * ⚠ 여기는 `a`·`b`·`a/b` 의 **형상**까지다. 타원 **내부**의 `p(x, y)` 는 `BbStressContourView`
- *   소관이다 (§3.6.4.4). 여기서 히트맵을 그리면 두 뷰가 같은 것을 두 번 그리게 된다.
- */
-function ContactEllipse({ balls }: { balls: BallResult[] }) {
-  const idx = balls.map((_, i) => i + 1);
-  const bar = (name: string, vals: number[], color: string): Plotly.Data =>
-    ({
-      type: 'bar',
-      x: idx,
-      y: vals,
-      name,
-      marker: { color },
-      hovertemplate: `볼 #%{x} — ${name} = %{y:.4f} mm<extra></extra>`,
-    }) as Plotly.Data;
-
-  const barLayout: Partial<Plotly.Layout> = {
-    ...darkLayout,
-    title: { text: '접촉타원 반경 a · b', font: { size: 14, color: '#e2e8f0' } },
-    xaxis: { ...darkLayout.xaxis, title: { text: '볼 번호 j' }, dtick: 1 },
-    yaxis: { ...darkLayout.yaxis, title: { text: '[mm]' } },
-    barmode: 'group',
-    showlegend: true,
-    legend: { font: { size: 11, color: '#94a3b8' }, bgcolor: 'transparent' },
-  };
-
-  // 실제 축척 윤곽 — 최대하중 볼. 「내·외륜 타원이 뒤바뀜」(§3.6.4.2 징후)이 여기서 보인다.
-  let top = -1;
-  for (let i = 0; i < balls.length; i++) {
-    if (top < 0 || balls[i].q_n > balls[top].q_n) top = i;
-  }
-  const b0 = top >= 0 ? balls[top] : null;
-
-  const ring = (a: number, b: number, name: string, color: string): Plotly.Data => {
-    const t = Array.from({ length: 181 }, (_, k) => (k * 2 * Math.PI) / 180);
-    return {
-      type: 'scatter',
-      x: t.map(v => a * Math.cos(v)),
-      y: t.map(v => b * Math.sin(v)),
-      mode: 'lines',
-      fill: 'toself',
-      fillcolor: 'rgba(255,255,255,0.04)',
-      line: { color, width: 2 },
-      name,
-      hovertemplate: `${name}<br>x = %{x:.4f} mm<br>y = %{y:.4f} mm<extra></extra>`,
-    } as Plotly.Data;
-  };
-
-  const shapeLayout: Partial<Plotly.Layout> = {
-    ...darkLayout,
-    title: {
-      text: b0 ? `접촉타원 윤곽 — 볼 #${top + 1}` : '접촉타원 윤곽',
-      font: { size: 14, color: '#e2e8f0' },
-    },
-    xaxis: { ...darkLayout.xaxis, title: { text: 'a 방향 [mm]' } },
-    yaxis: { ...darkLayout.yaxis, title: { text: 'b 방향 [mm]' }, scaleanchor: 'x', scaleratio: 1 },
-    showlegend: true,
-    legend: { font: { size: 11, color: '#94a3b8' }, bgcolor: 'transparent' },
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="h-[300px]">
-        <Plot
-          data={[
-            bar('a inner', balls.map(b => b.a_inner_mm), C_INNER),
-            bar('b inner', balls.map(b => b.b_inner_mm), '#93c5fd'),
-            bar('a outer', balls.map(b => b.a_outer_mm), C_OUTER),
-            bar('b outer', balls.map(b => b.b_outer_mm), '#fdba74'),
-          ]}
-          layout={barLayout}
-          config={plotConfig}
-          style={{ width: '100%', height: '100%' }}
-          useResizeHandler
-        />
-      </div>
-
-      {b0 && b0.b_inner_mm > 0 && b0.b_outer_mm > 0 && (
-        <div className="h-[320px]">
-          <Plot
-            data={[
-              ring(
-                b0.a_inner_mm,
-                b0.b_inner_mm,
-                `inner (a/b = ${fmtDimless(b0.a_inner_mm / b0.b_inner_mm)})`,
-                C_INNER
-              ),
-              ring(
-                b0.a_outer_mm,
-                b0.b_outer_mm,
-                `outer (a/b = ${fmtDimless(b0.a_outer_mm / b0.b_outer_mm)})`,
-                C_OUTER
-              ),
-            ]}
-            layout={shapeLayout}
-            config={plotConfig}
-            style={{ width: '100%', height: '100%' }}
-            useResizeHandler
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
  * 볼별 전 항목 표 — `BallResult` 11필드를 **빠짐없이** 낸다.
  *
  * 비접촉 볼은 흐리게 하고 α_j 를 「—」로 둔다 — 하중을 받지 않는 볼의 접촉각은 물리적 의미가 없다.
@@ -633,16 +543,10 @@ export default function BbLoadDistView() {
       <AlphaCurve balls={balls} alpha0Rad={result.geometry.alpha_0_rad} />
 
       {/* ③ 위상 스윕 — C-5. `SolverParams.phase_sweep.enabled` 일 때만 채워진다. */}
-      {result.phase_sweep ? (
+      {result.phase_sweep && (
         <PhaseSweepChart sweep={result.phase_sweep} z={balls.length} baseQMaxN={eq.q_max_n} />
-      ) : (
-        <p className="text-[12px] text-text-canvas/60">
-          위상 스윕 꺼짐 (<span className="font-mono">solver.phase_sweep.enabled = false</span>)
-        </p>
       )}
 
-      {/* ④ 접촉타원 형상 — 내부 압력분포는 S5 소관 (§3.6.4.4) */}
-      <ContactEllipse balls={balls} />
 
       <BallTable balls={balls} />
     </div>
