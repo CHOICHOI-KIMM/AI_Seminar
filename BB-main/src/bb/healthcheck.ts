@@ -826,8 +826,10 @@ async function measureFormat(): Promise<string[]> {
     if (!main) continue;
     rows += main.querySelectorAll('tr').length;
     bad.push(...checkDecimals(main, `${t}: `));
-    // 설명 문구 잔존 — 상단 안내 배너(파란 박스) · 개발 메모
-    const banners = main.querySelectorAll('.bg-blue-500\\/10').length;
+    // 설명 문구 잔존 — 상단 안내 배너 · 개발 메모.
+    // ⚠ 배너는 `p-2.5` + 파란 배경으로 식별한다. 파란 배경만 보면 AlertList 의 Info 알림(`p-2`)까지
+    //    걸린다 (첫 실측에서 Life 의 Info 알림을 배너로 오판했다).
+    const banners = main.querySelectorAll('.p-2\\.5.bg-blue-500\\/10').length;
     const memo = (main.textContent ?? '').includes('재사용:');
     if (banners) bad.push(`${t}: 안내 배너 ${banners}개 잔존`);
     if (memo) bad.push(`${t}: 「재사용:」 개발 메모 잔존`);
