@@ -840,16 +840,20 @@ async function measureFormat(): Promise<string[]> {
     // 결과 카드의 검증 배지 — 화면 어디에도 「D-2a」 가 남지 않아야 한다
     bad.push('결과 카드: 검증 단계 배지(D-2a) 잔존');
   }
-  // 잔존 탭 (Plan §4-5.7) — 「TRB 잔존」 배지 0, Lubrication 은 앱을 멈추지 않고 안내만 보인다.
-  // ⚠ Thermal Speed 는 누르면 앱 전체가 빈 화면이 되므로(실측) 여기서 누르지 않는다.
+  // 잔존 탭 (Plan §4-5.7) — 「TRB 잔존」 배지 0, 잔존 5탭은 disabled(클릭해도 화면이 바뀌지 않음).
+  // Lubrication·Thermal Speed 는 활성 상태에서 누르면 앱 전체가 빈 화면이 됐다(실측).
   const tabBar = Array.from(document.querySelectorAll('button')).map(b => b.textContent ?? '').join('|');
   if (tabBar.includes('TRB 잔존')) bad.push('탭 바: 「TRB 잔존」 배지 잔존');
-  buttonByText('Lubrication')?.click();
-  await sleep(500);
-  const lubText = document.querySelector('main')?.textContent ?? '';
-  if (!lubText.includes('윤활 해석은 Phase 6 예정')) bad.push('Lubrication: 「Phase 6 예정」 안내가 보이지 않는다');
-  if (!buttonByText('Geometry')) bad.push('Lubrication: 클릭 후 탭 바가 사라졌다 (앱 멈춤)');
-  buttonByText('Geometry')?.click();
+  const before = document.querySelector('main')?.textContent ?? '';
+  for (const t of ['Profile', 'Lubrication', 'Thermal Speed', 'Comparison', 'Transient']) {
+    const b = buttonByText(t);
+    if (!b) { bad.push(`잔존 탭 '${t}' 버튼이 없다`); continue; }
+    if (!b.disabled) bad.push(`잔존 탭 '${t}' 이 비활성(disabled)이 아니다`);
+    b.click();
+  }
+  await sleep(400);
+  if (!buttonByText('Geometry')) bad.push('잔존 탭 클릭 후 탭 바가 사라졌다 (앱 멈춤)');
+  if ((document.querySelector('main')?.textContent ?? '') !== before) bad.push('잔존 탭 클릭으로 화면이 바뀌었다 (disabled 무효)');
   await logInfo(`[healthcheck] format 표 행 ${rows}개 검사 · 위반 ${bad.length}`);
   return bad;
 }

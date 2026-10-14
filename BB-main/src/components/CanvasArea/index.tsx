@@ -7,25 +7,25 @@ import ThermalSpeedView from '../ThermalSpeedView';
 
 // P4-S1-4 (Plan §3.6.4.3 최소 변경 방침): TRB 잔존 탭(Profile·Thermal Speed·Comparison·Transient)은
 //   지우지 않고 그대로 둔다 — 검증 중에는 변경이 적을수록 원인 분리가 쉽다. 일괄 정리는 §3.6.4.6 시점.
-//   P4-5 (Plan §4-5.7, 2026-10-14 사용자 결정): 「TRB 잔존」 배지·회색 처리를 지웠다(탭은 유지).
-//   Lubrication 은 BB 결과에서 앱 전체를 빈 화면으로 만들어(실측) 「Phase 6 예정」 안내로 바꿨다.
-//   ⚠ Thermal Speed 도 같은 현상이 실측됐으나 사용자 결정으로 탭을 유지한다(Plan §4-5.7 남는 위험).
+//   P4-5 (Plan §4-5.7, 2026-10-14 사용자 결정): 「TRB 잔존」 배지는 지우고, 잔존 5탭은
+//   **회색 + 클릭 불가(disabled)** 로 둔다. Lubrication·Thermal Speed 는 BB 결과에서 누르면 앱 전체가
+//   빈 화면이 됐다(실측) — 클릭을 막아 그 경로를 없앤다. 탭 자체는 남겨 개조할 목록이 보이게 한다.
 //   S3 에서 geometry, S4 에서 load, **S5 에서 contour** 가 BB 뷰로 채워졌다 (셋 다 prop 주입).
 //   P4-3a 에서 **section** 이 `bb/BbAxialSectionView` 로 채워졌다 (같은 prop 주입).
 //   P4-3b 에서 **3d**, P5-2 에서 **life** 가 같은 방식으로 채워졌다.
 //   → 이로써 Geometry·Section·3D·Load·Contour·Life 6탭이 **전부** BB 뷰다.
-const tabs: { key: CanvasTab; label: string }[] = [
+const tabs: { key: CanvasTab; label: string; disabled?: boolean }[] = [
   { key: 'geometry', label: 'Geometry' },
-  { key: 'profile', label: 'Profile' },
+  { key: 'profile', label: 'Profile', disabled: true },
   { key: 'section', label: 'Section' },
   { key: '3d', label: '3D View' },
   { key: 'load', label: 'Load Distribution' },
   { key: 'contour', label: 'Stress Contour' },
-  { key: 'lubrication', label: 'Lubrication' },
+  { key: 'lubrication', label: 'Lubrication', disabled: true },
   { key: 'life', label: 'Life' },
-  { key: 'iso15312', label: 'Thermal Speed' },
-  { key: 'comparison', label: 'Comparison' },
-  { key: 'transient', label: 'Transient' },
+  { key: 'iso15312', label: 'Thermal Speed', disabled: true },
+  { key: 'comparison', label: 'Comparison', disabled: true },
+  { key: 'transient', label: 'Transient', disabled: true },
 ];
 
 /**
@@ -72,10 +72,13 @@ export default function CanvasArea({
           <button
             key={tab.key}
             onClick={() => dispatch({ type: 'SET_TAB', payload: tab.key })}
-            className={`px-3 py-1.5 text-[13px] font-medium rounded-t transition-colors cursor-pointer flex items-center gap-1.5 ${
+            disabled={tab.disabled}
+            className={`px-3 py-1.5 text-[13px] font-medium rounded-t transition-colors flex items-center gap-1.5 ${
               activeTab === tab.key
-                ? 'bg-canvas-subtle text-text-light border border-white/10 border-b-0'
-                : 'text-text-canvas hover:text-text-light hover:bg-white/5'
+                ? 'bg-canvas-subtle text-text-light border border-white/10 border-b-0 cursor-pointer'
+                : tab.disabled
+                  ? 'text-text-canvas/40 cursor-not-allowed'
+                  : 'text-text-canvas hover:text-text-light hover:bg-white/5 cursor-pointer'
             }`}
           >
             {tab.label}
@@ -96,17 +99,10 @@ export default function CanvasArea({
         {activeTab === 'section' && sectionView}
         {activeTab === 'profile' && <ProfileView />}
         {activeTab === 'transient' && <TransientView />}
-        {/* P4-5 §4-5.7: BB 윤활 뷰는 Phase 6 에서 만든다. 결과와 무관하게 안내만 보인다. */}
-        {activeTab === 'lubrication' && (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-text-canvas text-sm">윤활 해석은 Phase 6 예정</p>
-          </div>
-        )}
         {activeTab !== 'geometry' &&
           activeTab !== 'section' &&
           activeTab !== 'profile' &&
-          activeTab !== 'transient' &&
-          activeTab !== 'lubrication' && (
+          activeTab !== 'transient' && (
           !result ? (
             <EmptyState />
           ) : (
