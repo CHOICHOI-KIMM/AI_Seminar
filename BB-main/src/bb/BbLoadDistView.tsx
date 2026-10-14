@@ -189,6 +189,22 @@ function LoadDistPolar({
     } as Plotly.Data);
   }
 
+  // 반경축(눈금 숫자 500·1000 …)은 envelope 이 가장 낮은 볼 사이 간격의 가운데로 돌린다.
+  //   하중구간 반대편(Q≈0)이라 숫자가 envelope 선·볼 마커와 겹치지 않는다.
+  //   `radialaxis.angle` 은 화면 각(반시계, +x 기준)이므로 φ 를 `dir·φ + rotation` = φ − 90 으로 바꾼다.
+  let radialPhi = 0;
+  if (env.length > 1) {
+    const phiMax = env.reduce((a, b) => (b.q > a.q ? b : a)).phi;
+    let best = Infinity;
+    env.forEach((a, i) => {
+      const b = env[(i + 1) % env.length];
+      const mid = (a.phi + (((b.phi - a.phi) % 360) + 360) % 360 / 2) % 360;
+      const far = Math.abs((((mid - phiMax) % 360) + 540) % 360 - 180); // φ_max 에서 각거리
+      const score = a.q + b.q - far * 1e-9 * (qMax || 1);
+      if (score < best) { best = score; radialPhi = mid; }
+    });
+  }
+
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
     // 제목은 **`Load Distribution`** 으로 단순화한다 (§3.6.4.11). 축 규약은 위 주석과
@@ -220,6 +236,7 @@ function LoadDistPolar({
       },
       radialaxis: {
         range: [0, rRef * 1.2],
+        angle: radialPhi - 90,
         gridcolor: '#334155',
         linecolor: '#334155',
         tickfont: { size: 11, family: 'JetBrains Mono', color: '#94a3b8' },
@@ -228,7 +245,11 @@ function LoadDistPolar({
     },
     margin: { l: 40, r: 40, t: 45, b: 30 },
     showlegend: true,
-    legend: { font: { size: 11, color: '#94a3b8' }, bgcolor: 'transparent', x: 0.02, y: 0.98 },
+    // 범례는 그림 틀(container)의 좌상단 모서리에 붙인다 — 극좌표 원·각도 눈금과 겹치지 않게.
+    legend: {
+      font: { size: 11, color: '#94a3b8' }, bgcolor: 'transparent',
+      xref: 'container', yref: 'container', x: 0, y: 1, xanchor: 'left', yanchor: 'top',
+    },
   };
 
   return (

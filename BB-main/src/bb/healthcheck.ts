@@ -897,6 +897,37 @@ async function measureFormat(): Promise<string[]> {
       if (colorBad) bad.push(`Load Dist: 막대 색이 3D 컬러맵과 다른 막대 ${colorBad}개`);
     }
   }
+  // 극좌표 겹침 (2026-10-14) — 범례 ∩ 극좌표(원·각도 눈금) = 0 · 반경 눈금 숫자 ∩ envelope 선 = 0
+  const polarPlot = Array.from(mL?.querySelectorAll('.js-plotly-plot') ?? []).find(pl => pl.querySelector('.polarlayer'));
+  if (polarPlot) {
+    const numText = (sel: string, re: RegExp) =>
+      Array.from(polarPlot.querySelectorAll(sel)).filter(t => re.test((t.textContent ?? '').trim()));
+    const angLabels = numText('.angular-axis text', /^-?\d+°$/);
+    const radLabels = numText('.radial-axis text', /^[\d.,k]+$/);
+    const legend = polarPlot.querySelector('.legend')?.getBoundingClientRect();
+    const polarBox = (polarPlot.querySelector('.polarlayer .bg path, .polarlayer .bglayer path')
+      ?? polarPlot.querySelector('.polarlayer'))!.getBoundingClientRect();
+    const legHits = legend
+      ? [polarBox, ...angLabels.map(t => t.getBoundingClientRect())].filter(r => overlapArea(legend, r) > 0).length
+      : -1;
+    // envelope 선(fill:'toself' 첫 trace)을 1px 간격으로 화면 좌표로 바꿔 숫자 bbox 안에 드는 점을 센다
+    const line = polarPlot.querySelector('.polarlayer .scatterlayer .trace .js-line') as SVGPathElement | null;
+    const pts: DOMPoint[] = [];
+    if (line) {
+      const m = line.getScreenCTM()!;
+      const len = line.getTotalLength();
+      for (let d = 0; d <= len; d += 1) pts.push(line.getPointAtLength(d).matrixTransform(m));
+    }
+    const radHits = radLabels.filter(t => {
+      const r = t.getBoundingClientRect();
+      return pts.some(p => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom);
+    }).map(t => t.textContent);
+    await logInfo(`[healthcheck] Load Dist 극좌표 각도눈금 ${angLabels.length} · 반경눈금 ${radLabels.length} · envelope 점 ${pts.length} · 범례 겹침 ${legHits} · 숫자∩envelope ${radHits.length}`);
+    if (!legend) bad.push('Load Dist: 극좌표 범례가 없다');
+    else if (legHits) bad.push(`Load Dist: 범례가 극좌표 원·각도 눈금과 겹친다 (${legHits}곳)`);
+    if (!angLabels.length || !radLabels.length || !pts.length) bad.push('Load Dist: 극좌표 눈금/envelope 를 찾지 못했다');
+    if (radHits.length) bad.push(`Load Dist: 반경 눈금 숫자가 envelope 선과 겹친다 (${radHits.join(', ')})`);
+  } else bad.push('Load Dist: 극좌표 차트가 없다');
   buttonByText('Life')?.click();
   const mLife = document.querySelector('main');
   await waitStable(() => mLife?.textContent ?? '');
