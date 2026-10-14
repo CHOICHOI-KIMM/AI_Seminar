@@ -191,7 +191,7 @@ function LoadDistPolar({
 
   // 반경축(눈금 숫자 500·1000 …)은 envelope 이 가장 낮은 볼 사이 간격의 가운데로 돌린다.
   //   하중구간 반대편(Q≈0)이라 숫자가 envelope 선·볼 마커와 겹치지 않는다.
-  //   `radialaxis.angle` 은 화면 각(반시계, +x 기준)이므로 φ 를 `dir·φ + rotation` = φ − 90 으로 바꾼다.
+  //   `radialaxis.angle` 은 각도축 좌표(φ 그대로)다 — 화면 각으로 바꾸면 축이 90° 어긋난다(2026-10-14 화면 확인).
   let radialPhi = 0;
   if (env.length > 1) {
     const phiMax = env.reduce((a, b) => (b.q > a.q ? b : a)).phi;
@@ -204,6 +204,13 @@ function LoadDistPolar({
       if (score < best) { best = score; radialPhi = mid; }
     });
   }
+  // 반경 눈금: 격자 원은 범위 끝까지 두되 숫자는 Q_max 이하만 단다 — 볼 링(1.12·Q_max)의 점과 안 겹치게.
+  const rawStep = (rRef * 1.2) / 5;
+  const mag = 10 ** Math.floor(Math.log10(rawStep));
+  const step = ([1, 2, 2.5, 5, 10].find(m => m * mag >= rawStep) ?? 10) * mag;
+  const tickvals: number[] = [];
+  for (let v = 0; v <= rRef * 1.2 + 1e-9 * step; v += step) tickvals.push(Number(v.toPrecision(12)));
+  const ticktext = tickvals.map(v => (v <= qMax ? String(v) : ''));
 
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
@@ -228,7 +235,7 @@ function LoadDistPolar({
       angularaxis: {
         direction: 'counterclockwise',
         rotation: -90,
-        dtick: 30,
+        dtick: 45,
         ticksuffix: '°',
         gridcolor: '#334155',
         linecolor: '#334155',
@@ -236,14 +243,16 @@ function LoadDistPolar({
       },
       radialaxis: {
         range: [0, rRef * 1.2],
-        angle: radialPhi - 90,
+        angle: radialPhi,
+        tickvals,
+        ticktext,
         gridcolor: '#334155',
         linecolor: '#334155',
         tickfont: { size: 11, family: 'JetBrains Mono', color: '#94a3b8' },
         title: { text: 'Q [N]', font: { size: 12, color: '#94a3b8' } },
       },
     },
-    margin: { l: 40, r: 40, t: 45, b: 30 },
+    margin: { l: 40, r: 40, t: 70, b: 30 },
     showlegend: true,
     // 범례는 그림 틀(container)의 좌상단 모서리에 붙인다 — 극좌표 원·각도 눈금과 겹치지 않게.
     legend: {
@@ -319,6 +328,7 @@ function BallLoadBars({ balls }: { balls: BallResult[] }) {
   const layout: Partial<Plotly.Layout> = {
     ...darkLayout,
     title: { text: '볼별 하중 Q_j', font: { size: 14, color: '#e2e8f0' } },
+    margin: { ...darkLayout.margin, t: 70 }, // 극좌표와 같은 상단 여백 — 제목과 그래프 간격
     xaxis: { ...darkLayout.xaxis, title: { text: '볼 번호' }, dtick: 1 },
     yaxis: { ...darkLayout.yaxis, title: { text: 'Q [N]' }, rangemode: 'tozero' },
     bargap: 0.15,

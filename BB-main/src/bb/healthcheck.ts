@@ -922,7 +922,14 @@ async function measureFormat(): Promise<string[]> {
       const r = t.getBoundingClientRect();
       return pts.some(p => p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom);
     }).map(t => t.textContent);
-    await logInfo(`[healthcheck] Load Dist 극좌표 각도눈금 ${angLabels.length} · 반경눈금 ${radLabels.length} · envelope 점 ${pts.length} · 범례 겹침 ${legHits} · 숫자∩envelope ${radHits.length}`);
+    // 반경 눈금 숫자 ∩ 볼 마커(볼 링·꼭짓점) — 마커 bbox 와 숫자 bbox 의 교차
+    const markers = Array.from(polarPlot.querySelectorAll('.polarlayer .scatterlayer .trace .points path')).map(m => m.getBoundingClientRect());
+    const markHits = radLabels.filter(t => markers.some(m => overlapArea(t.getBoundingClientRect(), m) > 0)).map(t => t.textContent);
+    const angText = angLabels.map(t => (t.textContent ?? '').trim()).join(',');
+    await logInfo(`[healthcheck] Load Dist 극좌표 각도눈금 [${angText}] · 반경눈금 ${radLabels.length} · envelope 점 ${pts.length} · 마커 ${markers.length} · 범례 겹침 ${legHits} · 숫자∩envelope ${radHits.length} · 숫자∩마커 ${markHits.length}`);
+    if (angLabels.length !== 8 || angLabels.some(t => parseInt(t.textContent ?? '', 10) % 45 !== 0))
+      bad.push(`Load Dist: 방위 눈금이 45° 단위 8개가 아니다 (${angText})`);
+    if (markHits.length) bad.push(`Load Dist: 반경 눈금 숫자가 볼 마커와 겹친다 (${markHits.join(', ')})`);
     if (!legend) bad.push('Load Dist: 극좌표 범례가 없다');
     else if (legHits) bad.push(`Load Dist: 범례가 극좌표 원·각도 눈금과 겹친다 (${legHits}곳)`);
     if (!angLabels.length || !radLabels.length || !pts.length) bad.push('Load Dist: 극좌표 눈금/envelope 를 찾지 못했다');
