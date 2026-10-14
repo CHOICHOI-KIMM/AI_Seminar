@@ -40,6 +40,18 @@ export function WarnBox({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * 입력 변경 배지 — 입력이 Solve 이후 바뀌어 화면의 형상(현재 입력)과 하중 결과(Solve 시점)가
+ * 서로 다른 입력에서 나왔음을 알린다. Plan §4-5.1 결정 2 (긴 경고 박스를 한 줄로).
+ */
+export function StaleBadge() {
+  return (
+    <span className="inline-block px-2 py-0.5 rounded border bg-amber-500/10 border-amber-400/30 text-amber-200 text-[12px]">
+      입력 변경됨 · 다시 Solve
+    </span>
+  );
+}
+
 /** 오류 박스 (빨강) — 제목 + Rust 메시지 원문. */
 export function ErrorBox({ title, message }: { title: string; message: string }) {
   return (
