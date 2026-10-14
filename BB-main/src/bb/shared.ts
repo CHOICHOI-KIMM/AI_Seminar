@@ -132,12 +132,12 @@ export const C_AXIS_Z = '#60a5fa';
  * - `axis`: 축 화살표(X·Y(G)·Z) 길이
  * - `axisLabel`: 축 글자 위치
  * - `loadLabel`: 하중·모멘트 값 글자 위치 — 하중 화살표는 그리지 않는다(사용자 결정).
- *   축 글자 바로 바깥에 두어 좌표계 가까이 붙인다 (2026-10-14 지시, 전 0.92·r_bore → 0.70·r_bore).
+ *   0.70·r_bore 로 당겼다가 기본 시점에서 F_x 글자가 X 축 글자와 겹쳐(실측) 0.85·r_bore 로 정했다 (2026-10-14 사용자 결정).
  */
 export function arrowLengths3d(boreMm: number): { axis: number; axisLabel: number; loadLabel: number } {
   const rBore = boreMm / 2;
   const axis = 0.45 * rBore;
-  return { axis, axisLabel: axis * 1.18, loadLabel: 0.7 * rBore };
+  return { axis, axisLabel: axis * 1.18, loadLabel: 0.85 * rBore };
 }
 
 // ─── 기하 커맨드 ───────────────────────────────────────────────────────
