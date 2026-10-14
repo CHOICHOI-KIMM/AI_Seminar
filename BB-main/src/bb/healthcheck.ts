@@ -930,6 +930,18 @@ async function measureFormat(): Promise<string[]> {
     if (angLabels.length !== 8 || angLabels.some(t => parseInt(t.textContent ?? '', 10) % 45 !== 0))
       bad.push(`Load Dist: 방위 눈금이 45° 단위 8개가 아니다 (${angText})`);
     if (markHits.length) bad.push(`Load Dist: 반경 눈금 숫자가 볼 마커와 겹친다 (${markHits.join(', ')})`);
+    // 반경 숫자는 90° 선(원 중심의 오른쪽 수평) · 제목 중심 = 180° 눈금 중심
+    const cx = (r: DOMRect) => r.left + r.width / 2;
+    const cy = (r: DOMRect) => r.top + r.height / 2;
+    const a180 = angLabels.find(t => (t.textContent ?? '').trim() === '180°')?.getBoundingClientRect();
+    const title = polarPlot.querySelector('.gtitle')?.getBoundingClientRect();
+    const titleDx = a180 && title ? cx(title) - cx(a180) : NaN;
+    const radRects = radLabels.map(t => t.getBoundingClientRect());
+    const pc = cy(polarBox);
+    const radOff90 = radRects.filter(r => cx(r) < cx(polarBox) - 2 || Math.abs(cy(r) - pc) > 20).length;
+    await logInfo(`[healthcheck] Load Dist 제목−180° 중심 Δx ${titleDx.toFixed(1)}px · 90° 선 밖 반경 숫자 ${radOff90}`);
+    if (!(Math.abs(titleDx) <= 2)) bad.push(`Load Dist: 제목 중심이 180° 눈금 위가 아니다 (Δx ${titleDx.toFixed(1)}px)`);
+    if (radOff90) bad.push(`Load Dist: 반경 숫자 ${radOff90}개가 90° 선 위에 있지 않다`);
     if (!legend) bad.push('Load Dist: 극좌표 범례가 없다');
     else if (legHits) bad.push(`Load Dist: 범례가 극좌표 원·각도 눈금과 겹친다 (${legHits}곳)`);
     if (!angLabels.length || !radLabels.length || !pts.length) bad.push('Load Dist: 극좌표 눈금/envelope 를 찾지 못했다');

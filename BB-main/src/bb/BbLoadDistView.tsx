@@ -189,21 +189,8 @@ function LoadDistPolar({
     } as Plotly.Data);
   }
 
-  // 반경축(눈금 숫자 500·1000 …)은 envelope 이 가장 낮은 볼 사이 간격의 가운데로 돌린다.
-  //   하중구간 반대편(Q≈0)이라 숫자가 envelope 선·볼 마커와 겹치지 않는다.
-  //   `radialaxis.angle` 은 각도축 좌표(φ 그대로)다 — 화면 각으로 바꾸면 축이 90° 어긋난다(2026-10-14 화면 확인).
-  let radialPhi = 0;
-  if (env.length > 1) {
-    const phiMax = env.reduce((a, b) => (b.q > a.q ? b : a)).phi;
-    let best = Infinity;
-    env.forEach((a, i) => {
-      const b = env[(i + 1) % env.length];
-      const mid = (a.phi + (((b.phi - a.phi) % 360) + 360) % 360 / 2) % 360;
-      const far = Math.abs((((mid - phiMax) % 360) + 540) % 360 - 180); // φ_max 에서 각거리
-      const score = a.q + b.q - far * 1e-9 * (qMax || 1);
-      if (score < best) { best = score; radialPhi = mid; }
-    });
-  }
+  // 반경축(눈금 숫자 500·1000 …)은 90° 선(오른쪽 수평)에 고정한다 — 가독성이 가장 좋다(2026-10-14 사용자 지시).
+  //   `radialaxis.angle` 은 각도축 좌표(φ 그대로)다.
   // 반경 눈금: 격자 원은 범위 끝까지 두되 숫자는 Q_max 이하만 단다 — 볼 링(1.12·Q_max)의 점과 안 겹치게.
   const rawStep = (rRef * 1.2) / 5;
   const mag = 10 ** Math.floor(Math.log10(rawStep));
@@ -216,7 +203,8 @@ function LoadDistPolar({
     ...darkLayout,
     // 제목은 **`Load Distribution`** 으로 단순화한다 (§3.6.4.11). 축 규약은 위 주석과
     // `angularaxis` 설정이 지킨다 (화면 배너·부제는 2026-08-24 사용자 지시로 제거).
-    title: { text: 'Load Distribution', font: { size: 14, color: '#e2e8f0' } },
+    // 제목은 그래프 영역(paper) 기준 중앙 = 극좌표 중심(180° 눈금) 위 — 범례가 왼쪽 여백을 늘려도 맞는다.
+    title: { text: 'Load Distribution', font: { size: 14, color: '#e2e8f0' }, xref: 'paper', x: 0.5 },
     polar: {
       bgcolor: 'transparent',
       // 🔴 각도 **표시** 규약 — §3.6.4.10 (구 주석의 「회전을 넣지 않는다」는 폐기됐다).
@@ -243,7 +231,7 @@ function LoadDistPolar({
       },
       radialaxis: {
         range: [0, rRef * 1.2],
-        angle: radialPhi,
+        angle: 90,
         tickvals,
         ticktext,
         gridcolor: '#334155',
