@@ -128,13 +128,16 @@ export const C_AXIS_Z = '#60a5fa';
 // ─── 3D 화살표 길이 (Plan §4-5.8) ─────────────────────────────────────
 
 /**
- * 3D 화살표 길이 [mm] — **내륜 안지름 반경 r_bore 안쪽**에 들어가게 정해 볼·링과 닿지 않게 한다.
- * 축(X·Y·Z)과 하중·틸트 화살표의 길이를 다르게 해 끝의 글자가 서로 다른 반경에 놓이게 한다.
- * 같은 원점에서 같은 방향이면 선은 겹친다 — 글자만 분리된다.
+ * 3D 중심 좌표계의 반경 [mm] — 모두 **내륜 안지름 반경 r_bore 안쪽**이라 볼·링과 닿지 않는다.
+ * - `axis`: 축 화살표(X·Y(G)·Z) 길이
+ * - `axisLabel`: 축 글자 위치
+ * - `loadLabel`: 하중·모멘트 값 글자 위치 — 하중 화살표는 그리지 않는다(사용자 결정).
+ *   축 글자 바로 바깥에 두어 좌표계 가까이 붙인다 (2026-10-14 지시, 전 0.92·r_bore → 0.70·r_bore).
  */
-export function arrowLengths3d(boreMm: number): { axis: number; load: number; labelGap: number } {
+export function arrowLengths3d(boreMm: number): { axis: number; axisLabel: number; loadLabel: number } {
   const rBore = boreMm / 2;
-  return { axis: 0.45 * rBore, load: 0.85 * rBore, labelGap: 1.08 };
+  const axis = 0.45 * rBore;
+  return { axis, axisLabel: axis * 1.18, loadLabel: 0.7 * rBore };
 }
 
 // ─── 기하 커맨드 ───────────────────────────────────────────────────────

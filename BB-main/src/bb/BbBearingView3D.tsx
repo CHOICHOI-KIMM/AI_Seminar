@@ -166,17 +166,17 @@ const AXES: { dir: THREE.Vector3; label: string; color: string }[] = [
 
 /**
  * 중심의 축 화살표 X·Y·Z (Plan §4-5.8).
- * X 가 회전축(D-7), +Y 가 φ=0(D-8)이다. 길이는 `arrowLengths3d().axis` — 하중 화살표보다 짧아
- * 끝의 글자가 하중 값 라벨과 다른 반경에 놓인다. 글자는 DOM(Html)이라 겹침을 측정할 수 있다.
+ * X 가 회전축(D-7), +Y 가 φ=0(D-8)·중력(G) 방향이다. 길이는 `arrowLengths3d().axis`, 글자는 `axisLabel` 반경 —
+ * 하중 값 글자(`loadLabel`)보다 안쪽이다. 글자는 DOM(Html)이라 겹침을 측정할 수 있다.
  */
-function AxisMarker({ length }: { length: number }) {
+function AxisMarker({ length, labelAt }: { length: number; labelAt: number }) {
   const origin = useMemo(() => new THREE.Vector3(0, 0, 0), []);
   return (
     <group>
       {AXES.map(a => (
         <group key={a.label}>
           <DirArrow dir={a.dir} origin={origin} length={length} color={a.color} thickness={0.6} />
-          <Html position={a.dir.clone().multiplyScalar(length * 1.18)} center style={{ pointerEvents: 'none' }}>
+          <Html position={a.dir.clone().multiplyScalar(labelAt)} center style={{ pointerEvents: 'none' }}>
             <div data-role="axis-label" style={{ ...LABEL_STYLE, color: a.color }}>
               {a.label}
             </div>
@@ -351,11 +351,11 @@ function Ball({
 
 /**
  * 외부 하중 · 모멘트 — **글자만** 표시한다 (2026-10-14 사용자 결정, Plan §4-5.8 후속).
- * 하중 방향의 화살표는 그리지 않고, 그 방향으로 `arrowLengths3d().load × labelGap` 떨어진 자리에 값 라벨을 둔다.
+ * 하중 방향의 화살표는 그리지 않고, 그 방향으로 `arrowLengths3d().loadLabel` 떨어진 자리에 값 라벨을 둔다.
  * Y 축이 중력(G)·φ=0 방향을 이미 보이므로 화살표를 겹쳐 그리지 않는다.
  * ⚠ 하중은 **`resultInput.operating`**(Solve 시점 스냅샷)에서 읽는다 — `bbInput` 은 편집 중이라 시점이 어긋난다.
  */
-function LoadLabels({ op, scale }: { op: BbOperatingConditions | null; scale: number }) {
+function LoadLabels({ op, at }: { op: BbOperatingConditions | null; at: number }) {
   const items = useMemo(() => {
     const out: { dir: THREE.Vector3; color: string; label: string }[] = [];
     if (!op) return out;
@@ -388,7 +388,7 @@ function LoadLabels({ op, scale }: { op: BbOperatingConditions | null; scale: nu
       {items.map((it, i) => (
         <Html
           key={i}
-          position={it.dir.clone().normalize().multiplyScalar(scale * arrowLengths3d(0).labelGap)}
+          position={it.dir.clone().normalize().multiplyScalar(at)}
           center
           style={{ pointerEvents: 'none' }}
         >
@@ -434,9 +434,9 @@ function Scene({
         />
       ))}
       {showLoads && (
-        <LoadLabels op={op} scale={arrowLengths3d(g.bore_mm).load} />
+        <LoadLabels op={op} at={arrowLengths3d(g.bore_mm).loadLabel} />
       )}
-      <AxisMarker length={arrowLengths3d(g.bore_mm).axis} />
+      <AxisMarker length={arrowLengths3d(g.bore_mm).axis} labelAt={arrowLengths3d(g.bore_mm).axisLabel} />
     </group>
   );
 }
