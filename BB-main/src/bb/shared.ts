@@ -112,8 +112,6 @@ export const C_OUTER = '#f97316';
 export const C_FORCE = '#ef4444';
 /** 3D — 외부 모멘트 화살표 */
 export const C_MOMENT = '#a3e635';
-/** 3D — 틸트축 (γ_y, γ_z) */
-export const C_TILT = '#38bdf8';
 /** 3D — 내륜 실루엣 */
 export const C_RING_INNER = '#94a3b8';
 /** 3D — 외륜 실루엣 */
@@ -126,8 +124,6 @@ export const C_AXIS_X = '#f87171';
 export const C_AXIS_Y = '#4ade80';
 /** 3D 축 Z */
 export const C_AXIS_Z = '#60a5fa';
-/** 3D 중력 G (표시 전용 — 해석에 중력 입력은 없다) */
-export const C_GRAVITY = '#fbbf24';
 
 // ─── 3D 화살표 길이 (Plan §4-5.8) ─────────────────────────────────────
 

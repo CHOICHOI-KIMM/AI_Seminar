@@ -854,7 +854,7 @@ async function measureFormat(): Promise<string[]> {
   await sleep(400);
   if (!buttonByText('Geometry')) bad.push('잔존 탭 클릭 후 탭 바가 사라졌다 (앱 멈춤)');
   if ((document.querySelector('main')?.textContent ?? '') !== before) bad.push('잔존 탭 클릭으로 화면이 바뀌었다 (disabled 무효)');
-  // 3D 뷰 (Plan §4-5.8) — 라벨 겹침 0 · 축 글자 X·Y·Z · +Y 가 화면 아래 · 우측 상단 G
+  // 3D 뷰 (Plan §4-5.8) — 라벨 겹침 0 · 축 글자 X·Y(G)·Z · +Y 가 화면 아래 · 틸트 정보 없음
   buttonByText('3D View')?.click();
   const m3 = document.querySelector('main');
   await waitStable(() => Array.from(m3?.querySelectorAll('[data-role]') ?? []).map(e => {
@@ -868,19 +868,19 @@ async function measureFormat(): Promise<string[]> {
     for (let a = 0; a < rects.length; a++)
       for (let b = a + 1; b < rects.length; b++) if (overlapArea(rects[a], rects[b]) > OVERLAP_TOL_PX2) pairs++;
     const axisTexts = labels.filter(l => l.dataset.role === 'axis-label').map(l => (l.textContent ?? '').trim()).sort();
-    const yLabel = labels.find(l => l.dataset.role === 'axis-label' && (l.textContent ?? '').trim() === 'Y');
+    const yLabel = labels.find(l => l.dataset.role === 'axis-label' && (l.textContent ?? '').trim() === 'Y(G)');
     const canvas = m3.querySelector('canvas');
     const cy = canvas ? canvas.getBoundingClientRect().top + canvas.getBoundingClientRect().height / 2 : NaN;
     const yy = yLabel ? yLabel.getBoundingClientRect().top + yLabel.getBoundingClientRect().height / 2 : NaN;
-    const gizmo = m3.querySelector('[data-role="gizmo-g"]');
+    const tiltLeft = (m3.textContent ?? '').includes('틸트');
     await logInfo(
       `[healthcheck] 3D 라벨 ${labels.length}개 · 교차 ${pairs} · 축=${axisTexts.join('')} · ` +
-        `Y라벨 y=${yy.toFixed(0)} 캔버스중심 y=${cy.toFixed(0)} · G=${gizmo ? '있음' : '없음'}`
+        `Y라벨 y=${yy.toFixed(0)} 캔버스중심 y=${cy.toFixed(0)} · 틸트 표기=${tiltLeft ? '있음' : '없음'}`
     );
     if (pairs) bad.push(`3D: 라벨 bbox 교차 ${pairs}쌍`);
-    if (axisTexts.join('') !== 'XYZ') bad.push(`3D: 축 라벨이 X·Y·Z 가 아니다 (${axisTexts.join(',')})`);
+    if (axisTexts.join('|') !== 'X|Y(G)|Z') bad.push(`3D: 축 라벨이 X·Y(G)·Z 가 아니다 (${axisTexts.join(',')})`);
     if (!(yy > cy)) bad.push('3D: Y 라벨이 화면 중심보다 아래에 있지 않다 (+Y 화면 아래 규약)');
-    if (!gizmo) bad.push('3D: 우측 상단 G 좌표계가 없다');
+    if (tiltLeft) bad.push('3D: 틸트 정보가 남아 있다');
   }
   await logInfo(`[healthcheck] format 표 행 ${rows}개 검사 · 위반 ${bad.length}`);
   return bad;

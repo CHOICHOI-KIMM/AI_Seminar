@@ -9,9 +9,10 @@
 //  |---|---|---|
 //  | 볼 세트 + `Q_j` 컬러맵 | 볼 배치와 **하중구간의 공간 위치** | C-7 · D-2b/2c |
 //  | 접촉선 세그먼트(`α_j` 방향) | 접촉각이 **벌어지는 방향** | D-1 · C-2 |
-//  | 틸트축 ↔ 모멘트 벡터 | **틸트축이 모멘트와 맞는가** | **D-2d** ← 3D 의 핵심 존재 이유 |
 //
-//  깨졌을 때의 징후: 「하중구간이 하중 화살표와 어긋남」·「틸트축이 모멘트와 반대」.
+//  깨졌을 때의 징후: 「하중구간이 하중 방향과 어긋남」.
+//  ⚠ 틸트축 화살표·틸트 방위는 2026-10-14 사용자 결정으로 3D 에서 뺐다(Plan §4-5.8 후속).
+//     D-2d(틸트축 ↔ 모멘트 방위)는 Section 탭 나침반이 맡는다.
 //
 // ─────────────────────────────────────────────────────────────────────
 //  🔴 좌표계 — D-7 / D-8 을 씬에 **그대로** 옮긴다
@@ -62,41 +63,30 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Html, GizmoHelper } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppState } from '../store';
 import { StaleBadge } from './ui';
 import type { BallBearingGeometry } from './generated/BallBearingGeometry';
 import type { BallResult } from './generated/BallResult';
 import type { BbOperatingConditions } from './generated/BbOperatingConditions';
-import type { Displacement } from './generated/Displacement';
 import {
   toDeg,
   fmtDeg,
   fmtN,
   fmtNm,
   fmtUm,
-  fmtUrad,
   C_FORCE,
   C_MOMENT,
-  C_TILT,
   C_RING_INNER,
   C_RING_OUTER,
   useGeometryResponse,
   C_AXIS_X,
   C_AXIS_Y,
   C_AXIS_Z,
-  C_GRAVITY,
   arrowLengths3d,
 } from './shared';
 
-/** `commands::GeometryResponse` 대응 — `BbGeometryView`·`BbAxialSectionView` 와 같은 형태다. */
-/** (−180, 180] 로 접는다 — 방위차 Δ 표시용 (축단면과 같은 함수). */
-function wrapDeg(d: number): number {
-  let x = ((((d + 180) % 360) + 360) % 360) - 180;
-  if (x === -180) x = 180;
-  return x;
-}
 
 
 /** three 의 기본 원기둥·원뿔 축. `setFromUnitVectors` 의 시작 벡터다. */
@@ -170,7 +160,7 @@ const LABEL_STYLE: React.CSSProperties = {
 
 const AXES: { dir: THREE.Vector3; label: string; color: string }[] = [
   { dir: new THREE.Vector3(1, 0, 0), label: 'X', color: C_AXIS_X },
-  { dir: new THREE.Vector3(0, 1, 0), label: 'Y', color: C_AXIS_Y },
+  { dir: new THREE.Vector3(0, 1, 0), label: 'Y(G)', color: C_AXIS_Y },
   { dir: new THREE.Vector3(0, 0, 1), label: 'Z', color: C_AXIS_Z },
 ];
 
@@ -194,39 +184,6 @@ function AxisMarker({ length }: { length: number }) {
         </group>
       ))}
     </group>
-  );
-}
-
-/**
- * 우측 상단 좌표계 — 카메라를 따라 돈다 (drei GizmoHelper, 단위는 화면 px).
- * 작은 X·Y·Z 와 함께 중력 G(+Y 고정, 표시 전용)를 강조해 그린다 (Plan §4-5.8 결정 3).
- */
-function GravityGizmo() {
-  const origin = useMemo(() => new THREE.Vector3(0, 0, 0), []);
-  const g = useMemo(() => new THREE.Vector3(0, 1, 0), []);
-  return (
-    <GizmoHelper alignment="top-right" margin={[70, 70]}>
-      <group>
-        {AXES.map(a => (
-          <group key={a.label}>
-            <DirArrow dir={a.dir} origin={origin} length={34} color={a.color} thickness={0.8} />
-            <Html position={a.dir.clone().multiplyScalar(42)} center style={{ pointerEvents: 'none' }}>
-              <div data-role="gizmo-label" style={{ ...LABEL_STYLE, color: a.color, background: 'transparent' }}>
-                {a.label}
-              </div>
-            </Html>
-          </group>
-        ))}
-        <group position={[-14, 0, 0]}>
-          <DirArrow dir={g} origin={origin} length={44} color={C_GRAVITY} thickness={1.6} />
-          <Html position={[0, 54, 0]} center style={{ pointerEvents: 'none' }}>
-            <div data-role="gizmo-g" style={{ ...LABEL_STYLE, color: C_GRAVITY, background: 'transparent' }}>
-              G
-            </div>
-          </Html>
-        </group>
-      </group>
-    </GizmoHelper>
   );
 }
 
@@ -393,79 +350,53 @@ function Ball({
 }
 
 /**
- * 외부 하중 · 모멘트 · 틸트축.
- *
- * 🔴 **D-2d 는 여기서 본다** — 틸트축 `(0, γ_y, γ_z)` 와 모멘트 벡터 `(0, M_y, M_z)` 를
- *   같은 길이로 겹쳐 그린다. 정합하면 두 화살표가 포개진다.
- *   기대 부호의 근거(Theory §4.4 확정형): `M_y > 0 ⟹ γ_y > 0`, `M_z > 0 ⟹ γ_z > 0`.
- *   ⚠ 볼이 `Z` 개로 **이산**이라 순수 모멘트라도 작은 편차는 정상이다. 화면은 두 벡터를
- *     보일 뿐 정합 여부를 **단정하지 않는다** (4단 수치 판정은 축단면 P4-3a 의 나침반이 맡는다).
- *
- * ⚠ 화살표 **길이는 물리량이 아니다**. 씬 크기에 고정한다 (단위가 서로 달라 비교 불가).
- * ⚠ 하중은 **`resultInput.operating`**(Solve 시점 스냅샷)에서 읽는다 — `bbInput` 은
- *   편집 중이라 시점이 어긋난다 (축단면과 같은 근거).
+ * 외부 하중 · 모멘트 — **글자만** 표시한다 (2026-10-14 사용자 결정, Plan §4-5.8 후속).
+ * 하중 방향의 화살표는 그리지 않고, 그 방향으로 `arrowLengths3d().load × labelGap` 떨어진 자리에 값 라벨을 둔다.
+ * Y 축이 중력(G)·φ=0 방향을 이미 보이므로 화살표를 겹쳐 그리지 않는다.
+ * ⚠ 하중은 **`resultInput.operating`**(Solve 시점 스냅샷)에서 읽는다 — `bbInput` 은 편집 중이라 시점이 어긋난다.
  */
-function LoadVectors({
-  op,
-  disp,
-  scale,
-}: {
-  op: BbOperatingConditions | null;
-  disp: Displacement | null;
-  scale: number;
-}) {
-  const origin = useMemo(() => new THREE.Vector3(0, 0, 0), []);
-
+function LoadLabels({ op, scale }: { op: BbOperatingConditions | null; scale: number }) {
   const items = useMemo(() => {
     const out: { dir: THREE.Vector3; color: string; label: string }[] = [];
-    if (op) {
-      if (op.f_y_n !== 0 || op.f_z_n !== 0) {
-        out.push({
-          dir: new THREE.Vector3(0, op.f_y_n, op.f_z_n),
-          color: C_FORCE,
-          label: `F_r = ${fmtN(Math.hypot(op.f_y_n, op.f_z_n))} N`,
-        });
-      }
-      if (op.f_x_n !== 0) {
-        out.push({
-          dir: new THREE.Vector3(Math.sign(op.f_x_n), 0, 0),
-          color: C_FORCE,
-          label: `F_x = ${fmtN(op.f_x_n)} N`,
-        });
-      }
-      if (op.m_y_nmm !== 0 || op.m_z_nmm !== 0) {
-        out.push({
-          dir: new THREE.Vector3(0, op.m_y_nmm, op.m_z_nmm),
-          color: C_MOMENT,
-          label: `M = (${fmtNm(op.m_y_nmm)}, ${fmtNm(op.m_z_nmm)}) N·m`,
-        });
-      }
-    }
-    if (disp && (disp.ry_rad !== 0 || disp.rz_rad !== 0)) {
+    if (!op) return out;
+    if (op.f_y_n !== 0 || op.f_z_n !== 0) {
       out.push({
-        dir: new THREE.Vector3(0, disp.ry_rad, disp.rz_rad),
-        color: C_TILT,
-        label: `틸트축 (γ_y, γ_z) = (${fmtUrad(disp.ry_rad)}, ${fmtUrad(disp.rz_rad)}) μrad`,
+        dir: new THREE.Vector3(0, op.f_y_n, op.f_z_n),
+        color: C_FORCE,
+        label: `F_r = ${fmtN(Math.hypot(op.f_y_n, op.f_z_n))} N`,
+      });
+    }
+    if (op.f_x_n !== 0) {
+      out.push({
+        dir: new THREE.Vector3(Math.sign(op.f_x_n), 0, 0),
+        color: C_FORCE,
+        label: `F_x = ${fmtN(op.f_x_n)} N`,
+      });
+    }
+    if (op.m_y_nmm !== 0 || op.m_z_nmm !== 0) {
+      out.push({
+        dir: new THREE.Vector3(0, op.m_y_nmm, op.m_z_nmm),
+        color: C_MOMENT,
+        label: `M = (${fmtNm(op.m_y_nmm)}, ${fmtNm(op.m_z_nmm)}) N·m`,
       });
     }
     return out;
-  }, [op, disp]);
+  }, [op]);
 
   return (
     <group>
-      {items.map((it, i) => {
-        const tip = it.dir.clone().normalize().multiplyScalar(scale * arrowLengths3d(0).labelGap);
-        return (
-          <group key={i}>
-            <DirArrow dir={it.dir} origin={origin} length={scale} color={it.color} thickness={0.7} />
-            <Html position={tip} center style={{ pointerEvents: 'none' }}>
-              <div data-role="load-label" style={{ ...LABEL_STYLE, color: it.color }}>
-                {it.label}
-              </div>
-            </Html>
-          </group>
-        );
-      })}
+      {items.map((it, i) => (
+        <Html
+          key={i}
+          position={it.dir.clone().normalize().multiplyScalar(scale * arrowLengths3d(0).labelGap)}
+          center
+          style={{ pointerEvents: 'none' }}
+        >
+          <div data-role="load-label" style={{ ...LABEL_STYLE, color: it.color }}>
+            {it.label}
+          </div>
+        </Html>
+      ))}
     </group>
   );
 }
@@ -475,7 +406,6 @@ function Scene({
   balls,
   qMax,
   op,
-  disp,
   showLoads,
   showRings,
 }: {
@@ -483,7 +413,6 @@ function Scene({
   balls: BallResult[];
   qMax: number;
   op: BbOperatingConditions | null;
-  disp: Displacement | null;
   showLoads: boolean;
   showRings: boolean;
 }) {
@@ -505,7 +434,7 @@ function Scene({
         />
       ))}
       {showLoads && (
-        <LoadVectors op={op} disp={disp} scale={arrowLengths3d(g.bore_mm).load} />
+        <LoadLabels op={op} scale={arrowLengths3d(g.bore_mm).load} />
       )}
       <AxisMarker length={arrowLengths3d(g.bore_mm).axis} />
     </group>
@@ -565,7 +494,6 @@ export default function BbBearingView3D() {
 
   const qMax = result?.equilibrium.q_max_n ?? 0;
   const op = resultInput?.operating ?? null;
-  const disp = result?.equilibrium.displacement ?? null;
   // 입력이 Solve 이후 변경되었는가 — 축단면(P4-3a)과 같은 판정.
   // 형상은 현재 입력(bbInput), 하중·변위는 Solve 시점(resultInput) 기준이라 어긋난다.
   const stale = result !== null && resultInput !== null && resultInput !== bbInput;
@@ -575,14 +503,6 @@ export default function BbBearingView3D() {
   // 카메라 up = −Y. 시점은 화면 위쪽(−Y) 에서 내려다보도록 y 를 음수로 둔다.
   const camPos: [number, number, number] = [rOD * 1.9, -rOD * 1.25, rOD * 1.7];
 
-  const tiltDeg =
-    disp && (disp.ry_rad !== 0 || disp.rz_rad !== 0)
-      ? wrapDeg(toDeg(Math.atan2(disp.rz_rad, disp.ry_rad)))
-      : null;
-  const momDeg =
-    op && (op.m_y_nmm !== 0 || op.m_z_nmm !== 0)
-      ? wrapDeg(toDeg(Math.atan2(op.m_z_nmm, op.m_y_nmm)))
-      : null;
 
   return (
     <div className="w-full h-full relative">
@@ -593,7 +513,7 @@ export default function BbBearingView3D() {
           className="px-2.5 py-1 rounded-md text-xs text-white border-0 cursor-pointer backdrop-blur-sm"
           style={{ background: showLoads ? 'rgba(59,130,246,0.8)' : 'rgba(30,30,30,0.7)' }}
         >
-          하중·모멘트·틸트 {showLoads ? 'ON' : 'OFF'}
+          하중·모멘트 {showLoads ? 'ON' : 'OFF'}
         </button>
         <button
           onClick={() => setShowRings(v => !v)}
@@ -623,20 +543,11 @@ export default function BbBearingView3D() {
         {result ? (
           <div className="mt-1 text-white/70">
             <span style={{ color: C_FORCE }}>━ 하중</span>{' '}
-            <span style={{ color: C_MOMENT }}>━ 모멘트</span>{' '}
-            <span style={{ color: C_TILT }}>━ 틸트축</span>
+            <span style={{ color: C_MOMENT }}>━ 모멘트</span>
           </div>
         ) : (
           <div className="mt-1" style={{ color: '#fbbf24' }}>
             무하중 기하 (Solve 전) — α₀ = {fmtDeg(toDeg(alpha0 ?? 0))} °
-          </div>
-        )}
-        {tiltDeg !== null && (
-          <div className="text-white/70">
-            틸트 방위 {fmtDeg(tiltDeg)} °
-            {momDeg !== null && (
-              <> · 모멘트 방위 {fmtDeg(momDeg)} ° · Δ = {fmtDeg(wrapDeg(tiltDeg - momDeg))} °</>
-            )}
           </div>
         )}
       </div>
@@ -668,12 +579,10 @@ export default function BbBearingView3D() {
           balls={balls}
           qMax={qMax}
           op={op}
-          disp={disp}
           showLoads={showLoads}
           showRings={showRings}
         />
         <OrbitControls enableDamping dampingFactor={0.12} />
-        <GravityGizmo />
       </Canvas>
     </div>
   );
