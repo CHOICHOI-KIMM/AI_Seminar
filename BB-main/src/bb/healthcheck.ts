@@ -915,10 +915,18 @@ async function measureFormat(): Promise<string[]> {
     const angLabels = numText('.angular-axis text', /^-?\d+°$/);
     const radLabels = numText('.radial-axis text', /^[\d.,k]+$/);
     const legend = polarPlot.querySelector('.legend')?.getBoundingClientRect();
-    const polarBox = (polarPlot.querySelector('.polarlayer .bg path, .polarlayer .bglayer path')
-      ?? polarPlot.querySelector('.polarlayer'))!.getBoundingClientRect();
+    // 극좌표 원의 화면 영역 = 각도 눈금 글자 8개를 감싸는 상자 (`.bg path` 는 원 전체가 아니어서 쓰지 않는다)
+    const angRects = angLabels.map(t => t.getBoundingClientRect());
+    const polarBox = angRects.length
+      ? DOMRect.fromRect({
+          x: Math.min(...angRects.map(r => r.left)),
+          y: Math.min(...angRects.map(r => r.top)),
+          width: Math.max(...angRects.map(r => r.right)) - Math.min(...angRects.map(r => r.left)),
+          height: Math.max(...angRects.map(r => r.bottom)) - Math.min(...angRects.map(r => r.top)),
+        })
+      : new DOMRect();
     const legHits = legend
-      ? [polarBox, ...angLabels.map(t => t.getBoundingClientRect())].filter(r => overlapArea(legend, r) > 0).length
+      ? [polarBox, ...angRects].filter(r => overlapArea(legend, r) > 0).length
       : -1;
     // envelope 선(fill:'toself' 첫 trace)을 1px 간격으로 화면 좌표로 바꿔 숫자 bbox 안에 드는 점을 센다
     const line = polarPlot.querySelector('.polarlayer .scatterlayer .trace .js-line') as SVGPathElement | null;
@@ -948,7 +956,7 @@ async function measureFormat(): Promise<string[]> {
     const titleDx = a180 && title ? cx(title) - cx(a180) : NaN;
     const radRects = radLabels.map(t => t.getBoundingClientRect());
     const pc = cy(polarBox);
-    const radOff90 = radRects.filter(r => cx(r) < cx(polarBox) - 2 || Math.abs(cy(r) - pc) > 20).length;
+    const radOff90 = radRects.filter(r => cx(r) < cx(polarBox) - 2 || Math.abs(cy(r) - pc) > 20).length; // 숫자는 선 바로 아래(눈금 길이만큼)에 붙는다
     await logInfo(`[healthcheck] Load Dist 제목−180° 중심 Δx ${titleDx.toFixed(1)}px · 90° 선 밖 반경 숫자 ${radOff90}`);
     if (!(Math.abs(titleDx) <= 2)) bad.push(`Load Dist: 제목 중심이 180° 눈금 위가 아니다 (Δx ${titleDx.toFixed(1)}px)`);
     if (radOff90) bad.push(`Load Dist: 반경 숫자 ${radOff90}개가 90° 선 위에 있지 않다`);

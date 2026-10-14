@@ -190,7 +190,8 @@ function LoadDistPolar({
   }
 
   // 반경축(눈금 숫자 500·1000 …)은 90° 선(오른쪽 수평)에 고정한다 — 가독성이 가장 좋다(2026-10-14 사용자 지시).
-  //   `radialaxis.angle` 은 각도축 좌표(φ 그대로)다.
+  //   `radialaxis.angle` 은 **화면 각**(반시계, +x 기준)이다 — plotly polar 가 `rotate(-angle)` 로 그린다(런타임 실측:
+  //   angle 90 → 숫자가 위로 쌓임). φ=90° 는 화면 오른쪽(rotation −90 · 반시계)이므로 화면 각 0 이다.
   // 반경 눈금: 격자 원은 범위 끝까지 두되 숫자는 Q_max 이하만 단다 — 볼 링(1.12·Q_max)의 점과 안 겹치게.
   const rawStep = (rRef * 1.2) / 5;
   const mag = 10 ** Math.floor(Math.log10(rawStep));
@@ -231,7 +232,8 @@ function LoadDistPolar({
       },
       radialaxis: {
         range: [0, rRef * 1.2],
-        angle: 90,
+        angle: 0, // = φ 90° 선
+        tickangle: 0, // 숫자를 수평으로 (기본값은 축을 따라 세워 쓴다)
         tickvals,
         ticktext,
         gridcolor: '#334155',
