@@ -2439,7 +2439,12 @@ webview error 0 · build 성공 · lint baseline 44 증감 0.
 - **검증**
   - Rust 테스트를 새로 넣었다. p_max > σ_Hu 가 실제로 성립하는 입력에서 평형 해석과 접촉 커맨드 모두 이 경고가 0 건이다.
   - `cargo test` 185 → 186 전량 통과, clippy 0, tsc -b 0, eslint 0, lint 44.
-  - 헬스체크에 Stress Contour 「σ_Hu」 0 · 화면 경고 코드 0 검사를 넣었다. 런타임 실측은 사용자 앱 세션이 끝난 뒤 한다.
+  - 헬스체크에 Stress Contour 「σ_Hu」 0 · 화면 경고 코드 0 검사를 넣었다.
+- **런타임 실측 — ALL PASS**
+  - Stress Contour 의 「σ_Hu」 0, 화면과 로그의 `CONTACT_STRESS_OVER_FATIGUE_LIMIT` 0.
+  - 이번 실행의 내륜 p_max 는 2031 MPa 로 1500 MPa 를 넘었는데도 경고가 없었다.
+  - 표 167행 자릿수 위반 0, 3D 라벨 교차 0, 볼별 막대 색 불일치 0, 레이아웃·6탭 PASS, webview error 0.
+  - 이번 실행은 사용자가 앱에서 바꿔 둔 입력(볼 21개)으로 측정됐다.
 
 ---
 
