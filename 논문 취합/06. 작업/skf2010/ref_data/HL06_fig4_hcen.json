@@ -1,0 +1,49 @@
+{
+ "source": "Hooke & Li 2006 Part 1 Fig 4 smooth panels, digitize_hl06.py",
+ "cases": {
+  "D": {
+   "case": "D",
+   "h_center_hR_b2": 0.17846,
+   "h_center_pm_3col_min_max": [
+    0.17846,
+    0.17846
+   ],
+   "pixel_resolution_hR_b2": 0.005663,
+   "p_center_p_pHertz": 0.9856,
+   "flags": {
+    "cross": 2,
+    "merged": 3,
+    "p_on_frame": 34
+   }
+  },
+  "E": {
+   "case": "E",
+   "h_center_hR_b2": 0.02331,
+   "h_center_pm_3col_min_max": [
+    0.02331,
+    0.02331
+   ],
+   "pixel_resolution_hR_b2": 0.000846,
+   "p_center_p_pHertz": 0.9945,
+   "flags": {
+    "merged": 4,
+    "p_on_frame": 70
+   }
+  },
+  "F": {
+   "case": "F",
+   "h_center_hR_b2": 0.00322,
+   "h_center_pm_3col_min_max": [
+    0.00314,
+    0.00322
+   ],
+   "pixel_resolution_hR_b2": 0.000169,
+   "p_center_p_pHertz": 0.9974,
+   "flags": {
+    "h_reacquired": 1,
+    "merged": 8,
+    "p_on_frame": 85
+   }
+  }
+ }
+}
