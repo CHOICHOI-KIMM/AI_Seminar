@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M2 Ripple Calculator</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --border: #dde1e6; --fg: #1f2328; --muted: #6a737d;
+    --accent: #1f6feb; --warn: #b26a00; --danger: #c62828; --ok: #2e7d32;
+    --gap-1: 2px; --gap-2: 4px; --gap-3: 8px; --gap-4: 12px;
+    --fs-meta: 11px; --fs-body: 12px; --fs-label: 13px; --fs-title: 14px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: var(--fs-body)/1.45 "Segoe UI", "Malgun Gothic", sans-serif; color: var(--fg); background: var(--bg); }
+  header { display: flex; align-items: center; gap: var(--gap-4); padding: var(--gap-3) var(--gap-4);
+           background: var(--panel); border-bottom: 1px solid var(--border); }
+  header h1 { margin: 0; font-size: var(--fs-title); font-weight: 500; }
+  header .meta { color: var(--muted); font-size: var(--fs-meta); }
+  main { display: grid; grid-template-columns: 330px 1fr 300px; height: calc(100vh - 41px); }
+  .pane { overflow: auto; padding: var(--gap-4); }
+  .pane + .pane { border-left: 1px solid var(--border); }
+  #left, #right { background: var(--panel); }
+  details { border: 1px solid var(--border); border-radius: 4px; margin-top: var(--gap-3); }
+  summary { padding: var(--gap-2) var(--gap-3); font-weight: 500; font-size: var(--fs-label); cursor: pointer; }
+  .grp { padding: var(--gap-2) var(--gap-3) var(--gap-3); }
+  .row { display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: var(--gap-3); padding: var(--gap-1) 0; }
+  .row label { font-size: var(--fs-body); }
+  .row .unit { color: var(--muted); font-size: var(--fs-meta); margin-left: var(--gap-2); }
+  input, select { width: 100%; font: inherit; padding: 2px 4px; border: 1px solid var(--border); border-radius: 3px; }
+  input.bad { border-color: var(--danger); background: #fff5f5; }
+  .hidden { display: none; }
+  .btns { display: flex; gap: var(--gap-3); margin-top: var(--gap-4); }
+  button { font: inherit; padding: 4px 12px; border: 1px solid var(--border); border-radius: 3px; background: var(--panel); cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+  button:disabled { opacity: .5; cursor: default; }
+  .alerts { margin-top: var(--gap-4); }
+  .alert { font-size: var(--fs-body); padding: var(--gap-2) var(--gap-3); border-left: 3px solid var(--warn); background: #fff8e6; margin-top: var(--gap-2); }
+  .alert.err { border-color: var(--danger); background: #fff5f5; }
+  .tabbar { display: flex; align-items: flex-end; border-bottom: 1px solid var(--border); }
+  .tabs { display: flex; gap: var(--gap-2); flex: 1; flex-wrap: wrap; }
+  .tools { display: flex; gap: var(--gap-2); padding-bottom: var(--gap-2); }
+  .tools button { padding: 1px 8px; font-size: var(--fs-meta); }
+  .meta { color: var(--muted); font-size: var(--fs-meta); font-weight: 400; }
+  .tab { padding: var(--gap-2) var(--gap-3); border: 1px solid transparent; border-bottom: none; cursor: pointer; color: var(--muted); }
+  .tab.on { color: var(--fg); border-color: var(--border); background: var(--panel); font-weight: 500; border-radius: 4px 4px 0 0; }
+  #plot { background: var(--panel); border: 1px solid var(--border); border-top: none; height: calc(100% - 60px); min-height: 420px; }
+  #status { font-size: var(--fs-meta); color: var(--muted); padding: var(--gap-2) 0; }
+  h2 { font-size: var(--fs-label); font-weight: 500; margin: var(--gap-4) 0 var(--gap-2); }
+  h2:first-child { margin-top: 0; }
+  table.kv { width: 100%; border-collapse: collapse; }
+  table.kv td { padding: var(--gap-1) 0; border-bottom: 1px solid #f0f1f3; }
+  table.kv td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  table.kv td.k { color: var(--muted); }
+  .badge { display: inline-block; font-size: var(--fs-meta); padding: 0 6px; border-radius: 8px; border: 1px solid var(--border); color: var(--muted); }
+  .badge.cache { border-color: var(--ok); color: var(--ok); }
+  .badge.stale { border-color: var(--warn); color: var(--warn); }
+</style>
+</head>
+<body>
+<header>
+  <h1>M2 리플 계산기</h1>
+  <span class="meta">SKF 2010 M2 · Hooke &amp; Li H/A · 작업내역서 §9</span>
+</header>
+<main>
+  <!-- 왼쪽: 입력 패널 -->
+  <section id="left" class="pane">
+    <label for="preset" style="font-weight:500;font-size:var(--fs-label)">프리셋</label>
+    <select id="preset" style="margin-top:var(--gap-2)"></select>
+
+    <details open><summary>접촉 · 재료</summary><div class="grp">
+      <div class="row"><label>E′ <span class="unit">GPa</span></label><input id="E_eff" data-si="1e9" data-pos></div>
+      <div class="row"><label>Rx <span class="unit">mm</span></label><input id="Rx" data-si="1e-3" data-pos></div>
+      <div class="row"><label>Ry <span class="unit">mm</span></label><input id="Ry" data-si="1e-3" data-pos></div>
+      <div class="row"><label>p_h <span class="unit">GPa</span></label><input id="p_h" data-si="1e9" data-pos></div>
+    </div></details>
+
+    <details open><summary>윤활</summary><div class="grp">
+      <div class="row"><label>η0 <span class="unit">Pa s</span></label><input id="eta0" data-si="1" data-pos></div>
+      <div class="row"><label>α <span class="unit">1/GPa</span></label><input id="alpha" data-si="1e-9" data-pos></div>
+      <div class="row"><label>τ0 (빈칸 = Newtonian) <span class="unit">MPa</span></label><input id="tau0" data-si="1e6" data-pos data-opt></div>
+    </div></details>
+
+    <details open><summary>운전</summary><div class="grp">
+      <div class="row"><label>ū <span class="unit">m/s</span></label><input id="u_bar" data-si="1" data-pos></div>
+      <div class="row"><label>S = (u2 − u1)/ū</label><input id="S" data-si="1"></div>
+    </div></details>
+
+    <details open><summary>막두께 · 모델</summary><div class="grp">
+      <div class="row"><label>막두께</label><select id="film_mode">
+        <option value="hd">Hamrock–Dowson</option><option value="pan_hamrock">Pan–Hamrock 선접촉</option>
+        <option value="value">직접 입력</option></select></div>
+      <div class="row" id="row_h"><label>h <span class="unit">μm</span></label><input id="film_h" data-si="1e-6" data-pos data-opt></div>
+      <div class="row"><label>s0_mode</label><select id="s0_mode">
+        <option value="hooke_li">hooke_li (S=0 H/A)</option><option value="hooke_li_all">hooke_li_all (S≠0 근사)</option>
+        <option value="skf">skf (식 24)</option></select></div>
+      <div class="row"><label>hc_mode (U9)</label><select id="hc_mode">
+        <option value="complex">complex</option><option value="magnitude">magnitude</option></select></div>
+    </div></details>
+
+    <details open><summary>해석 · 거칠기</summary><div class="grp">
+      <div class="row"><label>해석 종류</label><select id="atype">
+        <option value="sine_centre">사인파 중심 복소비</option><option value="sine_line">사인파 공간 분포</option>
+        <option value="patch">패치 단면(flat-top)</option></select></div>
+      <div data-for="sine_centre">
+        <div class="row"><label>θ <span class="unit">deg</span></label><input id="theta" data-si="1"></div>
+      </div>
+      <div data-for="sine_line">
+        <div class="row"><label>λ/b</label><input id="lam_b" data-si="1" data-pos></div>
+      </div>
+      <div data-for="patch">
+        <div class="row"><label>형상</label><select id="shape"><option value="trapezoid">사다리꼴</option>
+          <option value="flat_top">수직 모서리</option></select></div>
+        <div class="row"><label>N (홀수 권장)</label><input id="N" data-si="1" data-int></div>
+        <div class="row"><label>주기 수</label><input id="periods" data-si="1" data-int></div>
+        <div class="row"><label>위상 s <span class="unit">μm</span></label><input id="s" data-si="1e-6"></div>
+        <div class="row"><label>단면 y0 <span class="unit">μm</span></label><input id="y0" data-si="1e-6"></div>
+        <div class="row"><label>단면 점 수</label><input id="nx" data-si="1" data-int></div>
+      </div>
+    </div></details>
+
+    <div class="btns">
+      <button id="run" class="primary">계산</button>
+      <button id="reset">프리셋 값으로</button>
+    </div>
+    <div id="alerts" class="alerts"></div>
+  </section>
+
+  <!-- 가운데: 그래프 탭 -->
+  <section id="center" class="pane">
+    <div class="tabbar"><div class="tabs" id="tabs"></div>
+      <span class="tools"><button id="csv" title="현재 그래프의 곡선 데이터">CSV</button><button id="png" title="현재 그래프 그림">PNG</button></span></div>
+    <div id="plot"></div>
+    <div id="status"></div>
+  </section>
+
+  <!-- 오른쪽: 결과 카드 -->
+  <section id="right" class="pane">
+    <h2>결과 <span id="src" class="badge">—</span></h2>
+    <table class="kv" id="derived"></table>
+    <h2>경고</h2>
+    <div id="warn" class="alerts"></div>
+    <div id="harm_box" class="hidden">
+      <h2>성분 표 — 고조파 <span class="meta">(§4.7.4 2. 방법)</span></h2>
+      <table class="kv" id="harm"></table>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------- 상태
+const ST = { presets: {}, preset: null, views: null, view: null, src: "—", ref: null, lastReq: null, graphs: [] };
+const $ = (id) => document.getElementById(id);
+const CASE_KEYS = ["E_eff", "Rx", "Ry", "p_h", "eta0", "alpha", "u_bar", "tau0"];
+
+// ---------------------------------------------------------------- 입력 ↔ 요청
+function setVal(id, si) {
+  const el = $(id);
+  el.value = (si === null || si === undefined) ? "" : +(si / +el.dataset.si).toPrecision(8);
+  el.classList.remove("bad");
+}
+function getVal(id) {
+  const el = $(id), raw = el.value.trim();
+  el.classList.remove("bad");
+  if (raw === "") {
+    if (el.dataset.opt !== undefined) return null;
+    el.classList.add("bad"); throw new Error(`${id} 값이 비어 있음`);
+  }
+  const v = Number(raw);
+  const bad = !Number.isFinite(v) || (el.dataset.pos !== undefined && v <= 0) || (el.dataset.int !== undefined && !Number.isInteger(v));
+  if (bad) { el.classList.add("bad"); throw new Error(`${id} 값이 올바르지 않음: ${raw}`); }
+  return v * +el.dataset.si;
+}
+function fillForm(req) {
+  CASE_KEYS.forEach((k) => setVal(k, req.case[k]));
+  setVal("S", req.S ?? 0);
+  $("film_mode").value = req.film?.mode ?? "hd"; setVal("film_h", req.film?.h ?? null);
+  $("s0_mode").value = req.model?.s0_mode ?? "hooke_li"; $("hc_mode").value = req.model?.hc_mode ?? "complex";
+  const a = req.analysis;
+  $("atype").value = a.type;
+  setVal("theta", a.theta ?? 0); setVal("lam_b", a.lam_b && !Array.isArray(a.lam_b) ? a.lam_b : 0.7);
+  $("shape").value = a.shape ?? "trapezoid";
+  setVal("N", a.N ?? 255); setVal("periods", a.periods ?? 3); setVal("s", a.s ?? 0); setVal("y0", a.y0 ?? 0); setVal("nx", a.nx ?? 1201);
+  syncVisibility();
+}
+function readForm() {
+  const c = {}; CASE_KEYS.forEach((k) => (c[k] = getVal(k)));
+  const film = { mode: $("film_mode").value, h: $("film_mode").value === "value" ? getVal("film_h") : null };
+  if (film.mode === "value" && film.h === null) { $("film_h").classList.add("bad"); throw new Error("막두께 직접 입력값 필요"); }
+  const t = $("atype").value; let a = { type: t };
+  if (t === "sine_centre") {
+    a.theta = getVal("theta");
+    const base = ST.preset && ST.presets[ST.preset].request.analysis;      // 프리셋의 λ/b 격자 유지
+    if (base && base.type === "sine_centre" && base.lam_b) a.lam_b = base.lam_b;
+  } else if (t === "sine_line") a.lam_b = getVal("lam_b");
+  else a = { type: t, shape: $("shape").value, N: getVal("N"), periods: getVal("periods"), s: getVal("s"), y0: getVal("y0"), nx: getVal("nx") };
+  return { case: c, S: getVal("S"), film, model: { s0_mode: $("s0_mode").value, hc_mode: $("hc_mode").value }, analysis: a };
+}
+function syncVisibility() {
+  const t = $("atype").value;
+  document.querySelectorAll("[data-for]").forEach((d) => d.classList.toggle("hidden", d.dataset.for !== t));
+  $("row_h").classList.toggle("hidden", $("film_mode").value !== "value");
+}
+function clientWarnings(req) {
+  const w = [];
+  if (req.analysis.type === "patch") {
+    if (req.analysis.N % 2 === 0) w.push("N 짝수 — Nyquist 성분 포함(§7.5, 홀수 권장)");
+    if (req.analysis.N > 255 || req.S !== 0) w.push("패치 계산은 수십 초 걸릴 수 있음(§9.6.2)");
+  }
+  return w;
+}
+
+// ---------------------------------------------------------------- 표시
+function showAlerts(list, err) {
+  $("alerts").innerHTML = list.map((m) => `<div class="alert${err ? " err" : ""}">${m}</div>`).join("");
+}
+function fmt(v) {
+  if (typeof v !== "number") return String(v);
+  const a = Math.abs(v);
+  return (a !== 0 && (a < 1e-3 || a >= 1e5)) ? v.toExponential(4) : +v.toPrecision(5);
+}
+const DERIVED = [["a_x", "a_x 반폭", 1e6, "μm"], ["a_y", "a_y 반폭", 1e6, "μm"], ["F", "하중 F", 1, "N"],
+  ["h", "막두께 h", 1e6, "μm"], ["hR_b2", "hR/b²", 1, ""], ["h_cen_hd", "HD h_cen", 1e6, "μm"],
+  ["P", "P = αp_h", 1, ""], ["S_greenwood", "S (Greenwood)", 1, ""], ["Lambda_per_lam_b", "Λ / (λ/b)", 1, ""],
+  ["moes_M", "Moes M", 1, ""], ["moes_L", "Moes L", 1, ""]];
+function showResult(out, src) {
+  ST.src = src;
+  const b = $("src"); b.textContent = src; b.className = "badge" + (src.startsWith("저장값") ? (src.includes("낡음") ? " stale" : " cache") : "");
+  $("derived").innerHTML = DERIVED.map(([k, lab, f, u]) =>
+    `<tr><td class="k">${lab}</td><td>${fmt(out.derived[k] * f)} ${u}</td></tr>`).join("");
+  $("warn").innerHTML = (out.warnings || []).map((m) => `<div class="alert">${m}</div>`).join("") || `<span class="meta">없음</span>`;
+}
+// 단면 Δh · Δp 띠 분리(§4.7.4 2. 형식) — 두 축 모두 7 눈금, Δh 는 아래 띠 · Δp 는 위 띠에 들도록 범위를 정함
+const N_TICK = 7, BAND_H = [0.02, 0.62], BAND_P = [0.64, 0.98];
+const LEEDS_RANGE = { h: [-0.3, 0.4], p: [-5, 2] };   // §4.7.4 2. 그림 범위(Leeds 프리셋, 데이터가 띠 안일 때)
+function inBand(lo, hi, [a, b], [f0, f1]) { return lo >= a + f0 * (b - a) && hi <= a + f1 * (b - a); }
+function bandAxis(lo, hi, [f0, f1]) {      // 눈금 간격 d(1 · 2 · 2.5 · 5 × 10^k) 가장 작은 것부터
+  const w = Math.max(Math.abs(lo), Math.abs(hi));
+  if (hi - lo <= 1e-9 * w || w === 0) { const t = 0.05 * w || 1; lo -= t; hi += t; }   // 평탄 데이터
+  const r = (v) => Number(v.toPrecision(12));
+  let e = Math.floor(Math.log10((hi - lo) / (N_TICK * (f1 - f0)))) - 1;
+  for (;; e++) for (const m of [1, 2, 2.5, 5]) {
+    const d = m * 10 ** e, k = Math.floor(lo / d - f0 * N_TICK + 1e-9);
+    if (hi <= (k + f1 * N_TICK) * d) return [r(k * d), r((k + N_TICK) * d)];
+  }
+}
+function sectionAxes(h, p) {
+  const fin = (a) => a.filter(Number.isFinite);
+  const [hl, hh, pl, ph] = [Math.min(...fin(h)), Math.max(...fin(h)), Math.min(...fin(p)), Math.max(...fin(p))];
+  if (ST.preset?.startsWith("leeds") && inBand(hl, hh, LEEDS_RANGE.h, BAND_H) && inBand(pl, ph, LEEDS_RANGE.p, BAND_P))
+    return LEEDS_RANGE;
+  return { h: bandAxis(hl, hh, BAND_H), p: bandAxis(pl, ph, BAND_P) };
+}
+
+// ---------------------------------------------------------------- 그래프(§9.5 작업내역서 그림 형식, S3)
+const C_MODEL = ["#1f77b4", "#d62728"], C_REF = "#737373", C_REF2 = "#bdbdbd";
+const LOG_TICKS = { tickvals: [1e-4, 1e-3, 1e-2, 1e-1, 1, 10, 100], ticktext: ["10⁻⁴", "10⁻³", "10⁻²", "10⁻¹", "10⁰", "10¹", "10²"] };
+const axn = (i) => (i === 1 ? "" : i);
+function niceUp(v) {                         // v 이상인 1 · 2 · 2.5 · 5 × 10^k
+  const e = Math.floor(Math.log10(v));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * 10 ** e >= v * (1 - 1e-12)) return m * 10 ** e;
+}
+// nr × nc 칸(twin 이면 칸마다 오른축) — ax[i] = { x, y, y2: trace 축 이름, X, Y, Y2: layout 축 객체 }
+function grid(nr, nc, twin = false, gapY = 0.07, gapX = 0.12) {
+  const L = { margin: { t: 50, r: twin ? 70 : 20, l: 70, b: 50 }, font: { size: 12 }, showlegend: true, shapes: [],
+              legend: { orientation: "h", x: 0, y: 1, yanchor: "bottom" }, plot_bgcolor: "#fff" };   // 범례는 위(축 제목과 겹침 방지)
+  const st = { linecolor: "#444", mirror: true, ticks: "outside", gridcolor: "#eee", zeroline: false };
+  const H = (1 - gapY * (nr - 1)) / nr, W = (1 - gapX * (nc - 1)) / nc, ax = [];
+  for (let r = 0; r < nr; r++) for (let c = 0; c < nc; c++) {
+    const i = r * nc + c + 1, y1 = 1 - r * (H + gapY), x0 = c * (W + gapX);
+    const X = (L[`xaxis${axn(i)}`] = { ...st, domain: [x0, x0 + W], anchor: `y${axn(i)}` });
+    const Y = (L[`yaxis${axn(i)}`] = { ...st, domain: [y1 - H, y1], anchor: `x${axn(i)}` });
+    const a = { x: `x${axn(i)}`, y: `y${axn(i)}`, X, Y };
+    if (twin) {
+      const j = nr * nc + i;
+      a.Y2 = L[`yaxis${j}`] = { ...st, mirror: false, overlaying: `y${axn(i)}`, side: "right", anchor: `x${axn(i)}`, showgrid: false };
+      a.y2 = `y${j}`; Y.mirror = false;
+    }
+    ax.push(a);
+  }
+  return { L, ax };
+}
+const line = (a, x, y, name, o = {}) => ({ x, y, name, xaxis: a.x, yaxis: a.y, mode: "lines", ...o });
+const pts = (a, xy, name, o = {}) => ({ x: xy.map((p) => p[0]), y: xy.map((p) => p[1]), name, xaxis: a.x, yaxis: a.y, mode: "markers", ...o });
+const right = (t, a) => ({ ...t, yaxis: a.y2 });
+function legendOnce() {                      // 같은 이름 범례는 한 번만
+  const seen = new Set();
+  return (name) => (seen.has(name) ? { name, legendgroup: name, showlegend: false } : (seen.add(name), { name, legendgroup: name }));
+}
+const vline = (a, x) => ({ type: "line", xref: a.x, yref: `${a.y} domain`, x0: x, x1: x, y0: 0, y1: 1,
+                           line: { color: "#999", width: 1, dash: "dash" } });
+
+// 원문 겹침: 저장값이거나, 계산 조건(해석 외)이 프리셋과 같을 때만 — 입력칸 표시 8 자리 반올림 허용(상대 1e-6)
+function near(a, b) {
+  if (typeof a === "number" && typeof b === "number") return Math.abs(a - b) <= 1e-6 * Math.max(Math.abs(a), Math.abs(b), 1e-300);
+  if (a && b && typeof a === "object" && typeof b === "object")
+    return [...new Set([...Object.keys(a), ...Object.keys(b)])].every((k) => near(a[k], b[k]));
+  return a === b || (a == null && b == null);
+}
+function refOn(e) {
+  if (!ST.ref || e.cached) return ST.ref;
+  const key = (r) => ({ c: r.case, S: r.S, f: { h: null, ...r.film }, m: { hc_mode: "complex", ...r.model } });
+  return near(key(ST.presets[ST.preset].request), key(ST.lastReq)) ? ST.ref : null;
+}
+
+// 저장값 뷰 · 계산 결과 → 항목 { type, theta | lam_b, S, r: result, d: derived, cached, label, harmonics }
+function entries() {
+  if (ST.src === "계산") {
+    const v = ST.views["계산"];
+    return [{ ...ST.lastReq.analysis, S: ST.lastReq.S, r: v.result, d: v.derived, cached: false, label: `S = ${ST.lastReq.S}` }];
+  }
+  const req = ST.presets[ST.preset].request;
+  return Object.entries(ST.views).map(([k, v]) => {
+    const e = { r: v.result, d: v.derived, cached: true, S: req.S, label: k, harmonics: v.harmonics };
+    if (k === "section") return { ...e, type: "patch" };
+    if (k.startsWith("centre_t")) return { ...e, type: "sine_centre", theta: +k.slice(8) };
+    if (k.startsWith("line_")) return { ...e, type: "sine_line", lam_b: +k.slice(5) };
+    const vu = +k.slice(5);                                   // hc_vu… (Hooke 2007, v/u = 1 + S/2)
+    return { ...e, type: "sine_centre", theta: req.analysis.theta, S: 2 * (vu - 1), label: `v/u = ${vu}` };
+  });
+}
+
+// 단면 Δh · Δp (§4.7.4 2. 형식): Δp 위 띠 · Δh 아래 띠, 접촉 경계 ±a 점선, Leeds NN 검정
+function drawSection(e) {
+  const r = e.r, ref = refOn(e)?.leeds, { L, ax: [a] } = grid(1, 1, true), tr = [];
+  const x = r.x.map((v) => v * 1e6), h = r.dh.map((v) => v * 1e6), p = r.dp.map((v) => v / 1e9);
+  const A = sectionAxes(ref ? h.concat(ref.dh_um) : h, ref ? p.concat(ref.dp_GPa) : p);
+  if (ref) {                                 // §4.7.4 2. 와 같이 검정 · NaN(수직 급변 · 미검출) 점은 빼고 이어 그림
+    const o = { legendgroup: "ref", line: { color: "#000", width: 2.5 } };
+    const fin = (y) => { const k = ref.x_um.map((_, i) => i).filter((i) => Number.isFinite(y[i])); return [k.map((i) => ref.x_um[i]), k.map((i) => y[i])]; };
+    tr.push(line(a, ...fin(ref.dh_um), `원문 ${ref.label}`, o), right(line(a, ...fin(ref.dp_GPa), "", { ...o, showlegend: false }), a));
+  }
+  tr.push(line(a, x, h, "본 모델 Δh", { line: { color: C_MODEL[0] } }), right(line(a, x, p, "본 모델 Δp", { line: { color: C_MODEL[1] } }), a));
+  const ty = (t, rg) => ({ title: { text: t }, range: rg, dtick: (rg[1] - rg[0]) / N_TICK, tick0: rg[0] });
+  Object.assign(a.Y, ty("Δh [μm] (아래)", A.h)); Object.assign(a.Y2, ty("Δp [GPa] (위)", A.p));
+  a.X.title = { text: `x [μm] · S = ${e.S}` };
+  L.shapes.push(vline(a, -e.d.a_x * 1e6), vline(a, e.d.a_x * 1e6));
+  return [tr, L];
+}
+
+// 중심 복소비 (Fig 4 형식): θ 0 → 허수부 · 실수부, θ 90 → 실수부(원문과 같음) · 계산 결과는 둘 다
+function drawFig4(es) {
+  const P = [], once = legendOnce();
+  es.filter((e) => !e.cached || e.theta === 0 || e.theta === 90).forEach((e) =>
+    (e.cached && e.theta === 90 ? ["re"] : ["im", "re"]).forEach((part) => P.push({ e, part })));
+  const { L, ax } = grid(P.length, 1, true), tr = [];
+  P.forEach(({ e, part }, i) => {
+    const a = ax[i], r = e.r, ref = refOn(e), key = `${e.theta}_${part}`, rf = ref?.fig4?.[key];
+    const yl = part === "im" ? [-0.1, 1.2] : [-1.2, 1.2], Pv = r[`P_${part}`];
+    const s = ref?.fig4_scale?.[key] ?? niceUp(Math.max(...Pv.map(Math.abs), 1e-30) / (0.8 * yl[1]));   // 오른축/왼축 비: 원문 그대로, 없으면 자동
+    tr.push(line(a, r.lam_b, r[`H_${part}`], "", { ...once("본 모델 H/A (굵은 선)"), line: { color: C_MODEL[0], width: 2.5 } }),
+            right(line(a, r.lam_b, Pv, "", { ...once("본 모델 P b/E′A (가는 선)"), line: { color: C_MODEL[0], width: 1.2 } }), a));
+    if (rf) tr.push(pts(a, rf.H, "", { ...once("원문 h ▲"), marker: { symbol: "triangle-up", color: C_REF, size: 7 } }),
+                    right(pts(a, rf.P, "", { ...once("원문 p △"), marker: { symbol: "triangle-up-open", color: C_REF, size: 7 } }), a));
+    const dir = e.theta === 0 ? "횡 " : e.theta === 90 ? "종 " : "";
+    Object.assign(a.X, { type: "log", range: [-4, 2], ...LOG_TICKS, title: i === P.length - 1 ? { text: "λ/b" } : undefined });
+    Object.assign(a.Y, { range: yl, zeroline: true, zerolinecolor: "#000",
+                         title: { text: `${dir}θ = ${e.theta}° ${part === "re" ? "실수부" : "허수부"}<br>H/A` } });
+    Object.assign(a.Y2, { range: [yl[0] * s, yl[1] * s], title: { text: "P b/E′A" } });
+  });
+  return [tr, L];
+}
+
+// 마스터 곡선 (Fig 6 형식): θ 별 행, |a/A| ●(왼축) · |P|λ/E′A □(오른축) vs Λ
+function drawFig6(es) {
+  const { L, ax } = grid(es.length, 1, true), tr = [], once = legendOnce();
+  es.forEach((e, i) => {
+    const a = ax[i], r = e.r, rf = refOn(e)?.fig6?.[String(e.theta)];
+    if (rf) {
+      const g = once("원문 맞춤 곡선(디지타이징)");
+      tr.push(pts(a, rf.amp, "", { ...g, marker: { color: C_REF, size: 3 } }),
+              right(pts(a, rf.pres, "", { ...g, showlegend: false, marker: { color: C_REF, size: 3 } }), a),
+              right(pts(a, rf.unknown, "", { ...once("원문 미구분"), marker: { color: C_REF2, size: 3 } }), a));
+    }
+    tr.push(pts(a, r.Lambda.map((v, k) => [v, r.amp[k]]), "", { ...once("본 모델 |a/A| (●)"), marker: { color: C_MODEL[0], size: 6 } }),
+            right(pts(a, r.Lambda.map((v, k) => [v, r.pres[k]]), "", { ...once("본 모델 |P|λ/E′A (□)"),
+                  marker: { symbol: "square-open", color: C_MODEL[0], size: 6 } }), a));
+    Object.assign(a.X, { type: "log", range: [-2, 2], ...LOG_TICKS, title: i === es.length - 1 ? { text: "Λ = (λ/b) P¹·⁵ S⁻²" } : undefined });
+    Object.assign(a.Y, { range: [0, 1.2], title: { text: `θ = ${e.theta}°<br>|a/A| (●)` } });
+    Object.assign(a.Y2, { range: [0, 3], title: { text: "|P|λ/E′A (□)" } });
+  });
+  return [tr, L];
+}
+
+// 입구 보완파 진폭 (Fig 12 형식): |h_c/A| vs Λ
+function drawFig12(es) {
+  const { L, ax: [a] } = grid(1, 1), tr = [], rf = refOn(es[0])?.fig12;
+  if (rf) {
+    const k = (n) => rf[n] || [];
+    tr.push(pts(a, k("plus"), "원문 v/u = 0.95 (+)", { marker: { symbol: "cross-thin-open", color: C_REF, size: 8, line: { width: 1.5, color: C_REF } } }),
+            pts(a, k("square"), "원문 v/u = 0.5 (■)", { marker: { symbol: "square", color: C_REF, size: 7 } }),
+            pts(a, [...k("line_dash"), ...k("line_solid"), ...k("unknown")], "원문 곡선 · 미구분", { marker: { color: C_REF, size: 3 } }));
+  }
+  es.forEach((e, i) => tr.push(line(a, e.r.Lambda, e.r.hc, `본 모델 ${e.label} · θ ${e.theta}°`, { line: { color: C_MODEL[i % 2], width: 2 } })));
+  Object.assign(a.X, { type: "log", range: [Math.log10(0.03), Math.log10(30)], ...LOG_TICKS, title: { text: "Λ = (λx/b) S⁻² P¹·⁵" } });
+  Object.assign(a.Y, { range: [0, 1.05], title: { text: "|h_c/A|" } });
+  return [tr, L];
+}
+
+// 공간 분포 (Fig 3 형식): λ/b 별 행 × (Δh/A · Δp b/E′A), 접촉 경계 x/b = ±1
+function drawFig3(es) {
+  es = [...es].sort((p, q) => p.lam_b - q.lam_b);
+  const { L, ax } = grid(es.length, 2), tr = [], once = legendOnce();
+  es.forEach((e, i) => [["dh", 1.2, "Δh/A"], ["dp", 2, "Δp b/E′A"]].forEach(([q, ym, t], j) => {
+    const a = ax[2 * i + j], rf = refOn(e)?.fig3;
+    if (rf) for (const kind of ["curve", "env_hi", "env_lo"]) {
+      const xy = rf[`${e.lam_b}_${q}_${kind}`] || [];
+      if (xy.length) tr.push(pts(a, xy, "", { ...once("원문(케이스 H · θ 0)"), mode: xy.length > 50 ? "lines" : "markers",
+                                                line: { color: C_REF, width: 1 }, marker: { color: C_REF, size: 3 } }));
+    }
+    const y = e.r[q], m = Math.max(ym, Math.max(...y.map(Math.abs)) * 1.05);   // 원문 축, 넘치면 넓힘
+    tr.push(line(a, e.r.x_b, y, "", { ...once("본 모델"), line: { color: C_MODEL[0], width: 1.5 } }));
+    Object.assign(a.X, { range: [-2, 2], title: i === es.length - 1 ? { text: "x/b" } : undefined });
+    Object.assign(a.Y, { range: [-m, m], zeroline: true, zerolinecolor: "#000", title: { text: `λ/b = ${e.lam_b}<br>${t}` } });
+    L.shapes.push(vline(a, -1), vline(a, 1));
+  }));
+  return [tr, L];
+}
+
+// 항목 → 그래프 탭 [key, 제목, 그리기]
+function graphs() {
+  const es = entries(), by = (t) => es.filter((e) => e.type === t), c = by("sine_centre"), g = [];
+  if (by("patch").length) g.push(["section", "단면 Δh · Δp", () => drawSection(by("patch")[0])]);
+  if (c.some((e) => e.S !== 0)) g.push(["fig12", "보완파 |h_c/A| · Fig 12 형식", () => drawFig12(c)]);
+  if (c.length) g.push(["fig4", "중심 복소비 · Fig 4 형식", () => drawFig4(c)], ["fig6", "마스터 곡선 · Fig 6 형식", () => drawFig6(c)]);
+  if (by("sine_line").length) g.push(["fig3", "공간 분포 · Fig 3 형식", () => drawFig3(by("sine_line"))]);
+  return { es, g };
+}
+function renderTabs() {
+  $("tabs").innerHTML = ST.graphs.map(([k, t]) => `<div class="tab${k === ST.view ? " on" : ""}" data-k="${k}">${t}</div>`).join("");
+  document.querySelectorAll(".tab").forEach((t) => (t.onclick = () => { ST.view = t.dataset.k; renderTabs(); plotView(); }));
+}
+function plotView() {
+  const [tr, L] = ST.graphs.find(([k]) => k === ST.view)[2]();
+  Plotly.react("plot", tr, L, { responsive: true, displaylogo: false });
+}
+// 결과 갱신: 결과 카드(첫 뷰) · 성분 표 · 탭
+function showAll() {
+  showResult(Object.values(ST.views)[0], ST.src);
+  const { es, g } = graphs();
+  ST.graphs = g;
+  if (!g.some(([k]) => k === ST.view)) ST.view = g[0][0];
+  showHarmonics(es.find((e) => e.harmonics)?.harmonics);
+  renderTabs(); plotView();
+}
+// 성분 표 — Leeds 고조파(§4.7.4 2. 표와 같은 방법, 저장값에 포함)
+function showHarmonics(hs) {
+  $("harm_box").classList.toggle("hidden", !hs);
+  if (!hs) return;
+  const f = (v, d) => v.toFixed(d);
+  $("harm").innerHTML = "<tr><td class='k'>n</td><td class='k'>λ μm</td><td class='k'>Δh/r</td><td class='k'>Leeds</td>" +
+    "<td class='k'>Δp GPa</td><td class='k'>Leeds</td></tr>" +
+    hs.map((h) => `<tr><td>${h.n}</td><td>${f(h.lam_um, 1)}</td><td>${f(h.dh_ratio, 3)}</td><td>${f(h.dh_ratio_leeds, 3)}</td>` +
+                  `<td>${f(h.dp_GPa, 3)}</td><td>${f(h.dp_GPa_leeds, 3)}</td></tr>`).join("");
+}
+// 내보내기 — 현재 그래프의 모든 곡선(CSV: 곡선 · 축 · x · y)
+function exportCSV() {
+  const rows = ["trace,yaxis,x,y"];
+  $("plot").data.forEach((t, i) => (t.x || []).forEach((x, k) =>
+    rows.push(`"${String(t.legendgroup || t.name || "trace" + i).replace(/"/g, "'")}",${t.yaxis || "y"},${x ?? ""},${t.y[k] ?? ""}`)));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + rows.join("\n")], { type: "text/csv" }));
+  a.download = `${ST.preset}_${ST.view}.csv`; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ---------------------------------------------------------------- 동작
+async function loadPreset(name) {
+  ST.preset = name;
+  fillForm(ST.presets[name].request);
+  showAlerts([]);
+  const r = await fetch(`/api/preset/${encodeURIComponent(name)}`);
+  if (!r.ok) { showAlerts([`저장값 없음 — ${await r.text()}`], true); return; }
+  const c = await r.json();
+  ST.ref = await (await fetch(`/api/ref/${encodeURIComponent(name)}`)).json();
+  ST.views = c.views; ST.view = null;
+  ST.src = c.stale ? "저장값 · 낡음" : "저장값";
+  if (c.stale) showAlerts(["저장값이 현재 코드와 다름 — python server.py --build-cache 로 재생성"]);
+  showAll();
+  $("status").textContent = `프리셋 ${name} · ${ST.presets[name].label}`;
+}
+async function runCalc() {
+  let req;
+  try { req = readForm(); } catch (e) { showAlerts([e.message], true); return; }
+  showAlerts(clientWarnings(req));
+  $("run").disabled = true; $("status").textContent = "계산 중…";
+  const t0 = performance.now();
+  try {
+    const r = await fetch("/api/m2", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req) });
+    const body = await r.json();
+    if (!r.ok) {
+      const msg = Array.isArray(body.detail) ? body.detail.map((d) => `${d.loc.slice(1).join(".")}: ${d.msg}`) : [String(body.detail)];
+      showAlerts(msg, true); return;
+    }
+    ST.views = { "계산": body }; ST.src = "계산"; ST.lastReq = req;
+    showAll();
+    $("status").textContent = `계산 완료 · ${((performance.now() - t0) / 1000).toFixed(1)} s`;
+  } catch (e) { showAlerts([`서버 오류: ${e.message}`], true); }
+  finally { $("run").disabled = false; }
+}
+async function init() {
+  ST.presets = await (await fetch("/api/presets")).json();
+  $("preset").innerHTML = Object.entries(ST.presets).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join("");
+  $("preset").onchange = () => loadPreset($("preset").value);
+  $("atype").onchange = syncVisibility; $("film_mode").onchange = syncVisibility;
+  $("run").onclick = runCalc;
+  $("csv").onclick = exportCSV;
+  $("png").onclick = () => Plotly.downloadImage("plot", { format: "png", filename: `${ST.preset}_${ST.view}`, scale: 2 });
+  $("reset").onclick = () => ST.preset && fillForm(ST.presets[ST.preset].request);
+  const q = new URLSearchParams(location.search);                       // ?preset=…&run=1 (점검용)
+  const first = q.get("preset") || Object.keys(ST.presets)[0];
+  $("preset").value = first;
+  await loadPreset(first);
+  if (q.get("run") === "1") await runCalc();
+  if (ST.graphs.some(([k]) => k === q.get("view"))) { ST.view = q.get("view"); renderTabs(); plotView(); }
+  document.body.dataset.ready = "1";
+}
+init().catch((e) => showAlerts([`초기화 실패: ${e.message}`], true));
+</script>
+</body>
+</html>
