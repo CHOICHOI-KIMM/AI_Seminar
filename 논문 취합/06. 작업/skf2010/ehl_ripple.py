@@ -99,7 +99,10 @@ def solve_psi(wx, wy, h, E_eff, B_bulk, u_bar, u2, eta_x, eta_y, tol=1e-12, itma
     if live.size == 0:
         return psi.reshape(shape)[()], 0, True
 
-    wx_u2, wyl = wx_u2_all[live][:, None], wy_f[live][:, None]
+    # P(psi) 는 |wx| 와 wy^2 에만 의존 → 고유한 (|wx|, |wy|) 쌍만 풀고 되돌린다(성분별 연산이라 결과 비트 동일, §9.6.2).
+    key, inv = np.unique(np.stack([wx_u2_all[live], np.abs(wy_f[live])], axis=1), axis=0, return_inverse=True)
+    inv = inv.ravel()
+    wx_u2, wyl = key[:, 0][:, None], key[:, 1][:, None]
     c_num, c_den = E_eff * h**3 / (48.0 * u_bar), E_eff * h / (4.0 * B_bulk)
 
     def P(wxp, beta):
@@ -110,7 +113,7 @@ def solve_psi(wx, wy, h, E_eff, B_bulk, u_bar, u2, eta_x, eta_y, tol=1e-12, itma
 
     scale = np.maximum(wx_u2, np.abs(wyl))
     has_x = wx_u2[:, 0] > 0
-    wxp, beta = wx_u2[:, 0].copy(), np.zeros(len(live))
+    wxp, beta = wx_u2[:, 0].copy(), np.zeros(len(key))
     ok = False
     for it in range(1, itmax + 1):
         wxp0, beta0 = wxp.copy(), beta.copy()
@@ -120,7 +123,7 @@ def solve_psi(wx, wy, h, E_eff, B_bulk, u_bar, u2, eta_x, eta_y, tol=1e-12, itma
         if np.all(np.abs(wxp - wxp0) + np.abs(beta - beta0) <= tol * (np.abs(wxp) + np.abs(beta))):
             ok = True
             break
-    psi[live] = sgn[live] * wxp + 1j * beta
+    psi[live] = sgn[live] * wxp[inv] + 1j * beta[inv]
     return psi.reshape(shape)[()], it, ok
 
 
@@ -236,6 +239,8 @@ def ripple_component(r_a, wx, wy, h, case, S, hc_mode="complex", psi_solver="pap
         "skf"      식 (24) 실수 h_t → h_c = h_t − h_a (위상 0)
         "hooke_li" Hooke & Li 2006 복소 H/A → h_c = (H/A − 1) r_a, h_t = (H/A) r_a (hooke_li_ratio)
       S ≠ 0 이면 무시된다. 기본값 "hooke_li" (사용자 결정 2026-10-11, 작업내역서 §4.7.4 ⑤).
+        "hooke_li_all" S ≠ 0 에도 h_t = (H/A) r_a, h_c = h_t − h_a(S) (특수적분 · ψ 는 S ≠ 0 그대로).
+                       순수구름 맞춤식을 미끄럼에 쓰는 근사 — 작업내역서 §5 V1c 시험용(사용자 결정 2026-10-16).
 
     tau_m 은 Eyring 식으로 미끄럼 속도에서 구한다(tau_mean_eyring).
     2D 성분의 진폭감쇠 변수는 [14] 식 [23][24] 를 따른다(계획서 U10):
@@ -272,10 +277,14 @@ def ripple_component(r_a, wx, wy, h, case, S, hc_mode="complex", psi_solver="pap
         h_t = total_amplitude(r_a, ar_nn)
     h_t = np.where(pi_["kappa"] > 0.0, h_t, 0.0)[()]        # DC: 0*inf 방지 (진폭 0)
     hl = None
-    if S == 0.0 and s0_mode == "hooke_li":
+    if S == 0.0 and s0_mode in ("hooke_li", "hooke_li_all"):
         hl = hooke_li_ratio(wx, wy, case)
         h_t = np.where(pi_["kappa"] > 0.0, hl["HA"] * r_a, 0.0)[()]
         h_cf = h_t - r_a                                     # h_a = r_a (S = 0)
+    elif s0_mode == "hooke_li_all":                          # S ≠ 0 근사(§5 V1c)
+        hl = hooke_li_ratio(wx, wy, case)
+        h_t = np.where(pi_["kappa"] > 0.0, hl["HA"] * r_a, 0.0)[()]
+        h_cf = h_t - pi_["h_a"]
     elif s0_mode not in ("skf", "hooke_li"):
         raise ValueError(s0_mode)
     elif hc_mode == "complex":

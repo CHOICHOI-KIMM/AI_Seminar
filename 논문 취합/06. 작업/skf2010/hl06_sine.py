@@ -1,6 +1,6 @@
-"""§7 M2 사인파 검토 — Hooke & Li 2006 Part 1 Fig 3·4 대응 계산 (작업내역서 §7).
+"""§8 M2 사인파 검토 — Hooke & Li 2006 Part 1 Fig 3·4 대응 계산 (작업내역서 §8).
 
-조건(사용자 결정 2026-10-12, §7.2):
+조건(사용자 결정 2026-10-12, §8.2):
   무차원 P·S·p_H 만 사용(Table 1), α = P/p_H, Barus 점도, Dowson–Higginson 압축성.
   선접촉 → Ry/Rx 큰 타원접촉(10·25·50), b ↔ a_x, R_eff ↔ Rx, h = 본 구현 Hamrock–Dowson h_cen.
   Rx·η0/ū 분할은 척도 — 무차원 결과 불변을 테스트로 먼저 확인(불변 아니면 중단).
@@ -14,7 +14,7 @@
 
     python hl06_sine.py  ->  ref_data/HL06_model.json · ref_data/HL06_model_fig3.npz
     python hl06_sine.py --film ref  ->  ref_data/HL06_model_REF.json · ref_data/HL06_model_fig3_REF.npz
-      (§7.5, 사용자 결정 2026-10-15: Fig 4 케이스 D·E·F 는 원문 Fig 4 1행 디지타이징 중심 간극(HL06_fig4_hcen.json),
+      (§8.5, 사용자 결정 2026-10-15: Fig 4 케이스 D·E·F 는 원문 Fig 4 1행 디지타이징 중심 간극(HL06_fig4_hcen.json),
        Fig 3 케이스 H 는 Pan & Hamrock 1989 선접촉 중심막(NASA RP-1255 식 21-60); Ry/Rx 25 · E′ 226 GPa · H/A 안만)
 """
 from __future__ import annotations
@@ -28,12 +28,13 @@ import numpy as np
 from conditions import Case
 from ehl_ripple import ripple_component
 
-TABLE1 = {"D": (10, 7.13, 0.5e9), "E": (20, 6.00, 1.0e9), "F": (40, 5.05, 2.0e9),
-          "H": (20, 8.00, 1.0e9)}
+TABLE1 = {"A": (10, 4.75, 0.5e9), "B": (20, 4.00, 1.0e9), "C": (40, 3.36, 2.0e9),   # 원문 Table 1 (P, S, p_H)
+          "D": (10, 7.13, 0.5e9), "E": (20, 6.00, 1.0e9), "F": (40, 5.05, 2.0e9),
+          "G": (10, 9.51, 0.5e9), "H": (20, 8.00, 1.0e9), "I": (40, 6.73, 2.0e9)}
 LAM_B = 10.0 ** (-4 + 0.15 * np.arange(41))          # 원문 41 점 격자
 MODES = ("skf", "hooke_li")
-RATIOS = (10.0, 25.0, 50.0)                            # Ry/Rx (§7.2.2)
-E_SET = (226e9, 117e9)                                 # E′ 폭 (§7.2.5)
+RATIOS = (10.0, 25.0, 50.0)                            # Ry/Rx (§8.2.2)
+E_SET = (226e9, 117e9)                                 # E′ 폭 (§8.2.5)
 HCEN = json.load(open("ref_data/HL06_fig4_hcen.json", encoding="utf-8"))["cases"]   # 원문 평활해 중심 간극
 
 
@@ -54,9 +55,10 @@ def h_pan_hamrock(case):
     """
     G = case.alpha * case.E_eff
     U = case.eta0 * case.u_bar / (case.E_eff * case.Rx)
-    P, S, _ = TABLE1[case.name]
-    assert np.isclose(case.alpha * case.p_h, P, rtol=1e-12), (case.name, case.alpha * case.p_h, P)
-    assert np.isclose(G * U**0.25, S, rtol=1e-12), (case.name, G * U**0.25, S)
+    if case.name in TABLE1:                            # Table 1 케이스면 P · S 일치 확인 (웹 계산기 등 일반 케이스는 생략)
+        P, S, _ = TABLE1[case.name]
+        assert np.isclose(case.alpha * case.p_h, P, rtol=1e-12), (case.name, case.alpha * case.p_h, P)
+        assert np.isclose(G * U**0.25, S, rtol=1e-12), (case.name, G * U**0.25, S)
     pe = case.p_h / case.E_eff                         # = P/G
     Hc = 2.922 * (2.0 * np.pi * pe**2) ** -0.166 * U**0.692 * G**0.470
     return Hc / (16.0 * pe**2) * case.a_x**2 / case.Rx
@@ -69,7 +71,7 @@ def h_digitized(case):
 
 
 def h_ref(case):
-    """§7.5 막두께: D·E·F 는 원문 디지타이징, H 는 Pan & Hamrock."""
+    """§8.5 막두께: D·E·F 는 원문 디지타이징, H 는 Pan & Hamrock."""
     return h_digitized(case) if case.name in HCEN else h_pan_hamrock(case)
 
 
@@ -78,7 +80,10 @@ def centre(case, lam_b, theta, mode, h=None):
     h = case.h_cen if h is None else h
     a = case.a_x
     k = 2.0 * np.pi / (lam_b * a)
-    wx, wy = (k, 0.0 * k) if theta == 0 else (0.0 * k, k)
+    if theta in (0, 90):
+        wx, wy = (k, 0.0 * k) if theta == 0 else (0.0 * k, k)
+    else:                                              # 경사 방향(§8.6 Fig 6, θ = 45°)
+        wx, wy = k * np.cos(np.radians(theta)), k * np.sin(np.radians(theta))
     s = ripple_component(np.ones_like(k) + 0j, wx, wy, h, case, 0.0, s0_mode=mode)
     ph = np.exp(1j * (s["psi"] - wx) * a)
     H = s["h_a"] + s["h_cf"] * ph
@@ -120,12 +125,12 @@ def invariance(modes=MODES, hfun=lambda c: c.h_cen):
 
 
 def main_ref():
-    """§7.5 막두께 안(h_ref): Ry/Rx 25, E′ 226 GPa, H/A 안만."""
+    """§8.5 막두께 안(h_ref): Ry/Rx 25, E′ 226 GPa, H/A 안만."""
     m, ratio, E = "hooke_li", 25.0, 226e9
     worst = invariance((m,), h_ref)
     print(f"척도 불변 최대 상대차 (REF) = {worst:.2e}")
     if not worst < 1e-8:
-        raise SystemExit("무차원 결과가 척도에 따라 변함 — 중단(§7.2.5)")
+        raise SystemExit("무차원 결과가 척도에 따라 변함 — 중단(§8.2.5)")
 
     res = {"invariance_max_rel": worst, "lam_b": LAM_B.tolist(),
            "film": "D·E·F: 원문 Fig 4 1행 디지타이징 중심 간극 · H: Pan-Hamrock 1989 line (RP-1255 eq 21-60)",
@@ -164,7 +169,7 @@ def main():
     worst = invariance()
     print(f"척도 불변 최대 상대차 = {worst:.2e}")
     if not worst < 1e-8:
-        raise SystemExit("무차원 결과가 척도에 따라 변함 — 중단(§7.2.5)")
+        raise SystemExit("무차원 결과가 척도에 따라 변함 — 중단(§8.2.5)")
 
     res = {"invariance_max_rel": worst, "lam_b": LAM_B.tolist(), "cases": {}}
     for name, ratio, E in ((n, r, e) for n in ("D", "E", "F") for r in RATIOS for e in E_SET):
@@ -201,5 +206,5 @@ def main():
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--film", choices=("hd", "ref"), default="hd",
-                    help="hd: Hamrock–Dowson h_cen (기본) · ref: D·E·F 원문 디지타이징, H Pan & Hamrock (§7.5)")
+                    help="hd: Hamrock–Dowson h_cen (기본) · ref: D·E·F 원문 디지타이징, H Pan & Hamrock (§8.5)")
     main_ref() if ap.parse_args().film == "ref" else main()

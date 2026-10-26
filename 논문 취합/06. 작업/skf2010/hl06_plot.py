@@ -1,11 +1,11 @@
-"""§7 그림 — 본 모델(hl06_sine.py)을 Hooke & Li 2006 Part 1 Fig 3·Fig 4 형식으로 그리고 원문 디지타이징을 겹친다.
+"""§8 그림 — 본 모델(hl06_sine.py)을 Hooke & Li 2006 Part 1 Fig 3·Fig 4 형식으로 그리고 원문 디지타이징을 겹친다.
 
     python hl06_plot.py            ->  figures/HL06_fig3_model.png · figures/HL06_fig4_model.png · ref_data/HL06_compare.json
     python hl06_plot.py --film ref ->  figures/HL06_fig3_REF.png · figures/HL06_fig4_REF.png · ref_data/HL06_compare_REF.json
-      (§7.5: D·E·F 원문 디지타이징 중심 간극, H Pan–Hamrock 선접촉 — HL06_model_REF.json · HL06_model_fig3_REF.npz,
+      (§8.5: D·E·F 원문 디지타이징 중심 간극, H Pan–Hamrock 선접촉 — HL06_model_REF.json · HL06_model_fig3_REF.npz,
        H/A 안 · E′ 226 GPa 선만)
 축 범위·좌우축 비는 원문 그림(디지타이징 축 보정 ref_data/HL06_calib.json)과 같게 둔다.
-본 모델: Ry/Rx 25, E′ 226 GPa 선 + E′ 117 GPa 와의 폭은 음영. 판정 없이 수치만(§7.3.2).
+본 모델: Ry/Rx 25, E′ 226 GPa 선 + E′ 117 GPa 와의 폭은 음영. 판정 없이 수치만(§8.3.2).
 원문(회색): 디지타이징 값(bbox 중심 기준).
 """
 from __future__ import annotations
