@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
@@ -75,6 +75,7 @@ class Patch(BaseModel):
     s: float = 0.0                                    # 스냅숏 위상 [m]
     y0: float = 0.0
     nx: int = Field(1201, ge=51, le=5001)
+    x: Optional[List[float]] = Field(None, max_length=20001)    # 단면 평가점 [m] 직접 지정(없으면 ±a_x 등간격 nx 점)
 
 
 class M2Request(BaseModel):
@@ -159,7 +160,7 @@ def run(req: M2Request) -> dict:
         out["warnings"] = warnings(case, h, req, np.array([a.lam_b]))
     else:
         r, Lp = (T.trapezoid_patch if a.shape == "trapezoid" else RC.flat_top_patch)(n=a.N, periods=a.periods)
-        xx = np.linspace(-case.a_x, case.a_x, a.nx)
+        xx = np.asarray(a.x, float) if a.x else np.linspace(-case.a_x, case.a_x, a.nx)
         dh, dp, resid, _ = M2.ripple_line(r, Lp, case, req.S, h, xx, req.model.hc_mode, y0=a.y0,
                                           shifts=np.array([a.s]), s0_mode=req.model.s0_mode)
         out["result"] = dict(x=xx.tolist(), dh=dh[0].tolist(), dp=dp[0].tolist(), L=Lp, dx=Lp / a.N,
@@ -210,7 +211,7 @@ def engine_hash() -> str:
     import hashlib
     h = hashlib.sha256()
     for f in ENGINE_FILES:
-        h.update(open(os.path.join(SKF, f), "rb").read())
+        h.update(open(os.path.join(SKF, f), encoding="utf-8").read().encode())   # 텍스트 읽기 — 줄바꿈(LF/CRLF) 무관
     src = open(os.path.join(WEB, "server.py"), encoding="utf-8").read()
     h.update(src[:src.index("# ---------------------------------------------------------------- 프리셋 저장값")].encode())
     return h.hexdigest()[:16]
