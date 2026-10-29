@@ -138,5 +138,29 @@ d12, o = pd.read_csv("ref_data/H07P1_fig12_digitized.csv", comment="#"), cli.get
 for k in sorted(d12.kind.unique()):
     same(f"원문 Fig 12 {k}", np.array(nan(sum(o[k], []))), d12[d12.kind == k][["Lambda", "hc_A"]].to_numpy())
 
+# 9) 단면 초기 간극 r · 높이 z — 입력 격자와 일치(격자점), §3.10 해석 형상과 평탄부 교차 확인
+from fig2_trapezoid import z_edge  # noqa: E402
+
+for key in ("leeds_S+0", "leeds_S-1"):
+    req = PRE[key]["request"]
+    an = req["analysis"]
+    r2, L = T.trapezoid_patch(n=an["N"])
+    dx = L / an["N"]
+    k = np.arange(-80, 81)
+    o = post(dict(req, analysis=dict(an, x=(k * dx + an["s"]).tolist())))["result"]
+    check(f"단면 r = 입력 격자 r[0, ix] ({key})", o["r"], r2[0, k % an["N"]], 1e-12 * 1e-6)
+    check(f"단면 z = z̄ − r ({key})", o["z"], o["zbar"] - np.array(o["r"]), 0.0)
+    check(f"단면 z 범위 0–0.30 μm ({key})", [min(o["z"]), max(o["z"])], [0.0, 0.30e-6], 1e-15)
+s310 = 176.0e-6
+o = post(dict(PRE["leeds_S+0"]["request"], analysis=dict(PRE["leeds_S+0"]["request"]["analysis"], s=s310)))["result"]
+xs = np.array(o["x"])
+uc = ((xs - s310) / np.sqrt(2.0) + 62.5e-6) % 125e-6 - 62.5e-6
+za = z_edge(np.abs(uc)) * 1e-6
+j310 = json.load(open("ref_data/V1_gap_r.json", encoding="utf-8"))
+rr = np.array(o["r"])
+check("§3.10 윗면 평균 r [μm]", rr[za >= 0.30e-6 - 1e-12].mean() * 1e6, j310["r_top_um"], 0.005)
+check("§3.10 홈 평균 r [μm]", rr[za <= 1e-12].mean() * 1e6, j310["r_groove_um"], 0.005)
+check("§3.10 z̄ [μm]", o["zbar"] * 1e6, j310["zbar_um"], 1e-9)
+
 n_ok = sum(1 for x in RES if x[3])
 print(f"{n_ok}/{len(RES)} PASS")

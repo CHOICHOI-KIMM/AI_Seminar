@@ -266,7 +266,7 @@ function niceUp(v) {                         // v 이상인 1 · 2 · 2.5 · 5 �
 function grid(nr, nc, twin = false, gapY = 0.07, gapX = 0.12) {
   const L = { margin: { t: 50, r: twin ? 70 : 20, l: 70, b: 50 }, font: { size: 12 }, showlegend: true, shapes: [],
               legend: { orientation: "h", x: 0, y: 1, yanchor: "bottom" }, plot_bgcolor: "#fff" };   // 범례는 위(축 제목과 겹침 방지)
-  const st = { linecolor: "#444", mirror: true, ticks: "outside", gridcolor: "#eee", zeroline: false };
+  const st = { linecolor: "#444", mirror: true, ticks: "outside", gridcolor: "#eee", zeroline: false, automargin: false };   // 여백 고정 → 플롯 영역 위치 고정
   const H = (1 - gapY * (nr - 1)) / nr, W = (1 - gapX * (nc - 1)) / nc, ax = [];
   for (let r = 0; r < nr; r++) for (let c = 0; c < nc; c++) {
     const i = r * nc + c + 1, y1 = 1 - r * (H + gapY), x0 = c * (W + gapX);
@@ -322,11 +322,25 @@ function entries() {
   });
 }
 
-// 단면 Δh · Δp (§4.7.4 2. 형식): Δp 위 띠 · Δh 아래 띠, 접촉 경계 ±a 점선, Leeds NN 검정
+// 단면 (§3.10 · §4.7.4 2. 형식): 위 = 초기 거칠기 z · z̄, 아래 = r · Δh(아래 띠) · Δp(위 띠) · Leeds NN 검정 · ±a 점선
 function drawSection(e) {
-  const r = e.r, ref = refOn(e)?.leeds, { L, ax: [a] } = grid(1, 1, true), tr = [];
-  const x = r.x.map((v) => v * 1e6), h = r.dh.map((v) => v * 1e6), p = r.dp.map((v) => v / 1e9);
-  const A = sectionAxes(ref ? h.concat(ref.dh_um) : h, ref ? p.concat(ref.dp_GPa) : p);
+  const r = e.r, ref = refOn(e)?.leeds, two = Array.isArray(r.z), tr = [];
+  const { L, ax } = grid(two ? 2 : 1, 1, true), a = ax[two ? 1 : 0];
+  const um = (v) => v * 1e6, x = r.x.map(um), h = r.dh.map(um), p = r.dp.map((v) => v / 1e9), rr = two ? r.r.map(um) : [];
+  const hp = [h.concat(ref ? ref.dh_um : []), ref ? p.concat(ref.dp_GPa) : p];
+  let A = sectionAxes(...hp);                // 띠 분리는 Δh · Δp 곡선 기준, r 은 축 안에만 들면 됨
+  if (rr.length && (Math.min(...rr) < A.h[0] || Math.max(...rr) > A.h[1])) A = sectionAxes(hp[0].concat(rr), hp[1]);
+  if (two) {                                 // 위 패널: 엔진 입력 격자에서 합성한 단면 높이 z = z̄ − r
+    const t = ax[0], z = r.z.map(um), zb = um(r.zbar), zm = +Math.max(...z).toPrecision(2);   // 2자리 반올림 → 합성 오차와 무관한 같은 축
+    t.Y.domain = [0.72, 1]; a.Y.domain = [0, 0.66];
+    tr.push(line(t, x, z, "초기 거칠기 z", { line: { color: "#000", width: 1.6 }, fill: "tozeroy", fillcolor: "rgba(0,0,0,0.12)" }),
+            line(t, [x[0], x[x.length - 1]], [zb, zb], `z̄ = ${zb.toFixed(3)} μm`, { line: { color: "#000", width: 1, dash: "dot" } }));
+    Object.assign(t.Y, { title: { text: "z [μm]" }, range: [-0.05 * zm, 1.6 * zm], dtick: 0.1, tick0: 0 });
+    Object.assign(t.X, { matches: a.x, showticklabels: false });
+    t.Y2.visible = false;
+    L.shapes.push(vline(t, -e.d.a_x * 1e6), vline(t, e.d.a_x * 1e6));
+    tr.push(line(a, x, rr, "초기 간극 r = −(z − z̄)", { line: { color: "#000", width: 1.4, dash: "dash" } }));
+  }
   if (ref) {                                 // §4.7.4 2. 와 같이 검정 · NaN(수직 급변 · 미검출) 점은 빼고 이어 그림
     const o = { legendgroup: "ref", line: { color: "#000", width: 2.5 } };
     const fin = (y) => { const k = ref.x_um.map((_, i) => i).filter((i) => Number.isFinite(y[i])); return [k.map((i) => ref.x_um[i]), k.map((i) => y[i])]; };
@@ -334,8 +348,9 @@ function drawSection(e) {
   }
   tr.push(line(a, x, h, "본 모델 Δh", { line: { color: C_MODEL[0] } }), right(line(a, x, p, "본 모델 Δp", { line: { color: C_MODEL[1] } }), a));
   const ty = (t, rg) => ({ title: { text: t }, range: rg, dtick: (rg[1] - rg[0]) / N_TICK, tick0: rg[0] });
-  Object.assign(a.Y, ty("Δh [μm] (아래)", A.h)); Object.assign(a.Y2, ty("Δp [GPa] (위)", A.p));
+  Object.assign(a.Y, ty(two ? "r · Δh [μm] (아래)" : "Δh [μm] (아래)", A.h)); Object.assign(a.Y2, ty("Δp [GPa] (위)", A.p));
   a.X.title = { text: `x [μm] · S = ${e.S}` };
+  if (ST.preset?.startsWith("leeds")) Object.assign(a.X, { range: [-200, 200], dtick: 50, tick0: 0 });   // §4.7.4 2. 범위 — 세 프리셋 눈금 · 점선 위치 통일
   L.shapes.push(vline(a, -e.d.a_x * 1e6), vline(a, e.d.a_x * 1e6));
   return [tr, L];
 }
@@ -435,6 +450,11 @@ function renderTabs() {
 function plotView() {
   const [tr, L] = ST.graphs.find(([k]) => k === ST.view)[2]();
   Plotly.react("plot", tr, L, { responsive: true, displaylogo: false });
+  const fl = $("plot")._fullLayout, px = (ax, v) => +(ax._offset + ax.l2p(v)).toFixed(2);   // 점검용: 축 · 점선 픽셀 위치
+  document.body.dataset.axes = JSON.stringify({
+    axes: Object.keys(fl).filter((k) => /^[xy]axis\d*$/.test(k) && fl[k].visible !== false)
+      .map((k) => ({ k, off: fl[k]._offset, len: fl[k]._length, range: fl[k].range, ticks: (fl[k]._vals || []).map((t) => px(fl[k], t.x)) })),
+    shapes: (fl.shapes || []).map((sh) => px(fl[sh.xref.replace("x", "xaxis")], sh.x0)) });
 }
 // 결과 갱신: 결과 카드(첫 뷰) · 성분 표 · 탭
 function showAll() {

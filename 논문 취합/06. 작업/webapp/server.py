@@ -163,8 +163,14 @@ def run(req: M2Request) -> dict:
         xx = np.asarray(a.x, float) if a.x else np.linspace(-case.a_x, case.a_x, a.nx)
         dh, dp, resid, _ = M2.ripple_line(r, Lp, case, req.S, h, xx, req.model.hc_mode, y0=a.y0,
                                           shifts=np.array([a.s]), s0_mode=req.model.s0_mode)
+        # 단면 초기 간극 r(x): ripple_line 과 같은 Fourier 합성(R_00 = 0) · 높이 z = z̄ − r (바닥 0 → z̄ = max r)
+        R = np.fft.fft2(r) / r.size
+        R[0, 0] = 0.0
+        w = 2.0 * np.pi * np.fft.fftfreq(a.N, d=Lp / a.N)
+        Rx = (R * np.exp(1j * w * a.y0)[:, None]).sum(axis=0)
+        rl = (np.exp(1j * np.outer(xx - a.s, w)) @ Rx).real
         out["result"] = dict(x=xx.tolist(), dh=dh[0].tolist(), dp=dp[0].tolist(), L=Lp, dx=Lp / a.N,
-                             imag_resid=float(resid))
+                             imag_resid=float(resid), r=rl.tolist(), z=(r.max() - rl).tolist(), zbar=float(r.max()))
         out["warnings"] = warnings(case, h, req)
     return out
 
@@ -368,5 +374,30 @@ if __name__ == "__main__":
     if "--build-cache" in sys.argv:
         build_cache([a for a in sys.argv[1:] if not a.startswith("--")] or None)
     else:
+        import threading
+        import urllib.request
+        import webbrowser
+
         import uvicorn
+        URL = "http://127.0.0.1:8010"
+
+        def up():
+            try:
+                urllib.request.urlopen(URL + "/api/presets", timeout=1)
+                return True
+            except OSError:
+                return False
+
+        if "--open" in sys.argv:                      # 웹계산기_실행.bat — 서버 준비 후 브라우저 열기
+            if up():                                  # 이미 실행 중이면 브라우저만
+                webbrowser.open(URL)
+                raise SystemExit(0)
+
+            def wait_open():
+                for _ in range(120):
+                    if up():
+                        webbrowser.open(URL)
+                        return
+                    threading.Event().wait(0.5)
+            threading.Thread(target=wait_open, daemon=True).start()
         uvicorn.run(app, host="127.0.0.1", port=8010)
