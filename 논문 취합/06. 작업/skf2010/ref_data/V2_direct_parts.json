@@ -1,0 +1,11 @@
+{
+ "phi_bl": 0.013962500000000001,
+ "sel_dry_frac": 0.5262451171875,
+ "hf_rms_lub": 0.0007130886209350663,
+ "hf_rms_dry": 0.09243899506819908,
+ "hf_rms_direct": 0.09199113821420063,
+ "hf_rms_paper": 0.0951378819418429,
+ "hf_rms_paper_minus_direct": 0.00616361010935595,
+ "max_abs_paper_minus_direct": 0.09293582899905461,
+ "h_tran_redo_max_diff_nm": 2.5501250366070797e-08
+}

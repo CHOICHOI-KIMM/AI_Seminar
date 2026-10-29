@@ -1,0 +1,82 @@
+{
+ "S0_ellipsoid": {
+  "phi_bl": 0.0175,
+  "converged": true,
+  "h_max_lead": 0.19362672554868235,
+  "h_max_trail": 0.2718184314658498,
+  "h_far": 0.07113876588918884,
+  "paper_p_max_hertz": 4.491652207232,
+  "paper_x_pmax_hertz": 0.04687500000000001,
+  "paper_hf_rms_hertz": 0.1791680927747756,
+  "paper_skf_rms_hertz": 0.4904724012909531,
+  "paper_p_max_mean": 4.492751444205462,
+  "paper_x_pmax_mean": 0.04687500000000001,
+  "paper_hf_rms_mean": 0.17918290632836045,
+  "paper_skf_rms_mean": 0.5751189286057028,
+  "direct_p_max_hertz": 4.491652083276265,
+  "direct_x_pmax_hertz": 0.04687500000000001,
+  "direct_hf_rms_hertz": 0.17916811430844953,
+  "direct_skf_rms_hertz": 0.4904723775381039,
+  "direct_p_max_mean": 4.492751320249727,
+  "direct_x_pmax_mean": 0.04687500000000001,
+  "direct_hf_rms_mean": 0.17918292789176846,
+  "direct_skf_rms_mean": 0.5751189559666741,
+  "seconds": 88.4
+ },
+ "S0_cap": {
+  "phi_bl": 0.013962500000000001,
+  "converged": true,
+  "h_max_lead": 0.17305923170571447,
+  "h_max_trail": 0.2329130020029237,
+  "h_far": 0.0716856518967112,
+  "paper_p_max_hertz": 4.753426350698094,
+  "paper_x_pmax_hertz": 0.03125,
+  "paper_hf_rms_hertz": 0.09511337245002276,
+  "paper_skf_rms_hertz": 0.5552206484389522,
+  "paper_p_max_mean": 4.753914751215627,
+  "paper_x_pmax_mean": 0.03125,
+  "paper_hf_rms_mean": 0.09513788194184292,
+  "paper_skf_rms_mean": 0.6307866475603383,
+  "direct_p_max_hertz": 4.762042788874148,
+  "direct_x_pmax_hertz": 0.03125,
+  "direct_hf_rms_hertz": 0.09196631616736278,
+  "direct_skf_rms_hertz": 0.5549418233110864,
+  "direct_p_max_mean": 4.762531189391681,
+  "direct_x_pmax_mean": 0.03125,
+  "direct_hf_rms_mean": 0.09199113821420063,
+  "direct_skf_rms_mean": 0.6305480750219687,
+  "seconds": 88.2
+ },
+ "S+1_cap_eq24": {
+  "phi_bl": 0.00730625,
+  "converged": true,
+  "p_max_hertz": 7.142857142857143,
+  "h_min": -0.1179934086439216,
+  "h_max_trail": 0.13805873364556107,
+  "seconds": 83.5
+ },
+ "S+1_cap_HA": {
+  "phi_bl": 0.013925,
+  "converged": true,
+  "p_max_hertz": 7.142857142857143,
+  "h_min": -0.21955768794672378,
+  "h_max_trail": 0.12719792815864447,
+  "seconds": 83.6
+ },
+ "S-1_cap_eq24": {
+  "phi_bl": 0.0067125,
+  "converged": true,
+  "p_max_hertz": 7.142857142857143,
+  "h_min": -0.1544152890975528,
+  "h_max_trail": 0.14716861088433905,
+  "seconds": 76.5
+ },
+ "S-1_cap_HA": {
+  "phi_bl": 0.011568750000000003,
+  "converged": true,
+  "p_max_hertz": 7.142857142857143,
+  "h_min": -0.25151388237132966,
+  "h_max_trail": 0.12538504619510474,
+  "seconds": 76.0
+ }
+}
